@@ -2,7 +2,7 @@
 name = "its-client"
 version = "0.1.0"
 authors = ["Frédéric Gardes <frederic.gardes@orange.com>"]
-license = "MIT/Apache-2.0"
+license = "Apache-2.0"
 description = "binary to connect on an ITS MQTT server"
 homepage = "https://github.com/tigroo31/its-client"
 documentation = "https://docs.rs/its-client"
@@ -15,6 +15,7 @@ edition = "2018"
 
 [dependencies]
 log = "0.4"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde_with = { version = "1.9", features = ["json"] }
+
+[dependencies.libits-client]
+version = "0.1"
+path="../libits-client"
