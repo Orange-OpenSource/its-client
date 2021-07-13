@@ -1,0 +1,37 @@
+name: Crates
+
+on:
+  push:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish_docs:
+    name: Publish documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build documentation
+        run: |
+          cd rust
+          cargo doc --no-deps
+      - name: Publish documentation
+        run: |
+          cd rust/target/doc
+          git init
+          git add .
+          git -c user.name='tigroo31' -c user.email='tigroo@lilo.org' commit -m init
+          git push -f -q https://git:${{ secrets.github_token }}@github.com/${{ github.repository }} HEAD:gh-pages
+        if: github.event_name == 'push' && github.event.ref == 'refs/heads/master'
+
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Publish
+        run: |
+          cd rust
+          cargo publish --token ${{ secrets.CRATES_IO }}
