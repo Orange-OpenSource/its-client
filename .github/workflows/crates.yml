@@ -31,7 +31,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Publish
+      - name: Publish the its library
         run: |
-          cd rust
+          cd rust/libits-client
           cargo publish --token ${{ secrets.CRATES_IO }}
+      - name: Publish the its binary
+          run: |
+            cd rust/its-client
+            cargo publish --token ${{ secrets.CRATES_IO }}
