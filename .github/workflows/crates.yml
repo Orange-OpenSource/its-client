@@ -36,6 +36,6 @@ jobs:
           cd rust/libits-client
           cargo publish --token ${{ secrets.CRATES_IO }}
       - name: Publish the its binary
-          run: |
-            cd rust/its-client
-            cargo publish --token ${{ secrets.CRATES_IO }}
+        run: |
+          cd rust/its-client
+          cargo publish --token ${{ secrets.CRATES_IO }}
