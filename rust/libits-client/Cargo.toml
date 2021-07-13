@@ -2,8 +2,25 @@
 name = "libits-client"
 version = "0.1.0"
 authors = ["Frédéric Gardes <frederic.gardes@orange.com>"]
+license = "Apache-2.0"
+description = "library to connect on an ITS MQTT server"
+homepage = "https://github.com/tigroo31/its-client"
+documentation = "https://docs.rs/libits-client"
+repository = "https://github.com/tigroo31/its-client.git"
+readme = "README.md"
+keywords = ["network", "its", "vehicle", "mqtt", "etsi"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+log = "0.4"
+serde_json = "1.0"
+
+[dependencies.serde]
+version = "1.0"
+features = ["derive"]
+
+[dependencies.serde_with]
+version = "1.9"
+features = ["json"]
