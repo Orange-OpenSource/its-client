@@ -1,0 +1,21 @@
+name: Docker
+
+on: [ push ]
+
+jobs:
+  its_client_job:
+    runs-on: ubuntu-latest
+    name: Run the its client container
+    steps:
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
+      - name: Run docker action
+        id: run
+        uses: tigroo31/its-client@v1
+        with:
+          log_output: '/tmp'
+      # Use the output from the `hello` step
+      - name: Get the return code
+        run: echo "The return code was ${{ steps.run.outputs.return_code }} on ${{ steps.extract_branch.outputs.branch }}"
