@@ -1,0 +1,16 @@
+# action.yml
+name: 'Docker run'
+description: 'Build an image and run a container with the its-client'
+inputs:
+  log_output: # log directory
+    description: 'Log directory to use'
+    required: true
+    default: '/usr/src/app/log'
+outputs:
+  return_code: # return code of the binary
+    description: 'The return code of the client'
+runs:
+  using: 'docker'
+  image: 'rust/Dockerfile'
+  args:
+    - ${{ inputs.log_output }}
