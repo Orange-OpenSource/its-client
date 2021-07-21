@@ -13,9 +13,31 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["copycat"]
+copycat = ["libits-copycat"]
+
 [dependencies]
 log = "0.4"
+rumqttc = "0.8.0"
+clap = "2.33.0"
+
+[dependencies.flexi_logger]
+version = "0.18.0"
+features = ["async", "compress"]
 
 [dependencies.libits-client]
 version = "0.1"
 path="../libits-client"
+
+[dependencies.pretty_env_logger]
+version = "0.4"
+
+[dependencies.tokio]
+version = "1.8.1"
+features = ["full", "macros"]
+
+[dependencies.libits-copycat]
+version = "0.1"
+path="../libits-copycat"
+optional = true
