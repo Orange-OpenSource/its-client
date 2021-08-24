@@ -1,0 +1,721 @@
+use std::{cmp, hash};
+
+use serde::{Deserialize, Serialize};
+
+use crate::analyse::configuration::Configuration;
+use crate::reception::exchange::message::Message;
+use crate::reception::exchange::reference_position::ReferencePosition;
+use crate::reception::mortal::{now, Mortal};
+use crate::reception::Reception;
+
+pub(crate) mod collective_perception_message;
+pub(crate) mod cooperative_awareness_message;
+pub(crate) mod decentralized_environmental_notification_message;
+pub(crate) mod message;
+pub mod mobile;
+pub(crate) mod reference_position;
+//mod collective_perception_message;
+
+#[serde_with::skip_serializing_none]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Exchange {
+    #[serde(rename = "type")]
+    pub type_field: String,
+    pub origin: String,
+    pub version: String,
+    pub source_uuid: String,
+    pub timestamp: u128,
+    pub length: Option<u32>,
+    pub direction: Option<u16>,
+    pub message: Message,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+pub struct PositionConfidence {
+    pub position_confidence_ellipse: Option<PositionConfidenceEllipse>,
+    pub altitude: Option<u8>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+pub struct PositionConfidenceEllipse {
+    pub semi_major_confidence: Option<u16>,
+    pub semi_minor_confidence: Option<u16>,
+    pub semi_major_orientation: Option<u16>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+pub struct PathHistory {
+    pub path_position: PathPosition,
+    pub path_delta_time: Option<u16>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+pub struct PathPosition {
+    pub delta_latitude: Option<i32>,
+    pub delta_longitude: Option<i32>,
+    pub delta_altitude: Option<i32>,
+}
+
+impl Exchange {
+    pub fn new(
+        component: String,
+        timestamp: u128,
+        length: Option<u32>,
+        direction: Option<u16>,
+        message: Message,
+    ) -> Box<Exchange> {
+        Box::from(Exchange {
+            type_field: message.get_type(),
+            origin: "mec_application".to_string(),
+            version: "1.0.1".to_string(),
+            source_uuid: component,
+            length,
+            direction,
+            timestamp,
+            message,
+        })
+    }
+
+    // TODO find a better way to appropriate
+    pub fn appropriate(&mut self, configuration: &Configuration, timestamp: u128) {
+        self.origin = "mec_application".to_string();
+        let _number = self.message.appropriate(configuration, timestamp);
+        self.source_uuid = configuration.component_name(None);
+        self.timestamp = timestamp;
+    }
+}
+
+impl Mortal for Exchange {
+    fn timeout(&self) -> u128 {
+        self.message.timeout()
+    }
+
+    fn terminate(&mut self) {
+        self.message.terminate();
+    }
+
+    fn terminated(&self) -> bool {
+        self.message.terminated()
+    }
+
+    fn remaining_time(&self) -> u128 {
+        return (self.timeout() - now()) / 1000;
+    }
+}
+
+impl Reception for Exchange {}
+
+impl hash::Hash for Exchange {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        self.message.hash(state);
+    }
+}
+
+impl cmp::PartialEq for Exchange {
+    fn eq(&self, other: &Self) -> bool {
+        self.message == other.message
+    }
+}
+
+impl cmp::Eq for Exchange {}
+
+#[cfg(test)]
+mod tests {
+    use crate::reception::exchange::message::Message;
+    use crate::reception::exchange::Exchange;
+
+    fn basic_cam() -> &'static str {
+        return r#"
+{
+  "type": "cam",
+  "origin": "self",
+  "version": "1.0.0",
+  "source_uuid": "uuid14",
+  "timestamp": 1574778515424,
+  "message": {
+    "protocol_version": 1,
+    "station_id": 42,
+    "generation_delta_time": 3,
+    "basic_container": {
+      "reference_position": {
+        "latitude": 486263556,
+        "longitude": 22492123,
+        "altitude": 20000
+      }
+    },
+    "high_frequency_container": {}
+  }
+}
+"#;
+    }
+
+    fn standard_cam() -> &'static str {
+        return r#"
+{
+  "type": "cam",
+  "origin": "self",
+  "version": "1.0.0",
+  "source_uuid": "uuid14",
+  "timestamp": 1574778515424,
+  "message": {
+    "protocol_version": 1,
+    "station_id": 42,
+    "generation_delta_time": 3,
+    "basic_container": {
+      "station_type": 5,
+      "reference_position": {
+        "latitude": 486263556,
+        "longitude": 22492123,
+        "altitude": 20000
+      },
+      "confidence": {
+        "position_confidence_ellipse": {
+          "semi_major_confidence": 100,
+          "semi_minor_confidence": 50,
+          "semi_major_orientation": 180
+        },
+        "altitude": 3
+      }
+    },
+    "high_frequency_container": {
+      "heading": 180,
+      "speed": 365,
+      "drive_direction": 0,
+      "vehicle_length": 40,
+      "vehicle_width": 20,
+      "confidence": {
+        "heading": 2,
+        "speed": 3,
+        "vehicle_length": 0
+      }
+    }
+  }
+}
+"#;
+    }
+
+    fn full_cam() -> &'static str {
+        return r#"
+{
+  "type": "cam",
+  "origin": "self",
+  "version": "1.0.0",
+  "source_uuid": "uuid14",
+  "timestamp": 1574778515424,
+  "message": {
+    "protocol_version": 1,
+    "station_id": 42,
+    "generation_delta_time": 3,
+    "basic_container": {
+      "station_type": 5,
+      "reference_position": {
+        "latitude": 486263556,
+        "longitude": 22492123,
+        "altitude": 20000
+      },
+      "confidence": {
+        "position_confidence_ellipse": {
+          "semi_major_confidence": 100,
+          "semi_minor_confidence": 50,
+          "semi_major_orientation": 180
+        },
+        "altitude": 3
+      }
+    },
+    "high_frequency_container": {
+      "heading": 180,
+      "speed": 253,
+      "drive_direction": 0,
+      "vehicle_length": 40,
+      "vehicle_width": 20,
+      "curvature": 0,
+      "curvature_calculation_mode": 1,
+      "longitudinal_acceleration": 2,
+      "yaw_rate": 0,
+      "acceleration_control": "0000010",
+      "lane_position": 1,
+      "lateral_acceleration": 7,
+      "vertical_acceleration": 2,
+      "confidence": {
+        "heading": 2,
+        "speed": 3,
+        "vehicle_length": 0,
+        "yaw_rate": 0,
+        "longitudinal_acceleration": 1,
+        "curvature": 1,
+        "lateral_acceleration": 2,
+        "vertical_acceleration": 1
+      }
+    },
+    "low_frequency_container": {
+      "vehicle_role": 0,
+      "exterior_lights": "00000011",
+      "path_history": [
+        {
+          "path_position": {
+            "delta_latitude": 102,
+            "delta_longitude": 58,
+            "delta_altitude": -10
+          },
+          "path_delta_time": 19
+        },
+        {
+          "path_position": {
+            "delta_latitude": 96,
+            "delta_longitude": 42,
+            "delta_altitude": -6
+          },
+          "path_delta_time": 21
+        }
+      ]
+    }
+  }
+}
+"#;
+    }
+
+    fn basic_denm() -> &'static str {
+        return r#"
+{
+  "type": "denm",
+  "origin": "self",
+  "version": "1.0.0",
+  "source_uuid": "uuid14",
+  "timestamp": 1574778515425,
+  "message": {
+    "protocol_version": 1,
+    "station_id": 42,
+    "management_container": {
+      "action_id": {
+        "originating_station_id": 41,
+        "sequence_number": 1
+      },
+      "detection_time": 503253331000,
+      "reference_time": 503253331050,
+      "event_position": {
+        "latitude": 486263556,
+        "longitude": 224921234,
+        "altitude": 20000
+      }
+    }
+  }
+}
+    "#;
+    }
+
+    fn standard_denm() -> &'static str {
+        return r#"
+{
+  "type": "denm",
+  "origin": "self",
+  "version": "1.0.0",
+  "source_uuid": "uuid14",
+  "timestamp": 1574778515425,
+  "message": {
+    "protocol_version": 1,
+    "station_id": 42,
+    "management_container": {
+      "action_id": {
+        "originating_station_id": 41,
+        "sequence_number": 1
+      },
+      "detection_time": 503253332000,
+      "reference_time": 503253330000,
+      "event_position": {
+        "latitude": 486263556,
+        "longitude": 224921234,
+        "altitude": 20000
+      },
+      "station_type": 5,
+      "confidence": {
+        "position_confidence_ellipse": {
+          "semi_major_confidence": 100,
+          "semi_minor_confidence": 50,
+          "semi_major_orientation": 180
+        },
+        "altitude": 3
+      }
+    },
+    "situation_container": {
+      "event_type": {
+        "cause": 97,
+        "subcause": 0
+      }
+    },
+    "location_container": {
+      "event_speed": 289,
+      "event_position_heading": 1806,
+      "traces": [
+        {
+          "path_history": []
+        }
+      ],
+      "confidence": {
+        "speed": 3,
+        "heading": 2
+      }
+    }
+  }
+}
+    "#;
+    }
+
+    fn full_denm() -> &'static str {
+        return r#"
+{
+  "type": "denm",
+  "origin": "self",
+  "version": "1.0.0",
+  "source_uuid": "uuid14",
+  "timestamp": 1574778515425,
+  "message": {
+    "protocol_version": 1,
+    "station_id": 42,
+    "management_container": {
+      "action_id": {
+        "originating_station_id": 41,
+        "sequence_number": 1
+      },
+      "detection_time": 503253332000,
+      "reference_time": 503253330000,
+      "termination": 1,
+      "event_position": {
+        "latitude": 486263556,
+        "longitude": 224921234,
+        "altitude": 20000
+      },
+      "relevance_distance": 3,
+      "relevance_traffic_direction": 2,
+      "validity_duration": 600,
+      "transmission_interval": 500,
+      "station_type": 5,
+      "confidence": {
+        "position_confidence_ellipse": {
+          "semi_major_confidence": 100,
+          "semi_minor_confidence": 50,
+          "semi_major_orientation": 180
+        },
+        "altitude": 3
+      }
+    },
+    "situation_container": {
+      "information_quality": 1,
+      "event_type": {
+        "cause": 97,
+        "subcause": 0
+      },
+      "linked_cause": {
+        "cause": 1,
+        "subcause": 1
+      }
+    },
+    "location_container": {
+      "event_speed": 289,
+      "event_position_heading": 1806,
+      "traces": [
+        {
+          "path_history": [
+            {
+              "path_position": {
+                "delta_latitude": 102,
+                "delta_longitude": 58,
+                "delta_altitude": -10
+              },
+              "path_delta_time": 19
+            },
+            {
+              "path_position": {
+                "delta_latitude": 96,
+                "delta_longitude": 42,
+                "delta_altitude": -6
+              },
+              "path_delta_time": 21
+            }
+          ]
+        },
+        {
+          "path_history": [
+            {
+              "path_position": {
+                "delta_latitude": 75,
+                "delta_longitude": 12,
+                "delta_altitude": 3
+              },
+              "path_delta_time": 20
+            },
+            {
+              "path_position": {
+                "delta_latitude": 74,
+                "delta_longitude": 11,
+                "delta_altitude": 2
+              },
+              "path_delta_time": 20
+            },
+            {
+              "path_position": {
+                "delta_latitude": 73,
+                "delta_longitude": 10,
+                "delta_altitude": 6
+              },
+              "path_delta_time": 20
+            }
+          ]
+        }
+      ],
+      "road_type": 0,
+      "confidence": {
+        "speed": 3,
+        "heading": 2
+      }
+    },
+    "alacarte_container": {
+      "lane_position": -1,
+      "positioning_solution": 2
+    }
+  }
+}
+    "#;
+    }
+
+    fn bad_cam_without_timestamp() -> &'static str {
+        return r#"
+{
+  "type": "cam",
+  "origin": "self",
+  "version": "1.0.0",
+  "source_uuid": "uuid14",
+  "message": {
+    "protocol_version": 1,
+    "station_id": 42,
+    "generation_delta_time": 3,
+    "basic_container": {
+      "reference_position": {
+        "latitude": 486263556,
+        "longitude": 22492123,
+        "altitude": 20000
+      }
+    },
+    "high_frequency_container": {}
+  }
+}
+"#;
+    }
+
+    fn bad_denm_with_string_timestamp() -> &'static str {
+        return r#"
+{
+  "type": "denm",
+  "origin": "self",
+  "version": "1.0.0",
+  "source_uuid": "uuid14",
+  "timestamp": "1574778515425",
+  "message": {
+    "protocol_version": 1,
+    "station_id": 42,
+    "management_container": {
+      "action_id": {
+        "originating_station_id": 41,
+        "sequence_number": 1
+      },
+      "detection_time": 503253332000,
+      "reference_time": 503253330000,
+      "event_position": {
+        "latitude": 486263556,
+        "longitude": 224921234,
+        "altitude": 20000
+      }
+    }
+  }
+}
+    "#;
+    }
+
+    fn bad_denm_with_protocol_version_u32() -> &'static str {
+        return r#"
+{
+  "type": "denm",
+  "origin": "self",
+  "version": "1.0.0",
+  "source_uuid": "uuid14",
+  "timestamp": 1574778515425,
+  "message": {
+    "protocol_version": 4242424242,
+    "station_id": 42,
+    "management_container": {
+      "action_id": {
+        "originating_station_id": 41,
+        "sequence_number": 1
+      },
+      "detection_time": 503253332000,
+      "reference_time": 503253330000,
+      "event_position": {
+        "latitude": 486263556,
+        "longitude": 224921234,
+        "altitude": 20000
+      }
+    }
+  }
+}
+    "#;
+    }
+
+    fn remove_whitespace(s: &str) -> String {
+        s.split_whitespace().collect()
+    }
+
+    #[test]
+    fn it_can_deserialize_then_serialize_a_basic_cam() {
+        let json = basic_cam();
+        let cam: Exchange = serde_json::from_str(json).unwrap();
+        assert_eq!(cam.timestamp, 1574778515424);
+        assert_eq!(
+            serde_json::to_string(&cam).unwrap(),
+            remove_whitespace(json)
+        );
+    }
+
+    #[test]
+    fn it_can_deserialize_then_serialize_a_standard_cam() {
+        let json = standard_cam();
+        let cam: Exchange = serde_json::from_str(json).unwrap();
+        assert_eq!(cam.timestamp, 1574778515424);
+        if let Message::CAM(message) = &cam.message {
+            assert_eq!(message.high_frequency_container.speed.unwrap(), 365);
+            assert_eq!(
+                serde_json::to_string(&cam).unwrap(),
+                remove_whitespace(json)
+            );
+        } else {
+            panic!("no cam deserialized");
+        };
+    }
+
+    #[test]
+    fn it_can_deserialize_then_serialize_a_full_cam() {
+        let json = full_cam();
+        let cam: Exchange = serde_json::from_str(json).unwrap();
+        assert_eq!(cam.timestamp, 1574778515424);
+        if let Message::CAM(message) = &cam.message {
+            assert_eq!(message.high_frequency_container.speed.unwrap(), 253);
+            assert_eq!(
+                message
+                    .high_frequency_container
+                    .curvature_calculation_mode
+                    .unwrap(),
+                1
+            );
+            assert_eq!(
+                serde_json::to_string(&cam).unwrap(),
+                remove_whitespace(json)
+            );
+        } else {
+            panic!("no cam deserialized");
+        };
+    }
+
+    #[test]
+    fn it_can_deserialize_then_serialize_a_basic_denm() {
+        let json = basic_denm();
+        let denm: Exchange = serde_json::from_str(json).unwrap();
+        assert_eq!(denm.timestamp, 1574778515425);
+        if let Message::DENM(message) = &denm.message {
+            assert_eq!(
+                message
+                    .management_container
+                    .action_id
+                    .originating_station_id,
+                41
+            );
+            assert_eq!(
+                serde_json::to_string(&denm).unwrap(),
+                remove_whitespace(json)
+            );
+        } else {
+            panic!("no denm deserialized");
+        };
+    }
+
+    #[test]
+    fn it_can_deserialize_then_serialize_a_standard_denm() {
+        let json = standard_denm();
+        let denm: Exchange = serde_json::from_str(json).unwrap();
+        assert_eq!(denm.timestamp, 1574778515425);
+        if let Message::DENM(message) = &denm.message {
+            assert_eq!(
+                message
+                    .management_container
+                    .action_id
+                    .originating_station_id,
+                41
+            );
+            match &message.situation_container {
+                Some(s) => assert_eq!(s.event_type.cause, 97),
+                None => panic!("Situation container is undefined"),
+            };
+            assert_eq!(
+                serde_json::to_string(&denm).unwrap(),
+                remove_whitespace(json)
+            );
+        } else {
+            panic!("no denm deserialized");
+        };
+    }
+
+    #[test]
+    fn it_can_deserialize_then_serialize_a_full_denm() {
+        let json = full_denm();
+        let denm: Exchange = serde_json::from_str(json).unwrap();
+        assert_eq!(denm.timestamp, 1574778515425);
+        if let Message::DENM(message) = &denm.message {
+            assert_eq!(
+                message
+                    .management_container
+                    .action_id
+                    .originating_station_id,
+                41
+            );
+            match &message.situation_container {
+                Some(s) => {
+                    assert_eq!(s.event_type.cause, 97);
+                    assert_eq!(s.information_quality.unwrap(), 1);
+                    match &s.linked_cause {
+                        Some(lc) => assert_eq!(lc.cause, 1),
+                        None => panic!("Linked cause is undefined"),
+                    };
+                }
+                None => panic!("Situation container is undefined"),
+            };
+            assert_eq!(
+                serde_json::to_string(&denm).unwrap(),
+                remove_whitespace(json)
+            );
+        } else {
+            panic!("no denm deserialized");
+        };
+    }
+
+    #[test]
+    #[should_panic]
+    fn it_should_panic_when_deserializing_a_cam_without_timestamp() {
+        let json = bad_cam_without_timestamp();
+        let _: Exchange = serde_json::from_str(json).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn it_should_panic_when_deserializing_a_denm_with_timestamp_as_string() {
+        let json = bad_denm_with_string_timestamp();
+        let _: Exchange = serde_json::from_str(json).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn it_should_panic_when_deserializing_a_denm_with_protocol_version_bigger_than_u8() {
+        let json = bad_denm_with_protocol_version_u32();
+        let _: Exchange = serde_json::from_str(json).unwrap();
+    }
+}

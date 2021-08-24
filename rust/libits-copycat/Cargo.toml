@@ -1,0 +1,23 @@
+[package]
+name = "libits-copycat"
+version = "0.1.0"
+authors = ["Frédéric Gardes <frederic.gardes@orange.com>"]
+license = "Apache-2.0"
+description = "library to provide an example of analyser which copycat 10 seconds later the message received appropriating it"
+homepage = "https://github.com/tigroo31/its-client"
+documentation = "https://docs.rs/libits-copycat"
+repository = "https://github.com/tigroo31/its-client.git"
+readme = "README.md"
+keywords = ["network", "its", "vehicle", "mqtt", "etsi"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+timer = "0.2"
+chrono = "0.4"
+
+[dependencies.libits-client]
+version = "0.1"
+path="../libits-client"
