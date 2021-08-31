@@ -61,7 +61,7 @@ impl Mortal for Message {
         if let Message::DENM(message) = self {
             return message.timeout();
         }
-        // TODO implement a timeout on the cam
+        // TODO implement a timeout on the cam and cpm
         0
     }
 
@@ -69,14 +69,14 @@ impl Mortal for Message {
         if let Message::DENM(message) = self {
             message.terminate();
         }
-        // TODO implement a terminate on the cam
+        // TODO implement a terminate on the cam and cpm
     }
 
     fn terminated(&self) -> bool {
         if let Message::DENM(message) = self {
             return message.terminated();
         }
-        // TODO implement a timeout on the cam
+        // TODO implement a timeout on the cam and cpm
         false
     }
 }
