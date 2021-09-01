@@ -3,4 +3,3 @@ pub mod monitor;
 pub mod mqtt;
 pub mod pipeline;
 pub mod reception;
-mod shared_channel;
