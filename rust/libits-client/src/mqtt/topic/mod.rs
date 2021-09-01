@@ -1,4 +1,4 @@
-pub(crate) mod geo_extension;
+pub mod geo_extension;
 mod message_type;
 mod parse_error;
 mod queue;

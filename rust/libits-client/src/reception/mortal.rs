@@ -39,6 +39,6 @@ pub(crate) fn timestamp(etsi_timestamp: u128) -> u128 {
 /// Unit: millisecond since ETSI epoch (2004/01/01, so 1072915195000).
 /// Time at which a new DENM, an update DENM or a cancellation DENM is generated.
 /// utcStartOf2004(0), oneMillisecAfterUTCStartOf2004(1)
-pub(crate) fn etsi_timestamp(timestamp: u128) -> u128 {
+pub fn etsi_timestamp(timestamp: u128) -> u128 {
     timestamp - 1072915195000
 }

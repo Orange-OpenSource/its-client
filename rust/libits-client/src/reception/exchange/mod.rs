@@ -8,12 +8,12 @@ use crate::reception::exchange::reference_position::ReferencePosition;
 use crate::reception::mortal::{now, Mortal};
 use crate::reception::Reception;
 
-pub(crate) mod collective_perception_message;
-pub(crate) mod cooperative_awareness_message;
-pub(crate) mod decentralized_environmental_notification_message;
-pub(crate) mod message;
+pub mod collective_perception_message;
+pub mod cooperative_awareness_message;
+pub mod decentralized_environmental_notification_message;
+pub mod message;
 pub mod mobile;
-pub(crate) mod reference_position;
+pub mod reference_position;
 
 #[serde_with::skip_serializing_none]
 #[derive(Clone, Debug, Serialize, Deserialize)]
