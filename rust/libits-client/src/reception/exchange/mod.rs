@@ -14,7 +14,6 @@ pub(crate) mod decentralized_environmental_notification_message;
 pub(crate) mod message;
 pub mod mobile;
 pub(crate) mod reference_position;
-//mod collective_perception_message;
 
 #[serde_with::skip_serializing_none]
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -481,6 +480,238 @@ mod tests {
     "#;
     }
 
+    fn basic_cpm() -> &'static str {
+        return r#"
+{
+  "type": "cpm",
+  "origin": "self",
+  "version": "1.0.0",
+  "source_uuid": "uuid1",
+  "timestamp": 1574778515425,
+  "message": {
+    "protocol_version": 1,
+    "station_id": 12345,
+    "message_id": 14,
+    "generation_delta_time": 65535,
+    "management_container": {
+      "station_type": 5,
+      "reference_position": {
+        "latitude": 426263556,
+        "longitude": -82492123,
+        "altitude": 800001
+      },
+      "confidence": {
+        "position_confidence_ellipse": {
+          "semi_major_confidence": 4095,
+          "semi_minor_confidence": 4095,
+          "semi_major_orientation": 3601
+        },
+        "altitude": 15
+      }
+    },
+    "number_of_perceived_objects": 1
+  }
+}"#;
+    }
+
+    fn standard_cpm() -> &'static str {
+        return r#"
+{
+  "type": "cpm",
+  "origin": "self",
+  "version": "1.0.0",
+  "source_uuid": "uuid1",
+  "timestamp": 1574778515425,
+  "message": {
+    "protocol_version": 1,
+    "station_id": 12345,
+    "message_id": 14,
+    "generation_delta_time": 65535,
+    "management_container": {
+      "station_type": 5,
+      "reference_position": {
+        "latitude": 426263556,
+        "longitude": -82492123,
+        "altitude": 800001
+      },
+      "confidence": {
+        "position_confidence_ellipse": {
+          "semi_major_confidence": 4095,
+          "semi_minor_confidence": 4095,
+          "semi_major_orientation": 3601
+        },
+        "altitude": 15
+      }
+    },
+    "station_data_container": {
+      "originating_vehicle_container": {
+        "heading": 180,
+        "speed": 1600,
+        "confidence": {
+          "heading": 127,
+          "speed": 127
+        }
+      }
+    },
+    "sensor_information_container": [
+      {
+        "sensor_id": 1,
+        "type": 3,
+        "detection_area": {
+          "vehicle_sensor": {
+            "ref_point_id": 0,
+            "x_sensor_offset": -20,
+            "y_sensor_offset": 20,
+            "vehicle_sensor_property_list": [
+              {
+                "range": 5000,
+                "horizontal_opening_angle_start": 600,
+                "horizontal_opening_angle_end": 600
+              }
+            ]
+          }
+        }
+      }
+    ],
+        "perceived_object_container": [
+      {
+        "object_id": 0,
+        "time_of_measurement": 50,
+        "object_confidence": 10,
+        "distance": {
+          "x_distance": 400,
+          "y_distance": 100
+        },
+        "distance_confidence": {
+          "x_distance": 102,
+          "y_distance": 102
+        },
+        "speed": {
+          "x_speed": 1400,
+          "y_speed": 500
+        },
+        "speed_confidence": {
+          "x_speed": 127,
+          "y_speed": 127
+        },
+        "object_ref_point": 0
+      }
+    ],
+    "number_of_perceived_objects": 1
+  }
+}"#;
+    }
+
+    fn full_cpm() -> &'static str {
+        return r#"
+{
+  "type": "cpm",
+  "origin": "self",
+  "version": "1.0.0",
+  "source_uuid": "uuid1",
+  "timestamp": 1574778515425,
+  "message": {
+    "protocol_version": 1,
+    "station_id": 12345,
+    "message_id": 14,
+    "generation_delta_time": 65535,
+    "management_container": {
+      "station_type": 5,
+      "reference_position": {
+        "latitude": 426263556,
+        "longitude": -82492123,
+        "altitude": 800001
+      },
+      "confidence": {
+        "position_confidence_ellipse": {
+          "semi_major_confidence": 4095,
+          "semi_minor_confidence": 4095,
+          "semi_major_orientation": 3601
+        },
+        "altitude": 15
+      }
+    },
+    "station_data_container": {
+      "originating_vehicle_container": {
+        "heading": 180,
+        "speed": 1600,
+        "drive_direction": 0,
+        "vehicle_length": 31,
+        "vehicle_width": 18,
+        "longitudinal_acceleration": 8,
+        "yaw_rate": 4,
+        "lateral_acceleration": 2,
+        "vertical_acceleration": 1,
+        "confidence": {
+          "heading": 127,
+          "speed": 127,
+          "vehicle_length": 3,
+          "yaw_rate": 2,
+          "longitudinal_acceleration": 12,
+          "lateral_acceleration": 13,
+          "vertical_acceleration": 14
+        }
+      },
+      "originating_rsu_container": {
+        "intersection_reference_id": {
+          "road_regulator_id": 31,
+          "intersection_id": 31470
+        },
+        "road_segment_reference_id": 124
+      }
+    },
+    "sensor_information_container": [
+      {
+        "sensor_id": 1,
+        "type": 3,
+        "detection_area": {
+          "vehicle_sensor": {
+            "ref_point_id": 0,
+            "x_sensor_offset": -20,
+            "y_sensor_offset": 20,
+            "z_sensor_offset": 0,
+            "vehicle_sensor_property_list": [
+              {
+                "range": 5000,
+                "horizontal_opening_angle_start": 600,
+                "horizontal_opening_angle_end": 600,
+                "vertical_opening_angle_start": 300,
+                "vertical_opening_angle_end": 300
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "perceived_object_container": [
+      {
+        "object_id": 0,
+        "time_of_measurement": 50,
+        "object_confidence": 10,
+        "distance": {
+          "x_distance": 400,
+          "y_distance": 100
+        },
+        "distance_confidence": {
+          "x_distance": 102,
+          "y_distance": 102
+        },
+        "speed": {
+          "x_speed": 1400,
+          "y_speed": 500
+        },
+        "speed_confidence": {
+          "x_speed": 127,
+          "y_speed": 127
+        },
+        "object_ref_point": 0
+      }
+    ],
+    "number_of_perceived_objects": 1
+  }
+}"#;
+    }
+
     fn bad_cam_without_timestamp() -> &'static str {
         return r#"
 {
@@ -561,6 +792,40 @@ mod tests {
   }
 }
     "#;
+    }
+
+    fn bad_cpm_with_negative_timestamp() -> &'static str {
+        return r#"
+{
+  "type": "cpm",
+  "origin": "self",
+  "version": "1.0.0",
+  "source_uuid": "uuid1",
+  "timestamp": -1,
+  "message": {
+    "protocol_version": 1,
+    "station_id": 12345,
+    "message_id": 14,
+    "generation_delta_time": 65535,
+    "management_container": {
+      "station_type": 5,
+      "reference_position": {
+        "latitude": 426263556,
+        "longitude": -82492123,
+        "altitude": 800001
+      },
+      "confidence": {
+        "position_confidence_ellipse": {
+          "semi_major_confidence": 4095,
+          "semi_minor_confidence": 4095,
+          "semi_major_orientation": 3601
+        },
+        "altitude": 15
+      }
+    },
+    "numberOfPerceivedObjects": 1
+  }
+}"#;
     }
 
     fn remove_whitespace(s: &str) -> String {
@@ -699,6 +964,78 @@ mod tests {
     }
 
     #[test]
+    fn it_can_deserialize_then_serialize_a_basic_cpm() {
+        let json = basic_cpm();
+        let cpm: Exchange = serde_json::from_str(json).unwrap();
+        assert_eq!(cpm.timestamp, 1574778515425);
+        assert_eq!(
+            serde_json::to_string(&cpm).unwrap(),
+            remove_whitespace(json)
+        );
+    }
+
+    #[test]
+    fn it_can_deserialize_then_serialize_a_standard_cpm() {
+        let json = standard_cpm();
+        let cpm: Exchange = serde_json::from_str(json).unwrap();
+        assert_eq!(cpm.timestamp, 1574778515425);
+        if let Message::CPM(message) = &cpm.message {
+            assert_eq!(
+                message
+                    .station_data_container
+                    .as_ref()
+                    .unwrap()
+                    .originating_vehicle_container
+                    .as_ref()
+                    .unwrap()
+                    .speed,
+                1600
+            );
+            assert_eq!(
+                serde_json::to_string(&cpm).unwrap(),
+                remove_whitespace(json)
+            );
+        } else {
+            panic!("no cpm deserialized");
+        };
+    }
+
+    #[test]
+    fn it_can_deserialize_then_serialize_a_full_cpm() {
+        let json = full_cpm();
+        let cpm: Exchange = serde_json::from_str(json).unwrap();
+        assert_eq!(cpm.timestamp, 1574778515425);
+        if let Message::CPM(message) = &cpm.message {
+            assert_eq!(
+                message
+                    .station_data_container
+                    .as_ref()
+                    .unwrap()
+                    .originating_vehicle_container
+                    .as_ref()
+                    .unwrap()
+                    .speed,
+                1600
+            );
+            assert_eq!(
+                message.sensor_information_container[0]
+                    .detection_area
+                    .vehicle_sensor
+                    .as_ref()
+                    .unwrap()
+                    .x_sensor_offset,
+                -20
+            );
+            assert_eq!(
+                serde_json::to_string(&cpm).unwrap(),
+                remove_whitespace(json)
+            );
+        } else {
+            panic!("no cpm deserialized");
+        };
+    }
+
+    #[test]
     #[should_panic]
     fn it_should_panic_when_deserializing_a_cam_without_timestamp() {
         let json = bad_cam_without_timestamp();
@@ -709,6 +1046,13 @@ mod tests {
     #[should_panic]
     fn it_should_panic_when_deserializing_a_denm_with_timestamp_as_string() {
         let json = bad_denm_with_string_timestamp();
+        let _: Exchange = serde_json::from_str(json).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn it_should_panic_when_deserializing_a_cpm_without_timestamp() {
+        let json = bad_cpm_with_negative_timestamp();
         let _: Exchange = serde_json::from_str(json).unwrap();
     }
 

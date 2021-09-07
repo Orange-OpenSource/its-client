@@ -12,6 +12,7 @@ use serde::de::DeserializeOwned;
 use crate::analyse::analyser::Analyser;
 use crate::analyse::configuration::Configuration;
 use crate::analyse::item::Item;
+use crate::monitor;
 use crate::mqtt::mqtt_client::{listen, Client};
 use crate::mqtt::{mqtt_client, mqtt_router};
 use crate::reception::exchange::collective_perception_message::CollectivePerceptionMessage;
@@ -21,8 +22,6 @@ use crate::reception::exchange::Exchange;
 use crate::reception::information::Information;
 use crate::reception::typed::Typed;
 use crate::reception::Reception;
-use crate::shared_channel::SharedReceiver;
-use crate::{monitor, shared_channel};
 
 pub async fn run<T: Analyser>(
     mqtt_host: &str,
@@ -57,17 +56,17 @@ pub async fn run<T: Analyser>(
         // receive
         let (event_receiver, mqtt_client_listen_handle) = mqtt_client_listen_thread(event_loop);
         // dispatch
-        let (item_receiver, information_receiver, mqtt_router_dispatch_handle) =
+        let (item_receiver, monitoring_receiver, information_receiver, mqtt_router_dispatch_handle) =
             mqtt_router_dispatch_thread(topic_list, event_receiver);
 
         // in parallel, monitor exchanges reception
         let monitor_reception_handle = monitor_thread(
             "received_on".to_string(),
             configuration.clone(),
-            item_receiver.clone(),
+            monitoring_receiver,
         );
         // in parallel, analyse exchanges
-        let (publish_item_receiver, analyser_generate_handle) =
+        let (publish_item_receiver, publish_monitoring_receiver, analyser_generate_handle) =
             analyser_generate_thread::<T>(configuration.clone(), item_receiver);
 
         // read information
@@ -78,7 +77,7 @@ pub async fn run<T: Analyser>(
         let monitor_publish_handle = monitor_thread(
             "sent_on".to_string(),
             configuration.clone(),
-            publish_item_receiver.clone(),
+            publish_monitoring_receiver,
         );
         // in parallel send
         mqtt_client_publish(publish_item_receiver, &mut client).await;
@@ -120,12 +119,14 @@ fn mqtt_router_dispatch_thread(
     event_receiver: Receiver<Event>,
     // FIXME manage a Box into the Exchange to use a unique object Trait instead
 ) -> (
-    SharedReceiver<Item<Exchange>>,
+    Receiver<Item<Exchange>>,
+    Receiver<Item<Exchange>>,
     Receiver<Item<Information>>,
     JoinHandle<()>,
 ) {
     info!("starting mqtt router dispatching...");
-    let (exchange_sender, exchange_receiver) = shared_channel::shared_channel();
+    let (exchange_sender, exchange_receiver) = channel();
+    let (monitoring_sender, monitoring_receiver) = channel();
     let (information_sender, information_receiver) = channel();
 
     let handle = thread::Builder::new()
@@ -165,10 +166,19 @@ fn mqtt_router_dispatch_thread(
                         // TODO use the From Trait
                         if reception.is::<Exchange>() {
                             if let Ok(exchange) = reception.downcast::<Exchange>() {
-                                match exchange_sender.send(Item {
+                                let item = Item {
                                     topic,
                                     reception: unbox(exchange),
-                                }) {
+                                };
+                                //assumed clone, we send to 2 channels
+                                match monitoring_sender.send(item.clone()) {
+                                    Ok(()) => trace!("mqtt monitoring sent"),
+                                    Err(error) => {
+                                        error!("stopped to send mqtt monitoring: {}", error);
+                                        break;
+                                    }
+                                }
+                                match exchange_sender.send(item) {
                                     Ok(()) => trace!("mqtt exchange sent"),
                                     Err(error) => {
                                         error!("stopped to send mqtt exchange: {}", error);
@@ -196,13 +206,18 @@ fn mqtt_router_dispatch_thread(
         })
         .unwrap();
     info!("mqtt router dispatching started");
-    (exchange_receiver, information_receiver, handle)
+    (
+        exchange_receiver,
+        monitoring_receiver,
+        information_receiver,
+        handle,
+    )
 }
 
 fn monitor_thread(
     direction: String,
     configuration: Arc<Configuration>,
-    exchange_receiver: SharedReceiver<Item<Exchange>>,
+    exchange_receiver: Receiver<Item<Exchange>>,
 ) -> JoinHandle<()> {
     info!("starting monitor reception thread...");
     let handle = thread::Builder::new()
@@ -236,10 +251,15 @@ fn unbox<T>(value: Box<T>) -> T {
 
 fn analyser_generate_thread<T: Analyser>(
     configuration: Arc<Configuration>,
-    exchange_receiver: SharedReceiver<Item<Exchange>>,
-) -> (SharedReceiver<Item<Exchange>>, JoinHandle<()>) {
+    exchange_receiver: Receiver<Item<Exchange>>,
+) -> (
+    Receiver<Item<Exchange>>,
+    Receiver<Item<Exchange>>,
+    JoinHandle<()>,
+) {
     info!("starting analyser generation...");
-    let (sender, publish_receiver) = shared_channel::shared_channel();
+    let (publish_sender, publish_receiver) = channel();
+    let (monitoring_sender, monitoring_receiver) = channel();
     let handle = thread::Builder::new()
         .name("analyser-generator".into())
         .spawn(move || {
@@ -248,10 +268,18 @@ fn analyser_generate_thread<T: Analyser>(
             let mut analyser = T::new(configuration);
             for item in exchange_receiver {
                 for publish_item in analyser.analyze(item) {
-                    match sender.send(publish_item) {
+                    //assumed clone, we send to 2 channels
+                    match publish_sender.send(publish_item.clone()) {
                         Ok(()) => trace!("publish sent"),
                         Err(error) => {
                             error!("stopped to send publish: {}", error);
+                            break;
+                        }
+                    }
+                    match monitoring_sender.send(publish_item) {
+                        Ok(()) => trace!("monitoring sent"),
+                        Err(error) => {
+                            error!("stopped to send monitoring: {}", error);
                             break;
                         }
                     }
@@ -261,7 +289,7 @@ fn analyser_generate_thread<T: Analyser>(
         })
         .unwrap();
     info!("analyser generation started");
-    (publish_receiver, handle)
+    (publish_receiver, monitoring_receiver, handle)
 }
 
 fn reader_configure_thread(
@@ -324,6 +352,12 @@ async fn mqtt_client_subscribe(topic_list: &Vec<String>, client: &mut Client) {
     {
         topic_subscription_list.push(format!("{}/+/#", denm_topic));
     }
+    if let Some(cpm_topic) = topic_list
+        .iter()
+        .find(|&r| r.contains(CollectivePerceptionMessage::get_type().as_str()))
+    {
+        topic_subscription_list.push(format!("{}/+/#", cpm_topic));
+    }
     if let Some(info_topic) = topic_list
         .iter()
         .find(|&r| r.contains(Information::get_type().as_str()))
@@ -338,10 +372,7 @@ async fn mqtt_client_subscribe(topic_list: &Vec<String>, client: &mut Client) {
     info!("mqtt client subscribing finished");
 }
 
-async fn mqtt_client_publish(
-    publish_item_receiver: SharedReceiver<Item<Exchange>>,
-    client: &mut Client,
-) {
+async fn mqtt_client_publish(publish_item_receiver: Receiver<Item<Exchange>>, client: &mut Client) {
     info!("mqtt client publishing starting...");
     for item in publish_item_receiver {
         debug!("we received a publish");

@@ -46,7 +46,8 @@ impl Analyser for CopyCat {
         } else {
             info!(
                 "we start to schedule {} from {}",
-                component_name, item.reception.source_uuid
+                item.reception.message.mobile_id(),
+                item.reception.source_uuid
             );
             let guard = self
                 .timer
@@ -55,13 +56,19 @@ impl Analyser for CopyCat {
             debug!("scheduling done");
         }
         // 2- create the copy cat items for each removed delayed item
-        let mut data_found = true;
-        while data_found {
+        let mut data_found = 0;
+        while data_found >= 0 {
             match self.item_receiver.try_recv() {
                 Ok(item) => {
-                    info!("we received an item scheduled");
+                    data_found += 1;
                     //assumed clone, we create a new item
                     let mut own_exchange = item.reception.clone();
+                    info!(
+                        "we treat the scheduled item {} {} from {}",
+                        data_found,
+                        item.reception.message.mobile_id(),
+                        item.reception.source_uuid
+                    );
                     let timestamp = now();
                     own_exchange.appropriate(&self.configuration, timestamp);
                     let mut own_topic = item.topic.clone();
@@ -72,11 +79,11 @@ impl Analyser for CopyCat {
                 Err(e) => match e {
                     TryRecvError::Empty => {
                         debug!("delayed channel empty, we stop");
-                        data_found = false;
+                        data_found = -1;
                     }
                     TryRecvError::Disconnected => {
                         warn!("delayed channel disconnected, we stop");
-                        data_found = false;
+                        data_found = -1;
                     }
                 },
             }

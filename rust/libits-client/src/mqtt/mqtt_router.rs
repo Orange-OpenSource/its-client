@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use log::{debug, error, info, trace};
+use log::{debug, error, info};
 use rumqttc::{Event, Incoming, Publish};
 
 use crate::mqtt::topic::Topic;
@@ -47,10 +47,9 @@ impl Router {
             Event::Incoming(incoming) => match incoming {
                 // Incoming publish from the broker
                 Incoming::Publish(publish) => {
-                    trace!(
+                    debug!(
                         "Publish received for the packet {:?} on the topic {}",
-                        publish.pkid,
-                        publish.topic
+                        publish.pkid, publish.topic
                     );
                     // add manually the v2x server for the info message type: not provided :(
                     match Topic::from_str(publish.topic.replace("info", "v2x/info").as_ref()) {

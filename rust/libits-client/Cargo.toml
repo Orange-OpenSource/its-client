@@ -1,7 +1,7 @@
 [package]
 name = "libits-client"
-version = "0.1.1"
-authors = ["Frédéric Gardes <frederic.gardes@orange.com>"]
+version = "0.2.1"
+authors = ["Frédéric Gardes <frederic.gardes@orange.com>", "Nicolas Buffon <nicolas.buffon@orange.com>"]
 license = "Apache-2.0"
 description = "library to connect on an ITS MQTT server"
 homepage = "https://github.com/tigroo31/its-client"

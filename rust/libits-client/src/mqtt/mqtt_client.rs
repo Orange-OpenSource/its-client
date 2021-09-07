@@ -22,7 +22,7 @@ impl<'client> Client {
             mqtt_username,
             mqtt_password,
         );
-        let (client, event_loop) = AsyncClient::new(mqtt_options, 10);
+        let (client, event_loop) = AsyncClient::new(mqtt_options, 1000);
         (Client { client }, event_loop)
     }
 

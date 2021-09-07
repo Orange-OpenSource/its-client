@@ -6,8 +6,6 @@ use crate::reception::mortal::Mortal;
 use crate::reception::typed::Typed;
 use crate::reception::Reception;
 
-// TODO test with {"type":"gateway","instance_id":"ora_gateway_0002","running":true,"timestamp":1591810234000,"validity_duration":600}
-
 #[serde_with::skip_serializing_none]
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct Information {
@@ -22,7 +20,7 @@ pub struct Information {
 impl Information {
     pub(crate) fn new() -> Self {
         Information {
-            instance_id: "ora_broker".to_string(),
+            instance_id: "broker".to_string(),
             ..Default::default()
         }
     }

@@ -40,7 +40,7 @@ RUN groupadd -r itsclient && useradd --no-log-init -r -g itsclient itsclient
 
 RUN mkdir /usr/src/app/log
 
-RUN printf "Version 0.1.1\n" > /usr/src/app/log/RELEASE
+RUN printf "Version 0.2.1\n" > /usr/src/app/log/RELEASE
 
 COPY --from=builder --chown=itsclient:itsclient /usr/src/app/target/release/its-client .
 
