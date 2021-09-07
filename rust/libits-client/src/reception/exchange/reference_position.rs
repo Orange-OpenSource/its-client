@@ -1,6 +1,7 @@
+use core::fmt;
 use std::f64::consts;
 
-use core::fmt;
+use cheap_ruler::{CheapRuler, DistanceUnit};
 use navigation::Location;
 use serde::{Deserialize, Serialize};
 
@@ -43,6 +44,7 @@ impl ReferencePosition {
     }
 
     pub fn get_heading(&self, other: &ReferencePosition) -> u16 {
+        // FIXME use cheap_ruler instead of navigation crates
         let self_location = Location::new(
             get_coordinate(self.latitude),
             get_coordinate(self.longitude),
@@ -54,6 +56,19 @@ impl ReferencePosition {
 
         let bearing = self_location.calc_bearing_to(&other_location);
         (bearing * 10_f64).round() as u16
+    }
+
+    pub fn get_destination(&self, distance: f64, bearing: f64) -> Self {
+        let longitude_coordinate = get_coordinate(self.longitude);
+        let latitude_coordinate = get_coordinate(self.latitude);
+        let cr = CheapRuler::new(latitude_coordinate, DistanceUnit::Meters);
+        let p1 = (longitude_coordinate, latitude_coordinate).into();
+        let destination = cr.destination(&p1, distance, bearing);
+        ReferencePosition {
+            longitude: get_etsi_coordinate(destination.lng()),
+            latitude: get_etsi_coordinate(destination.lat()),
+            altitude: self.altitude,
+        }
     }
 }
 
@@ -74,6 +89,11 @@ fn get_coordinate(etsi_coordinate: i32) -> f64 {
     etsi_coordinate as f64 / base.pow(COORDINATE_SIGNIFICANT_DIGIT as u32) as f64
 }
 
+fn get_etsi_coordinate(coordinate: f64) -> i32 {
+    let base: i32 = 10;
+    (coordinate * base.pow(COORDINATE_SIGNIFICANT_DIGIT as u32) as f64) as i32
+}
+
 fn get_altitude(etsi_altitude: i32) -> f64 {
     let base: i32 = 10;
     etsi_altitude as f64 / base.pow(ALTITUDE_SIGNIFICANT_DIGIT as u32) as f64
@@ -81,17 +101,32 @@ fn get_altitude(etsi_altitude: i32) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::reception::exchange::ReferencePosition;
+    use cheap_ruler::{CheapRuler, DistanceUnit};
     use navigation::Location;
 
-    #[test]
-    fn compute_100_meters_distance() {
+    use crate::reception::exchange::ReferencePosition;
+
+    fn teqmo_lane_merge_reference_postion() -> ReferencePosition {
         // center is at TEQMO lane merge position
-        let position = ReferencePosition {
+        ReferencePosition {
             latitude: 486244870,
             longitude: 22436370,
             ..Default::default() // no altitude
-        };
+        }
+    }
+
+    fn teqmo_city_reference_postion() -> ReferencePosition {
+        // center is at TEQMO city
+        ReferencePosition {
+            latitude: 486249990,
+            longitude: 22412116,
+            ..Default::default() // no altitude
+        }
+    }
+
+    #[test]
+    fn compute_100_meters_distance() {
+        let position = teqmo_lane_merge_reference_postion();
         // I take a point at 100 meters
         let other_position = ReferencePosition {
             latitude: 486237420,
@@ -104,11 +139,7 @@ mod tests {
     #[test]
     fn compute_31_meters_distance() {
         // center is at TEQMO city
-        let position = ReferencePosition {
-            latitude: 486249990,
-            longitude: 22412116,
-            ..Default::default() // no altitude
-        };
+        let position = teqmo_city_reference_postion();
         // I take a point at 31 meters
         let other_position = ReferencePosition {
             latitude: 486252239,
@@ -182,5 +213,57 @@ mod tests {
             "110.44",
             format!("{:.*}", 2, boulder.estimate_bearing_to(&dia, 69.0, 53.0))
         );
+    }
+
+    #[test]
+    fn it_can_get_south_destination() {
+        let position = teqmo_lane_merge_reference_postion();
+        // I take a point at 100 meters on south
+        let other_position = ReferencePosition {
+            latitude: 486235877,
+            longitude: position.longitude,
+            ..Default::default() // no altitude
+        };
+        assert_eq!(position.get_destination(100.0, 180.0), other_position);
+        assert_eq!(position.get_destination(100.0, -180.0), other_position);
+    }
+
+    #[test]
+    fn it_can_get_north_destination() {
+        let position = teqmo_lane_merge_reference_postion();
+        // I take a point at 100 meters on north
+        let other_position = ReferencePosition {
+            latitude: 486253862,
+            longitude: position.longitude,
+            ..Default::default() // no altitude
+        };
+        assert_eq!(position.get_destination(100.0, 0.0), other_position);
+        assert_eq!(position.get_destination(100.0, 360.0), other_position);
+    }
+
+    #[test]
+    fn it_can_get_east_destination() {
+        let position = teqmo_lane_merge_reference_postion();
+        // I take a point at 100 meters on south
+        let other_position = ReferencePosition {
+            latitude: position.latitude,
+            longitude: 22449934,
+            ..Default::default() // no altitude
+        };
+        assert_eq!(position.get_destination(100.0, 90.0), other_position);
+        assert_eq!(position.get_destination(100.0, -270.0), other_position);
+    }
+
+    #[test]
+    fn it_can_get_west_destination() {
+        let position = teqmo_lane_merge_reference_postion();
+        // I take a point at 100 meters on south
+        let other_position = ReferencePosition {
+            latitude: position.latitude,
+            longitude: 22422805,
+            ..Default::default() // no altitude
+        };
+        assert_eq!(position.get_destination(100.0, 270.0), other_position);
+        assert_eq!(position.get_destination(100.0, -90.0), other_position);
     }
 }

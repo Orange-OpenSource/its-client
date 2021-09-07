@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::reception::exchange::mobile::Mobile;
+use crate::reception::exchange::mobile_perceived_object::MobilePerceivedObject;
+use crate::reception::exchange::perceived_object::PerceivedObject;
 use crate::reception::exchange::{PositionConfidence, ReferencePosition};
 use crate::reception::typed::Typed;
 
@@ -18,6 +20,31 @@ pub struct CollectivePerceptionMessage {
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub perceived_object_container: Vec<PerceivedObject>,
     pub number_of_perceived_objects: u8,
+}
+
+impl CollectivePerceptionMessage {
+    pub fn mobile_perceived_object_list(&self) -> Vec<MobilePerceivedObject> {
+        if let Some(station_data_container) = &self.station_data_container {
+            if let Some(originating_vehicle_container) =
+                &station_data_container.originating_vehicle_container
+            {
+                return self
+                    .perceived_object_container
+                    .iter()
+                    .map(|perceived_object| {
+                        MobilePerceivedObject::new(
+                            //assumed clone : we store a copy into the MobilePerceivedObject container
+                            // TODO use a lifetime to propage the lifecycle betwwen PerceivedObject and MobilePerceivedObject instead of clone
+                            perceived_object.clone(),
+                            &self.management_container.reference_position,
+                            originating_vehicle_container.heading,
+                        )
+                    })
+                    .collect();
+            }
+        }
+        Vec::new()
+    }
 }
 
 #[serde_with::skip_serializing_none]
@@ -62,19 +89,6 @@ pub struct OriginatingRSUContainer {
 pub struct IntersectionReferenceId {
     pub road_regulator_id: Option<u32>,
     pub intersection_id: u32,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
-pub struct PerceivedObject {
-    pub object_id: u8,
-    pub time_of_measurement: i16,
-    pub object_confidence: u8,
-    pub distance: Distance,
-    pub distance_confidence: DistanceConfidence,
-    pub speed: Speed,
-    pub speed_confidence: SpeedConfidence,
-    pub object_ref_point: u8,
 }
 
 #[serde_with::skip_serializing_none]
@@ -125,34 +139,6 @@ pub struct VehicleSensorProperty {
     pub vertical_opening_angle_end: Option<u16>,
 }
 
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
-pub struct Distance {
-    pub x_distance: i32,
-    pub y_distance: i32,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
-pub struct DistanceConfidence {
-    pub x_distance: u8,
-    pub y_distance: u8,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
-pub struct Speed {
-    pub x_speed: i16,
-    pub y_speed: i16,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
-pub struct SpeedConfidence {
-    pub x_speed: u8,
-    pub y_speed: u8,
-}
-
 impl Mobile for CollectivePerceptionMessage {
     fn mobile_id(&self) -> u32 {
         self.station_id
@@ -192,4 +178,140 @@ impl Typed for CollectivePerceptionMessage {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use crate::reception::exchange::collective_perception_message::{
+        CollectivePerceptionMessage, DetectionArea, ManagementContainer,
+        OriginatingVehicleContainer, SensorInformation, StationDataContainer, VehicleSensor,
+        VehicleSensorProperty,
+    };
+    use crate::reception::exchange::mobile_perceived_object::MobilePerceivedObject;
+    use crate::reception::exchange::perceived_object::{
+        Distance, DistanceConfidence, PerceivedObject, Speed, SpeedConfidence,
+    };
+    use crate::reception::exchange::reference_position::ReferencePosition;
+
+    fn create_perceived_object_in_front() -> PerceivedObject {
+        PerceivedObject {
+            object_id: 45,
+            time_of_measurement: 50,
+            object_confidence: 10,
+            distance: Distance {
+                x_distance: 40,
+                y_distance: 100,
+            },
+            distance_confidence: DistanceConfidence {
+                x_distance: 102,
+                y_distance: 102,
+            },
+            speed: Speed {
+                x_speed: 1400,
+                y_speed: 500,
+            },
+            speed_confidence: SpeedConfidence {
+                x_speed: 127,
+                y_speed: 127,
+            },
+            object_ref_point: 0,
+        }
+    }
+
+    fn create_perceived_object_behind() -> PerceivedObject {
+        PerceivedObject {
+            object_id: 48,
+            time_of_measurement: 51,
+            object_confidence: 9,
+            distance: Distance {
+                x_distance: -40,
+                y_distance: 100,
+            },
+            distance_confidence: DistanceConfidence {
+                x_distance: 102,
+                y_distance: 102,
+            },
+            speed: Speed {
+                x_speed: 1200,
+                y_speed: 400,
+            },
+            speed_confidence: SpeedConfidence {
+                x_speed: 127,
+                y_speed: 127,
+            },
+            object_ref_point: 0,
+        }
+    }
+
+    fn create_cpm_with_two_perceived_object() -> CollectivePerceptionMessage {
+        CollectivePerceptionMessage {
+            protocol_version: 1,
+            station_id: 31470,
+            message_id: 12,
+            generation_delta_time: 65535,
+            management_container: ManagementContainer {
+                station_type: 5,
+                reference_position: ReferencePosition {
+                    latitude: 426263556,
+                    longitude: -82492123,
+                    altitude: 800001,
+                },
+                confidence: Default::default(),
+            },
+            station_data_container: Some(StationDataContainer {
+                originating_vehicle_container: Some(OriginatingVehicleContainer {
+                    heading: 900,
+                    speed: 1600,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+            sensor_information_container: vec![SensorInformation {
+                sensor_id: 3,
+                sensor_type: 3,
+                detection_area: DetectionArea {
+                    vehicle_sensor: Some(VehicleSensor {
+                        ref_point_id: 0,
+                        x_sensor_offset: -20,
+                        y_sensor_offset: 20,
+                        z_sensor_offset: Some(0),
+                        vehicle_sensor_property_list: vec![VehicleSensorProperty {
+                            range: 5000,
+                            horizontal_opening_angle_start: 600,
+                            horizontal_opening_angle_end: 600,
+                            vertical_opening_angle_start: None,
+                            vertical_opening_angle_end: None,
+                        }],
+                    }),
+                },
+            }],
+            perceived_object_container: vec![
+                create_perceived_object_in_front(),
+                create_perceived_object_behind(),
+            ],
+            number_of_perceived_objects: 2,
+        }
+    }
+
+    #[test]
+    fn it_can_provide_the_mobile_perceived_object_list() {
+        assert_eq!(
+            create_cpm_with_two_perceived_object().mobile_perceived_object_list(),
+            vec![
+                MobilePerceivedObject {
+                    perceived_object: create_perceived_object_in_front(),
+                    reference_position: ReferencePosition {
+                        latitude: 426263645,
+                        longitude: -82492074,
+                        altitude: 800001,
+                    },
+                },
+                MobilePerceivedObject {
+                    perceived_object: create_perceived_object_behind(),
+                    reference_position: ReferencePosition {
+                        latitude: 426263645,
+                        longitude: -82492170,
+                        altitude: 800001,
+                    },
+                },
+            ]
+        );
+    }
+}

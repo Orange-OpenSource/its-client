@@ -15,4 +15,123 @@ pub trait Mobile {
         }
         false
     }
+
+    fn heading_in_degrees(&self) -> Option<f64> {
+        if let Some(heading) = self.heading() {
+            return Some(heading_in_degrees(heading));
+        }
+        None
+    }
+
+    fn speed_in_meter_per_second(&self) -> Option<f64> {
+        if let Some(speed) = self.speed() {
+            return Some(speed_in_meter_per_second(speed));
+        }
+        None
+    }
+
+    fn speed_in_kilometer_per_hour(&self) -> Option<f64> {
+        if let Some(speed) = self.speed() {
+            return Some(speed_in_kilometer_per_hour(speed));
+        }
+        None
+    }
+}
+
+pub(crate) fn heading_in_degrees(heading: u16) -> f64 {
+    heading as f64 / 10.0
+}
+
+pub(crate) fn speed_in_meter_per_second(speed: u16) -> f64 {
+    speed as f64 / 100.0
+}
+
+pub(crate) fn speed_in_kilometer_per_hour(speed: u16) -> f64 {
+    speed_in_meter_per_second(speed) * 3.6
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::reception::exchange::mobile::Mobile;
+    use crate::reception::exchange::reference_position::ReferencePosition;
+
+    struct StoppedMobileStub {}
+
+    impl Mobile for StoppedMobileStub {
+        fn mobile_id(&self) -> u32 {
+            todo!()
+        }
+
+        fn position(&self) -> &ReferencePosition {
+            todo!()
+        }
+
+        fn speed(&self) -> Option<u16> {
+            Some(35)
+        }
+
+        fn heading(&self) -> Option<u16> {
+            Some(1800) // south
+        }
+    }
+
+    struct MovingMobileStub {}
+
+    impl Mobile for MovingMobileStub {
+        fn mobile_id(&self) -> u32 {
+            todo!()
+        }
+
+        fn position(&self) -> &ReferencePosition {
+            todo!()
+        }
+
+        fn speed(&self) -> Option<u16> {
+            Some(37)
+        }
+
+        fn heading(&self) -> Option<u16> {
+            Some(900) // east
+        }
+    }
+
+    #[test]
+    fn it_can_check_if_stopped() {
+        assert!(StoppedMobileStub {}.stopped());
+    }
+
+    #[test]
+    fn it_can_check_if_moving() {
+        assert_eq!(MovingMobileStub {}.stopped(), false);
+    }
+
+    #[test]
+    fn it_can_provide_heading_in_degrees() {
+        // south
+        assert_eq!(StoppedMobileStub {}.heading_in_degrees(), Some(180.0));
+        // north
+        assert_eq!(MovingMobileStub {}.heading_in_degrees(), Some(90.0));
+    }
+
+    #[test]
+    fn it_can_provide_speed_in_meter_per_second() {
+        // south
+        assert_eq!(StoppedMobileStub {}.speed_in_meter_per_second(), Some(0.35));
+        // north
+        assert_eq!(MovingMobileStub {}.speed_in_meter_per_second(), Some(0.37));
+    }
+
+    #[test]
+    fn it_can_provide_speed_in_kilometer_per_hour() {
+        // south
+        assert_eq!(
+            StoppedMobileStub {}.speed_in_kilometer_per_hour(),
+            Some(1.26)
+        );
+        // north
+        assert_eq!(
+            MovingMobileStub {}.speed_in_kilometer_per_hour(),
+            Some(1.332)
+        );
+    }
 }
