@@ -199,7 +199,7 @@ fn mqtt_router_dispatch_thread(
                             }
                         }
                     }
-                    None => debug!("no mqtt response to send"),
+                    None => trace!("no mqtt response to send"),
                 }
             }
             trace!("mqtt router dispatching closure finished");
