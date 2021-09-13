@@ -8,12 +8,34 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  publish:
-    name: Publish
+  publish_lib:
+    name: Publish the library
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Publish the its library
         run: |
           cd rust/libits-client
+          cargo publish --token ${{ secrets.CRATES_IO }}
+
+  publish_lib_copycat:
+    name: Publish the library example
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/checkout@v2
+      - name: Publish the copycat example its library
+        run: |
+          cd rust/libits-copycat
+          cargo publish --token ${{ secrets.CRATES_IO }}
+
+  publish_bin_copycat:
+    name: Publish the binary example
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/checkout@v2
+      - name: Publish the its binary using the copycat example
+        run: |
+          cd rust/its-client
           cargo publish --token ${{ secrets.CRATES_IO }}
