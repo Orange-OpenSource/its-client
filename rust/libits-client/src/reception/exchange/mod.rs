@@ -13,6 +13,8 @@ pub mod cooperative_awareness_message;
 pub mod decentralized_environmental_notification_message;
 pub mod message;
 pub mod mobile;
+pub mod mobile_perceived_object;
+pub mod perceived_object;
 pub mod reference_position;
 
 #[serde_with::skip_serializing_none]
