@@ -13,4 +13,4 @@ runs:
   using: 'docker'
   image: 'rust/Dockerfile'
   args:
-    - ${{ inputs.log_output }}
+    - --log-dir ${{ inputs.log_output }}
