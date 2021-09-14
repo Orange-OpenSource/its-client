@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use log::{debug, error, info};
+use log::{debug, error, info, trace};
 use rumqttc::{Event, Incoming, Publish};
 
 use crate::mqtt::topic::Topic;
@@ -47,9 +47,10 @@ impl Router {
             Event::Incoming(incoming) => match incoming {
                 // Incoming publish from the broker
                 Incoming::Publish(publish) => {
-                    debug!(
+                    trace!(
                         "Publish received for the packet {:?} on the topic {}",
-                        publish.pkid, publish.topic
+                        publish.pkid,
+                        publish.topic
                     );
                     // add manually the v2x server for the info message type: not provided :(
                     match Topic::from_str(publish.topic.replace("info", "v2x/info").as_ref()) {
@@ -69,48 +70,49 @@ impl Router {
                 }
                 // Incoming pub ack from the broker
                 Incoming::PubAck(packet) => {
-                    debug!("Publish Ack received for the packet {:?}", packet)
+                    trace!("Publish Ack received for the packet {:?}", packet)
                 }
                 // Incoming pubrec from the broker
                 Incoming::PubRec(packet) => {
-                    debug!("Publish Rec received for the packet {:?}", packet)
+                    trace!("Publish Rec received for the packet {:?}", packet)
                 }
                 // Incoming pubrel from the broker
                 Incoming::PubRel(packet) => {
-                    debug!("Publish Rel received for the packet {:?}", packet)
+                    trace!("Publish Rel received for the packet {:?}", packet)
                 }
                 // Incoming pubcomp from the broker
                 Incoming::PubComp(packet) => {
-                    debug!("Publish Comp received for the packet {:?}", packet)
+                    trace!("Publish Comp received for the packet {:?}", packet)
                 }
                 // Incoming sub ack from the broker
-                Incoming::SubAck(suback) => debug!(
+                Incoming::SubAck(suback) => trace!(
                     "Subscription Ack received for the packet {:?}: {:?}",
-                    suback.pkid, suback.return_codes
+                    suback.pkid,
+                    suback.return_codes
                 ),
                 // Incoming unsub ack from the broker
                 Incoming::UnsubAck(packet) => {
-                    debug!("Unsubscription Ack received for the packet {:?}", packet)
+                    trace!("Unsubscription Ack received for the packet {:?}", packet)
                 }
                 // Incoming con ack ack from the broker
                 Incoming::ConnAck(packet) => {
-                    debug!("Con Ack Ack received for the packet {:?}", packet)
+                    trace!("Con Ack Ack received for the packet {:?}", packet)
                 }
                 // Incoming subscribe from the broker
                 Incoming::Subscribe(packet) => {
-                    debug!("Subscribe received for the packet {:?}", packet)
+                    trace!("Subscribe received for the packet {:?}", packet)
                 }
                 // Incoming unsubscribe from the broker
                 Incoming::Unsubscribe(packet) => {
-                    debug!("Unsubscribe received for the packet {:?}", packet)
+                    trace!("Unsubscribe received for the packet {:?}", packet)
                 }
                 // Incoming ping request packet
                 Incoming::PingReq => {
-                    debug!("Ping request received")
+                    trace!("Ping request received")
                 }
                 // Incoming ping response packet
                 Incoming::PingResp => {
-                    debug!("Ping response received")
+                    trace!("Ping response received")
                 }
                 // Incoming connect packet
                 Incoming::Connect(packet) => {
@@ -121,7 +123,7 @@ impl Router {
                     info!("Disconnect received")
                 }
             },
-            Event::Outgoing(outgoing) => debug!("outgoing: {:?}", outgoing),
+            Event::Outgoing(outgoing) => trace!("outgoing: {:?}", outgoing),
         }
         Option::None
     }
