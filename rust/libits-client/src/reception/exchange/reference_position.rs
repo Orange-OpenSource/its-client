@@ -101,7 +101,6 @@ fn get_altitude(etsi_altitude: i32) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use cheap_ruler::{CheapRuler, DistanceUnit};
     use navigation::Location;
 
     use crate::reception::exchange::ReferencePosition;
