@@ -21,6 +21,7 @@ pin-utils = "0.1"
 navigation = "0.1"
 cheap-ruler = "0.3.0"
 rustls = "0.19"
+integer-sqrt = "0.1.5"
 
 [dependencies.serde]
 version = "1.0"

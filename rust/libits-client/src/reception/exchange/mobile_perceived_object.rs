@@ -1,14 +1,15 @@
 use core::cmp;
 
 use crate::reception::exchange::mobile;
-use crate::reception::exchange::mobile::Mobile;
+use crate::reception::exchange::mobile::{speed_from_yaw_angle, Mobile};
 use crate::reception::exchange::perceived_object::PerceivedObject;
 use crate::reception::exchange::reference_position::ReferencePosition;
 
 #[derive(Debug)]
 pub struct MobilePerceivedObject {
-    pub perceived_object: PerceivedObject,
-    pub reference_position: ReferencePosition,
+    pub(crate) perceived_object: PerceivedObject,
+    pub(crate) reference_position: ReferencePosition,
+    pub(crate) speed: u16,
 }
 
 impl MobilePerceivedObject {
@@ -23,9 +24,14 @@ impl MobilePerceivedObject {
             cpm_position,
             cpm_heading,
         );
+        let computed_speed = compute_speed(
+            perceived_object.speed.x_speed,
+            perceived_object.speed.y_speed,
+        );
         Self {
             perceived_object,
             reference_position: computed_reference_position,
+            speed: computed_speed,
         }
     }
 }
@@ -40,8 +46,7 @@ impl Mobile for MobilePerceivedObject {
     }
 
     fn speed(&self) -> Option<u16> {
-        // TODO compute it from Speed
-        None
+        Some(self.speed)
     }
 
     fn heading(&self) -> Option<u16> {
@@ -70,6 +75,10 @@ fn compute_position(
     return cpm_position
         .get_destination(x_offset_meters, heading_in_degrees)
         .get_destination(y_offset_meters, (heading_in_degrees - 90.0 + 360.0) % 360.0);
+}
+
+fn compute_speed(x_speed: i16, y_speed: i16) -> u16 {
+    speed_from_yaw_angle(x_speed, y_speed)
 }
 
 #[cfg(test)]
@@ -154,6 +163,7 @@ mod tests {
                     longitude: 1218218,
                     altitude: 220000,
                 },
+                speed: 0,
             }
         );
     }
