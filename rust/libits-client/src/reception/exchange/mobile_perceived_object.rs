@@ -1,11 +1,13 @@
 use core::cmp;
+use serde::{Deserialize, Serialize};
 
 use crate::reception::exchange::mobile;
 use crate::reception::exchange::mobile::{speed_from_yaw_angle, Mobile};
 use crate::reception::exchange::perceived_object::PerceivedObject;
 use crate::reception::exchange::reference_position::ReferencePosition;
+use crate::reception::typed::Typed;
 
-#[derive(Debug)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct MobilePerceivedObject {
     pub(crate) perceived_object: PerceivedObject,
     pub(crate) reference_position: ReferencePosition,
@@ -60,6 +62,12 @@ impl cmp::PartialEq for MobilePerceivedObject {
     fn eq(&self, other: &Self) -> bool {
         self.perceived_object == other.perceived_object
             && self.reference_position == other.reference_position
+    }
+}
+
+impl Typed for MobilePerceivedObject {
+    fn get_type() -> String {
+        "po".to_string()
     }
 }
 

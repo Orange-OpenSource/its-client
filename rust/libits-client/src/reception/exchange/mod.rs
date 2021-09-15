@@ -26,9 +26,16 @@ pub struct Exchange {
     pub version: String,
     pub source_uuid: String,
     pub timestamp: u128,
-    pub length: Option<u32>,
-    pub direction: Option<u16>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub path: Vec<PathElement>,
     pub message: Message,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+pub struct PathElement {
+    pub position: ReferencePosition,
+    pub message_type: String,
 }
 
 #[serde_with::skip_serializing_none]
@@ -65,17 +72,15 @@ impl Exchange {
     pub fn new(
         component: String,
         timestamp: u128,
-        length: Option<u32>,
-        direction: Option<u16>,
+        path: Vec<PathElement>,
         message: Message,
     ) -> Box<Exchange> {
         Box::from(Exchange {
             type_field: message.get_type(),
             origin: "mec_application".to_string(),
-            version: "1.0.1".to_string(),
+            version: "1.1.1".to_string(),
             source_uuid: component,
-            length,
-            direction,
+            path,
             timestamp,
             message,
         })

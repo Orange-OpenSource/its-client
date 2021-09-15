@@ -14,9 +14,9 @@
   ],
   "properties": {
     "type": {
-      "enum": [
-        "cam"
-      ]
+      "type": "string",
+      "description": "message type",
+      "const": "cam"
     },
     "origin": {
       "type": "string",
