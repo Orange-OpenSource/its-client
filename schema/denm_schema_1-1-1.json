@@ -14,9 +14,9 @@
   ],
   "properties": {
     "type": {
-      "enum": [
-        "denm"
-      ]
+      "type": "string",
+      "description": "message type",
+      "const": "denm"
     },
     "origin": {
       "type": "string",

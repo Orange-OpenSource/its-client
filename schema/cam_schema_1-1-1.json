@@ -31,12 +31,7 @@
     "version": {
       "type": "string",
       "description": "json message format version",
-      "default": "1.1.0",
-      "examples": [
-        "0.0.1",
-        "0.2.0",
-        "1.0.0"
-      ]
+      "const": "1.1.1"
     },
     "source_uuid": {
       "type": "string",
