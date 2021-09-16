@@ -1,4 +1,8 @@
+extern crate integer_sqrt;
+
 use crate::reception::exchange::ReferencePosition;
+
+use self::integer_sqrt::IntegerSquareRoot;
 
 pub trait Mobile {
     fn mobile_id(&self) -> u32;
@@ -50,10 +54,22 @@ pub(crate) fn speed_in_kilometer_per_hour(speed: u16) -> f64 {
     speed_in_meter_per_second(speed) * 3.6
 }
 
+pub(crate) fn speed_from_yaw_angle(x_speed: i16, y_speed: i16) -> u16 {
+    ((x_speed.abs() as u32).pow(2) + (y_speed.abs() as u32).pow(2)).integer_sqrt() as u16
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::reception::exchange::mobile::Mobile;
+    use crate::reception::exchange::mobile::{speed_from_yaw_angle, Mobile};
     use crate::reception::exchange::reference_position::ReferencePosition;
+
+    #[test]
+    fn it_can_compute_speed() {
+        assert_eq!(speed_from_yaw_angle(1400, 500), 1486);
+        assert_eq!(speed_from_yaw_angle(-1400, 500), 1486);
+        assert_eq!(speed_from_yaw_angle(1400, -500), 1486);
+        assert_eq!(speed_from_yaw_angle(-1400, -500), 1486);
+    }
 
     struct StoppedMobileStub {}
 

@@ -11,7 +11,7 @@
     "running",
     "timestamp",
     "validity_duration",
-    "server_type"
+    "role"
   ],
   "properties": {
     "type": {
@@ -24,12 +24,7 @@
     "version": {
       "type": "string",
       "description": "json message format version",
-      "default": "1.0.3",
-      "examples": [
-        "0.1.0",
-        "0.2.0",
-        "1.0.0"
-      ]
+      "const": "1.0.6"
     },
     "instance_id": {
       "description": "unique id all other the world for a server",
@@ -41,19 +36,19 @@
       "default": false
     },
     "timestamp": {
-      "description": "generation timestamp of the information",
+      "description": "generation timestamp of the information, millisecond since epoch (1970/01/01)",
       "type": "integer"
     },
     "validity_duration": {
-      "description": "validity duration of the information relatively to the timestamp in minuts",
+      "description": "validity period of the information relatively to the timestamp in seconds",
       "type": "integer"
     },
     "public_ip_address": {
       "description": "list of public IP address",
       "type": "array",
       "examples": [
-        "161.105.211.66",
-        "90.84.199.250",
+        "161.05.21.166",
+        "190.14.19.50",
         "127.0.0.1"
       ],
       "items": {
@@ -61,31 +56,43 @@
         "type": "string"
       }
     },
-    "mqtt": {
+    "mqtt_ip": {
       "description": "list of MQTT IP address and port separated by a colon",
       "type": "array",
       "items": {
         "description": "MQTT IP address and port (classically 1883) separated by a colon",
         "type": "string",
         "examples": [
-          "84.88.40.59:1883",
-          "172.16.2.12:11883"
+          "84.188.43.159:1883",
+          "172.116.12.182:11883"
         ]
       }
     },
-    "mqtt_tls": {
+    "mqtt_tls_ip": {
       "description": "list of MQTT IP address and TLS port separated by a colon",
       "type": "array",
       "items": {
         "description": "MQTT IP address and TLS port (classically 8883) separated by a colon",
         "type": "string",
         "examples": [
-          "84.88.40.59:8883",
-          "172.16.2.12:18883"
+          "84.188.43.159:8883",
+          "172.116.82.124:18883"
         ]
       }
     },
-    "ntp": {
+    "http_proxy": {
+      "description": "list of HTTP IP address and port separated by a colon",
+      "type": "array",
+      "items": {
+        "description": "HTTP IP address and port (classically 8080) separated by a colon",
+        "type": "string",
+        "examples": [
+          "84.188.43.159:8080",
+          "172.116.82.124:1280"
+        ]
+      }
+    },
+    "ntp_servers": {
       "description": "list of Network Time Protocol server",
       "type": "array",
       "items": {
@@ -98,7 +105,7 @@
         ]
       }
     },
-    "dns": {
+    "domain_name_servers": {
       "description": "list of Domain Name Server",
       "type": "array",
       "items": {
@@ -106,35 +113,35 @@
         "type": "string",
         "examples": [
           "1.1.1.1",
-          "194.2.0.20"
+          "194.28.10.20"
         ]
       }
     },
-    "gelf_logger": {
+    "gelf_loggers": {
       "description": "list of Graylog Extended Log Format server and port separated by a colon",
       "type": "array",
       "items": {
         "description": "Graylog Extended Log Format server and port (classically 2201) separated by a colon",
         "type": "string",
         "examples": [
-          "90.84.191.133:2201",
+          "90.11.41.133:2201",
           "81.169.166.64:12201"
         ]
       }
     },
-    "udp_logger": {
+    "udp_loggers": {
       "description": "list of User Datagram Protocol server and port separated by a colon",
       "type": "array",
       "items": {
         "description": "User Datagram Protocol server and port (classically 2202) separated by a colon",
         "type": "string",
         "examples": [
-          "90.84.191.133:2202",
+          "90.11.41.133:2202",
           "81.169.166.64:12202"
         ]
       }
     },
-    "fbeat_logger": {
+    "fbeat_loggers": {
       "description": "list of Filebeat server and port separated by a colon",
       "type": "array",
       "minItems": 1,
@@ -142,8 +149,8 @@
         "description": "Filebeat server and port (classically 2203) separated by a colon",
         "type": "string",
         "examples": [
-          "90.84.191.133:2203",
-          "81.169.166.64:12203"
+          "90.11.41.133:2203",
+          "81.16.11.164:12203"
         ]
       }
     },
@@ -206,21 +213,20 @@
         "quadkeys": {
           "description": "list of quadkey of the tiles",
           "type": "array",
-          "default": [
-            "0",
-            "1",
-            "2",
-            "3"
-          ],
           "items": {
             "description": "quadkey",
-            "type": "string"
+            "type": "string",
+            "examples": [
+              "12020322313211",
+              "12020322313213",
+              "1203"
+            ]
           }
         }
       }
     },
     "cells_id": {
-      "description": "list of cell id of the serveur",
+      "description": "list of cell id of the server",
       "type": "array",
       "items": {
         "description": "cell id",
