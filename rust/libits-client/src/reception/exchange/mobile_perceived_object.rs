@@ -1,4 +1,5 @@
 use core::cmp;
+
 use serde::{Deserialize, Serialize};
 
 use crate::reception::exchange::mobile;
@@ -12,6 +13,7 @@ pub struct MobilePerceivedObject {
     pub(crate) perceived_object: PerceivedObject,
     pub(crate) reference_position: ReferencePosition,
     pub(crate) speed: u16,
+    pub(crate) heading: u16,
 }
 
 impl MobilePerceivedObject {
@@ -30,10 +32,13 @@ impl MobilePerceivedObject {
             perceived_object.speed.x_speed,
             perceived_object.speed.y_speed,
         );
+        let computed_heading = compute_heading(perceived_object.distance.y_distance, cpm_heading);
+
         Self {
             perceived_object,
             reference_position: computed_reference_position,
             speed: computed_speed,
+            heading: computed_heading,
         }
     }
 }
@@ -52,9 +57,7 @@ impl Mobile for MobilePerceivedObject {
     }
 
     fn heading(&self) -> Option<u16> {
-        // not known from a sensor
-        // TODO compute it using historical position if needed
-        None
+        Some(self.heading)
     }
 }
 
@@ -89,10 +92,17 @@ fn compute_speed(x_speed: i16, y_speed: i16) -> u16 {
     speed_from_yaw_angle(x_speed, y_speed)
 }
 
+fn compute_heading(y_distance: i32, cpm_heading: u16) -> u16 {
+    match y_distance {
+        y if y < 0 => (3600 + (cpm_heading - 1800)) % 3600,
+        _ => cpm_heading,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::reception::exchange::mobile_perceived_object::{
-        compute_position, MobilePerceivedObject,
+        compute_heading, compute_position, MobilePerceivedObject,
     };
     use crate::reception::exchange::perceived_object::{Distance, PerceivedObject};
     use crate::reception::exchange::reference_position::ReferencePosition;
@@ -138,6 +148,19 @@ mod tests {
     }
 
     #[test]
+    fn it_can_compute_a_heading() {
+        //east
+        assert_eq!(compute_heading(50000, 900,), 900);
+        assert_eq!(compute_heading(-50000, 2700,), 900);
+        //south
+        assert_eq!(compute_heading(50000, 1800,), 1800);
+        assert_eq!(compute_heading(-50000, 1800,), 0);
+        //west
+        assert_eq!(compute_heading(50000, 2700,), 2700);
+        assert_eq!(compute_heading(-50000, 2700,), 900);
+    }
+
+    #[test]
     fn create_a_new() {
         //south east with x and y
         assert_eq!(
@@ -172,6 +195,7 @@ mod tests {
                     altitude: 220000,
                 },
                 speed: 0,
+                heading: 0,
             }
         );
     }
