@@ -13,9 +13,9 @@
   ],
   "properties": {
     "type": {
-      "enum": [
-        "cpm"
-      ]
+      "type": "string",
+      "description": "message type",
+      "const": "cpm"
     },
     "origin": {
       "type": "string",
@@ -30,12 +30,7 @@
     "version": {
       "type": "string",
       "description": "json message format version",
-      "default": "1.0.0",
-      "examples": [
-        "0.1.0",
-        "0.2.0",
-        "1.0.0"
-      ]
+      "const": "1.0.1"
     },
     "source_uuid": {
       "type": "string",

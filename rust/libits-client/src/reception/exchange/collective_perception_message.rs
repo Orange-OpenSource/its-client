@@ -303,6 +303,7 @@ mod tests {
                         altitude: 800001,
                     },
                     speed: 15000,
+                    heading: 1800
                 },
                 MobilePerceivedObject {
                     perceived_object: create_perceived_object_behind(),
@@ -312,6 +313,7 @@ mod tests {
                         altitude: 800001,
                     },
                     speed: 15000,
+                    heading: 1800
                 },
             ]
         );

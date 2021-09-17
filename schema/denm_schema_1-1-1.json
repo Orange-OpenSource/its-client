@@ -14,9 +14,9 @@
   ],
   "properties": {
     "type": {
-      "enum": [
-        "denm"
-      ]
+      "type": "string",
+      "description": "message type",
+      "const": "denm"
     },
     "origin": {
       "type": "string",
@@ -31,12 +31,7 @@
     "version": {
       "type": "string",
       "description": "json message format version",
-      "default": "1.1.0",
-      "examples": [
-        "0.1.0",
-        "0.2.0",
-        "1.0.0"
-      ]
+      "const": "1.1.1"
     },
     "source_uuid": {
       "type": "string",
@@ -54,6 +49,60 @@
       ],
       "minimum": 1514764800000,
       "maximum": 1830297600000
+    },
+    "path": {
+      "type": "array",
+      "description": "List of ordered elements root source of the message",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "position",
+          "message_type"
+        ],
+        "properties": {
+          "position": {
+            "type": "object",
+            "required": [
+              "latitude",
+              "longitude",
+              "altitude"
+            ],
+            "properties": {
+              "latitude": {
+                "type": "integer",
+                "description": "Unit: 0,1 microdegree. oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10), unavailable(900000001)",
+                "default": 900000001,
+                "minimum": -900000000,
+                "maximum": 900000001
+              },
+              "longitude": {
+                "type": "integer",
+                "description": "Unit: 0,1 microdegree. oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(1800000001)",
+                "default": 1800000001,
+                "minimum": -1800000000,
+                "maximum": 1800000001
+              },
+              "altitude": {
+                "type": "integer",
+                "description": "Unit: 0.01 meter. referenceEllipsoidSurface(0), oneCentimeter(1), unavailable(800001)",
+                "default": 800001,
+                "minimum": -100000,
+                "maximum": 800001
+              }
+            }
+          },
+          "message_type": {
+            "description": "root message type source of the element",
+            "enum": [
+              "denm",
+              "cam",
+              "cpm",
+              "po"
+            ]
+          }
+        }
+      }
     },
     "message": {
       "type": "object",

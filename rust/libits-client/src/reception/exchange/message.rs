@@ -12,11 +12,8 @@ use crate::reception::typed::Typed;
 #[derive(Clone, Debug, Hash, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Message {
-    ///
     CAM(CooperativeAwarenessMessage),
-    ///
     DENM(DecentralizedEnvironmentalNotificationMessage),
-    ///
     CPM(CollectivePerceptionMessage),
 }
 
