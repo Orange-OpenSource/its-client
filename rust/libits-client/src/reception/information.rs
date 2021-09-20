@@ -7,14 +7,58 @@ use crate::reception::typed::Typed;
 use crate::reception::Reception;
 
 #[serde_with::skip_serializing_none]
-#[derive(Clone, Debug, Default, Eq, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Information {
     #[serde(rename = "type")]
     pub type_field: String,
+    pub version: String,
     pub instance_id: String,
     pub running: bool,
     pub timestamp: u128,
     pub validity_duration: u32,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    public_ip_address: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    mqtt_ip: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    mqtt_tls_ip: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    http_proxy: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    ntp_servers: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    domain_name_servers: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    gelf_loggers: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    udp_loggers: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    fbeat_loggers: Vec<String>,
+    pub role: String,
+    pub service_area: Option<ServiceArea>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    cells_id: Vec<u32>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct ServiceArea {
+    #[serde(rename = "type")]
+    pub type_field: String,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    coordinates: Vec<f32>,
+    radius: Option<u32>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    vertices: Vec<Vertex>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    quadkeys: Vec<String>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct Vertex {
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    coordinates: Vec<f32>,
 }
 
 impl Information {
