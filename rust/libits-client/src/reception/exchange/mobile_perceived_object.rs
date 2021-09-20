@@ -1,16 +1,17 @@
 use core::cmp;
 
-use serde::{Deserialize, Serialize};
-
 use crate::reception::exchange::mobile;
 use crate::reception::exchange::mobile::{speed_from_yaw_angle, Mobile};
 use crate::reception::exchange::perceived_object::PerceivedObject;
 use crate::reception::exchange::reference_position::ReferencePosition;
 use crate::reception::typed::Typed;
+use log::warn;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct MobilePerceivedObject {
     pub(crate) perceived_object: PerceivedObject,
+    pub(crate) mobile_id: u32,
     pub(crate) reference_position: ReferencePosition,
     pub(crate) speed: u16,
     pub(crate) heading: u16,
@@ -19,9 +20,11 @@ pub struct MobilePerceivedObject {
 impl MobilePerceivedObject {
     pub(crate) fn new(
         perceived_object: PerceivedObject,
+        cpm_station_id: u32,
         cpm_position: &ReferencePosition,
         cpm_heading: u16,
     ) -> Self {
+        let compute_mobile_id = compute_id(perceived_object.object_id, cpm_station_id);
         let computed_reference_position = compute_position(
             perceived_object.distance.x_distance,
             perceived_object.distance.y_distance,
@@ -36,6 +39,7 @@ impl MobilePerceivedObject {
 
         Self {
             perceived_object,
+            mobile_id: compute_mobile_id,
             reference_position: computed_reference_position,
             speed: computed_speed,
             heading: computed_heading,
@@ -45,7 +49,7 @@ impl MobilePerceivedObject {
 
 impl Mobile for MobilePerceivedObject {
     fn mobile_id(&self) -> u32 {
-        self.perceived_object.object_id as u32
+        self.mobile_id
     }
 
     fn position(&self) -> &ReferencePosition {
@@ -64,13 +68,30 @@ impl Mobile for MobilePerceivedObject {
 impl cmp::PartialEq for MobilePerceivedObject {
     fn eq(&self, other: &Self) -> bool {
         self.perceived_object == other.perceived_object
+            && self.mobile_id == other.mobile_id
             && self.reference_position == other.reference_position
+            && self.heading == other.heading
+            && self.speed == other.speed
     }
 }
 
 impl Typed for MobilePerceivedObject {
     fn get_type() -> String {
         "po".to_string()
+    }
+}
+
+fn compute_id(object_id: u8, cpm_station_id: u32) -> u32 {
+    let string_id = format!("{}{}", cpm_station_id, object_id);
+    match string_id.parse() {
+        Ok(id) => id,
+        Err(_err) => {
+            warn!(
+                "unable to generate a mobile id with {}, we create a short one",
+                string_id
+            );
+            cpm_station_id + object_id as u32
+        }
     }
 }
 
@@ -102,7 +123,7 @@ fn compute_heading(y_distance: i32, cpm_heading: u16) -> u16 {
 #[cfg(test)]
 mod tests {
     use crate::reception::exchange::mobile_perceived_object::{
-        compute_heading, compute_position, MobilePerceivedObject,
+        compute_heading, compute_id, compute_position, MobilePerceivedObject,
     };
     use crate::reception::exchange::perceived_object::{Distance, PerceivedObject};
     use crate::reception::exchange::reference_position::ReferencePosition;
@@ -148,16 +169,25 @@ mod tests {
     }
 
     #[test]
+    fn it_can_compute_an_id() {
+        //not too large, we concatenate
+        assert_eq!(compute_id(1, 100), 1001);
+        assert_eq!(compute_id(1, 400000000), 4000000001);
+        //too large, we add
+        assert_eq!(compute_id(1, 500000000), 500000001);
+    }
+
+    #[test]
     fn it_can_compute_a_heading() {
         //east
-        assert_eq!(compute_heading(50000, 900,), 900);
-        assert_eq!(compute_heading(-50000, 2700,), 900);
+        assert_eq!(compute_heading(50000, 900), 900);
+        assert_eq!(compute_heading(-50000, 2700), 900);
         //south
-        assert_eq!(compute_heading(50000, 1800,), 1800);
-        assert_eq!(compute_heading(-50000, 1800,), 0);
+        assert_eq!(compute_heading(50000, 1800), 1800);
+        assert_eq!(compute_heading(-50000, 1800), 0);
         //west
-        assert_eq!(compute_heading(50000, 2700,), 2700);
-        assert_eq!(compute_heading(-50000, 2700,), 900);
+        assert_eq!(compute_heading(50000, 2700), 2700);
+        assert_eq!(compute_heading(-50000, 2700), 900);
     }
 
     #[test]
@@ -173,6 +203,7 @@ mod tests {
                     },
                     ..Default::default()
                 },
+                10,
                 &ReferencePosition {
                     latitude: 434667520,
                     longitude: 1205862,
@@ -189,13 +220,14 @@ mod tests {
                     },
                     ..Default::default()
                 },
+                mobile_id: 101,
                 reference_position: ReferencePosition {
                     latitude: 434622516,
                     longitude: 1218218,
                     altitude: 220000,
                 },
                 speed: 0,
-                heading: 0,
+                heading: 1800,
             }
         );
     }

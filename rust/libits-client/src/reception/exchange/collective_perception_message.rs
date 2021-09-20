@@ -36,6 +36,7 @@ impl CollectivePerceptionMessage {
                             //assumed clone : we store a copy into the MobilePerceivedObject container
                             // TODO use a lifetime to propage the lifecycle betwwen PerceivedObject and MobilePerceivedObject instead of clone
                             perceived_object.clone(),
+                            self.station_id,
                             &self.management_container.reference_position,
                             originating_vehicle_container.heading,
                         )
@@ -297,23 +298,25 @@ mod tests {
             vec![
                 MobilePerceivedObject {
                     perceived_object: create_perceived_object_in_front(),
+                    mobile_id: 3147045,
                     reference_position: ReferencePosition {
                         latitude: 426263645,
                         longitude: -82492074,
                         altitude: 800001,
                     },
-                    speed: 15000,
-                    heading: 1800
+                    speed: 1486,
+                    heading: 900
                 },
                 MobilePerceivedObject {
                     perceived_object: create_perceived_object_behind(),
+                    mobile_id: 3147048,
                     reference_position: ReferencePosition {
                         latitude: 426263645,
                         longitude: -82492170,
                         altitude: 800001,
                     },
-                    speed: 15000,
-                    heading: 1800
+                    speed: 1264,
+                    heading: 900
                 },
             ]
         );
