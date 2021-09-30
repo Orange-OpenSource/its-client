@@ -87,15 +87,33 @@ impl GeoExtension {
 impl str::FromStr for GeoExtension {
     type Err = ParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let geo_extension = s.split('/').fold(
-            GeoExtension::empty(),
-            |mut geo_extension_struct, element| {
-                let result = Tile::from_str(element).unwrap();
-                geo_extension_struct.tiles.push(result);
-                geo_extension_struct
-            },
-        );
-        Ok(geo_extension)
+        if s.is_empty() {
+            Err(ParseError {
+                element: s.to_string(),
+            })
+        } else {
+            let number_of_slash = s.chars().filter(|&character| character == '/').count();
+            if number_of_slash > 0 && ((number_of_slash * 2) + 1 == s.len()) {
+                // string with slash separator and one slash for each character except first
+                Ok(s.split('/').fold(
+                    GeoExtension::empty(),
+                    |mut geo_extension_struct, element| {
+                        let result = Tile::from_str(element).unwrap();
+                        geo_extension_struct.tiles.push(result);
+                        geo_extension_struct
+                    },
+                ))
+            } else {
+                // string without slash separator
+                Ok(s.chars().fold(
+                    GeoExtension::empty(),
+                    |mut geo_extension_struct, element| {
+                        geo_extension_struct.tiles.push(Tile::from(element));
+                        geo_extension_struct
+                    },
+                ))
+            }
+        }
     }
 }
 
@@ -145,12 +163,90 @@ impl PartialOrd for GeoExtension {
 mod tests {
     use std::str::FromStr;
 
-    use crate::mqtt::topic::geo_extension::GeoExtension;
+    use crate::mqtt::topic::geo_extension::{GeoExtension, Tile};
 
     fn create_geo_extension(geo_extension_string: &str) -> GeoExtension {
         let geo_extension_result = GeoExtension::from_str(geo_extension_string);
         assert!(geo_extension_result.is_ok());
         geo_extension_result.unwrap()
+    }
+
+    #[test]
+    fn test_create_geo_extension_with_slash() {
+        let geo_extension = create_geo_extension("0/1/2/3");
+        assert_eq!(geo_extension.tiles[0], Tile::Zero);
+        assert_eq!(geo_extension.tiles[1], Tile::One);
+        assert_eq!(geo_extension.tiles[2], Tile::Two);
+        assert_eq!(geo_extension.tiles[3], Tile::Three);
+    }
+
+    #[test]
+    fn test_create_geo_extension_without_slash() {
+        let geo_extension = create_geo_extension("0123");
+        assert_eq!(geo_extension.tiles[0], Tile::Zero);
+        assert_eq!(geo_extension.tiles[1], Tile::One);
+        assert_eq!(geo_extension.tiles[2], Tile::Two);
+        assert_eq!(geo_extension.tiles[3], Tile::Three);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fail_create_geo_extension_empty() {
+        create_geo_extension("");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fail_create_geo_extension_with_slash() {
+        create_geo_extension("/");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fail_create_geo_extension_with_a_character() {
+        create_geo_extension("a");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fail_create_geo_extension_with_a_too_big_number() {
+        create_geo_extension("4");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fail_create_geo_extension_with_slash_with_a_character_at_the_beginning() {
+        create_geo_extension("a/1/2/3");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fail_create_geo_extension_with_slash_with_a_character_in_the_midlle() {
+        create_geo_extension("0/1/a/3");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fail_create_geo_extension_with_slash_with_a_character_at_the_end() {
+        create_geo_extension("0/1/2/a");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fail_create_geo_extension_without_slash_with_a_character_at_the_beginning() {
+        create_geo_extension("a123");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fail_create_geo_extension_without_slash_with_a_character_in_the_midlle() {
+        create_geo_extension("01a3");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fail_create_geo_extension_without_slash_with_a_character_at_the_end() {
+        create_geo_extension("012a");
     }
 
     #[test]

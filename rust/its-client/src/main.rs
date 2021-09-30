@@ -73,8 +73,13 @@ async fn main() {
                 .help("root topic for messages")
                 .default_value("5GCroCo/outQueue")
                 .takes_value(true),
-        )
-        .get_matches();
+        ).arg(
+        Arg::with_name("ror")
+            .short("r")
+            .long("ror")
+            .help("filter the emission on the region of responsibility of the node")
+            .takes_value(true),
+    ).get_matches();
     let log_directory = Path::new(matches.value_of("log-dir").unwrap());
     if !log_directory.is_dir() {
         if let Err(error) = fs::create_dir(log_directory) {
@@ -122,6 +127,7 @@ async fn main() {
     let mqtt_password = matches.value_of("mqtt-password");
     let mqtt_client_id = matches.value_of("mqtt-client-id").unwrap();
     let mqtt_root_topic = matches.value_of("root-topic").unwrap();
+    let region_of_responsibility = matches.is_present("ror");
 
     info!(
         "Starting Mqtt client with args: \n  \
@@ -150,6 +156,7 @@ async fn main() {
         mqtt_username,
         mqtt_password,
         mqtt_root_topic,
+        region_of_responsibility,
     )
     .await;
 
