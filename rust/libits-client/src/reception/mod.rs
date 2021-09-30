@@ -5,6 +5,5 @@ pub(crate) mod typed;
 
 use crate::reception::mortal::Mortal;
 use std::fmt::Debug;
-use std::hash::Hash;
 
-pub trait Reception: Clone + Debug + Eq + Hash + PartialEq + Mortal {}
+pub trait Reception: Clone + Debug + PartialEq + Mortal {}
