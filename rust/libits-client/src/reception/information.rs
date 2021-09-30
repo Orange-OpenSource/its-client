@@ -51,7 +51,7 @@ pub struct ServiceArea {
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     vertices: Vec<Vertex>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    quadkeys: Vec<String>,
+    pub quadkeys: Vec<String>,
 }
 
 #[serde_with::skip_serializing_none]
