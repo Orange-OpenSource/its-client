@@ -115,7 +115,7 @@ fn compute_speed(x_speed: i16, y_speed: i16) -> u16 {
 
 fn compute_heading(y_distance: i32, cpm_heading: u16) -> u16 {
     match y_distance {
-        y if y < 0 => (3600 + (cpm_heading - 1800)) % 3600,
+        y if y < 0 => (cpm_heading + 1800) % 3600,
         _ => cpm_heading,
     }
 }
