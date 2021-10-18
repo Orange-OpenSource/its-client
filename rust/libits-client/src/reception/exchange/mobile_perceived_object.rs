@@ -10,11 +10,11 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct MobilePerceivedObject {
-    pub(crate) perceived_object: PerceivedObject,
-    pub(crate) mobile_id: u32,
-    pub(crate) reference_position: ReferencePosition,
-    pub(crate) speed: u16,
-    pub(crate) heading: u16,
+    pub perceived_object: PerceivedObject,
+    pub mobile_id: u32,
+    pub reference_position: ReferencePosition,
+    pub speed: u16,
+    pub heading: u16,
 }
 
 impl MobilePerceivedObject {
