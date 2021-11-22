@@ -27,7 +27,7 @@ version = "0.18.0"
 features = ["async", "compress"]
 
 [dependencies.libits-client]
-version = "0.2"
+version = "0.3"
 path="../libits-client"
 
 [dependencies.pretty_env_logger]
