@@ -10,6 +10,7 @@ use rumqttc::{Event, EventLoop, Publish};
 use serde::de::DeserializeOwned;
 
 use crate::analyse::analyser::Analyser;
+use crate::analyse::cause::Cause;
 use crate::analyse::configuration::Configuration;
 use crate::analyse::item::Item;
 use crate::monitor;
@@ -120,7 +121,7 @@ fn mqtt_router_dispatch_thread(
     // FIXME manage a Box into the Exchange to use a unique object Trait instead
 ) -> (
     Receiver<Item<Exchange>>,
-    Receiver<Item<Exchange>>,
+    Receiver<(Item<Exchange>, Option<Cause>)>,
     Receiver<Item<Information>>,
     JoinHandle<()>,
 ) {
@@ -171,7 +172,7 @@ fn mqtt_router_dispatch_thread(
                                     reception: unbox(exchange),
                                 };
                                 //assumed clone, we send to 2 channels
-                                match monitoring_sender.send(item.clone()) {
+                                match monitoring_sender.send((item.clone(), None)) {
                                     Ok(()) => trace!("mqtt monitoring sent"),
                                     Err(error) => {
                                         error!("stopped to send mqtt monitoring: {}", error);
@@ -217,25 +218,28 @@ fn mqtt_router_dispatch_thread(
 fn monitor_thread(
     direction: String,
     configuration: Arc<Configuration>,
-    exchange_receiver: Receiver<Item<Exchange>>,
+    exchange_receiver: Receiver<(Item<Exchange>, Option<Cause>)>,
 ) -> JoinHandle<()> {
     info!("starting monitor reception thread...");
     let handle = thread::Builder::new()
         .name("monitor-reception".into())
         .spawn(move || {
             trace!("monitor reception entering...");
-            for item in exchange_receiver {
+            for tuple in exchange_receiver {
+                let publish_item = tuple.0;
+                let cause = tuple.1;
                 // monitor
                 monitor::monitor(
-                    &item.reception,
+                    &publish_item.reception,
+                    cause,
                     direction.as_str(),
                     // assumed clone, we preserve it for the topics
                     configuration.component_name(None),
                     format!(
                         "{}/{}/{}",
                         configuration.gateway_component_name(),
-                        item.topic.project_base(),
-                        item.reception.source_uuid
+                        publish_item.topic.project_base(),
+                        publish_item.reception.source_uuid
                     ),
                 );
             }
@@ -254,7 +258,7 @@ fn analyser_generate_thread<T: Analyser>(
     exchange_receiver: Receiver<Item<Exchange>>,
 ) -> (
     Receiver<Item<Exchange>>,
-    Receiver<Item<Exchange>>,
+    Receiver<(Item<Exchange>, Option<Cause>)>,
     JoinHandle<()>,
 ) {
     info!("starting analyser generation...");
@@ -267,7 +271,7 @@ fn analyser_generate_thread<T: Analyser>(
             //initialize the analyser
             let mut analyser = T::new(configuration);
             for item in exchange_receiver {
-                for publish_item in analyser.analyze(item) {
+                for publish_item in analyser.analyze(item.clone()) {
                     //assumed clone, we send to 2 channels
                     match publish_sender.send(publish_item.clone()) {
                         Ok(()) => trace!("publish sent"),
@@ -276,7 +280,9 @@ fn analyser_generate_thread<T: Analyser>(
                             break;
                         }
                     }
-                    match monitoring_sender.send(publish_item) {
+                    match monitoring_sender
+                        .send((publish_item, Cause::from_exchange(&item.reception)))
+                    {
                         Ok(()) => trace!("monitoring sent"),
                         Err(error) => {
                             error!("stopped to send monitoring: {}", error);
