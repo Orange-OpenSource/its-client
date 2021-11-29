@@ -19,5 +19,5 @@ timer = "0.2"
 chrono = "0.4"
 
 [dependencies.libits-client]
-version = "0.2"
+version = "0.3"
 path="../libits-client"

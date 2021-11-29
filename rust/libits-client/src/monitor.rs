@@ -1,9 +1,16 @@
+use crate::analyse::cause::Cause;
 use crate::reception::exchange::message::Message;
 use crate::reception::exchange::Exchange;
 use crate::reception::mortal::now;
 
 // TODO implement the Rust macro monitor!
-pub fn monitor(exchange: &Exchange, direction: &str, component: String, partner: String) {
+pub fn monitor(
+    exchange: &Exchange,
+    cause: Option<Cause>,
+    direction: &str,
+    component: String,
+    partner: String,
+) {
     match &exchange.message {
         // FIXME find how to call position() on any Message implementing Mobile
         Message::CAM(message) => {
@@ -22,7 +29,7 @@ pub fn monitor(exchange: &Exchange, direction: &str, component: String, partner:
         Message::DENM(message) => {
             // log to monitoring platform
             println!(
-                "{} {} {} {} {}/{}/{}/{}/{} at {}",
+                "{} {} {} {} {}/{}/{}/{}/{}{} at {}",
                 component,
                 exchange.type_field,
                 direction,
@@ -35,6 +42,7 @@ pub fn monitor(exchange: &Exchange, direction: &str, component: String, partner:
                 message.management_container.action_id.sequence_number,
                 message.management_container.reference_time,
                 message.management_container.detection_time,
+                get_cause_str(cause),
                 now()
             );
         }
@@ -51,5 +59,12 @@ pub fn monitor(exchange: &Exchange, direction: &str, component: String, partner:
                 now()
             );
         }
+    };
+}
+
+fn get_cause_str(cause: Option<Cause>) -> String {
+    return match cause {
+        Some(cause) => format!("/cause_type:{}/cause_id:{}", cause.m_type, cause.id),
+        None => String::new(),
     };
 }
