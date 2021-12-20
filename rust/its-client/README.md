@@ -6,9 +6,11 @@
 The Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) Rust client based on
 the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription.
 
-# Hello world docker action
+This package provides a Rust binary example to connect on the ITS platform using the libits-copycat example.
 
-This action launches the its client providing the log output directory.
+# Docker action
+
+This action launches the ITS client providing the log output directory.
 
 ## Inputs
 

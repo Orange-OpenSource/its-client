@@ -19,7 +19,7 @@ $
 ```
 
 * Install docker
-* To compile and build the binary and the docker image, just run `./build.sh`
+* To compile and build the binary and docker image, just run `./build.sh`
 
 ## Run
 
@@ -27,7 +27,7 @@ TODO add details on the logger levels
 
 TODO add details on the log files
 
-TODO add details on the 2 targets
+TODO add details on the 2 targets (debug and release)
 
 TODO add details on the arguments.
 
