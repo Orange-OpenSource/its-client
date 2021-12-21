@@ -1,3 +1,4 @@
+use std::time::Duration;
 use crate::analyse::item::Item;
 use crate::reception::exchange::Exchange;
 use log::{debug, error, info, trace, warn};
@@ -72,7 +73,7 @@ fn orange_broker(
     mqtt_password: Option<&str>,
 ) -> MqttOptions {
     let mut mqttoptions = MqttOptions::new(mqtt_client_id, mqtt_host, mqtt_port);
-    mqttoptions.set_keep_alive(5);
+    mqttoptions.set_keep_alive(Duration::from_secs(5));
     match mqtt_username {
         None => {}
         Some(username) => match mqtt_password {

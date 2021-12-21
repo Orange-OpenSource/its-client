@@ -19,7 +19,7 @@ copycat = ["libits-copycat"]
 
 [dependencies]
 log = "0.4"
-rumqttc = "0.8.0"
+rumqttc = "0.10"
 clap = "2.33.0"
 
 [dependencies.flexi_logger]
