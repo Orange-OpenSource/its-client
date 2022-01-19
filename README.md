@@ -13,6 +13,10 @@ Let's connect your device or application to our Intelligent Transport Systems (I
 
 We provide many packages into the same project.
 
+### JSon Schema
+
+[ETSI.org](https://www.etsi.org/committee/its) proposal of implementation using the JSon language (instead of ASN.1 by default).
+
 ### Rust libits-client
 
 The Rust library to build a client.
@@ -23,4 +27,8 @@ A Rust library example cloning each message and waiting 3 seconds before to send
 
 ### Rust its-client
 
-A Rust binary example to connect on the ITS platform using the libits-copycat example.
+A Rust binary example to connect on ITS platform using the libits-copycat example.
+
+### Python its-client
+
+A Python package to connect on ITS platform as a Passenger car (station type 5).
