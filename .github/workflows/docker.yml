@@ -17,7 +17,7 @@ jobs:
         id: extract_branch
       - name: Run docker action
         id: run
-        uses: tigroo31/its-client@v1
+        uses: tigroo31/its_client@v1
         with:
           log_output: '/tmp'
       # Use the output from the `hello` step

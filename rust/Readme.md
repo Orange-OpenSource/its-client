@@ -19,7 +19,7 @@ $
 ```
 
 * Install docker
-* To compile and build the binary and docker image, just run `./build.sh`
+* To compile and build the binary and docker image, use cargo and the `docker` command
 
 ## Run
 
@@ -40,7 +40,7 @@ Go to the target directory and execute the binary. For example:
 
 ```shell script
 $ cd target/release
-$ RUST_LOG=debug ./its-client -H <IP_OR_HOST> -P <PORT> -u its-client -p ****
+$ RUST_LOG=debug ./its_client -H <IP_OR_HOST> -P <PORT> -u its_client -p ****
 ```
 
 With another terminal, you can check the logs:
@@ -59,25 +59,25 @@ Run a container. For example:
 * with an online its platform
 
 ```shell script
-$ docker container run -it --name its-client --env RUST_LOG=debug its-client -H <IP_OR_HOST> -P <PORT> -u its-client -p ****
+$ docker container run -it --name its_client --env RUST_LOG=debug its_client -H <IP_OR_HOST> -P <PORT> -u its_client -p ****
 ```
 
 With another terminal, you can check the logs:
 
 ```shell script
-$ docker container exec -it its-client /bin/bash
-$ its-client@033fe953c429:/usr/src/app$ tail -f log/its-client_rCURRENT.log
+$ docker container exec -it its_client /bin/bash
+$ its_client@033fe953c429:/usr/src/app$ tail -f log/its-client_rCURRENT.log
 ...
-$ its-client@033fe953c429:/usr/src/app$ exit
+$ its_client@033fe953c429:/usr/src/app$ exit
 ```
 
 At the end, you must remove the container:
 
 ```shell script
-$ docker container stop its-client
-its-client
-$ docker container rm its-client
-its-client
+$ docker container stop its_client
+its_client
+$ docker container rm its_client
+its_client
 ```
 
 ## Development
@@ -87,3 +87,10 @@ its-client
 * Have docker installed
 * Have CLion
 * Configure a CLion shortcut for rustfmt as explained here: https://github.com/rust-lang/rustfmt/blob/master/intellij.md
+
+
+### Next features
+
+* increase the Region Of Interest from 1 to 9 tiles
+* manage TLS
+* detect the position using IP instead of GPS or a stub 

@@ -1,6 +1,6 @@
 # action.yml
 name: 'Docker run'
-description: 'Build an image and run a container with the its-client'
+description: 'Build an image and run a container with the its_client'
 inputs:
   log_output: # log directory
     description: 'Log directory to use'
