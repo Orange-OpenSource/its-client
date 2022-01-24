@@ -320,9 +320,7 @@ fn filter_thread<T: Analyser>(
                         }
                     }
                     let cause = Cause::from_exchange(&(item.reception));
-                    match monitoring_sender
-                        .send((item, cause))
-                    {
+                    match monitoring_sender.send((item, cause)) {
                         Ok(()) => trace!("monitoring sent"),
                         Err(error) => {
                             error!("stopped to send monitoring: {}", error);

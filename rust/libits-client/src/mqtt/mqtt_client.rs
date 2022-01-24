@@ -1,8 +1,8 @@
-use std::time::Duration;
 use crate::analyse::item::Item;
 use crate::reception::exchange::Exchange;
 use log::{debug, error, info, trace, warn};
 use rumqttc::{AsyncClient, Event, EventLoop, MqttOptions, QoS, SubscribeFilter};
+use std::time::Duration;
 
 pub(crate) struct Client {
     client: AsyncClient,
