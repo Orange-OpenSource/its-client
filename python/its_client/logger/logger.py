@@ -25,11 +25,13 @@ def filter_default_message(record):
 
 
 def log_setup(log_level=logging.WARNING):
-    Path("/save/log").mkdir(parents=True, exist_ok=True)
+    Path("/var/log/its_client").mkdir(parents=True, exist_ok=True)
     # monitoring
     monitoring_logger = logging.getLogger("obu.monitoring")
     monitoring_handler = logging.handlers.RotatingFileHandler(
-        filename="/save/log/monitoring-obu.csv", maxBytes=2000000, backupCount=10
+        filename="/var/log/its_client/monitoring-obu.csv",
+        maxBytes=2000000,
+        backupCount=10,
     )
     monitoring_logger.addHandler(monitoring_handler)
     monitoring_logger.addFilter(filter_monitoring_message)
@@ -38,7 +40,7 @@ def log_setup(log_level=logging.WARNING):
     # its
     its_logger = logging.getLogger("obu.its")
     its_handler = logging.handlers.RotatingFileHandler(
-        filename="/save/log/its-obu.log", maxBytes=200000000, backupCount=10
+        filename="/var/log/its_client/its-obu.log", maxBytes=200000000, backupCount=10
     )
     its_logger.addHandler(its_handler)
     its_handler.addFilter(filter_its_message)
@@ -47,7 +49,9 @@ def log_setup(log_level=logging.WARNING):
     # creation
     creation_logger = logging.getLogger("obu.creation")
     creation_handler = logging.handlers.RotatingFileHandler(
-        filename="/save/log/creation-obu.log", maxBytes=2000000, backupCount=10
+        filename="/var/log/its_client/creation-obu.log",
+        maxBytes=2000000,
+        backupCount=10,
     )
     creation_logger.addHandler(creation_handler)
     creation_handler.addFilter(filter_creation_message)
@@ -57,7 +61,7 @@ def log_setup(log_level=logging.WARNING):
     logger = logging.getLogger()
     # log_handler = logging.StreamHandler()
     log_handler = logging.handlers.RotatingFileHandler(
-        filename="/save/log/service.log", maxBytes=200000000, backupCount=10
+        filename="/var/log/its_client/service.log", maxBytes=200000000, backupCount=10
     )
     log_formatter = logging.Formatter(
         "%(asctime)s.%(msecs)03d  obu [ %(thread)d %(threadName)s]: %(message)s",
