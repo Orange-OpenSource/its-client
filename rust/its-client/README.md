@@ -1,5 +1,10 @@
 # Rust its-client
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://github.com/Orange-OpenSource/its-client/workflows/Rust/badge.svg)](https://github.com/Orange-OpenSource/its-client/actions)
+[![crates.io](https://img.shields.io/crates/v/its-client)](https://crates.io/crates/its-client)
+
+
 The Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) Rust client based on
 the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription.
 
