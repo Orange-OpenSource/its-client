@@ -29,7 +29,3 @@ A Rust library example cloning each message and waiting 3 seconds before to send
 ### Rust its-client
 
 A Rust binary example to connect on ITS platform using the libits-copycat example.
-
-### Python its-client
-
-A Python package to connect on ITS platform as a Passenger car (station type 5).
