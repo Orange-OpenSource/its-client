@@ -31,6 +31,7 @@ pub async fn run<T: Analyser>(
     mqtt_username: Option<&str>,
     mqtt_password: Option<&str>,
     mqtt_root_topic: &str,
+    region_of_responsibility: bool,
 ) {
     loop {
         // build the shared topic list
@@ -50,7 +51,10 @@ pub async fn run<T: Analyser>(
             mqtt_password,
         );
 
-        let configuration = Arc::new(Configuration::new(mqtt_client_id.to_string()));
+        let configuration = Arc::new(Configuration::new(
+            mqtt_client_id.to_string(),
+            region_of_responsibility,
+        ));
 
         // subscribe
         mqtt_client_subscribe(&topic_list, &mut client).await;
@@ -67,17 +71,21 @@ pub async fn run<T: Analyser>(
             monitoring_receiver,
         );
         // in parallel, analyse exchanges
-        let (publish_item_receiver, publish_monitoring_receiver, analyser_generate_handle) =
+        let (analyser_item_receiver, analyser_generate_handle) =
             analyser_generate_thread::<T>(configuration.clone(), item_receiver);
 
         // read information
         let reader_configure_handle =
             reader_configure_thread(configuration.clone(), information_receiver);
 
+        // filter exchanges on region of responsibility
+        let (publish_item_receiver, publish_monitoring_receiver, filter_handle) =
+            filter_thread::<T>(configuration.clone(), analyser_item_receiver);
+
         // in parallel, monitor exchanges publish
         let monitor_publish_handle = monitor_thread(
             "sent_on".to_string(),
-            configuration.clone(),
+            configuration,
             publish_monitoring_receiver,
         );
         // in parallel send
@@ -93,6 +101,8 @@ pub async fn run<T: Analyser>(
         reader_configure_handle.join().unwrap();
         debug!("analyser_generate_handler joining...");
         analyser_generate_handle.join().unwrap();
+        debug!("filter_handle joining...");
+        filter_handle.join().unwrap();
         debug!("monitor_publish_handle joining...");
         monitor_publish_handle.join().unwrap();
 
@@ -256,14 +266,9 @@ pub fn unbox<T>(value: Box<T>) -> T {
 fn analyser_generate_thread<T: Analyser>(
     configuration: Arc<Configuration>,
     exchange_receiver: Receiver<Item<Exchange>>,
-) -> (
-    Receiver<Item<Exchange>>,
-    Receiver<(Item<Exchange>, Option<Cause>)>,
-    JoinHandle<()>,
-) {
+) -> (Receiver<Item<Exchange>>, JoinHandle<()>) {
     info!("starting analyser generation...");
-    let (publish_sender, publish_receiver) = channel();
-    let (monitoring_sender, monitoring_receiver) = channel();
+    let (analyser_sender, analyser_receiver) = channel();
     let handle = thread::Builder::new()
         .name("analyser-generator".into())
         .spawn(move || {
@@ -271,21 +276,11 @@ fn analyser_generate_thread<T: Analyser>(
             //initialize the analyser
             let mut analyser = T::new(configuration);
             for item in exchange_receiver {
-                for publish_item in analyser.analyze(item.clone()) {
-                    //assumed clone, we send to 2 channels
-                    match publish_sender.send(publish_item.clone()) {
-                        Ok(()) => trace!("publish sent"),
+                for publish_item in analyser.analyze(item) {
+                    match analyser_sender.send(publish_item) {
+                        Ok(()) => trace!("analyser sent"),
                         Err(error) => {
-                            error!("stopped to send publish: {}", error);
-                            break;
-                        }
-                    }
-                    match monitoring_sender
-                        .send((publish_item, Cause::from_exchange(&item.reception)))
-                    {
-                        Ok(()) => trace!("monitoring sent"),
-                        Err(error) => {
-                            error!("stopped to send monitoring: {}", error);
+                            error!("stopped to send analyser: {}", error);
                             break;
                         }
                     }
@@ -295,6 +290,49 @@ fn analyser_generate_thread<T: Analyser>(
         })
         .unwrap();
     info!("analyser generation started");
+    (analyser_receiver, handle)
+}
+
+fn filter_thread<T: Analyser>(
+    configuration: Arc<Configuration>,
+    exchange_receiver: Receiver<Item<Exchange>>,
+) -> (
+    Receiver<Item<Exchange>>,
+    Receiver<(Item<Exchange>, Option<Cause>)>,
+    JoinHandle<()>,
+) {
+    info!("starting filtering...");
+    let (publish_sender, publish_receiver) = channel();
+    let (monitoring_sender, monitoring_receiver) = channel();
+    let handle = thread::Builder::new()
+        .name("filter".into())
+        .spawn(move || {
+            trace!("filter closure entering...");
+            for item in exchange_receiver {
+                //assumed clone, we just send the GeoExtension
+                if configuration.is_in_region_of_responsibility(item.topic.geo_extension.clone()) {
+                    //assumed clone, we send to 2 channels
+                    match publish_sender.send(item.clone()) {
+                        Ok(()) => trace!("publish sent"),
+                        Err(error) => {
+                            error!("stopped to send publish: {}", error);
+                            break;
+                        }
+                    }
+                    let cause = Cause::from_exchange(&(item.reception));
+                    match monitoring_sender.send((item, cause)) {
+                        Ok(()) => trace!("monitoring sent"),
+                        Err(error) => {
+                            error!("stopped to send monitoring: {}", error);
+                            break;
+                        }
+                    }
+                }
+                trace!("filter closure finished");
+            }
+        })
+        .unwrap();
+    info!("filter started");
     (publish_receiver, monitoring_receiver, handle)
 }
 

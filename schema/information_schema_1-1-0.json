@@ -8,10 +8,10 @@
     "type",
     "version",
     "instance_id",
+    "instance_type",
     "running",
     "timestamp",
-    "validity_duration",
-    "role"
+    "validity_duration"
   ],
   "properties": {
     "type": {
@@ -24,10 +24,22 @@
     "version": {
       "type": "string",
       "description": "json message format version",
-      "const": "1.0.6"
+      "const": "1.1.0"
     },
     "instance_id": {
       "description": "unique id all other the world for a server",
+      "type": "string"
+    },
+    "instance_type": {
+      "description": "type of instance",
+      "type": "string",
+      "enum": [
+        "edge",
+        "central"
+      ]
+    },
+    "central_instance_id": {
+      "description": "unique id all other the world for the central server if the instance is of type edge",
       "type": "string"
     },
     "running": {
@@ -153,14 +165,6 @@
           "81.16.11.164:12203"
         ]
       }
-    },
-    "role": {
-      "description": "role of the server",
-      "type": "string",
-      "enum": [
-        "edge",
-        "central"
-      ]
     },
     "service_area": {
       "description": "handled service area of the server",
