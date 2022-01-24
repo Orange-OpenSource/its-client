@@ -1,6 +1,7 @@
 # its-client
 
-[![Build Status](https://github.com/tigroo31/its-client/workflows/Rust/badge.svg)](https://github.com/tigroo31/its-client/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://github.com/Orange-OpenSource/its-client/workflows/Rust/badge.svg)](https://github.com/Orange-OpenSource/its-client/actions)
 [![crates.io](https://img.shields.io/crates/v/its-client)](https://crates.io/crates/its-client)
 
 This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on

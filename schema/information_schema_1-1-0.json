@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://tigroo31.github.io/its-client/schema/info",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/info",
   "description": "Information JSon schema",
   "type": "object",
   "additionalProperties": false,

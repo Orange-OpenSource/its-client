@@ -1,9 +1,17 @@
+# Software Name: its-client
+# SPDX-FileCopyrightText: Copyright (c) 2016-2022 Orange
+# SPDX-License-Identifier: MIT License
+#
+# This software is distributed under the MIT license, see LICENSE.txt.txt file for more details.
+#
+# Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
+# Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 FROM rust:buster as builder
 
 LABEL description="Rust builder to compile"
 LABEL maintainer="frederic.gardes@orange.com"
 LABEL authors=["frederic.gardes@orange.com"]
-LABEL url="https://github.com/tigroo31/its-client"
+LABEL url="https://github.com/Orange-OpenSource/its-client"
 
 RUN rustc --version && cargo --version
 
@@ -27,7 +35,7 @@ FROM debian:buster
 LABEL description="Rust ITS client"
 LABEL maintainer="frederic.gardes@orange.com"
 LABEL authors=["frederic.gardes@orange.com"]
-LABEL url="https://github.com/tigroo31/its-client"
+LABEL url="https://github.com/Orange-OpenSource/its-client"
 
 # Install curl for healthcheck
 RUN apt-get update && \
@@ -41,7 +49,7 @@ WORKDIR /usr/src/app
 
 RUN groupadd -r itsclient && useradd --no-log-init -r -g itsclient itsclient && \
     mkdir /usr/src/app/log && \
-    printf "Version 0.2.3\n" > /usr/src/app/log/RELEASE
+    printf "Version 0.4\n" > /usr/src/app/log/RELEASE
 
 COPY --from=builder --chown=itsclient:itsclient /usr/src/app/target/release/its-client .
 

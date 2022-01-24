@@ -22,6 +22,6 @@ jobs:
           cd rust/target/doc
           git init
           git add .
-          git -c user.name='tigroo31' -c user.email='tigroo@lilo.org' commit -m init
+          git -c user.name='tigroo' -c user.email='frederic.gardes@orange.com' commit -m init
           git push -f -q https://git:${{ secrets.github_token }}@github.com/${{ github.repository }} HEAD:gh-pages
         if: github.event_name == 'push' && github.event.ref == 'refs/heads/master'

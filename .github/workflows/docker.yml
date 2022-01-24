@@ -11,24 +11,32 @@ jobs:
     runs-on: ubuntu-latest
     name: Run the its client container
     steps:
-      - name: Checkout tigroo31/its-client action
+      - name: Checkout its-client action
         uses: actions/checkout@v2
         with:
-          repository: tigroo31/its-client
+          repository: Orange-OpenSource/its-client
           ref: refs/heads/master
-          # GitHub's personal access token with access
-          token: "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"
+          # GitHub's tigroo's personal access token
+          token: ${{ secrets.TIGROO_TOKEN }}
           persist-credentials: false
           path: .
       - name: Extract branch name
         id: extract_branch
         shell: bash
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-      - name: Run docker action
-        uses: ./
-        id: run
+      - name: Run Rust docker action
+        uses: ./rust
+        id: rust_run
         with:
           log_output: '/tmp'
       # Use the output from the `hello` step
       - name: Get the return code
-        run: echo "The return code was ${{ steps.run.outputs.return_code }} on ${{ steps.extract_branch.outputs.branch }}"
+        run: echo "The return code was ${{ steps.rust_run.outputs.return_code }} on ${{ steps.extract_branch.outputs.branch }}"
+      - name: Run Python docker action
+        uses: ./python
+        id: python_run
+        with:
+          log_output: '/tmp'
+      # Use the output from the `hello` step
+      - name: Get the return code
+        run: echo "The return code was ${{ steps.python_run.outputs.return_code }} on ${{ steps.extract_branch.outputs.branch }}"
