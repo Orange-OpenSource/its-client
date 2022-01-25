@@ -1,0 +1,5 @@
+gpsd-py3==0.3.0
+paho-mqtt==1.6.1
+pyGeoTile==1.0.6
+pytest==6.2.5
+ConfigParser==5.2.0
