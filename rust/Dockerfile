@@ -49,7 +49,7 @@ WORKDIR /usr/src/app
 
 RUN groupadd -r itsclient && useradd --no-log-init -r -g itsclient itsclient && \
     mkdir /usr/src/app/log && \
-    printf "Version 0.4\n" > /usr/src/app/log/RELEASE
+    printf "Version 1.0\n" > /usr/src/app/log/RELEASE
 
 COPY --from=builder --chown=itsclient:itsclient /usr/src/app/target/release/its-client .
 
