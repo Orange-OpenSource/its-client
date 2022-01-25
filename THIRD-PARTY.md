@@ -115,3 +115,34 @@
 #### rustls
 - [Source code](https://github.com/rustls/rustls)
 - Copyright (c) 2016, Joseph Birr-Pixton
+
+## Python
+
+### License MIT
+
+#### gpsd-py3
+- [Source code](https://github.com/MartijnBraam/gpsd-py3)
+
+#### pyGeoTile
+- [Source code](https://github.com/geometalab/pyGeoTile)
+
+#### pytest
+- [Source code](https://github.com/pytest-dev/pytest)
+- Copyright (c) 2004 Holger Krekel and others
+
+#### ConfigParser
+- [Source code](https://github.com/jaraco/configparser/)
+- Copyright Jason R. Coombs
+
+### Licence EPL v2.0
+
+#### paho
+- [Source code](https://github.com/eclipse/paho.mqtt.python)
+
+### Licence EDL v1.0
+
+#### paho
+- [Source code](https://github.com/eclipse/paho.mqtt.python)
+
+
+
