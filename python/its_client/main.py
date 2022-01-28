@@ -94,15 +94,23 @@ if __name__ == "__main__":
         default="WARNING",
         help="logging level: CRITICAL, ERROR, WARNING, INFO or DEBUG",
     )
+    parser.add_argument(
+        "-c",
+        "--config-path",
+        dest="config_path",
+        default=".",
+        help="path to the its_config.cfg file (default: .)",
+    )
     args, unknown_arguments = parser.parse_known_args()
 
     logger.log_setup(args.log_level)
 
     # config parser
+    config = ConfigParser(allow_no_value=True)
     try:
         # Load the configuration file
-        with open("../its_client.cfg") as file:
-            config = ConfigParser(allow_no_value=True)
+        logging.info(f"we search the config file in {os.getcwd()}")
+        with open(file=f"{args.config_path}/its_client.cfg") as file:
             config.read_file(file)
             logging.info(f"config loaded from its_client.cfg")
             # list all contents
@@ -120,6 +128,9 @@ if __name__ == "__main__":
         logging.warning(
             "no its_client.cfg config file specified or found, so using defaults"
         )
+        config.add_section("position")
+        config.set("position", "latitude", "43.6359296"),
+        config.set("position", "longitude", "1.3752608"),
 
     logging.info("argument configuration:")
     for key, value in vars(args).items():
