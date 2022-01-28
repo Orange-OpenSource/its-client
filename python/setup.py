@@ -30,6 +30,10 @@ setup(
     url="https://github.com/Orange-OpenSource/its-client",
     download_url="https://pypi.org/project/its-client",
     packages=find_packages(exclude=["*.tests.*"]),
+    include_package_data=True,
+    package_data={
+        "its_client": ["its_client.cfg"],
+    },
     description="The Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) Python packages based on the "
     "[JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription.",
     long_description="The Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) Python packages based on "
