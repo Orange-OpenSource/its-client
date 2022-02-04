@@ -35,7 +35,14 @@ class MqttWorker:
         self.region = roi.RegionOfResponsibility()
 
     def step(self) -> bool:
-        lon, lat, speed, alt, heading = self.geo_position.get_current_value()
+        (
+            lon,
+            lat,
+            speed,
+            alt,
+            heading,
+            position_time,
+        ) = self.geo_position.get_current_value()
         if lon is not None and lat is not None and speed is not None:
             # alt
             (
@@ -62,6 +69,9 @@ class MqttWorker:
                 cam_topic = f"{root_cam_topic}{quadtree.lat_lng_to_quad_key(lat, lon, 22, True)}"
                 # time
                 now = time.time()
+                difference = now - position_time.timestamp()
+                if difference > 1:
+                    logging.warning(f"the position time is older than {difference} ms")
                 # acceleration
                 if (
                     self.previous_step_timestamp is None

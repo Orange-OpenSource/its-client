@@ -54,12 +54,15 @@ class GeoPosition:
                     logging.debug("altitude received:" + str(altitude))
                     movement = packet.movement()
                     logging.debug("movement received:" + str(movement))
+                    position_time = packet.get_time()
+                    logging.debug("time received:" + str(position_time))
                     return (
                         lon,
                         lat,
                         movement.get("speed"),
                         altitude,
                         movement.get("track"),
+                        position_time,
                     )
                 else:
                     logging.info("no location available")
@@ -69,4 +72,4 @@ class GeoPosition:
                 logging.warning(error)
             except Exception as error:
                 logging.warning(f"a gps position error occurs:{error}")
-        return None, None, None, None, None
+        return None, None, None, None, None, None
