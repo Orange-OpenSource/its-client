@@ -10,11 +10,9 @@
 # mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 from setuptools import setup, find_packages
 
-import its_client
-
 setup(
     name="its_client",
-    version=its_client.__version__,
+    version="1.0.0",
     author="Frederic GARDES",
     author_email="frederic(dot)gardes(at)orange(dot)com",
     maintainer="Frederic GARDES",
