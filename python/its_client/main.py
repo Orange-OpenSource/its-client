@@ -41,7 +41,8 @@ def signal_handler(_sig, _frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-if __name__ == "__main__":
+
+def main():
     # argument parser
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument(
@@ -177,3 +178,7 @@ if __name__ == "__main__":
 
         logging.info(f"ended at {int(round(time.time() * 1000))}")
         exit(0)
+
+
+if __name__ == "__main__":
+    main()
