@@ -46,4 +46,5 @@ setup(
         "pyGeoTile==1.0.6",
         "pytest==6.2.5",
     ],
+    entry_points={"console_scripts": ["its-client = its_client.main:main"]},
 )
