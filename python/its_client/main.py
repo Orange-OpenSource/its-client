@@ -39,9 +39,6 @@ def signal_handler(_sig, _frame):
     exit(2)
 
 
-signal.signal(signal.SIGINT, signal_handler)
-
-
 def main():
     # argument parser
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
@@ -166,6 +163,7 @@ def main():
         mqtt_client.loop_start()
 
         logging.info("starting worker...")
+        signal.signal(signal.SIGINT, signal_handler)
         worker = MqttWorker(
             mqtt_client, args.mqtt_client_id, geo_position=position_client
         )
