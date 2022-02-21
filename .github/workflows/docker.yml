@@ -14,10 +14,6 @@ jobs:
       - name: Checkout its-client action
         uses: actions/checkout@v2
         with:
-          repository: Orange-OpenSource/its-client
-          ref: refs/heads/master
-          # GitHub's tigroo's personal access token
-          token: ${{ secrets.TIGROO_TOKEN }}
           persist-credentials: false
           path: .
       - name: Extract branch name
