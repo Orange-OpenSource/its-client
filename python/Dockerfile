@@ -17,8 +17,7 @@ RUN python --version
 
 WORKDIR /usr/src/app
 
-COPY its-client .
-COPY its-client.cfg .
+COPY its_client its_client
 COPY requirements.txt .
 COPY setup.cfg .
 COPY setup.py .
