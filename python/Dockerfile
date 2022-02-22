@@ -23,7 +23,8 @@ COPY setup.cfg .
 COPY setup.py .
 
 RUN pip install wheel && \
-    python -m unittest && \
+
+RUN python -m unittest && \
     python setup.py test && \
     python setup.py bdist_wheel
 
