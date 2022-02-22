@@ -62,6 +62,8 @@ RUN chown -R itsclient:itsclient /usr/src/app && \
 # no parameters today, just to check de lint
 CMD [""]
 
+RUN mkdir /var/log/its_client &&\
+    chown itsclient:itsclient /var/log/its_client
 USER itsclient
 
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
