@@ -22,7 +22,9 @@ COPY requirements.txt .
 COPY setup.cfg .
 COPY setup.py .
 
-RUN pip install wheel && \
+RUN pip install \
+        --disable-pip-version-check \
+        -r requirements.txt
 
 RUN python -m unittest && \
     python setup.py test && \
