@@ -6,33 +6,33 @@
 #
 # Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
 # Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
-FROM rust:buster as builder
+FROM python:3.8-buster as builder
 
-LABEL description="Rust builder to compile"
+LABEL description="Python builder to compile"
 LABEL maintainer="frederic.gardes@orange.com"
 LABEL authors=["frederic.gardes@orange.com"]
 LABEL url="https://github.com/Orange-OpenSource/its-client"
 
-RUN rustc --version && cargo --version
+RUN python --version
 
 WORKDIR /usr/src/app
 
-COPY libits-client/src libits-client/src
-COPY libits-client/Cargo.toml libits-client/Cargo.toml
-COPY libits-copycat/src libits-copycat/src
-COPY libits-copycat/Cargo.toml libits-copycat/Cargo.toml
-COPY its-client/src its-client/src
-COPY its-client/Cargo.toml its-client/Cargo.toml
+COPY its_client its_client
+COPY requirements.txt .
+COPY setup.cfg .
+COPY setup.py .
 
-COPY Cargo.toml .
+RUN pip install \
+        --disable-pip-version-check \
+        -r requirements.txt
 
-RUN cargo build --verbose --all && \
-    cargo test --verbose --all && \
-    cargo build --release
+RUN python -m unittest && \
+    python setup.py test && \
+    python setup.py bdist_wheel
 
-FROM debian:buster
+FROM python:3.8-buster
 
-LABEL description="Rust ITS client"
+LABEL description="Python ITS client"
 LABEL maintainer="frederic.gardes@orange.com"
 LABEL authors=["frederic.gardes@orange.com"]
 LABEL url="https://github.com/Orange-OpenSource/its-client"
@@ -51,17 +51,21 @@ RUN groupadd -r itsclient && useradd --no-log-init -r -g itsclient itsclient && 
     mkdir /usr/src/app/log && \
     printf "Version 1.0\n" > /usr/src/app/log/RELEASE
 
-COPY --from=builder --chown=itsclient:itsclient /usr/src/app/target/release/its-client .
+COPY --from=builder --chown=itsclient:itsclient /usr/src/app/dist/its_client-1.0.0-py3-none-any.whl .
 
 COPY docker-entrypoint.sh .
 
-RUN chown -R itsclient:itsclient /usr/src/app && chmod -R ug+rwx /usr/src/app
+RUN chown -R itsclient:itsclient /usr/src/app && \
+    chmod -R ug+rwx /usr/src/app && \
+    pip install its_client-1.0.0-py3-none-any.whl
 
 # no parameters today, just to check de lint
 CMD [""]
 
+RUN mkdir /var/log/its_client &&\
+    chown itsclient:itsclient /var/log/its_client
 USER itsclient
 
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
 
-HEALTHCHECK CMD ./its-client --help || exit 1
+HEALTHCHECK CMD python PYTHONPATH='$PYTHONPATH:/usr/local/lib/python3.8/site-packages/its_client' python /usr/local/lib/python3.8/site-packages/its_client/main.py --help || exit 1
