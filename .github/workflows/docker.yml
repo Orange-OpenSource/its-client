@@ -33,6 +33,7 @@ jobs:
         id: python_run
         with:
           log_output: '/tmp'
+          args: --help
       # Use the output from the `hello` step
       - name: Get the return code
         run: echo "The return code was ${{ steps.python_run.outputs.return_code }} on ${{ steps.extract_branch.outputs.branch }}"
