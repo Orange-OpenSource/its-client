@@ -17,14 +17,16 @@ RUN python --version
 
 WORKDIR /usr/src/app
 
-COPY its-client .
-COPY its-client.cfg .
+COPY its_client its_client
 COPY requirements.txt .
 COPY setup.cfg .
 COPY setup.py .
 
-RUN pip install wheel && \
-    python -m unittest && \
+RUN pip install \
+        --disable-pip-version-check \
+        -r requirements.txt
+
+RUN python -m unittest && \
     python setup.py test && \
     python setup.py bdist_wheel
 
@@ -60,6 +62,8 @@ RUN chown -R itsclient:itsclient /usr/src/app && \
 # no parameters today, just to check de lint
 CMD [""]
 
+RUN mkdir /var/log/its_client &&\
+    chown itsclient:itsclient /var/log/its_client
 USER itsclient
 
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
