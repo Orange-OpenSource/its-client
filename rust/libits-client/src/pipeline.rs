@@ -7,6 +7,7 @@
 // Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 use std::any::Any;
+use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
 use std::thread;
@@ -40,6 +41,7 @@ pub async fn run<T: Analyser>(
     mqtt_password: Option<&str>,
     mqtt_root_topic: &str,
     region_of_responsibility: bool,
+    custom_settings: HashMap<String, String>,
 ) {
     loop {
         // build the shared topic list
@@ -62,6 +64,7 @@ pub async fn run<T: Analyser>(
         let configuration = Arc::new(Configuration::new(
             mqtt_client_id.to_string(),
             region_of_responsibility,
+            custom_settings.clone(),
         ));
 
         // subscribe
