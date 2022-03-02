@@ -9,7 +9,7 @@
 
 [package]
 name = "its-client"
-version = "1.0.1"
+version = "1.1.0"
 authors = ["Frédéric Gardes <frederic.gardes@orange.com>", "Nicolas Buffon <nicolas.buffon@orange.com>"]
 license = "MIT"
 description = "binary to connect on an ITS MQTT server"
@@ -43,10 +43,10 @@ version = "1.8.1"
 features = ["full", "macros"]
 
 [dependencies.libits-client]
-version = "1.0"
+version = "1.1"
 path="../libits-client"
 
 [dependencies.libits-copycat]
-version = "1.0"
+version = "1.1"
 path="../libits-copycat"
 optional = true
