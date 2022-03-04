@@ -9,7 +9,7 @@
 # https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the
 # mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 import random
-import time
+from datetime import datetime
 
 
 class GeoPosition:
@@ -37,5 +37,5 @@ class GeoPosition:
         speed = 0.103
         alt = 131.693
         heading = 130.7275
-        position_time = time.time()
+        position_time = datetime.utcnow()
         return lon, lat, speed, alt, heading, position_time

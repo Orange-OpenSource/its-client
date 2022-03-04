@@ -11,6 +11,7 @@
 import logging
 import threading
 import time
+from datetime import datetime, timedelta
 
 from its_client.position import GeoPosition
 from its_client import quadtree, cam, mobility, roi
@@ -68,10 +69,15 @@ class MqttWorker:
                 root_cam_topic = f"{self.QUEUE}/{self.client_name}"
                 cam_topic = f"{root_cam_topic}{quadtree.lat_lng_to_quad_key(lat, lon, 22, True)}"
                 # time
-                now = time.time()
-                difference = now - position_time.timestamp()
-                if difference > 1:
-                    logging.warning(f"the position time is older than {difference} ms")
+                now = datetime.now()
+                utc_now = datetime.utcnow()
+                gps_utc_datetime = datetime.fromtimestamp(position_time.timestamp())
+                difference = utc_now - gps_utc_datetime
+                if abs(difference) > timedelta(microseconds=1000):
+                    logging.warning(
+                        f"the position time is {abs(difference).seconds * 1000 + abs(difference).microseconds / 1000} ms in the {'future' if difference > timedelta(0) else 'past'}"
+                    )
+
                 # acceleration
                 if (
                     self.previous_step_timestamp is None
@@ -86,14 +92,14 @@ class MqttWorker:
                         latitude_end=lat,
                         longitude_end=lon,
                         time_start=self.previous_step_timestamp,
-                        time_end=now,
+                        time_end=now.timestamp(),
                     )
                 # speed
                 km_speed = mobility.mps_to_kmph(speed)
                 logging.debug(f"current speed: {speed} km/h")
                 message = cam.CooperativeAwarenessMessage(
                     uuid=self.client_name,
-                    timestamp=now,
+                    timestamp=now.timestamp(),
                     latitude=lat,
                     longitude=lon,
                     altitude=alt,
@@ -116,7 +122,7 @@ class MqttWorker:
                     generation_delta_time=message.generation_delta_time(),
                     latitude=lat,
                     longitude=lon,
-                    timestamp=int(round(now * 1000)),
+                    timestamp=int(round(now.timestamp() * 1000)),
                     partner=self.mqtt_client.gateway_name,
                     root_queue=root_cam_topic,
                 )
@@ -124,7 +130,7 @@ class MqttWorker:
                 self.region.update_subscription(
                     latitude=lat, longitude=lon, speed=speed, client=self.mqtt_client
                 )
-                self.previous_step_timestamp = now
+                self.previous_step_timestamp = now.timestamp()
                 self.previous_step_lat = lat
                 self.previous_step_lon = lon
                 # threading
