@@ -10,6 +10,7 @@ use std::sync::RwLock;
 
 use crate::mqtt::topic::geo_extension::GeoExtension;
 use crate::reception::information::Information;
+use std::collections::HashMap;
 
 pub struct Configuration {
     client_id: String,
@@ -17,14 +18,20 @@ pub struct Configuration {
     region_of_responsibility: bool,
     // TODO add the information's of the neighbourhood
     // TODO if you're a central node, remove from your Region Of Responsibility the Regions Of Responsibility of the neighbourhood
+    custom_settings: HashMap<String, String>,
 }
 
 impl Configuration {
-    pub fn new(client_id: String, region_of_responsibility: bool) -> Self {
+    pub fn new(
+        client_id: String,
+        region_of_responsibility: bool,
+        custom_settings: HashMap<String, String>,
+    ) -> Self {
         Configuration {
             client_id,
             information: RwLock::new(Information::new()),
             region_of_responsibility,
+            custom_settings,
         }
     }
 
@@ -61,5 +68,13 @@ impl Configuration {
     pub fn update(&self, new_information: Information) {
         let mut information_guard = self.information.write().unwrap();
         *information_guard = new_information;
+    }
+
+    pub fn get(&self, key: &str) -> Option<&String> {
+        self.custom_settings.get(key)
+    }
+
+    pub fn set(&mut self, key: &str, value: String) {
+        self.custom_settings.insert(key.to_string(), value);
     }
 }

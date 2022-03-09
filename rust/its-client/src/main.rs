@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 // Software Name: its-client
 // SPDX-FileCopyrightText: Copyright (c) 2016-2022 Orange
 // SPDX-License-Identifier: MIT License
@@ -165,6 +166,7 @@ async fn main() {
         mqtt_password,
         mqtt_root_topic,
         region_of_responsibility,
+        HashMap::new(),
     )
     .await;
 

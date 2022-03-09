@@ -389,7 +389,7 @@ checksum = "1aab8fc367588b89dcee83ab0fd66b72b50b72fa1904d7095045ace2b0c81c35"
 
 [[package]]
 name = "its-client"
-version = "1.0.1"
+version = "1.1.0"
 dependencies = [
  "clap",
  "flexi_logger",
@@ -424,7 +424,7 @@ checksum = "06e509672465a0504304aa87f9f176f2b2b716ed8fb105ebe5c02dc6dce96a94"
 
 [[package]]
 name = "libits-client"
-version = "1.0.1"
+version = "1.1.0"
 dependencies = [
  "async-channel",
  "cheap-ruler",
@@ -442,7 +442,7 @@ dependencies = [
 
 [[package]]
 name = "libits-copycat"
-version = "1.0.1"
+version = "1.1.0"
 dependencies = [
  "chrono",
  "libits-client",
