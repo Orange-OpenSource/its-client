@@ -4,14 +4,15 @@
 #
 # This software is distributed under the MIT license, see LICENSE.txt file for more details.
 #
-# Author: Frédéric GARDES <frederic.gardes@orange.com> et al. Software description: This Intelligent Transportation
-# Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](
-# https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the
-# mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+# Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
+# Software description: This Intelligent Transportation Systems (ITS)
+# [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org)
+# [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project
+# for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 import json
 import logging
 
-from hashlib import sha1
+from hashlib import sha256
 
 from its_client.mobility import kmph_to_mps
 
@@ -21,7 +22,7 @@ TIMESTAMP_ITS_START = 1072915195000  # its timestamp starts at 2004/01/01T00:00:
 def station_id(uuid: str) -> int:
     logging.debug("we compute the station id for " + uuid)
 
-    hasher = sha1()
+    hasher = sha256()
     hasher.update(bytes(uuid, "utf-8"))
     hashed_uuid = hasher.hexdigest()
     return int(hashed_uuid[0:6], 16)
