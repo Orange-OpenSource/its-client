@@ -25,11 +25,9 @@ COPY requirements.txt .
 COPY setup.cfg .
 COPY setup.py .
 
-RUN pip install \
-        --disable-pip-version-check \
-        -r requirements.txt
-
-RUN python -m unittest && \
+RUN python -m pip install --upgrade pip && \
+    pip install --disable-pip-version-check -r requirements.txt && \
+    python -m unittest && \
     python setup.py test && \
     python setup.py bdist_wheel
 
@@ -45,6 +43,7 @@ RUN apt-get update && \
     apt-get install --no-install-recommends -y \
         curl=7.* \
         procps=2:* && \
+    python -m pip install --upgrade pip && \
     rm -rf /var/lib/apt/lists/*
 
 # Create app directory
@@ -52,23 +51,23 @@ WORKDIR /usr/src/app
 
 RUN groupadd -r itsclient && useradd --no-log-init -r -g itsclient itsclient && \
     mkdir /usr/src/app/log && \
-    printf "Version 1.0\n" > /usr/src/app/log/RELEASE
+    printf "Version 1.1\n" > /usr/src/app/log/RELEASE
 
-COPY --from=builder --chown=itsclient:itsclient /usr/src/app/dist/its_client-1.0.0-py3-none-any.whl .
+COPY --from=builder --chown=itsclient:itsclient /usr/src/app/dist/its_client-1.1.1-py3-none-any.whl .
 
 COPY docker-entrypoint.sh .
 
 RUN chown -R itsclient:itsclient /usr/src/app && \
     chmod -R ug+rwx /usr/src/app && \
-    pip install its_client-1.0.0-py3-none-any.whl
+    pip install its_client-1.1.1-py3-none-any.whl
 
 # no parameters today, just to check de lint
 CMD [""]
 
-RUN mkdir /var/log/its_client &&\
-    chown itsclient:itsclient /var/log/its_client
+RUN mkdir /data &&\
+    chown itsclient:itsclient /data
 USER itsclient
 
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
 
-HEALTHCHECK CMD python PYTHONPATH='$PYTHONPATH:/usr/local/lib/python3.8/site-packages/its_client' python /usr/local/lib/python3.8/site-packages/its_client/main.py --help || exit 1
+HEALTHCHECK CMD its-client --help || exit 1
