@@ -6,10 +6,11 @@
 #
 # This software is distributed under the MIT license, see LICENSE.txt file for more details.
 #
-# Author: Frédéric GARDES <frederic.gardes@orange.com> et al. Software description: This Intelligent Transportation
-# Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](
-# https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the
-# mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+# Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
+# Software description: This Intelligent Transportation Systems (ITS)
+# [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org)
+# [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project
+# for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 import argparse
 import logging
 import os
@@ -101,7 +102,7 @@ def main():
     )
     args, unknown_arguments = parser.parse_known_args()
 
-    logger.log_setup(args.log_level)
+    logger.log_setup(log_level=args.log_level)
 
     # config parser
     config = ConfigParser(allow_no_value=True)

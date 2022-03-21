@@ -4,10 +4,11 @@
 #
 # This software is distributed under the MIT license, see LICENSE.txt file for more details.
 #
-# Author: Frédéric GARDES <frederic.gardes@orange.com> et al. Software description: This Intelligent Transportation
-# Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](
-# https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the
-# mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+# Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
+# Software description: This Intelligent Transportation Systems (ITS)
+# [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org)
+# [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project
+# for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 import logging
 
 from gpsd import connect, get_current, GpsResponse, NoFixError
@@ -19,7 +20,8 @@ class GeoPosition:
             connect()
             self.connected = True
         except Exception as error:
-            logging.warning(f"a gps init error occurs:{error}")
+            logging.error(f"a gps init error occurs:{error}")
+            exit(3)
 
     def get_current_position(self, packet: GpsResponse = None):
         if self.connected:
@@ -35,12 +37,14 @@ class GeoPosition:
                         return lon, lat
                     else:
                         logging.warning("no location available")
-            except NoFixError as error:
-                logging.warning(error)
             except UserWarning as error:
-                logging.warning(error)
+                logging.warning(f"a gps user warning occurs:{error}")
+            except NoFixError as error:
+                logging.error(f"a no fix gps error occurs:{error}")
+                exit(3)
             except Exception as error:
-                logging.warning(f"a gps position error occurs:{error}")
+                logging.error(f"a gps error occurs:{error}")
+                exit(3)
         return None, None
 
     def get_current_value(self):
@@ -66,10 +70,12 @@ class GeoPosition:
                     )
                 else:
                     logging.info("no location available")
-            except NoFixError as error:
-                logging.warning(error)
             except UserWarning as error:
-                logging.warning(error)
+                logging.warning(f"a gps user warning occurs:{error}")
+            except NoFixError as error:
+                logging.error(f"a no fix gps error occurs:{error}")
+                exit(3)
             except Exception as error:
-                logging.warning(f"a gps position error occurs:{error}")
+                logging.error(f"a gps error occurs:{error}")
+                exit(3)
         return None, None, None, None, None, None

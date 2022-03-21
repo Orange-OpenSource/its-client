@@ -4,10 +4,11 @@
 #
 # This software is distributed under the MIT license, see LICENSE.txt file for more details.
 #
-# Author: Frédéric GARDES <frederic.gardes@orange.com> et al. Software description: This Intelligent Transportation
-# Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](
-# https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the
-# mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+# Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
+# Software description: This Intelligent Transportation Systems (ITS)
+# [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org)
+# [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project
+# for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 import json
 import logging
 import time
@@ -16,8 +17,8 @@ from inspect import getouterframes
 
 import paho.mqtt.client
 
-from its_client.position import GeoPosition
 from its_client.logger import its, monitoring
+from its_client.position import GeoPosition
 
 
 class MQTTClient(object):
@@ -64,9 +65,7 @@ class MQTTClient(object):
             logging.info("connected to mqtt broker")
             # gather the gateway name
             topic = "5GCroCo/outQueue/info/broker"
-            logging.info("we launch a subscribe")
             self.subscribe(topic)
-            logging.debug("we subscribed")
             # save the new connection status to trigger the subscriptions
             self.new_connection = True
 
@@ -183,23 +182,24 @@ class MQTTClient(object):
         self.client.connect(host=self.host, port=self.port, keepalive=60)
 
     def subscribe(self, topic):
-        logging.info(self._format_log(f"subscribing to {topic}..."))
+        logging.debug(self._format_log(f"subscribing to {topic}..."))
         self.client.subscribe(topic)
+        logging.info(f"we subscribed on topic {topic}")
 
     def loop_start(self):
-        logging.info(self._format_log(f"starting loop..."))
+        logging.debug(self._format_log(f"starting loop..."))
         self._connect()
         self.client.loop_start()
 
     def loop_stop(self):
-        logging.info(self._format_log(f"stopping loop..."))
+        logging.debug(self._format_log(f"stopping loop..."))
         self.client.loop_stop()
         self.client.disconnect()
 
     def publish(self, topic, payload=None, qos=1, retain=False, properties=None):
-        logging.info(self._format_log(f"publishing..."))
-        logging.debug(self._format_log(f"payload: {payload}"))
+        logging.debug(self._format_log(f"publishing payload: {payload}"))
         self.client.publish(topic, payload, qos, retain, properties)
+        logging.info(f"message sent on topic {topic}")
 
     def _format_log(self, message=""):
         return f"{type(self).__name__}[{self.client_id}]::{getouterframes(currentframe())[1][3]} {message}"

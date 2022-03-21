@@ -13,11 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Build documentation
+      - name: Build Rust documentation
         run: |
           cd rust
           cargo doc --no-deps
-      - name: Publish documentation
+      - name: Publish Rust documentation
         run: |
           cd rust/target/doc
           git init

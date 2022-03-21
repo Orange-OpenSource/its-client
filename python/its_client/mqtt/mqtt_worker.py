@@ -4,18 +4,19 @@
 #
 # This software is distributed under the MIT license, see LICENSE.txt file for more details.
 #
-# Author: Frédéric GARDES <frederic.gardes@orange.com> et al. Software description: This Intelligent Transportation
-# Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](
-# https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the
-# mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+# Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
+# Software description: This Intelligent Transportation Systems (ITS)
+# [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org)
+# [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project
+# for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 import logging
 import threading
 import time
 from datetime import datetime, timedelta
 
-from its_client.position import GeoPosition
 from its_client import quadtree, cam, mobility, roi
 from its_client.logger import its, monitoring
+from its_client.position import GeoPosition
 
 
 class MqttWorker:
@@ -73,9 +74,10 @@ class MqttWorker:
                 utc_now = datetime.utcnow()
                 gps_utc_datetime = datetime.fromtimestamp(position_time.timestamp())
                 difference = utc_now - gps_utc_datetime
-                if abs(difference) > timedelta(microseconds=1000):
+                if abs(difference) > timedelta(milliseconds=300):
                     logging.warning(
-                        f"the position time is {abs(difference).seconds * 1000 + abs(difference).microseconds / 1000} ms in the {'future' if difference > timedelta(0) else 'past'}"
+                        f"the position time is {abs(difference).seconds * 1000 + abs(difference).microseconds / 1000} "
+                        f"ms in the {'future' if difference > timedelta(0) else 'past'}"
                     )
 
                 # acceleration

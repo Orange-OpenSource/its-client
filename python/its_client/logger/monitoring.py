@@ -4,10 +4,11 @@
 #
 # This software is distributed under the MIT license, see LICENSE.txt file for more details.
 #
-# Author: Frédéric GARDES <frederic.gardes@orange.com> et al. Software description: This Intelligent Transportation
-# Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](
-# https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the
-# mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+# Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
+# Software description: This Intelligent Transportation Systems (ITS)
+# [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org)
+# [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project
+# for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 import logging
 
 
@@ -22,7 +23,7 @@ def monitore_cam(
     partner: str,
     root_queue: str,
 ):
-    logging.getLogger("obu.monitoring").info(
+    logging.getLogger("monitoring").info(
         f"{vehicle_id} cam {direction} {partner}/{root_queue}"
         f" {station_id}/{generation_delta_time}/lat:{latitude}/lng:{longitude} at {timestamp} "
     )
@@ -42,7 +43,7 @@ def monitore_denm(
     root_queue: str,
     sender: str,
 ):
-    logging.getLogger("obu.monitoring").info(
+    logging.getLogger("monitoring").info(
         f"{vehicle_id} denm received_on {partner}/{root_queue}/{sender}"
         f" {station_id}/{originating_station_id}/{sequence_number}/{reference_time}/{detection_time}"
         f"/lat:{latitude}/lng:{longitude} at {timestamp}"
