@@ -57,7 +57,7 @@ class CooperativeAwarenessMessage:
         cam_json = {
             "type": "cam",
             "origin": "self",
-            "version": "1.0.0",
+            "version": "1.1.1",
             "source_uuid": self.uuid,
             "timestamp": self.timestamp,
             "message": {
