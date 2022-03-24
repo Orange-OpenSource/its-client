@@ -32,7 +32,7 @@ class MQTTClient(object):
     def __init__(
         self,
         client_id: str,
-        host: str,
+        hostname: str,
         port: int,
         geo_position: GeoPosition,
         username=None,
@@ -41,7 +41,7 @@ class MQTTClient(object):
         self.client = None
         self.gateway_name = "broker"
         self.client_id = client_id
-        self.host = host
+        self.host = hostname
         self.port = port
         self.username = username
         self.password = password

@@ -1,7 +1,9 @@
 # its-client
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://github.com/Orange-OpenSource/its-client/workflows/Rust/badge.svg)](https://github.com/Orange-OpenSource/its-client/actions)
+[![Build Status](https://github.com/Orange-OpenSource/its-client/workflows/Rust/badge.svg)](https://github.com/Orange-OpenSource/its-client/actions/workflows/rust.yml)
+[![Build Status](https://github.com/Orange-OpenSource/its-client/workflows/Python/badge.svg)](https://github.com/Orange-OpenSource/its-client/actions/workflows/python.yml)
+[![Build Status](https://github.com/Orange-OpenSource/its-client/workflows/Docker/badge.svg)](https://github.com/Orange-OpenSource/its-client/actions/workflows/docker.yml)
 [![crates.io](https://img.shields.io/crates/v/its-client)](https://crates.io/crates/its-client)
 
 This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on
@@ -32,4 +34,5 @@ A Rust binary example to connect on ITS platform using the libits-copycat exampl
 
 ### Python its-client
 
-A Python package to connect on ITS platform as a Passenger car (station type 5).
+A Python package to connect on ITS platform as a Passenger car (station type 5): 
+you'll share your position and receive alerts from your direct environment.

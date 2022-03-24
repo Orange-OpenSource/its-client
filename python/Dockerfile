@@ -70,4 +70,4 @@ USER itsclient
 
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
 
-HEALTHCHECK CMD its-client --help || exit 1
+HEALTHCHECK CMD its-client --help || exit 10

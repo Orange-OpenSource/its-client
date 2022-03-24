@@ -22,6 +22,9 @@ python/dist
 python/venv
 python/**/*.pyc
 python/**/__pycache__
+python/**/monitoring.csv
+python/**/reception.txt
+python/**/sending.txt
 
 # Custom
 .idea

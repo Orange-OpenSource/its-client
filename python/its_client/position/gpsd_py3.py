@@ -41,10 +41,10 @@ class GeoPosition:
                 logging.warning(f"a gps user warning occurs:{error}")
             except NoFixError as error:
                 logging.error(f"a no fix gps error occurs:{error}")
-                exit(3)
+                exit(4)
             except Exception as error:
                 logging.error(f"a gps error occurs:{error}")
-                exit(3)
+                exit(4)
         return None, None
 
     def get_current_value(self):
@@ -74,8 +74,8 @@ class GeoPosition:
                 logging.warning(f"a gps user warning occurs:{error}")
             except NoFixError as error:
                 logging.error(f"a no fix gps error occurs:{error}")
-                exit(3)
+                exit(4)
             except Exception as error:
                 logging.error(f"a gps error occurs:{error}")
-                exit(3)
+                exit(4)
         return None, None, None, None, None, None

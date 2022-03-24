@@ -55,8 +55,8 @@ def log_setup(directory: str = "/data", log_level=logging.WARNING):
         filename=path / "reception.txt", maxBytes=200000000, backupCount=10
     )
     reception_logger.addHandler(reception_handler)
-    reception_handler.addFilter(filter_reception)
-    reception_handler.setLevel(log_level)
+    reception_logger.addFilter(filter_reception)
+    reception_logger.setLevel(log_level)
 
     # sending
     sending_logger = logging.getLogger("sending")
@@ -66,17 +66,15 @@ def log_setup(directory: str = "/data", log_level=logging.WARNING):
         backupCount=10,
     )
     sending_logger.addHandler(sending_handler)
-    sending_handler.addFilter(filter_sending)
-    sending_handler.setLevel(log_level)
+    sending_logger.addFilter(filter_sending)
+    sending_logger.setLevel(log_level)
 
     # default log
     logger = logging.getLogger()
     logger_handler = logging.StreamHandler(stream=sys.stdout)
     # this is just to make the output look nice
-    logger_formatter = logging.Formatter(
-        fmt="%(asctime)s %(name)s.%(levelname)s: %(message)s"
-    )
+    logger_formatter = logging.Formatter(fmt="%(asctime)s %(levelname)s: %(message)s")
     logger_handler.setFormatter(logger_formatter)
     logger.addHandler(logger_handler)
-    logger_handler.addFilter(filter_default)
+    logger.addFilter(filter_default)
     logger.setLevel(log_level)
