@@ -77,18 +77,21 @@ def build(args=None) -> ConfigParser:
         # Load the configuration file
         with open(file=config_file) as file:
             config.read_file(file)
-            logging.info(f"config loaded from {config_file}")
     except IOError:
         # if the user did not specify a config path and there is not a file
         # at the default path, we stop
-        logging.error(f"no {config_file} config file found")
+        print(f"no {config_file} config file found")
         exit(1)
 
     # overwrite the configuration default values with the provided parameters
     if args.log_level is not None:
         config.set(section="log", option="default_level", value=args.log_level)
     # set up the logger with the configuration to be able to well log as soon as possible
-    logger.log_setup(log_level=config.get(section="log", option="default_level"))
+    logger.log_setup(
+        directory=config.get(section="log", option="directory"),
+        log_level=config.get(section="log", option="default_level"),
+    )
+    logging.info(f"config loaded from {config_file}")
 
     logging.info("argument configuration:")
     for key, value in vars(args).items():
