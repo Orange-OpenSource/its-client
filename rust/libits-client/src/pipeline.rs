@@ -277,7 +277,7 @@ pub fn unbox<T>(value: Box<T>) -> T {
 fn analyser_generate_thread<T: Analyser>(
     configuration: Arc<Configuration>,
     exchange_receiver: Receiver<Item<Exchange>>,
-) -> (Receiver<Item<Exchange>>, JoinHandle<()>) {
+) -> (Receiver<(Item<Exchange>, Option<Cause>)>, JoinHandle<()>) {
     info!("starting analyser generation...");
     let (analyser_sender, analyser_receiver) = channel();
     let handle = thread::Builder::new()
@@ -287,8 +287,9 @@ fn analyser_generate_thread<T: Analyser>(
             //initialize the analyser
             let mut analyser = T::new(configuration);
             for item in exchange_receiver {
-                for publish_item in analyser.analyze(item) {
-                    match analyser_sender.send(publish_item) {
+                for publish_item in analyser.analyze(item.clone()) {
+                    let cause = Cause::from_exchange(&(item.reception));
+                    match analyser_sender.send((publish_item, cause)) {
                         Ok(()) => trace!("analyser sent"),
                         Err(error) => {
                             error!("stopped to send analyser: {}", error);
@@ -306,7 +307,7 @@ fn analyser_generate_thread<T: Analyser>(
 
 fn filter_thread<T: Analyser>(
     configuration: Arc<Configuration>,
-    exchange_receiver: Receiver<Item<Exchange>>,
+    exchange_receiver: Receiver<(Item<Exchange>, Option<Cause>)>,
 ) -> (
     Receiver<Item<Exchange>>,
     Receiver<(Item<Exchange>, Option<Cause>)>,
@@ -319,7 +320,10 @@ fn filter_thread<T: Analyser>(
         .name("filter".into())
         .spawn(move || {
             trace!("filter closure entering...");
-            for item in exchange_receiver {
+            for tuple in exchange_receiver {
+                let item = tuple.0;
+                let cause = tuple.1;
+
                 //assumed clone, we just send the GeoExtension
                 if configuration.is_in_region_of_responsibility(item.topic.geo_extension.clone()) {
                     //assumed clone, we send to 2 channels
@@ -330,7 +334,6 @@ fn filter_thread<T: Analyser>(
                             break;
                         }
                     }
-                    let cause = Cause::from_exchange(&(item.reception));
                     match monitoring_sender.send((item, cause)) {
                         Ok(()) => trace!("monitoring sent"),
                         Err(error) => {
