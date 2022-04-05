@@ -58,6 +58,9 @@ def main():
         logging.info(f"we use the gps position")
         position_client = gpsd_py3.GeoPosition()
 
+    logging.debug("handling stop signal...")
+    signal.signal(signal.SIGINT, signal_handler)
+
     logging.info("starting mqtt client...")
     client_id = config.get(section="broker", option="client_id")
     mqtt_client = MQTTClient(
@@ -67,11 +70,11 @@ def main():
         geo_position=position_client,
         username=config.get(section="broker", option="username"),
         password=config.get(section="broker", option="password"),
+        stop_signal=stop_signal,
     )
     mqtt_client.loop_start()
 
     logging.info("starting worker...")
-    signal.signal(signal.SIGINT, signal_handler)
     worker = MqttWorker(
         mqtt_client=mqtt_client, client_name=client_id, geo_position=position_client
     )
@@ -79,11 +82,15 @@ def main():
     worker_process.start()
     worker_process.join()
 
-    logging.info("waiting on mqtt client...")
-    mqtt_client.loop_stop()
-
+    if mqtt_client.is_connected():
+        logging.info("stopping mqtt client...")
+        mqtt_client.loop_stop()
+        return_code = 0
+    else:
+        logging.warning("unexpected end of mqtt client, stopping...")
+        return_code = 5
     logging.info(f"ended at {int(round(time.time() * 1000))}")
-    exit(0)
+    exit(return_code)
 
 
 if __name__ == "__main__":

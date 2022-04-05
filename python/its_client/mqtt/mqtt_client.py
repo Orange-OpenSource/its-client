@@ -37,6 +37,7 @@ class MQTTClient(object):
         geo_position: GeoPosition,
         username=None,
         password=None,
+        stop_signal=None,
     ):
         self.client = None
         self.gateway_name = "broker"
@@ -47,6 +48,7 @@ class MQTTClient(object):
         self.password = password
         self.geo_position = geo_position
         self.new_connection = False
+        self.stop_signal = stop_signal
 
     def on_disconnect(self, client, userdata, rc):
         logging.debug(
@@ -54,6 +56,8 @@ class MQTTClient(object):
         )
         if rc != 0:
             logging.warning("unexpected disconnection")
+            self.loop_stop()
+            self.stop_signal.set()
 
     def on_connect(self, client, userdata, flags, rc):
         logging.debug(
@@ -118,10 +122,10 @@ class MQTTClient(object):
                         "action_id"
                     ]["sequence_number"],
                     reference_time=message_dict["message"]["management_container"][
-                        "detection_time"
+                        "reference_time"
                     ],
                     detection_time=message_dict["message"]["management_container"][
-                        "reference_time"
+                        "detection_time"
                     ],
                     latitude=lat,
                     longitude=lon,
@@ -183,8 +187,33 @@ class MQTTClient(object):
 
     def subscribe(self, topic):
         logging.debug(self._format_log(f"subscribing to {topic}..."))
-        self.client.subscribe(topic)
-        logging.info(f"we subscribed on topic {topic}")
+        if self.client.is_connected():
+            self.client.subscribe(topic)
+            logging.info(f"we subscribed on topic {topic}")
+        else:
+            logging.warning(
+                f"we didn't subscribe to the topic {topic} because we aren't connected"
+            )
+
+    def unsubscribe(self, topic):
+        logging.debug(self._format_log(f"unsubscribing to {topic}..."))
+        if self.client.is_connected():
+            self.client.unsubscribe(topic)
+            logging.info(f"we unsubscribed to the topic {topic}")
+        else:
+            logging.warning(
+                f"we didn't unsubscribe to the topic {topic} because we aren't connected"
+            )
+
+    def publish(self, topic, payload=None, qos=1, retain=False, properties=None):
+        logging.debug(self._format_log(f"publishing payload: {payload}"))
+        if self.client.is_connected():
+            self.client.publish(topic, payload, qos, retain, properties)
+            logging.info(f"message sent on topic {topic}")
+        else:
+            logging.warning(
+                f"message not sent on topic {topic} because we aren't connected"
+            )
 
     def loop_start(self):
         logging.debug(self._format_log(f"starting loop..."))
@@ -196,14 +225,12 @@ class MQTTClient(object):
         self.client.loop_stop()
         self.client.disconnect()
 
-    def publish(self, topic, payload=None, qos=1, retain=False, properties=None):
-        logging.debug(self._format_log(f"publishing payload: {payload}"))
-        self.client.publish(topic, payload, qos, retain, properties)
-        logging.info(f"message sent on topic {topic}")
+    def loop_restart(self):
+        self.loop_stop()
+        self.loop_start()
+
+    def is_connected(self):
+        return self.client.is_connected()
 
     def _format_log(self, message=""):
         return f"{type(self).__name__}[{self.client_id}]::{getouterframes(currentframe())[1][3]} {message}"
-
-    def unsubscribe(self, topic):
-        logging.info(self._format_log(f"unsubscribing to {topic}..."))
-        self.client.unsubscribe(topic)
