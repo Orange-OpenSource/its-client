@@ -45,17 +45,18 @@ def log_setup(directory: str = "/data", log_level=logging.WARNING):
         maxBytes=2000000,
         backupCount=10,
     )
+    monitoring_handler.addFilter(filter_monitoring)
     monitoring_logger.addHandler(monitoring_handler)
-    monitoring_logger.addFilter(filter_monitoring)
-    monitoring_logger.setLevel(log_level)
+    # let's monitor on any level
+    monitoring_logger.setLevel("DEBUG")
 
     # reception
     reception_logger = logging.getLogger("reception")
     reception_handler = logging.handlers.RotatingFileHandler(
         filename=path / "reception.txt", maxBytes=200000000, backupCount=10
     )
+    reception_handler.addFilter(filter_reception)
     reception_logger.addHandler(reception_handler)
-    reception_logger.addFilter(filter_reception)
     reception_logger.setLevel(log_level)
 
     # sending
@@ -65,8 +66,8 @@ def log_setup(directory: str = "/data", log_level=logging.WARNING):
         maxBytes=2000000,
         backupCount=10,
     )
+    sending_handler.addFilter(filter_sending)
     sending_logger.addHandler(sending_handler)
-    sending_logger.addFilter(filter_sending)
     sending_logger.setLevel(log_level)
 
     # default log
@@ -75,6 +76,6 @@ def log_setup(directory: str = "/data", log_level=logging.WARNING):
     # this is just to make the output look nice
     logger_formatter = logging.Formatter(fmt="%(asctime)s %(levelname)s: %(message)s")
     logger_handler.setFormatter(logger_formatter)
+    logger_handler.addFilter(filter_default)
     logger.addHandler(logger_handler)
-    logger.addFilter(filter_default)
     logger.setLevel(log_level)
