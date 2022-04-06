@@ -95,6 +95,8 @@ def build(args=None) -> ConfigParser:
 
     logging.info("argument configuration:")
     for key, value in vars(args).items():
+        if key == "mqtt_password":
+            value = "****"
         logging.info(f"{key}: {value}")
     logging.info("unknown arguments:")
     logging.info(unknown_arguments)
@@ -119,8 +121,9 @@ def build(args=None) -> ConfigParser:
     for section in config.sections():
         logging.info(f"section: {section}")
         for option in config.options(section):
-            logging.info(
-                "x %s:::%s:::%s"
-                % (option, config.get(section, option), str(type(option)))
-            )
+            if option == "password":
+                option_value = "****"
+            else:
+                option_value = config.get(section, option)
+            logging.info("x %s:::%s:::%s" % (option, option_value, str(type(option))))
     return config
