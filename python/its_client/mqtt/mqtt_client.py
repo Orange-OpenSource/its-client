@@ -27,6 +27,7 @@ class MQTTClient(object):
     """
 
     CAM_RECEPTION_QUEUE = "5GCroCo/outQueue/v2x/cam"
+    CPM_RECEPTION_QUEUE = "5GCroCo/outQueue/v2x/cpm"
     DENM_RECEPTION_QUEUE = "5GCroCo/outQueue/v2x/denm"
 
     def __init__(
@@ -136,6 +137,24 @@ class MQTTClient(object):
                 )
                 json_denm = json.dumps(message_dict)
                 its.record(json_denm)
+        elif self.CPM_RECEPTION_QUEUE in message.topic:
+            message_dict = json.loads(message.payload)
+            sender = message.topic.replace(self.CPM_RECEPTION_QUEUE, "").split("/")[1]
+            root_cpm_topic = f"{self.CPM_RECEPTION_QUEUE}/{sender}"
+            lon, lat = self.geo_position.get_current_position()
+            monitoring.monitore_cpm(
+                vehicle_id=self.client_id,
+                direction="received_on",
+                station_id=message_dict["message"]["station_id"],
+                generation_delta_time=message_dict["message"]["generation_delta_time"],
+                latitude=lat,
+                longitude=lon,
+                timestamp=int(round(time.time() * 1000)),
+                partner=self.gateway_name,
+                root_queue=root_cpm_topic,
+            )
+            json_denm = json.dumps(message_dict)
+            its.record(json_denm)
 
     def on_publish(self, client, userdata, _mid):
         logging.debug(
