@@ -45,7 +45,6 @@ setup(
         "gpsd-py3==0.3.0",
         "paho-mqtt==1.6.1",
         "pyGeoTile==1.0.6",
-        "pytest==7.1.0",
     ],
     entry_points={"console_scripts": ["its-client = its_client.main:main"]},
 )
