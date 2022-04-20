@@ -13,7 +13,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="its_client",
-    version="1.1.1",
+    version="1.2.0",
     author="Frederic GARDES",
     author_email="frederic(dot)gardes(at)orange(dot)com",
     maintainer="Frederic GARDES",
@@ -45,7 +45,6 @@ setup(
         "gpsd-py3==0.3.0",
         "paho-mqtt==1.6.1",
         "pyGeoTile==1.0.6",
-        "pytest==7.1.0",
     ],
     entry_points={"console_scripts": ["its-client = its_client.main:main"]},
 )
