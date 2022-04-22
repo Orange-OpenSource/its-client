@@ -18,6 +18,7 @@ from its_client.mqtt.mqtt_client import MQTTClient
 class RegionOfResponsibility:
     ZOOM_BASE_DENM = 15
     ZOOM_BASE_CAM = 18
+    ZOOM_BASE_CPM = ZOOM_BASE_CAM
 
     def __init__(
         self,
@@ -33,6 +34,12 @@ class RegionOfResponsibility:
         self.cam_right = None
         self.cam_up = None
         self.cam_down = None
+        # CPM
+        self.cpm_position = None
+        self.cpm_left = None
+        self.cpm_right = None
+        self.cpm_up = None
+        self.cpm_down = None
         # DENM
         self.denm_position = None
         self.denm_left = None
@@ -49,6 +56,7 @@ class RegionOfResponsibility:
             self._reinit()
             client.new_connection = False
         self._update_cam_subscription(latitude, longitude, speed, client)
+        self._update_cpm_subscription(latitude, longitude, speed, client)
         self._update_denm_subscription(latitude, longitude, speed, client)
 
     def _update_cam_subscription(
@@ -60,6 +68,17 @@ class RegionOfResponsibility:
         )
         self.cam_position = self._update_subscription(
             new_position, self.cam_position, client.CAM_RECEPTION_QUEUE, client
+        )
+
+    def _update_cpm_subscription(
+        self, latitude, longitude, speed: float, client: MQTTClient
+    ):
+        zoom_base = self._correct_zoom_level(speed, self.ZOOM_BASE_CPM)
+        new_position = quadtree.lat_lng_to_quad_key(
+            latitude, longitude, zoom_base, True
+        )
+        self.cpm_position = self._update_subscription(
+            new_position, self.cpm_position, client.CPM_RECEPTION_QUEUE, client
         )
 
     def _update_denm_subscription(

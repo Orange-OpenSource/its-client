@@ -16,7 +16,11 @@ from pathlib import Path
 
 
 def filter_monitoring(record):
-    return record.funcName == "monitore_cam" or record.funcName == "monitore_denm"
+    return (
+        record.funcName == "monitore_cam"
+        or record.funcName == "monitore_cpm"
+        or record.funcName == "monitore_denm"
+    )
 
 
 def filter_reception(record):
