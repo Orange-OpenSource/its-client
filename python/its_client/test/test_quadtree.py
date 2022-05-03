@@ -16,6 +16,9 @@ from its_client.quadtree import (
     get_up_or_down,
     get_right_or_left,
     get_neighbour,
+    get_neighborhood,
+    slash,
+    unslash,
 )
 
 
@@ -205,3 +208,97 @@ class TestNeighborhood(unittest.TestCase):
         self.assertEqual(get_neighbour("122", "left"), "033")
         self.assertEqual(get_neighbour("300", "left"), "211")
         self.assertEqual(get_neighbour("211", "left"), "210")
+
+    def test_top_left_corner_neighborhood(self):
+        result = get_neighborhood("033")
+
+        self.assertEqual(len(result), 8)
+        self.assertTrue("030" in result)
+        self.assertTrue("031" in result)
+        self.assertTrue("120" in result)
+        self.assertTrue("032" in result)
+        self.assertTrue("122" in result)
+        self.assertTrue("210" in result)
+        self.assertTrue("211" in result)
+        self.assertTrue("300" in result)
+
+    def test_top_right_corner_neighborhood(self):
+        result = get_neighborhood("122")
+
+        self.assertEqual(len(result), 8)
+        self.assertTrue("031" in result)
+        self.assertTrue("120" in result)
+        self.assertTrue("121" in result)
+        self.assertTrue("033" in result)
+        self.assertTrue("123" in result)
+        self.assertTrue("211" in result)
+        self.assertTrue("300" in result)
+        self.assertTrue("301" in result)
+
+    def test_bottom_left_corner_neighborhood(self):
+        result = get_neighborhood("211")
+
+        self.assertEqual(len(result), 8)
+        self.assertTrue("032" in result)
+        self.assertTrue("033" in result)
+        self.assertTrue("122" in result)
+        self.assertTrue("210" in result)
+        self.assertTrue("300" in result)
+        self.assertTrue("212" in result)
+        self.assertTrue("213" in result)
+        self.assertTrue("302" in result)
+
+    def test_bottom_right_corner_neighborhood(self):
+        result = get_neighborhood("300")
+
+        self.assertEqual(len(result), 8)
+        self.assertTrue("033" in result)
+        self.assertTrue("122" in result)
+        self.assertTrue("123" in result)
+        self.assertTrue("211" in result)
+        self.assertTrue("301" in result)
+        self.assertTrue("213" in result)
+        self.assertTrue("302" in result)
+        self.assertTrue("303" in result)
+
+    def test_slash_unslashed_key(self):
+        unslashed_key = "01233210"
+
+        result = slash(unslashed_key)
+
+        self.assertEqual(result, "/0/1/2/3/3/2/1/0")
+
+    def test_slash_slashed_key_returns_as_is(self):
+        slashed_key = "/0/1/2/3/3/2/1/0"
+
+        result = slash(slashed_key)
+
+        self.assertEqual(result, "/0/1/2/3/3/2/1/0")
+
+    def test_slash_non_key_str_returns_as_is(self):
+        not_a_key = "This is not a quadkey"
+
+        result = slash(not_a_key)
+
+        self.assertEqual(result, "This is not a quadkey")
+
+    def test_unslash_slashed_key(self):
+        slashed_key = "/0/1/2/3/3/2/1/0"
+
+        result = unslash(slashed_key)
+
+        self.assertEqual(result, "01233210")
+
+    def test_unslash_unslashed_key_returns_as_is(self):
+        unslashed_key = "01233210"
+
+        result = unslash(unslashed_key)
+
+        self.assertEqual(result, "01233210")
+
+    def test_unslash_non_key_str_returns_as_is(self):
+        not_a_key = "This is not a quadkey"
+
+        result = unslash(not_a_key)
+
+        self.assertEqual(result, "This is not a quadkey")
