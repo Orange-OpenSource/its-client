@@ -15,7 +15,7 @@ import logging
 from its_client.mqtt.mqtt_client import MQTTClient
 
 
-class RegionOfResponsibility:
+class RegionOfInterest:
     ZOOM_BASE_DENM = 15
     ZOOM_BASE_CAM = 18
     ZOOM_BASE_CPM = ZOOM_BASE_CAM

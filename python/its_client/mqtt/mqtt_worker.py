@@ -34,7 +34,7 @@ class MqttWorker:
         self.previous_heading = None
         self.previous_heading_step_counter = 0
 
-        self.region = roi.RegionOfResponsibility()
+        self.region = roi.RegionOfInterest()
 
     def step(self) -> bool:
         (
