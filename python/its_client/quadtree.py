@@ -23,30 +23,30 @@ def lat_lng_to_quad_key(latitude, longitude, level_of_detail, slash=False):
     return quad_tree
 
 
-def is_edgy(direction, q):
+def is_edgy(direction, quadkey):
     return (
-        int(q)
+        int(quadkey)
         in {"up": [0, 1], "right": [1, 3], "down": [2, 3], "left": [0, 2]}[direction]
     )
 
 
-def get_up_or_down(q):
-    return str((int(q) + 2) % 4)
+def get_up_or_down(quadkey):
+    return str((int(quadkey) + 2) % 4)
 
 
-def get_right_or_left(q):
-    q_as_int = int(q)
-    if q_as_int % 2 == 0:
-        return str((q_as_int + 1) % 4)
+def get_right_or_left(quadkey):
+    quadkey_as_int = int(quadkey)
+    if quadkey_as_int % 2 == 0:
+        return str((quadkey_as_int + 1) % 4)
     else:
-        return str((q_as_int - 1) % 4)
+        return str((quadkey_as_int - 1) % 4)
 
 
-def get_neighbour(quadtree, direction):
+def get_neighbour(quadkey, direction):
     edge_crossed = False
     result = ""
 
-    for index, q in enumerate(quadtree[::-1]):
+    for index, q in enumerate(quadkey[::-1]):
         if index == 0 or edge_crossed:
             edge_crossed = is_edgy(direction, q)
             result += {
