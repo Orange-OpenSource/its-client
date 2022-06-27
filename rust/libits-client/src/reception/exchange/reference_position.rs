@@ -73,8 +73,8 @@ impl ReferencePosition {
         let p1 = (longitude_coordinate, latitude_coordinate).into();
         let destination = cr.destination(&p1, distance, bearing);
         ReferencePosition {
-            longitude: get_etsi_coordinate(destination.lng()),
-            latitude: get_etsi_coordinate(destination.lat()),
+            longitude: get_etsi_coordinate(destination.x()),
+            latitude: get_etsi_coordinate(destination.y()),
             altitude: self.altitude,
         }
     }
