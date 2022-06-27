@@ -18,7 +18,7 @@ documentation = "https://docs.rs/libits-client"
 repository = "https://github.com/Orange-OpenSource/its-client.git"
 readme = "README.md"
 keywords = ["network", "its", "vehicle", "mqtt", "etsi"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
