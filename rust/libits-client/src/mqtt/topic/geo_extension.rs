@@ -17,7 +17,7 @@ pub struct GeoExtension {
     pub(crate) tiles: Vec<Tile>,
 }
 
-#[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, Hash, PartialEq, PartialOrd)]
 pub(crate) enum Tile {
     Zero = 0,
     One = 1,
@@ -90,6 +90,10 @@ impl GeoExtension {
             ..Default::default()
         }
     }
+
+    fn len(&self) -> usize {
+        self.tiles.len()
+    }
 }
 
 impl str::FromStr for GeoExtension {
@@ -140,6 +144,39 @@ impl fmt::Display for GeoExtension {
     }
 }
 
+impl Ord for GeoExtension {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let matching = self
+            .tiles
+            .iter()
+            .zip(other.tiles.iter())
+            .filter(|&(myself, other)| myself == other)
+            .count();
+
+        if self.len() == matching {
+            if self.len() == other.len() {
+                Ordering::Equal
+            } else {
+                Ordering::Greater
+            }
+        } else if other.len() == matching {
+            Ordering::Less
+        } else if self.len() == other.len() {
+            if let Some(self_significant) = self.tiles.last() {
+                if let Some(other_significant) = other.tiles.last() {
+                    return match self_significant.partial_cmp(other_significant) {
+                        Some(ordering) => ordering,
+                        None => Ordering::Equal,
+                    };
+                }
+            }
+            Ordering::Equal
+        } else {
+            self.len().cmp(&other.len())
+        }
+    }
+}
+
 impl PartialOrd for GeoExtension {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         let matching = self
@@ -169,6 +206,7 @@ impl PartialOrd for GeoExtension {
 
 #[cfg(test)]
 mod tests {
+    use std::cmp::Ordering::{Equal, Greater, Less};
     use std::str::FromStr;
 
     use crate::mqtt::topic::geo_extension::{GeoExtension, Tile};
@@ -417,5 +455,46 @@ mod tests {
         assert_eq!(geo_extension.partial_cmp(&geo_extension2), None);
         geo_extension2 = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/2");
         assert_eq!(geo_extension.partial_cmp(&geo_extension2), None);
+    }
+
+    #[test]
+    fn test_equal_geo_extensions_are_equal() {
+        let twin_1 = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1");
+        let twin_2 = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1");
+
+        assert_eq!(twin_1.cmp(&twin_2), Equal);
+    }
+
+    #[test]
+    fn test_siblings_are_ordered() {
+        let sibling_0 = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/0");
+        let sibling_1 = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1");
+        let sibling_2 = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/2");
+        let sibling_3 = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/3");
+
+        assert_eq!(sibling_0.cmp(&sibling_1), Less);
+        assert_eq!(sibling_0.cmp(&sibling_2), Less);
+        assert_eq!(sibling_0.cmp(&sibling_3), Less);
+
+        assert_eq!(sibling_1.cmp(&sibling_0), Greater);
+        assert_eq!(sibling_1.cmp(&sibling_2), Less);
+        assert_eq!(sibling_1.cmp(&sibling_3), Less);
+
+        assert_eq!(sibling_2.cmp(&sibling_0), Greater);
+        assert_eq!(sibling_2.cmp(&sibling_1), Greater);
+        assert_eq!(sibling_2.cmp(&sibling_3), Less);
+
+        assert_eq!(sibling_3.cmp(&sibling_0), Greater);
+        assert_eq!(sibling_3.cmp(&sibling_1), Greater);
+        assert_eq!(sibling_3.cmp(&sibling_2), Greater);
+    }
+
+    #[test]
+    fn test_deeper_is_lesser() {
+        let less_deep = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0");
+        let deeper = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1");
+
+        assert_eq!(less_deep.cmp(&deeper), Greater);
+        assert_eq!(deeper.cmp(&less_deep), Less);
     }
 }
