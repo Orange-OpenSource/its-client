@@ -15,7 +15,7 @@ import logging
 from its_client.mqtt.mqtt_client import MQTTClient
 
 
-class RegionOfResponsibility:
+class RegionOfInterest:
     ZOOM_BASE_DENM = 15
     ZOOM_BASE_CAM = 18
     ZOOM_BASE_CPM = ZOOM_BASE_CAM
@@ -34,18 +34,23 @@ class RegionOfResponsibility:
         self.cam_right = None
         self.cam_up = None
         self.cam_down = None
+        self.cam_subscription = []
+
         # CPM
         self.cpm_position = None
         self.cpm_left = None
         self.cpm_right = None
         self.cpm_up = None
         self.cpm_down = None
+        self.cpm_subscription = []
+
         # DENM
         self.denm_position = None
         self.denm_left = None
         self.denm_right = None
         self.denm_up = None
         self.denm_down = None
+        self.denm_subscription = []
 
     def update_subscription(
         self, latitude, longitude, speed: float, client: MQTTClient
@@ -66,9 +71,16 @@ class RegionOfResponsibility:
         new_position = quadtree.lat_lng_to_quad_key(
             latitude, longitude, zoom_base, True
         )
-        self.cam_position = self._update_subscription(
-            new_position, self.cam_position, client.CAM_RECEPTION_QUEUE, client
-        )
+        if new_position != self.cam_position:
+            self.cam_position = self._update_subscription(
+                new_position, self.cam_position, client.CAM_RECEPTION_QUEUE, client
+            )
+            self._update_neighborhood_subscription(
+                set(self.cam_subscription),
+                set(quadtree.get_neighborhood(self.cam_position)),
+                client.CAM_RECEPTION_QUEUE,
+                client,
+            )
 
     def _update_cpm_subscription(
         self, latitude, longitude, speed: float, client: MQTTClient
@@ -77,9 +89,16 @@ class RegionOfResponsibility:
         new_position = quadtree.lat_lng_to_quad_key(
             latitude, longitude, zoom_base, True
         )
-        self.cpm_position = self._update_subscription(
-            new_position, self.cpm_position, client.CPM_RECEPTION_QUEUE, client
-        )
+        if new_position != self.cpm_position:
+            self.cpm_position = self._update_subscription(
+                new_position, self.cpm_position, client.CPM_RECEPTION_QUEUE, client
+            )
+            self._update_neighborhood_subscription(
+                set(self.cpm_subscription),
+                set(quadtree.get_neighborhood(self.cpm_position)),
+                client.CPM_RECEPTION_QUEUE,
+                client,
+            )
 
     def _update_denm_subscription(
         self, latitude, longitude, speed: float, client: MQTTClient
@@ -88,9 +107,16 @@ class RegionOfResponsibility:
         new_position = quadtree.lat_lng_to_quad_key(
             latitude, longitude, zoom_base, True
         )
-        self.denm_position = self._update_subscription(
-            new_position, self.denm_position, client.DENM_RECEPTION_QUEUE, client
-        )
+        if new_position != self.denm_position:
+            self.denm_position = self._update_subscription(
+                new_position, self.denm_position, client.DENM_RECEPTION_QUEUE, client
+            )
+            self._update_neighborhood_subscription(
+                set(self.denm_subscription),
+                set(quadtree.get_neighborhood(self.denm_position)),
+                client.DENM_RECEPTION_QUEUE,
+                client,
+            )
 
     @staticmethod
     def _correct_zoom_level(speed: float, level_of_detail: int) -> int:
@@ -119,3 +145,24 @@ class RegionOfResponsibility:
                 client.unsubscribe(old_topic)
             old_position = new_position
         return old_position
+
+    @staticmethod
+    def _update_neighborhood_subscription(
+        current_subscription: set,
+        current_neighbors: set,
+        root_queue: str,
+        client: MQTTClient,
+    ):
+        exclusion = current_neighbors ^ current_subscription
+        unsubscribe_to = exclusion & current_subscription
+        subscribe_to = exclusion & current_neighbors
+
+        for key in subscribe_to:
+            topic = f"{root_queue}/+{quadtree.slash(key)}/#"
+            logging.debug(f"Subscribing to neighbour topic: {topic}")
+            client.subscribe(topic)
+
+        for key in unsubscribe_to:
+            topic = f"{root_queue}/+{quadtree.slash(key)}/#"
+            logging.debug(f"Unsubscribing to neighbour topic: {topic}")
+            client.unsubscribe(topic)

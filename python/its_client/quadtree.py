@@ -9,6 +9,8 @@
 # [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org)
 # [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project
 # for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+import logging
+
 from pygeotile.tile import Tile
 
 
@@ -21,30 +23,30 @@ def lat_lng_to_quad_key(latitude, longitude, level_of_detail, slash=False):
     return quad_tree
 
 
-def is_edgy(direction, q):
+def is_edgy(direction, quadkey):
     return (
-        int(q)
+        int(quadkey)
         in {"up": [0, 1], "right": [1, 3], "down": [2, 3], "left": [0, 2]}[direction]
     )
 
 
-def get_up_or_down(q):
-    return str((int(q) + 2) % 4)
+def get_up_or_down(quadkey):
+    return str((int(quadkey) + 2) % 4)
 
 
-def get_right_or_left(q):
-    q_as_int = int(q)
-    if q_as_int % 2 == 0:
-        return str((q_as_int + 1) % 4)
+def get_right_or_left(quadkey):
+    quadkey_as_int = int(quadkey)
+    if quadkey_as_int % 2 == 0:
+        return str((quadkey_as_int + 1) % 4)
     else:
-        return str((q_as_int - 1) % 4)
+        return str((quadkey_as_int - 1) % 4)
 
 
-def get_neighbour(quadtree, direction):
+def get_neighbour(quadkey, direction):
     edge_crossed = False
     result = ""
 
-    for index, q in enumerate(quadtree[::-1]):
+    for index, q in enumerate(quadkey[::-1]):
         if index == 0 or edge_crossed:
             edge_crossed = is_edgy(direction, q)
             result += {
@@ -57,6 +59,48 @@ def get_neighbour(quadtree, direction):
             result += q
 
     return result[::-1]
+
+
+def get_neighborhood(quadkey):
+    """
+    Returns surrounding quadkeys list
+
+    :param quadkey:     Quadkey to get the neighborhood of
+    :return:            a list containing the quadkeys next to the one provided
+    """
+    neighbors = []
+
+    quadkey = unslash(quadkey)
+
+    up = get_neighbour(quadkey, "up")
+    down = get_neighbour(quadkey, "down")
+
+    neighbors.append(get_neighbour(up, "left"))
+    neighbors.append(up)
+    neighbors.append(get_neighbour(up, "right"))
+    neighbors.append(get_neighbour(quadkey, "left"))
+    neighbors.append(get_neighbour(quadkey, "right"))
+    neighbors.append(get_neighbour(down, "left"))
+    neighbors.append(down)
+    neighbors.append(get_neighbour(down, "right"))
+
+    return neighbors
+
+
+def slash(unslashed_quadkey: str) -> str:
+    if unslashed_quadkey.isdigit():
+        return "/" + "/".join(unslashed_quadkey)
+    else:
+        logging.debug(f"Key {unslashed_quadkey} is not unslashed, returning as is")
+        return unslashed_quadkey
+
+
+def unslash(slashed_quadkey: str) -> str:
+    if "/" in slashed_quadkey:
+        return slashed_quadkey.replace("/", "")
+    else:
+        logging.debug(f"Key {slashed_quadkey} is not slashed, returning as is")
+        return slashed_quadkey
 
 
 # This is the translation of the Java code given by Mathieu on 2019/11/15.
