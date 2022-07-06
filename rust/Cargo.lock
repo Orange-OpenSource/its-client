@@ -392,7 +392,7 @@ version = "1.1.0"
 dependencies = [
  "clap",
  "flexi_logger",
- "libits-client",
+ "libits-client 1.1.1",
  "libits-copycat",
  "log",
  "pretty_env_logger",
@@ -424,6 +424,26 @@ checksum = "349d5a591cd28b49e1d1037471617a32ddcda5731b99419008085f72d5a53836"
 [[package]]
 name = "libits-client"
 version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7c09c3fa2f400e1ee62be652259ae7267dbf9969a7fe32c0af7572cba424704"
+dependencies = [
+ "async-channel",
+ "cheap-ruler",
+ "integer-sqrt",
+ "log",
+ "navigation",
+ "pin-utils",
+ "rumqttc",
+ "rustls",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "tokio",
+]
+
+[[package]]
+name = "libits-client"
+version = "1.2.0"
 dependencies = [
  "async-channel",
  "cheap-ruler",
@@ -444,7 +464,7 @@ name = "libits-copycat"
 version = "1.1.0"
 dependencies = [
  "chrono",
- "libits-client",
+ "libits-client 1.1.1",
  "log",
  "timer",
 ]

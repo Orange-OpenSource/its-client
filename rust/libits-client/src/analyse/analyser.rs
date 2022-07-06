@@ -12,10 +12,10 @@ use crate::analyse::configuration::Configuration;
 use crate::analyse::item::Item;
 use crate::reception::exchange::Exchange;
 
-pub trait Analyser {
+pub trait Analyser<T> {
     fn new(configuration: Arc<Configuration>) -> Self
     where
         Self: Sized;
 
-    fn analyze(&mut self, item: Item<Exchange>) -> Vec<Item<Exchange>>;
+    fn analyze(&mut self, item: Item<Exchange>) -> T;
 }

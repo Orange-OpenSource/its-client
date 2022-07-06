@@ -44,7 +44,7 @@ features = ["full", "macros"]
 
 [dependencies.libits-client]
 version = "1.1"
-path="../libits-client"
+#path="../libits-client"
 
 [dependencies.libits-copycat]
 version = "1.1"
