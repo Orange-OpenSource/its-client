@@ -9,5 +9,5 @@
 pub mod analyse;
 pub mod monitor;
 pub mod mqtt;
-pub mod pipeline;
+pub mod pipelines;
 pub mod reception;

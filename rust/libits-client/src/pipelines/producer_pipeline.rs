@@ -6,6 +6,7 @@
 //
 // Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+
 use std::any::Any;
 use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver};
@@ -33,7 +34,7 @@ use crate::reception::information::Information;
 use crate::reception::typed::Typed;
 use crate::reception::Reception;
 
-pub async fn run<T: Analyser>(
+pub async fn run<T: Analyser<Vec<Item<Exchange>>>>(
     mqtt_host: &str,
     mqtt_port: u16,
     mqtt_client_id: &str,
@@ -274,7 +275,7 @@ pub fn unbox<T>(value: Box<T>) -> T {
     *value
 }
 
-fn analyser_generate_thread<T: Analyser>(
+fn analyser_generate_thread<T: Analyser<Vec<Item<Exchange>>>>(
     configuration: Arc<Configuration>,
     exchange_receiver: Receiver<Item<Exchange>>,
 ) -> (Receiver<(Item<Exchange>, Option<Cause>)>, JoinHandle<()>) {
@@ -305,7 +306,7 @@ fn analyser_generate_thread<T: Analyser>(
     (analyser_receiver, handle)
 }
 
-fn filter_thread<T: Analyser>(
+fn filter_thread<T: Analyser<Vec<Item<Exchange>>>>(
     configuration: Arc<Configuration>,
     exchange_receiver: Receiver<(Item<Exchange>, Option<Cause>)>,
 ) -> (
