@@ -53,13 +53,13 @@ RUN groupadd -r itsclient && useradd --no-log-init -r -g itsclient itsclient && 
     mkdir /usr/src/app/log && \
     printf "Version 1.2\n" > /usr/src/app/log/RELEASE
 
-COPY --from=builder --chown=itsclient:itsclient /usr/src/app/dist/its_client-1.2.0-py3-none-any.whl .
+COPY --from=builder --chown=itsclient:itsclient /usr/src/app/dist/its_client-1.2.1-py3-none-any.whl .
 
 COPY docker-entrypoint.sh .
 
 RUN chown -R itsclient:itsclient /usr/src/app && \
     chmod -R ug+rwx /usr/src/app && \
-    pip install its_client-1.2.0-py3-none-any.whl
+    pip install its_client-1.2.1-py3-none-any.whl
 
 # no parameters today, just to check de lint
 CMD [""]
