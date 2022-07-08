@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["CollectivePerceptionMessage",""],["DetectionArea",""],["IntersectionReferenceId",""],["ManagementContainer",""],["OriginatingRSUContainer",""],["OriginatingVehicleContainer",""],["OriginatingVehicleContainerConfidence",""],["SensorInformation",""],["StationDataContainer",""],["VehicleSensor",""],["VehicleSensorProperty",""]]});

@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["etsi_timestamp","Unit: millisecond since ETSI epoch (2004/01/01, so 1072915195000). Time at which a new DENM, an update DENM or a cancellation DENM is generated. utcStartOf2004(0), oneMillisecAfterUTCStartOf2004(1)"],["now",""]],"trait":[["Mortal",""]]});
