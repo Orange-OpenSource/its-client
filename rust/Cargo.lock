@@ -213,9 +213,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.9"
+version = "0.8.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ff1f980957787286a554052d03c7aee98d99cc32e09f6d45f0a814133c87978"
+checksum = "7d82ee10ce34d7bc12c2122495e7593a9c41347ecdd64185af4ecf72cb1a7f83"
 dependencies = [
  "cfg-if",
  "once_cell",
@@ -323,9 +323,9 @@ checksum = "0c09fd04b7e4073ac7156a9539b57a484a8ea920f79c7c675d05d289ab6110d3"
 
 [[package]]
 name = "geo-types"
-version = "0.7.5"
+version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5696e8138fbc44f64edc88b423afbe5a8f635df003376b3a57087e61a8ae7b66"
+checksum = "d9805fbfcea97de816e6408e938603241879cc41eea3fba3f84f122f4f6f9c54"
 dependencies = [
  "num-traits",
 ]
@@ -388,7 +388,7 @@ checksum = "112c678d4050afce233f4f2852bb2eb519230b3cf12f33585275537d7e41578d"
 
 [[package]]
 name = "its-client"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "clap",
  "flexi_logger",
@@ -423,7 +423,7 @@ checksum = "349d5a591cd28b49e1d1037471617a32ddcda5731b99419008085f72d5a53836"
 
 [[package]]
 name = "libits-client"
-version = "1.1.1"
+version = "1.2.0"
 dependencies = [
  "async-channel",
  "cheap-ruler",
@@ -441,7 +441,7 @@ dependencies = [
 
 [[package]]
 name = "libits-copycat"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "chrono",
  "libits-client",
@@ -553,9 +553,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.12.0"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7709cef83f0c1f58f666e746a08b21e0085f7440fa6a29cc194d68aac97a4225"
+checksum = "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1"
 
 [[package]]
 name = "parking_lot"
@@ -690,9 +690,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.5.6"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d83f127d94bdbcda4c8cc2e50f6f84f4b611f69c902699ca385a39c3a75f9ff1"
+checksum = "4c4eb3267174b8c6c2f654116623910a0fef09c4753f8dd83db29c48a0df988b"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -701,9 +701,9 @@ dependencies = [
 
 [[package]]
 name = "regex-syntax"
-version = "0.6.26"
+version = "0.6.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49b3de9ec5dc0a3417da371aab17d729997c15010e7fd24ff707773a33bddb64"
+checksum = "a3f87b73ce11b1619a3c6332f45341e0047173771e8b8b73f87bfeefb7b56244"
 
 [[package]]
 name = "ring"
@@ -775,18 +775,18 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.137"
+version = "1.0.138"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61ea8d54c77f8315140a05f4c7237403bf38b72704d031543aa1d16abbf517d1"
+checksum = "1578c6245786b9d168c5447eeacfb96856573ca56c9d68fdcf394be134882a47"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.137"
+version = "1.0.138"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f26faba0c3959972377d3b2d306ee9f71faee9714294e41bb777f83f88578be"
+checksum = "023e9b1467aef8a10fb88f25611870ada9800ef7e22afce356bb0d2387b6f27c"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -795,9 +795,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.81"
+version = "1.0.82"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b7ce2b32a1aed03c558dc61a5cd328f15aff2dbc17daad8fb8af04d2100e15c"
+checksum = "82c2c1fdcd807d1098552c5b9a36e425e42e9fbd7c6a37a8425f390f781f7fa7"
 dependencies = [
  "itoa",
  "ryu",
@@ -838,9 +838,9 @@ dependencies = [
 
 [[package]]
 name = "smallvec"
-version = "1.8.0"
+version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2dd574626839106c320a323308629dcb1acfc96e32a8cba364ddc61ac23ee83"
+checksum = "2fd0db749597d91ff862fd1d55ea87f7855a744a8425a64695b6fca237d1dad1"
 
 [[package]]
 name = "socket2"

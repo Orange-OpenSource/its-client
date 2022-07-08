@@ -13,7 +13,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="its_client",
-    version="1.2.0",
+    version="1.2.1",
     author="Frederic GARDES",
     author_email="frederic(dot)gardes(at)orange(dot)com",
     maintainer="Frederic GARDES",
