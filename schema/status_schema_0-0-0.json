@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/status",
+  "description": "Status JSON schema",
+  "type": "object",
+  "required": [
+    "version",
+    "id",
+    "type",
+    "timestamp"
+  ],
+  "properties": {
+    "version": {
+      "description": "version of the format of this JSON message",
+      "type": "string",
+      "const": "0.0.0"
+    },
+    "id": {
+      "description": "unique id all over the world for this device",
+      "type": "string"
+    },
+    "type": {
+      "description": "type of the server",
+      "type": "string",
+      "enum": [ "obu", "other" ]
+    },
+    "timestamp": {
+      "description": "date the information was generated, in seconds since 1970-01-01 00:00:00 +00:00, with arbitrary sub-second precision",
+      "type": "number",
+      "minimum": 0.0
+    }
+  }
+}
