@@ -8,7 +8,8 @@
     "id",
     "type",
     "timestamp",
-    "system"
+    "system",
+    "time_sources"
   ],
   "properties": {
     "version": {
@@ -85,6 +86,99 @@
           "maxItems": 3
         }
       }
+    },
+    "time_sources": {
+      "description": "status of time-keeping services",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "oneOf": [
+          { "$ref": "#/$defs/ntpTimeSource" },
+          { "$ref": "#/$defs/ppsTimeSource" },
+          { "$ref": "#/$defs/nmeaTimeSource" }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "genericTimeSource": {
+      "type": "object",
+      "required": [
+        "type",
+        "stratum",
+        "state",
+        "error"
+      ],
+      "properties": {
+        "type": {
+          "description": "type of the time source",
+          "type": "string",
+          "enum": [ "ntp", "pps", "nmea" ]
+        },
+        "stratum": {
+          "description": "stratum of the clock source",
+          "type": "integer",
+          "minimum": 0
+        },
+        "state": {
+          "description": "state of the source",
+          "type": "string",
+          "enum": [ "best", "combined", "not_combined", "maybe_error", "unstable", "unusable" ]
+        },
+        "error": {
+          "description": "estimated error in seconds, with arbitrary sub-second precision",
+          "type": "number"
+        }
+      }
+    },
+    "ntpTimeSource": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/genericTimeSource" },
+        {
+          "type": "object",
+          "required": [ "host" ],
+          "properties": {
+            "type": { "const": "ntp" },
+            "stratum": { "minimum": 1 },
+            "host": {
+              "description": "IP or hostname of the NTP server",
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "ppsTimeSource": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/genericTimeSource" },
+        {
+          "type": "object",
+          "required": [ "label" ],
+          "properties": {
+            "type": { "const": "pps" },
+            "stratum": { "const": 0 },
+            "label": {
+              "description": "PPS label/name",
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "nmeaTimeSource": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/genericTimeSource" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "nmea" },
+            "stratum": { "const": 0 }
+          }
+        }
+      ]
     }
   }
 }
