@@ -7,7 +7,8 @@
     "version",
     "id",
     "type",
-    "timestamp"
+    "timestamp",
+    "system"
   ],
   "properties": {
     "version": {
@@ -28,6 +29,62 @@
       "description": "date the information was generated, in seconds since 1970-01-01 00:00:00 +00:00, with arbitrary sub-second precision",
       "type": "number",
       "minimum": 0.0
+    },
+    "system": {
+      "description": "system low-level info",
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "hardware",
+        "os_release",
+        "memory",
+        "storage",
+        "cpu_load"
+      ],
+      "properties": {
+        "hardware": {
+          "description": "type of hardware",
+          "type": "string",
+          "examples": [ "vtc6221", "vtc7251", "rpi2" ]
+        },
+        "os_release": {
+          "description": "a key-value representation of the os-release of the running OS",
+          "type": "object",
+          "$comment": "all keys of os-release are optional; see https://www.freedesktop.org/software/systemd/man/os-release.html",
+          "additionalProperties": true,
+          "properties": {
+            "NAME": { "type": "string" },
+            "VERSION": { "type": "string" },
+            "ID": { "type": "string" },
+            "VERSION_ID": { "type": "string" },
+            "PRETTY_NAME": { "type": "string" }
+          }
+        },
+        "memory": {
+          "description": "RAM usage, in bytes, as a 2-tuple: [total_ram, available_ram]",
+          "type": "array",
+          "items": { "type": "integer" },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "storage": {
+          "description": "writable storage for data, as a 2-tuple: [total_space, free_space]",
+          "type": "array",
+          "items": { "type": "integer" },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "cpu_load": {
+          "description": "CPU load, as a 3-tuple: [1min_load, 5min_load, 15min_load]",
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0.0
+          },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      }
     }
   }
 }
