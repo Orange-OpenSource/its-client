@@ -9,7 +9,8 @@
     "type",
     "timestamp",
     "system",
-    "time_sources"
+    "time_sources",
+    "cellular"
   ],
   "properties": {
     "version": {
@@ -97,6 +98,62 @@
           { "$ref": "#/$defs/ppsTimeSource" },
           { "$ref": "#/$defs/nmeaTimeSource" }
         ]
+      }
+    },
+    "cellular": {
+      "description": "cellular connections",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "cellular connection status",
+        "required": [
+          "hardware"
+        ],
+        "properties": {
+          "hardware": {
+            "description": "harddware informatsion",
+            "type": "object",
+            "properties": {
+              "vendor": { "type": "string" },
+              "model": { "type": "string" },
+              "revision": { "type": "string" }
+            }
+          },
+          "operator": {
+            "description": "cellular operator",
+            "type": "object",
+            "properties": {
+              "code": { "type": "string" },
+              "name": { "type": "string" }
+            }
+          },
+          "connection": {
+            "description": "connection details",
+            "type": "object",
+            "properties": {
+              "technology": {
+                "type": "string",
+                "examples": [
+                  "gsm", "cdma1x", "evdo", "umts", "lte", "5G"
+                ]
+              },
+              "signal": {
+                "description": "signal quality metrics",
+                "type": "object",
+                "properties": {
+                  "ecio": { "type": "number" },
+                  "io": { "type": "number" },
+                  "rscp": { "type": "number" },
+                  "rsrp": { "type": "number" },
+                  "rsrq": { "type": "number" },
+                  "rssi": { "type": "number" },
+                  "sinr": { "type": "number" },
+                  "snr": { "type": "number" }
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
