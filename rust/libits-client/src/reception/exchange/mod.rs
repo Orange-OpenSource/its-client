@@ -496,235 +496,256 @@ mod tests {
     }
 
     fn basic_cpm() -> &'static str {
-        return r#"
-{
-  "type": "cpm",
-  "origin": "self",
-  "version": "1.0.0",
-  "source_uuid": "uuid1",
-  "timestamp": 1574778515425,
-  "message": {
-    "protocol_version": 1,
-    "station_id": 12345,
-    "message_id": 14,
-    "generation_delta_time": 65535,
-    "management_container": {
-      "station_type": 5,
-      "reference_position": {
-        "latitude": 426263556,
-        "longitude": -82492123,
-        "altitude": 800001
-      },
-      "confidence": {
-        "position_confidence_ellipse": {
-          "semi_major_confidence": 4095,
-          "semi_minor_confidence": 4095,
-          "semi_major_orientation": 3601
-        },
-        "altitude": 15
-      }
-    },
-    "number_of_perceived_objects": 1
-  }
-}"#;
+        return r#"{
+          "type": "cpm",
+          "origin": "self",
+          "version": "1.1.3",
+          "source_uuid": "uuid1",
+          "timestamp": 1574778515425,
+          "message": {
+            "protocol_version": 1,
+            "station_id": 12345,
+            "generation_delta_time": 65535,
+            "management_container": {
+              "station_type": 5,
+              "reference_position": {
+                "latitude": 426263556,
+                "longitude": -82492123,
+                "altitude": 800001
+              },
+              "confidence": {
+                "position_confidence_ellipse": {
+                  "semi_major_confidence": 4095,
+                  "semi_minor_confidence": 4095,
+                  "semi_major_orientation": 3601
+                },
+                "altitude": 15
+              }
+            }
+          }
+        }"#;
     }
 
     fn standard_cpm() -> &'static str {
-        return r#"
-{
-  "type": "cpm",
-  "origin": "self",
-  "version": "1.0.0",
-  "source_uuid": "uuid1",
-  "timestamp": 1574778515425,
-  "message": {
-    "protocol_version": 1,
-    "station_id": 12345,
-    "message_id": 14,
-    "generation_delta_time": 65535,
-    "management_container": {
-      "station_type": 5,
-      "reference_position": {
-        "latitude": 426263556,
-        "longitude": -82492123,
-        "altitude": 800001
-      },
-      "confidence": {
-        "position_confidence_ellipse": {
-          "semi_major_confidence": 4095,
-          "semi_minor_confidence": 4095,
-          "semi_major_orientation": 3601
-        },
-        "altitude": 15
-      }
-    },
-    "station_data_container": {
-      "originating_vehicle_container": {
-        "heading": 180,
-        "speed": 1600,
-        "confidence": {
-          "heading": 127,
-          "speed": 127
-        }
-      }
-    },
-    "sensor_information_container": [
-      {
-        "sensor_id": 1,
-        "type": 3,
-        "detection_area": {
-          "vehicle_sensor": {
-            "ref_point_id": 0,
-            "x_sensor_offset": -20,
-            "y_sensor_offset": 20,
-            "vehicle_sensor_property_list": [
-              {
-                "range": 5000,
-                "horizontal_opening_angle_start": 600,
-                "horizontal_opening_angle_end": 600
-              }
-            ]
-          }
-        }
-      }
-    ],
-        "perceived_object_container": [
-      {
-        "object_id": 0,
-        "time_of_measurement": 50,
-        "object_confidence": 10,
-        "distance": {
-          "x_distance": 400,
-          "y_distance": 100
-        },
-        "distance_confidence": {
-          "x_distance": 102,
-          "y_distance": 102
-        },
-        "speed": {
-          "x_speed": 1400,
-          "y_speed": 500
-        },
-        "speed_confidence": {
-          "x_speed": 127,
-          "y_speed": 127
-        },
-        "object_ref_point": 0
-      }
-    ],
-    "number_of_perceived_objects": 1
-  }
-}"#;
+        return r#"{
+            "type": "cpm",
+            "origin": "self",
+            "version": "1.1.3",
+            "source_uuid": "uuid1",
+            "timestamp": 1574778515425,
+            "message": {
+                "protocol_version": 1,
+                "station_id": 12345,
+                "generation_delta_time": 65535,
+                "management_container": {
+                    "station_type": 5,
+                    "reference_position": {
+                        "latitude": 426263556,
+                        "longitude": -82492123,
+                        "altitude": 800001
+                    },
+                    "confidence": {
+                        "position_confidence_ellipse": {
+                            "semi_major_confidence": 4095,
+                            "semi_minor_confidence": 4095,
+                            "semi_major_orientation": 3601
+                        },
+                        "altitude": 15
+                    }
+                },
+                "station_data_container": {
+                    "originating_vehicle_container": {
+                        "heading": 180,
+                        "speed": 1600,
+                        "confidence": {
+                            "heading": 127,
+                            "speed": 127
+                        }
+                    }
+                },
+                "sensor_information_container": [{
+                    "sensor_id": 1,
+                    "type": 3,
+                    "detection_area": {
+                        "vehicle_sensor": {
+                            "ref_point_id": 0,
+                            "x_sensor_offset": -20,
+                            "y_sensor_offset": 20,
+                            "vehicle_sensor_property_list": [{
+                                "range": 5000,
+                                "horizontal_opening_angle_start": 600,
+                                "horizontal_opening_angle_end": 600
+                            }]
+                        }
+                    }
+                }],
+                "perceived_object_container": [{
+                    "object_id": 0,
+                    "time_of_measurement": 50,
+                    "confidence": {
+                        "x_distance": 102,
+                        "y_distance": 102,
+                        "x_speed": 127,
+                        "y_speed": 127,
+                        "object": 10
+                    },
+                    "x_distance": 400,
+                    "y_distance": 100,
+                    "x_speed": 1400,
+                    "y_speed": 500,
+                    "object_age": 1500
+                }]
+            }
+        }"#;
     }
 
     fn full_cpm() -> &'static str {
-        return r#"
-{
-  "type": "cpm",
-  "origin": "self",
-  "version": "1.0.0",
-  "source_uuid": "uuid1",
-  "timestamp": 1574778515425,
-  "message": {
-    "protocol_version": 1,
-    "station_id": 12345,
-    "message_id": 14,
-    "generation_delta_time": 65535,
-    "management_container": {
-      "station_type": 5,
-      "reference_position": {
-        "latitude": 426263556,
-        "longitude": -82492123,
-        "altitude": 800001
-      },
-      "confidence": {
-        "position_confidence_ellipse": {
-          "semi_major_confidence": 4095,
-          "semi_minor_confidence": 4095,
-          "semi_major_orientation": 3601
-        },
-        "altitude": 15
-      }
-    },
-    "station_data_container": {
-      "originating_vehicle_container": {
-        "heading": 180,
-        "speed": 1600,
-        "drive_direction": 0,
-        "vehicle_length": 31,
-        "vehicle_width": 18,
-        "longitudinal_acceleration": 8,
-        "yaw_rate": 4,
-        "lateral_acceleration": 2,
-        "vertical_acceleration": 1,
-        "confidence": {
-          "heading": 127,
-          "speed": 127,
-          "vehicle_length": 3,
-          "yaw_rate": 2,
-          "longitudinal_acceleration": 12,
-          "lateral_acceleration": 13,
-          "vertical_acceleration": 14
-        }
-      },
-      "originating_rsu_container": {
-        "intersection_reference_id": {
-          "road_regulator_id": 31,
-          "intersection_id": 31470
-        },
-        "road_segment_reference_id": 124
-      }
-    },
-    "sensor_information_container": [
-      {
-        "sensor_id": 1,
-        "type": 3,
-        "detection_area": {
-          "vehicle_sensor": {
-            "ref_point_id": 0,
-            "x_sensor_offset": -20,
-            "y_sensor_offset": 20,
-            "z_sensor_offset": 0,
-            "vehicle_sensor_property_list": [
-              {
-                "range": 5000,
-                "horizontal_opening_angle_start": 600,
-                "horizontal_opening_angle_end": 600,
-                "vertical_opening_angle_start": 300,
-                "vertical_opening_angle_end": 300
-              }
-            ]
-          }
-        }
-      }
-    ],
-    "perceived_object_container": [
-      {
-        "object_id": 0,
-        "time_of_measurement": 50,
-        "object_confidence": 10,
-        "distance": {
-          "x_distance": 400,
-          "y_distance": 100
-        },
-        "distance_confidence": {
-          "x_distance": 102,
-          "y_distance": 102
-        },
-        "speed": {
-          "x_speed": 1400,
-          "y_speed": 500
-        },
-        "speed_confidence": {
-          "x_speed": 127,
-          "y_speed": 127
-        },
-        "object_ref_point": 0
-      }
-    ],
-    "number_of_perceived_objects": 1
-  }
-}"#;
+        return r#"{
+            "type": "cpm",
+            "origin": "self",
+            "version": "1.1.3",
+            "source_uuid": "uuid1",
+            "timestamp": 1574778515425,
+            "message": {
+                "protocol_version": 255,
+                "station_id": 4294967295,
+                "generation_delta_time": 65535,
+                "management_container": {
+                    "station_type": 254,
+                    "reference_position": {
+                        "latitude": 426263556,
+                        "longitude": -82492123,
+                        "altitude": 800001
+                    },
+                    "confidence": {
+                        "position_confidence_ellipse": {
+                            "semi_major_confidence": 4095,
+                            "semi_minor_confidence": 4095,
+                            "semi_major_orientation": 3601
+                        },
+                        "altitude": 15
+                    }
+                },
+                "station_data_container": {
+                    "originating_vehicle_container": {
+                        "heading": 180,
+                        "speed": 1600,
+                        "drive_direction": 0,
+                        "vehicle_length": 31,
+                        "vehicle_width": 18,
+                        "longitudinal_acceleration": -160,
+                        "yaw_rate": -32766,
+                        "lateral_acceleration": -2,
+                        "vertical_acceleration": -1,
+                        "confidence": {
+                            "heading": 127,
+                            "speed": 127,
+                            "vehicle_length": 3,
+                            "yaw_rate": 2,
+                            "longitudinal_acceleration": 12,
+                            "lateral_acceleration": 13,
+                            "vertical_acceleration": 14
+                        }
+                    }
+                },
+                "sensor_information_container": [{
+                    "sensor_id": 1,
+                    "type": 3,
+                    "detection_area": {
+                        "vehicle_sensor": {
+                            "ref_point_id": 255,
+                            "x_sensor_offset": -3094,
+                            "y_sensor_offset": -1000,
+                            "z_sensor_offset": 1000,
+                            "vehicle_sensor_property_list": [{
+                                "range": 10000,
+                                "horizontal_opening_angle_start": 3601,
+                                "horizontal_opening_angle_end": 3601,
+                                "vertical_opening_angle_start": 3601,
+                                "vertical_opening_angle_end": 3601
+                            }]
+                        }
+                    }
+                }],
+                "perceived_object_container": [{
+                    "object_id": 0,
+                    "time_of_measurement": 50,
+                    "confidence": {
+                        "x_distance": 102,
+                        "y_distance": 102,
+                        "x_speed": 7,
+                        "y_speed": 7,
+                        "object": 10
+                    },
+                    "x_distance": 400,
+                    "y_distance": 100,
+                    "z_distance": 50,
+                    "x_speed": 1400,
+                    "y_speed": 500,
+                    "z_speed": 0,
+                    "object_age": 1500,
+                    "object_ref_point": 8,
+                    "x_acceleration": -160,
+                    "y_acceleration": 0,
+                    "z_acceleration": 161,
+                    "roll_angle": 0,
+                    "pitch_angle": 3600,
+                    "yaw_angle": 3601,
+                    "roll_rate": -32766,
+                    "pitch_rate": 0,
+                    "yaw_rate": 32767,
+                    "roll_acceleration": -32766,
+                    "pitch_acceleration": 0,
+                    "yaw_acceleration": 32767,
+                    "lower_triangular_correlation_matrix_columns": [
+                        [-100, -99, -98],
+                        [0, 1, 2],
+                        [98, 99, 100]
+                    ],
+                    "planar_object_dimension_1": 1023,
+                    "planar_object_dimension_2": 1023,
+                    "vertical_object_dimension": 1023,
+                    "sensor_id_list": [1, 2, 10, 100, 255],
+                    "dynamic_status": 2,
+                    "classification": [{
+                        "object_class": {
+                            "vehicle": 10
+                        },
+                        "confidence": 101
+                    }, {
+                        "object_class": {
+                            "single_vru": {
+                                "pedestrian": 2
+                            }
+                        },
+                        "confidence": 25
+                    }, {
+                        "object_class": {
+                            "vru_group": {
+                                "group_size": 12,
+                                "group_type": {
+                                    "pedestrian": true,
+                                    "bicyclist": false,
+                                    "motorcyclist": false,
+                                    "animal": true
+                                },
+                                "cluster_id": 255
+                            }
+                        },
+                        "confidence": 64
+                    }, {
+                        "object_class": {
+                            "other": 1
+                        },
+                        "confidence": 0
+                    }],
+                    "matched_position": {
+                        "lane_id": 255,
+                        "longitudinal_lane_position": 32767
+                    }
+                }]
+            }
+        }"#;
     }
 
     fn bad_cam_without_timestamp() -> &'static str {
@@ -1039,7 +1060,7 @@ mod tests {
                     .as_ref()
                     .unwrap()
                     .x_sensor_offset,
-                -20
+                -3094
             );
             assert_eq!(
                 serde_json::to_string(&cpm).unwrap(),

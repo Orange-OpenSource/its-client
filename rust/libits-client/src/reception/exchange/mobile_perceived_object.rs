@@ -34,16 +34,13 @@ impl MobilePerceivedObject {
     ) -> Self {
         let compute_mobile_id = compute_id(perceived_object.object_id, cpm_station_id);
         let computed_reference_position = compute_position(
-            perceived_object.distance.x_distance,
-            perceived_object.distance.y_distance,
+            perceived_object.x_distance,
+            perceived_object.y_distance,
             cpm_position,
             cpm_heading,
         );
-        let computed_speed = compute_speed(
-            perceived_object.speed.x_speed,
-            perceived_object.speed.y_speed,
-        );
-        let computed_heading = compute_heading(perceived_object.distance.y_distance, cpm_heading);
+        let computed_speed = compute_speed(perceived_object.x_speed, perceived_object.y_speed);
+        let computed_heading = compute_heading(perceived_object.y_distance, cpm_heading);
 
         Self {
             perceived_object,
@@ -133,7 +130,7 @@ mod tests {
     use crate::reception::exchange::mobile_perceived_object::{
         compute_heading, compute_id, compute_position, MobilePerceivedObject,
     };
-    use crate::reception::exchange::perceived_object::{Distance, PerceivedObject};
+    use crate::reception::exchange::perceived_object::PerceivedObject;
     use crate::reception::exchange::reference_position::ReferencePosition;
 
     #[test]
@@ -205,10 +202,8 @@ mod tests {
             MobilePerceivedObject::new(
                 PerceivedObject {
                     object_id: 1,
-                    distance: Distance {
-                        x_distance: 50000,
-                        y_distance: 10000,
-                    },
+                    x_distance: 50000,
+                    y_distance: 10000,
                     ..Default::default()
                 },
                 10,
@@ -222,10 +217,8 @@ mod tests {
             MobilePerceivedObject {
                 perceived_object: PerceivedObject {
                     object_id: 1,
-                    distance: Distance {
-                        x_distance: 50000,
-                        y_distance: 10000,
-                    },
+                    x_distance: 50000,
+                    y_distance: 10000,
                     ..Default::default()
                 },
                 mobile_id: 101,
