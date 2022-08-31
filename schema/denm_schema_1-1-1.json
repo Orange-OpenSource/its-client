@@ -189,14 +189,14 @@
               "properties": {
                 "latitude": {
                   "type": "integer",
-                  "description": "Unit: 0,1 microdegree. oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10), unavailable(900000001)",
+                  "description": "Unit: 0.1 microdegree. oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10), unavailable(900000001)",
                   "default": 900000001,
                   "minimum": -900000000,
                   "maximum": 900000001
                 },
                 "longitude": {
                   "type": "integer",
-                  "description": "Unit: 0,1 microdegree. oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(1800000001)",
+                  "description": "Unit: 0.1 microdegree. oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(1800000001)",
                   "default": 1800000001,
                   "minimum": -1800000000,
                   "maximum": 1800000001
