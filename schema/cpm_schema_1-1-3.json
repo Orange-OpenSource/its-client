@@ -189,12 +189,11 @@
         },
         "station_data_container": {
           "type": "object",
-          "oneOf": [
-            {
-              "required": [
-                "originating_vehicle_container"
-              ]
-            },
+          "oneOf": [{
+            "required": [
+              "originating_vehicle_container"
+            ]
+          },
             {
               "required": [
                 "originating_rsu_container"
@@ -739,12 +738,11 @@
                     "object_class": {
                       "type": "object",
                       "description": "The class that best describes the detected object. The object can be classified into one of three main categories: vehicle, VRU and other.",
-                      "oneOf": [
-                        {
-                          "required": [
-                            "vehicle"
-                          ]
-                        },
+                      "oneOf": [{
+                        "required": [
+                          "vehicle"
+                        ]
+                      },
                         {
                           "required": [
                             "single_vru"
@@ -770,12 +768,11 @@
                         },
                         "single_vru": {
                           "type": "object",
-                          "oneOf": [
-                            {
-                              "required": [
-                                "pedestrian"
-                              ]
-                            },
+                          "oneOf": [{
+                            "required": [
+                              "pedestrian"
+                            ]
+                          },
                             {
                               "required": [
                                 "bicyclist"
@@ -817,67 +814,67 @@
                               "minimum": 0,
                               "maximum": 15
                             }
-                          },
-                          "vru_group": {
-                            "type": "object",
-                            "description": "group of VRUs",
-                            "required": [
-                              "group_type",
-                              "group_size"
-                            ],
-                            "properties": {
-                              "group_type": {
-                                "type": "object",
-                                "required": [
-                                  "pedestrian",
-                                  "bicyclist",
-                                  "motorcyclist",
-                                  "animal"
-                                ],
-                                "properties": {
-                                  "pedestrian": {
-                                    "type": "boolean"
-                                  },
-                                  "bicyclist": {
-                                    "type": "boolean"
-                                  },
-                                  "motorcyclist": {
-                                    "type": "boolean"
-                                  },
-                                  "animal": {
-                                    "type": "boolean"
-                                  }
-                                },
-                                "group_size": {
-                                  "type": "integer",
-                                  "description": "Indicates an estimation of the number of VRUs in the group. unavailable(0), onlyLeader(1).",
-                                  "minimum": 0,
-                                  "maximum": 255
-                                }
-                              },
-                              "cluster_id": {
-                                "type": "integer",
-                                "description": "If the group is associated to a VRU cluster, this element indicates the ID of the associated cluster. The ClusterId can only be assigned if a VRU cluster which is transmitting VAMs has been detected.",
-                                "minimum": 0,
-                                "maximum": 255
-                              }
-                            }
-                          },
-                          "other": {
-                            "type": "integer",
-                            "description": "Detected object for class other. unknown(0), roadSideUnit(1).",
-                            "minimum": 0,
-                            "maximum": 255
                           }
+                        },
+                        "vru_group": {
+                          "type": "object",
+                          "description": "group of VRUs",
+                          "required": [
+                            "group_type",
+                            "group_size"
+                          ],
+                          "properties": {
+                            "group_type": {
+                              "type": "object",
+                              "required": [
+                                "pedestrian",
+                                "bicyclist",
+                                "motorcyclist",
+                                "animal"
+                              ],
+                              "properties": {
+                                "pedestrian": {
+                                  "type": "boolean"
+                                },
+                                "bicyclist": {
+                                  "type": "boolean"
+                                },
+                                "motorcyclist": {
+                                  "type": "boolean"
+                                },
+                                "animal": {
+                                  "type": "boolean"
+                                }
+                              }
+                            },
+                            "group_size": {
+                              "type": "integer",
+                              "description": "Indicates an estimation of the number of VRUs in the group. unavailable(0), onlyLeader(1).",
+                              "minimum": 0,
+                              "maximum": 255
+                            },
+                            "cluster_id": {
+                              "type": "integer",
+                              "description": "If the group is associated to a VRU cluster, this element indicates the ID of the associated cluster. The ClusterId can only be assigned if a VRU cluster which is transmitting VAMs has been detected.",
+                              "minimum": 0,
+                              "maximum": 255
+                            }
+                          }
+                        },
+                        "other": {
+                          "type": "integer",
+                          "description": "Detected object for class other. unknown(0), roadSideUnit(1).",
+                          "minimum": 0,
+                          "maximum": 255
                         }
                       }
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "Describes the confidence value for the type of a detected object. unknown(0) in case the confidence value is unknown but the reported classification is still valid, onePercent(1), oneHundredPercent(100), unavailable(101) in case the class confidence value computation is not available for this object, indicates that the class assignment is invalid",
+                      "minimum": 0,
+                      "maximum": 101
                     }
-                  },
-                  "confidence": {
-                    "type": "integer",
-                    "description": "Describes the confidence value for the type of a detected object. unknown(0) in case the confidence value is unknown but the reported classification is still valid, onePercent(1), oneHundredPercent(100), unavailable(101) in case the class confidence value computation is not available for this object, indicates that the class assignment is invalid",
-                    "minimum": 0,
-                    "maximum": 101
                   }
                 }
               },
@@ -898,154 +895,154 @@
                     "maximum": 32767
                   }
                 }
+              },
+              "confidence": {
+                "required": [
+                  "x_distance",
+                  "y_distance",
+                  "x_speed",
+                  "y_speed",
+                  "object"
+                ],
+                "x_distance": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 meter. Distance confidence to detected object from the reference point in x-direction at the time of measurement. Absolute accuracy of measurement to a confidence level of 95%. zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(4094), unavailable(4095).",
+                  "minimum": 0,
+                  "maximum": 4095
+                },
+                "y_distance": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 meter. Distance confidence to detected object from the reference point in y-direction at the time of measurement. Absolute accuracy of measurement to a confidence level of 95%. zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(4094), unavailable(4095).",
+                  "minimum": 0,
+                  "maximum": 4095
+                },
+                "z_distance": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 meter. Distance confidence to detected object from the reference point in z-direction at the time of measurement. Absolute accuracy of measurement to a confidence level of 95%. zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(4094), unavailable(4095).",
+                  "minimum": 0,
+                  "maximum": 4095
+                },
+                "x_speed": {
+                  "type": "integer",
+                  "description": "Speed confidence of detected object from the reference point in x-direction at the time of measurement. unavailable(0) Not Equipped or unavailable, prec100ms(1) 100  meters / sec, prec10ms(2) 10 meters / sec, prec5ms(3) 5 meters / sec, prec1ms(4) 1 meters / sec, prec0-1ms(5) 0.1 meters / sec, prec0-05ms(6) 0.05 meters / sec, prec0-01ms(7) 0.01 meters / sec",
+                  "minimum": 0,
+                  "maximum": 7
+                },
+                "y_speed": {
+                  "type": "integer",
+                  "description": "Speed confidence of detected object from the reference point in y-direction at the time of measurement. unavailable(0) Not Equipped or unavailable, prec100ms(1) 100  meters / sec, prec10ms(2) 10 meters / sec, prec5ms(3) 5 meters / sec, prec1ms(4) 1 meters / sec, prec0-1ms(5) 0.1 meters / sec, prec0-05ms(6) 0.05 meters / sec, prec0-01ms(7) 0.01 meters / sec",
+                  "minimum": 0,
+                  "maximum": 7
+                },
+                "z_speed": {
+                  "type": "integer",
+                  "description": "Speed confidence of detected object from the reference point in z-direction at the time of measurement. unavailable(0) Not Equipped or unavailable, prec100ms(1) 100  meters / sec, prec10ms(2) 10 meters / sec, prec5ms(3) 5 meters / sec, prec1ms(4) 1 meters / sec, prec0-1ms(5) 0.1 meters / sec, prec0-05ms(6) 0.05 meters / sec, prec0-01ms(7) 0.01 meters / sec",
+                  "minimum": 0,
+                  "maximum": 7
+                },
+                "x_acceleration": {
+                  "type": "integer",
+                  "description": "Acceleration confidence of detected object from the reference point in x-direction at the time of measurement. pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102).",
+                  "minimum": 0,
+                  "maximum": 102
+                },
+                "y_acceleration": {
+                  "type": "integer",
+                  "description": "Acceleration confidence of detected object from the reference point in y-direction at the time of measurement. pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102).",
+                  "minimum": 0,
+                  "maximum": 102
+                },
+                "z_acceleration": {
+                  "type": "integer",
+                  "description": "Acceleration confidence of detected object from the reference point in z-direction at the time of measurement. pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102).",
+                  "minimum": 0,
+                  "maximum": 102
+                },
+                "roll_angle": {
+                  "type": "integer",
+                  "description": "Roll angle confidence. The absolute accuracy of a reported angle value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. zeroPointOneDegree(1), oneDegree(10), outOfRange(126), unavailable(127).",
+                  "minimum": 1,
+                  "maximum": 127
+                },
+                "pitch_angle": {
+                  "type": "integer",
+                  "description": "Pitch angle confidence. The absolute accuracy of a reported angle value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. zeroPointOneDegree(1), oneDegree(10), outOfRange(126), unavailable(127).",
+                  "minimum": 1,
+                  "maximum": 127
+                },
+                "yaw_angle": {
+                  "type": "integer",
+                  "description": "Yaw angle confidence. The absolute accuracy of a reported angle value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. zeroPointOneDegree(1), oneDegree(10), outOfRange(126), unavailable(127).",
+                  "minimum": 1,
+                  "maximum": 127
+                },
+                "roll_rate": {
+                  "type": "integer",
+                  "description": "Roll rate confidence. The absolute accuracy of a reported angular speed value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSec-000-01(0) if the accuracy is equal to or less than 0,01 degree/second, degSec-000-05(1) if the accuracy is equal to or less than 0,05 degrees/second, degSec-000-10(2) if the accuracy is equal to or less than 0,1 degree/second, degSec-001-00(3) if the accuracy is equal to or less than 1 degree/second, degSec-005-00(4) if the accuracy is equal to or less than 5 degrees/second, degSec-010-00(5) if the accuracy is equal to or less than 10 degrees/second, degSec-100-00(6) if the accuracy is equal to or less than 100 degrees/second, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second, unavailable(8) if the accuracy information is unavailable",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "pitch_rate": {
+                  "type": "integer",
+                  "description": "Pitch rate confidence. The absolute accuracy of a reported angular speed value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSec-000-01(0) if the accuracy is equal to or less than 0,01 degree/second, degSec-000-05(1) if the accuracy is equal to or less than 0,05 degrees/second, degSec-000-10(2) if the accuracy is equal to or less than 0,1 degree/second, degSec-001-00(3) if the accuracy is equal to or less than 1 degree/second, degSec-005-00(4) if the accuracy is equal to or less than 5 degrees/second, degSec-010-00(5) if the accuracy is equal to or less than 10 degrees/second, degSec-100-00(6) if the accuracy is equal to or less than 100 degrees/second, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second, unavailable(8) if the accuracy information is unavailable",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "yaw_rate": {
+                  "type": "integer",
+                  "description": "Yaw rate confidence. The absolute accuracy of a reported angular speed value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSec-000-01(0) if the accuracy is equal to or less than 0,01 degree/second, degSec-000-05(1) if the accuracy is equal to or less than 0,05 degrees/second, degSec-000-10(2) if the accuracy is equal to or less than 0,1 degree/second, degSec-001-00(3) if the accuracy is equal to or less than 1 degree/second, degSec-005-00(4) if the accuracy is equal to or less than 5 degrees/second, degSec-010-00(5) if the accuracy is equal to or less than 10 degrees/second, degSec-100-00(6) if the accuracy is equal to or less than 100 degrees/second, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second, unavailable(8) if the accuracy information is unavailable",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "roll_acceleration": {
+                  "type": "integer",
+                  "description": "Roll acceleration confidence.The absolute accuracy of a reported angular acceleration value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSecSquared-000-01(0) if the accuracy is equal to or less than 0,01 degree/second^2, degSecSquared-000-05(1) if the accuracy is equal to or less than 0,05 degrees/second^2, degSecSquared-000-10(2) if the accuracy is equal to or less than 0,1 degree/second^2, degSecSquared-001-00(3) if the accuracy is equal to or less than 1 degree/second^2, degSecSquared-005-00(4) if the accuracy is equal to or less than 5 degrees/second^2, degSecSquared-010-00(5) if the accuracy is equal to or less than 10 degrees/second^2, degSecSquared-100-00(6) if the accuracy is equal to or less than 100 degrees/second^2, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second^2, unavailable(8) if the accuracy information is unavailable",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "pitch_acceleration": {
+                  "type": "integer",
+                  "description": "Pitch acceleration confidence.The absolute accuracy of a reported angular acceleration value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSecSquared-000-01(0) if the accuracy is equal to or less than 0,01 degree/second^2, degSecSquared-000-05(1) if the accuracy is equal to or less than 0,05 degrees/second^2, degSecSquared-000-10(2) if the accuracy is equal to or less than 0,1 degree/second^2, degSecSquared-001-00(3) if the accuracy is equal to or less than 1 degree/second^2, degSecSquared-005-00(4) if the accuracy is equal to or less than 5 degrees/second^2, degSecSquared-010-00(5) if the accuracy is equal to or less than 10 degrees/second^2, degSecSquared-100-00(6) if the accuracy is equal to or less than 100 degrees/second^2, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second^2, unavailable(8) if the accuracy information is unavailable",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "yaw_acceleration": {
+                  "type": "integer",
+                  "description": "Yaw acceleration confidence.The absolute accuracy of a reported angular acceleration value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSecSquared-000-01(0) if the accuracy is equal to or less than 0,01 degree/second^2, degSecSquared-000-05(1) if the accuracy is equal to or less than 0,05 degrees/second^2, degSecSquared-000-10(2) if the accuracy is equal to or less than 0,1 degree/second^2, degSecSquared-001-00(3) if the accuracy is equal to or less than 1 degree/second^2, degSecSquared-005-00(4) if the accuracy is equal to or less than 5 degrees/second^2, degSecSquared-010-00(5) if the accuracy is equal to or less than 10 degrees/second^2, degSecSquared-100-00(6) if the accuracy is equal to or less than 100 degrees/second^2, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second^2, unavailable(8) if the accuracy information is unavailable",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "planar_object_dimension_1": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 m. Accuracy of first provided dimension value with a predefined confidence level (e.g. 95%). zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101), unavailable(102).",
+                  "minimum": 0,
+                  "maximum": 102
+                },
+                "planar_object_dimension_2": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 m. Accuracy of second provided dimension value with a predefined confidence level (e.g. 95%). zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101), unavailable(102).",
+                  "minimum": 0,
+                  "maximum": 102
+                },
+                "vertical_object_dimension": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 m. Accuracy of vertical provided dimension value with a predefined confidence level (e.g. 95%). zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101), unavailable(102).",
+                  "minimum": 0,
+                  "maximum": 102
+                },
+                "longitudinal_lane_position": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 m. Absolute accuracy of longitudinal lane position measurement to a confidence level of 95%. zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101) shall be set if the accuracy is out of range, unavailable(102) shall be set if the accuracy data is unavailable",
+                  "minimum": 0,
+                  "maximum": 102
+                },
+                "object": {
+                  "type": "integer",
+                  "description": "The confidence associated to the object. The computation of the object confidence is based on a sensor's or, fusion system's specific detection confidence, the binary detection success that is, if an object has been successfully detected by the last measurement and the object age. A single-value indication about the overall information quality of a perceived object. Its computation is based on several scaling factors and moving averages. noConfidence(0) no confidence in detected object, e.g. for ghost-objects or if confidence could not be computed, fullConfidence(15) full confidence in detected object",
+                  "minimum": 0,
+                  "maximum": 15
+                }
               }
-            }
-          },
-          "confidence": {
-            "required": [
-              "x_distance",
-              "y_distance",
-              "x_speed",
-              "y_speed",
-              "object_age"
-            ],
-            "x_distance": {
-              "type": "integer",
-              "description": "Unit: 0.01 meter. Distance confidence to detected object from the reference point in x-direction at the time of measurement. Absolute accuracy of measurement to a confidence level of 95%. zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(4094), unavailable(4095).",
-              "minimum": 0,
-              "maximum": 4095
-            },
-            "y_distance": {
-              "type": "integer",
-              "description": "Unit: 0.01 meter. Distance confidence to detected object from the reference point in y-direction at the time of measurement. Absolute accuracy of measurement to a confidence level of 95%. zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(4094), unavailable(4095).",
-              "minimum": 0,
-              "maximum": 4095
-            },
-            "z_distance": {
-              "type": "integer",
-              "description": "Unit: 0.01 meter. Distance confidence to detected object from the reference point in z-direction at the time of measurement. Absolute accuracy of measurement to a confidence level of 95%. zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(4094), unavailable(4095).",
-              "minimum": 0,
-              "maximum": 4095
-            },
-            "x_speed": {
-              "type": "integer",
-              "description": "Speed confidence of detected object from the reference point in x-direction at the time of measurement. unavailable(0) Not Equipped or unavailable, prec100ms(1) 100  meters / sec, prec10ms(2) 10 meters / sec, prec5ms(3) 5 meters / sec, prec1ms(4) 1 meters / sec, prec0-1ms(5) 0.1 meters / sec, prec0-05ms(6) 0.05 meters / sec, prec0-01ms(7) 0.01 meters / sec",
-              "minimum": 0,
-              "maximum": 7
-            },
-            "y_speed": {
-              "type": "integer",
-              "description": "Speed confidence of detected object from the reference point in y-direction at the time of measurement. unavailable(0) Not Equipped or unavailable, prec100ms(1) 100  meters / sec, prec10ms(2) 10 meters / sec, prec5ms(3) 5 meters / sec, prec1ms(4) 1 meters / sec, prec0-1ms(5) 0.1 meters / sec, prec0-05ms(6) 0.05 meters / sec, prec0-01ms(7) 0.01 meters / sec",
-              "minimum": 0,
-              "maximum": 7
-            },
-            "z_speed": {
-              "type": "integer",
-              "description": "Speed confidence of detected object from the reference point in z-direction at the time of measurement. unavailable(0) Not Equipped or unavailable, prec100ms(1) 100  meters / sec, prec10ms(2) 10 meters / sec, prec5ms(3) 5 meters / sec, prec1ms(4) 1 meters / sec, prec0-1ms(5) 0.1 meters / sec, prec0-05ms(6) 0.05 meters / sec, prec0-01ms(7) 0.01 meters / sec",
-              "minimum": 0,
-              "maximum": 7
-            },
-            "x_acceleration": {
-              "type": "integer",
-              "description": "Acceleration confidence of detected object from the reference point in x-direction at the time of measurement. pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102).",
-              "minimum": 0,
-              "maximum": 102
-            },
-            "y_acceleration": {
-              "type": "integer",
-              "description": "Acceleration confidence of detected object from the reference point in y-direction at the time of measurement. pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102).",
-              "minimum": 0,
-              "maximum": 102
-            },
-            "z_acceleration": {
-              "type": "integer",
-              "description": "Acceleration confidence of detected object from the reference point in z-direction at the time of measurement. pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102).",
-              "minimum": 0,
-              "maximum": 102
-            },
-            "roll_angle": {
-              "type": "integer",
-              "description": "Roll angle confidence. The absolute accuracy of a reported angle value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. zeroPointOneDegree(1), oneDegree(10), outOfRange(126), unavailable(127).",
-              "minimum": 1,
-              "maximum": 127
-            },
-            "pitch_angle": {
-              "type": "integer",
-              "description": "Pitch angle confidence. The absolute accuracy of a reported angle value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. zeroPointOneDegree(1), oneDegree(10), outOfRange(126), unavailable(127).",
-              "minimum": 1,
-              "maximum": 127
-            },
-            "yaw_angle": {
-              "type": "integer",
-              "description": "Yaw angle confidence. The absolute accuracy of a reported angle value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. zeroPointOneDegree(1), oneDegree(10), outOfRange(126), unavailable(127).",
-              "minimum": 1,
-              "maximum": 127
-            },
-            "roll_rate": {
-              "type": "integer",
-              "description": "Roll rate confidence. The absolute accuracy of a reported angular speed value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSec-000-01(0) if the accuracy is equal to or less than 0,01 degree/second, degSec-000-05(1) if the accuracy is equal to or less than 0,05 degrees/second, degSec-000-10(2) if the accuracy is equal to or less than 0,1 degree/second, degSec-001-00(3) if the accuracy is equal to or less than 1 degree/second, degSec-005-00(4) if the accuracy is equal to or less than 5 degrees/second, degSec-010-00(5) if the accuracy is equal to or less than 10 degrees/second, degSec-100-00(6) if the accuracy is equal to or less than 100 degrees/second, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second, unavailable(8) if the accuracy information is unavailable",
-              "minimum": 0,
-              "maximum": 8
-            },
-            "pitch_rate": {
-              "type": "integer",
-              "description": "Pitch rate confidence. The absolute accuracy of a reported angular speed value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSec-000-01(0) if the accuracy is equal to or less than 0,01 degree/second, degSec-000-05(1) if the accuracy is equal to or less than 0,05 degrees/second, degSec-000-10(2) if the accuracy is equal to or less than 0,1 degree/second, degSec-001-00(3) if the accuracy is equal to or less than 1 degree/second, degSec-005-00(4) if the accuracy is equal to or less than 5 degrees/second, degSec-010-00(5) if the accuracy is equal to or less than 10 degrees/second, degSec-100-00(6) if the accuracy is equal to or less than 100 degrees/second, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second, unavailable(8) if the accuracy information is unavailable",
-              "minimum": 0,
-              "maximum": 8
-            },
-            "yaw_rate": {
-              "type": "integer",
-              "description": "Yaw rate confidence. The absolute accuracy of a reported angular speed value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSec-000-01(0) if the accuracy is equal to or less than 0,01 degree/second, degSec-000-05(1) if the accuracy is equal to or less than 0,05 degrees/second, degSec-000-10(2) if the accuracy is equal to or less than 0,1 degree/second, degSec-001-00(3) if the accuracy is equal to or less than 1 degree/second, degSec-005-00(4) if the accuracy is equal to or less than 5 degrees/second, degSec-010-00(5) if the accuracy is equal to or less than 10 degrees/second, degSec-100-00(6) if the accuracy is equal to or less than 100 degrees/second, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second, unavailable(8) if the accuracy information is unavailable",
-              "minimum": 0,
-              "maximum": 8
-            },
-            "roll_acceleration": {
-              "type": "integer",
-              "description": "Roll acceleration confidence.The absolute accuracy of a reported angular acceleration value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSecSquared-000-01(0) if the accuracy is equal to or less than 0,01 degree/second^2, degSecSquared-000-05(1) if the accuracy is equal to or less than 0,05 degrees/second^2, degSecSquared-000-10(2) if the accuracy is equal to or less than 0,1 degree/second^2, degSecSquared-001-00(3) if the accuracy is equal to or less than 1 degree/second^2, degSecSquared-005-00(4) if the accuracy is equal to or less than 5 degrees/second^2, degSecSquared-010-00(5) if the accuracy is equal to or less than 10 degrees/second^2, degSecSquared-100-00(6) if the accuracy is equal to or less than 100 degrees/second^2, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second^2, unavailable(8) if the accuracy information is unavailable",
-              "minimum": 0,
-              "maximum": 8
-            },
-            "pitch_acceleration": {
-              "type": "integer",
-              "description": "Pitch acceleration confidence.The absolute accuracy of a reported angular acceleration value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSecSquared-000-01(0) if the accuracy is equal to or less than 0,01 degree/second^2, degSecSquared-000-05(1) if the accuracy is equal to or less than 0,05 degrees/second^2, degSecSquared-000-10(2) if the accuracy is equal to or less than 0,1 degree/second^2, degSecSquared-001-00(3) if the accuracy is equal to or less than 1 degree/second^2, degSecSquared-005-00(4) if the accuracy is equal to or less than 5 degrees/second^2, degSecSquared-010-00(5) if the accuracy is equal to or less than 10 degrees/second^2, degSecSquared-100-00(6) if the accuracy is equal to or less than 100 degrees/second^2, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second^2, unavailable(8) if the accuracy information is unavailable",
-              "minimum": 0,
-              "maximum": 8
-            },
-            "yaw_acceleration": {
-              "type": "integer",
-              "description": "Yaw acceleration confidence.The absolute accuracy of a reported angular acceleration value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSecSquared-000-01(0) if the accuracy is equal to or less than 0,01 degree/second^2, degSecSquared-000-05(1) if the accuracy is equal to or less than 0,05 degrees/second^2, degSecSquared-000-10(2) if the accuracy is equal to or less than 0,1 degree/second^2, degSecSquared-001-00(3) if the accuracy is equal to or less than 1 degree/second^2, degSecSquared-005-00(4) if the accuracy is equal to or less than 5 degrees/second^2, degSecSquared-010-00(5) if the accuracy is equal to or less than 10 degrees/second^2, degSecSquared-100-00(6) if the accuracy is equal to or less than 100 degrees/second^2, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second^2, unavailable(8) if the accuracy information is unavailable",
-              "minimum": 0,
-              "maximum": 8
-            },
-            "planar_object_dimension_1": {
-              "type": "integer",
-              "description": "Unit: 0.01 m. Accuracy of first provided dimension value with a predefined confidence level (e.g. 95%). zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101), unavailable(102).",
-              "minimum": 0,
-              "maximum": 102
-            },
-            "planar_object_dimension_2": {
-              "type": "integer",
-              "description": "Unit: 0.01 m. Accuracy of second provided dimension value with a predefined confidence level (e.g. 95%). zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101), unavailable(102).",
-              "minimum": 0,
-              "maximum": 102
-            },
-            "vertical_object_dimension": {
-              "type": "integer",
-              "description": "Unit: 0.01 m. Accuracy of vertical provided dimension value with a predefined confidence level (e.g. 95%). zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101), unavailable(102).",
-              "minimum": 0,
-              "maximum": 102
-            },
-            "longitudinal_lane_position": {
-              "type": "integer",
-              "description": "Unit: 0.01 m. Absolute accuracy of longitudinal lane position measurement to a confidence level of 95%. zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101) shall be set if the accuracy is out of range, unavailable(102) shall be set if the accuracy data is unavailable",
-              "minimum": 0,
-              "maximum": 102
-            },
-            "object": {
-              "type": "integer",
-              "description": "The confidence associated to the object. The computation of the object confidence is based on a sensor's or, fusion system's specific detection confidence, the binary detection success that is, if an object has been successfully detected by the last measurement and the object age. A single-value indication about the overall information quality of a perceived object. Its computation is based on several scaling factors and moving averages. noConfidence(0) no confidence in detected object, e.g. for ghost-objects or if confidence could not be computed, fullConfidence(15) full confidence in detected object",
-              "minimum": 0,
-              "maximum": 15
             }
           }
         },
@@ -1065,12 +1062,11 @@
               "free_space_area": {
                 "description": "free space area for which the free space confidence of this addendum container is valid. The described area that is considered as not occupied by any traffic participant or obstacle.",
                 "type": "object",
-                "oneOf": [
-                  {
-                    "required": [
-                      "free_space_polygon"
-                    ]
-                  },
+                "oneOf": [{
+                  "required": [
+                    "free_space_polygon"
+                  ]
+                },
                   {
                     "required": [
                       "free_space_circular"
