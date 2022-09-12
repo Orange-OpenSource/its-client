@@ -18,11 +18,13 @@ class GeoPosition:
                  latitude: float,
                  longitude: float,
                  heading: float,
+                 speed: float,
                  ):
         self.count = 0
         self.lat = latitude
         self.lon = longitude
         self.heading = heading
+        self.speed = speed
 
     def get_current_position(self):
         return self.lon, self.lat
@@ -40,7 +42,7 @@ class GeoPosition:
         lon, lat = self.get_current_position()
         lon = lon + lon_drift
         lat = lat + lat_drift
-        speed = 0.103
+        speed = self.speed
         alt = 131.693
         heading = self.heading
         position_time = datetime.utcnow()
