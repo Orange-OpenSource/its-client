@@ -21,10 +21,12 @@ class GeoPosition:
         longitude: float,
         heading: float,
         speed: float,
+        altitude: float,
     ):
         self.count = 0
         self.lat = latitude
         self.lon = longitude
+        self.alt = altitude
         self.heading = heading
         self.speed = speed
 
@@ -36,6 +38,7 @@ class GeoPosition:
         self.count += 1
         lon_drift = 0
         lat_drift = 0
+        alt_drift = 0
         heading_drift = 0
         if self.count % 5 == 0:
             # 0.000002° of delta is ~0.2226m at the equator, ~0.2219m at the poles
@@ -43,12 +46,14 @@ class GeoPosition:
             lat_drift = round(random.uniform(-0.000002, 0.000002), 6)
             # 0.5° of heading drift.
             heading_drift = round(random.uniform(-0.5, 0.5), 3)
+            # 0.25m of altitude drift
+            alt_drift = round(random.uniform(-0.25, 0.25), 3)
             self.count = 0
         lon, lat = self.get_current_position()
         lon = lon + lon_drift
         lat = lat + lat_drift
         speed = self.speed
-        alt = 131.693
+        alt = self.alt + alt_drift
         heading = self.heading + heading_drift
         position_time = datetime.utcnow()
         return lon, lat, speed, alt, heading, position_time
