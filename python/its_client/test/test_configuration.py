@@ -82,6 +82,7 @@ class TestConfiguration(unittest.TestCase):
             position_latitude=44.50779,
             position_longitude=2.209381,
             position_heading=130.7275,
+            position_speed=0.103,
             log_default_level=log_default_level,
         )
 
@@ -139,6 +140,7 @@ class TestConfiguration(unittest.TestCase):
         position_latitude=44.50779,
         position_longitude=2.209381,
         position_heading=130.7275,
+        position_speed=0.103,
         log_default_level="DEBUG",
     ):
         self.assertEqual(self.config.get("broker", "host"), broker_host)
@@ -155,4 +157,5 @@ class TestConfiguration(unittest.TestCase):
             self.config.getfloat("position", "longitude"), position_longitude
         )
         self.assertEqual(self.config.getfloat("position", "heading"), position_heading)
+        self.assertEqual(self.config.getfloat("position", "speed"), position_speed)
         self.assertEqual(self.config.get("log", "default_level"), log_default_level)

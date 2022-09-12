@@ -50,10 +50,12 @@ def main():
         latitude = config.getfloat("position", "latitude")
         longitude = config.getfloat("position", "longitude")
         heading = config.getfloat("position", "heading")
-        logging.info(f"we use a static position:{latitude}, {longitude}, {heading}")
+        speed = config.getfloat("position", "speed")
+        logging.info(f"we use a static position:{latitude}, {longitude}, {speed}, {heading}")
         position_client = static.GeoPosition(
             latitude=latitude,
             longitude=longitude,
+            speed=speed,
             heading=heading,
         )
     else:
