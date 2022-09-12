@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import jsonschema
+import requests
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('SCHEMA', help='JSON schema to validate')
+    args = parser.parse_args()
+
+    if 'Draft202012Validator' not in dir(jsonschema):
+        raise Exception('jsonschema version too old; at least 4.0.0'
+                        ' (or better, 4.9.1) needed for Draft 2020-12')
+
+    with open(args.SCHEMA, 'rb') as f:
+        schema = json.load(f)
+
+    r = requests.get(schema['$schema'])
+    meta_schema = json.loads(r.content)
+
+    jsonschema.validate(schema=meta_schema, instance=schema)
+
+
+if __name__ == "__main__":
+    main()
