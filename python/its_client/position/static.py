@@ -17,12 +17,14 @@ class GeoPosition:
     def __init__(self, *,
                  latitude: float,
                  longitude: float,
+                 altitude: float,
                  heading: float,
                  speed: float,
                  ):
         self.count = 0
         self.lat = latitude
         self.lon = longitude
+        self.alt = altitude
         self.heading = heading
         self.speed = speed
 
@@ -43,7 +45,7 @@ class GeoPosition:
         lon = lon + lon_drift
         lat = lat + lat_drift
         speed = self.speed
-        alt = 131.693
+        alt = self.alt
         heading = self.heading
         position_time = datetime.utcnow()
         return lon, lat, speed, alt, heading, position_time
