@@ -51,8 +51,8 @@ def main():
         longitude = config.getfloat("position", "longitude")
         logging.info(f"we use a static position:{latitude}, {longitude}")
         position_client = static.GeoPosition(
-            latitude,
-            longitude,
+            latitude=latitude,
+            longitude=longitude,
         )
     else:
         logging.info(f"we use the gps position")

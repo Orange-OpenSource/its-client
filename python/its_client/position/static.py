@@ -14,7 +14,10 @@ from datetime import datetime
 
 
 class GeoPosition:
-    def __init__(self, latitude: float, longitude: float):
+    def __init__(self, *,
+                 latitude: float,
+                 longitude: float,
+                 ):
         self.count = 0
         self.lat = latitude
         self.lon = longitude
