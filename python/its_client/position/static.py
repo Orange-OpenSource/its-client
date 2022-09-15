@@ -30,13 +30,12 @@ class GeoPosition:
     def get_current_value(self):
         # stub
         self.count += 1
+        lon_drift = 0
+        lat_drift = 0
         if self.count % 5 == 0:
             lon_drift = round(random.uniform(-0.000002, 0.000002), 6)
             lat_drift = round(random.uniform(-0.000002, 0.000002), 6)
             self.count = 0
-        else:
-            lon_drift = 0
-            lat_drift = 0
         lon, lat = self.get_current_position()
         lon = lon + lon_drift
         lat = lat + lat_drift
