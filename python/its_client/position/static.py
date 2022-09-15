@@ -33,6 +33,7 @@ class GeoPosition:
         lon_drift = 0
         lat_drift = 0
         if self.count % 5 == 0:
+            # 0.000002° of delta is ~0.2226m at the equator, ~0.2219m at the poles
             lon_drift = round(random.uniform(-0.000002, 0.000002), 6)
             lat_drift = round(random.uniform(-0.000002, 0.000002), 6)
             self.count = 0
