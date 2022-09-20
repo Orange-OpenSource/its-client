@@ -180,7 +180,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
         )
     }
 
-    fn new(
+    pub fn new(
         station_id: u32,
         originating_station_id: u32,
         event_position: ReferencePosition,
