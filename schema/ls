@@ -1,0 +1,16 @@
+#!/bin/sh
+
+main() {
+    first=true
+    printf '['
+    for schema in "${my_dir}/"*".json"; do
+        ${first} || printf ','
+        first=false
+        printf '"%s"' "${schema}"
+    done
+    printf ']'
+}
+
+my_name="${0##*/}"
+my_dir="${0%/*}"
+main "${@}"
