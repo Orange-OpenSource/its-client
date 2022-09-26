@@ -24,7 +24,7 @@ jobs:
       - name: Run black
         run: |
           cd python
-          black --check .
+          black --diff --check .
       - name: Run Unit Tests and generate coverage report
         run: |
           cd python
