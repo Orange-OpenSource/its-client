@@ -1,4 +1,4 @@
-name: Python
+name: Python its-client
 
 on:
   push:
@@ -17,17 +17,17 @@ jobs:
           python-version: 3.8
       - name: Install dependencies
         run: |
-          cd python
+          cd python/its-client
           python -m pip install --upgrade pip
           pip install coverage black wheel
           if  [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Run black
         run: |
-          cd python
+          cd python/its-client
           black --diff --check .
       - name: Run Unit Tests and generate coverage report
         run: |
-          cd python
+          cd python/its-client
           python -m unittest -v
           coverage run -m unittest
           coverage report
@@ -36,15 +36,13 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: code-coverage-report
-          path: python/htmlcov
+          path: python/its-client/htmlcov
       - name: Run package creation
         run: |
-          cd python
+          cd python/its-client
           python setup.py bdist_wheel
       - name: Archive package
         uses: actions/upload-artifact@v2
         with:
           name: its_client
-          path: python/dist
-
-
+          path: python/its-client/dist
