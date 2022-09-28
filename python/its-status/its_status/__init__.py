@@ -7,7 +7,10 @@ import glob
 import importlib.util
 import os.path
 
-plugins = {'collectors': {}}
+plugins = {
+    'collectors': {},
+    'emitters': {}
+}
 
 
 def init(*args, **kwargs):
@@ -19,6 +22,9 @@ def init(*args, **kwargs):
         if f_name.startswith('collector.'):
             name = f_name[10:]
             plugin_type = 'collectors'
+        elif f_name.startswith('emitter.'):
+            name = f_name[8:]
+            plugin_type = 'emitters'
         else:
             continue
         spec = importlib.util.spec_from_file_location(name, f)

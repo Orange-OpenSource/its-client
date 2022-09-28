@@ -5,7 +5,6 @@
 
 import configparser
 import its_status
-import json
 import time
 
 STATIC_STATUS = {
@@ -35,7 +34,8 @@ def main():
 
         # Here, we'd send them to MQTT or anywhere else
         status['timestamp'] = time.time()
-        print(json.dumps(status), flush=True)
+        for e in its_status.plugins['emitters']:
+            its_status.plugins['emitters'][e].emit(status)
 
         # Just one iteration for now, to debug the stuff
         break
