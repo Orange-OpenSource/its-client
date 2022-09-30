@@ -5,6 +5,7 @@
 
 import configparser
 import its_status
+import signal
 import time
 
 STATIC_STATUS = {
@@ -21,7 +22,7 @@ def main():
         cfg.read_file(f)
         basic_status['id'] = cfg['generic']['id']
 
-    while True:
+    def tick(_signum, _frame):
         status = basic_status
         status['collect'] = {'start': time.time()}
         for c in its_status.plugins['collectors']:
@@ -37,5 +38,8 @@ def main():
         for e in its_status.plugins['emitters']:
             its_status.plugins['emitters'][e].emit(status)
 
-        # Just one iteration for now, to debug the stuff
-        break
+    signal.signal(signal.SIGALRM, tick)
+    signal.setitimer(signal.ITIMER_REAL, 1.0, 1.0)
+
+    while True:
+        time.sleep(60)
