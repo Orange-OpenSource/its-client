@@ -8,31 +8,29 @@ import its_status
 import signal
 import time
 
-STATIC_STATUS = {
-    'version': '1.0.0',
-    'type': 'obu',
-}
-
 
 def main():
     with open('/etc/its-status/its-status.cfg') as f:
         cfg = configparser.ConfigParser()
         cfg.read_file(f)
 
-    basic_status = STATIC_STATUS
-    basic_status['id'] = cfg['generic']['id']
-
     its_status.init(cfg)
 
     def tick(_signum, _frame):
-        status = basic_status
+        status = dict()
         status['collect'] = {'start': time.time()}
         for c in its_status.plugins['collectors']:
             status['collect'][c] = {'start': time.time()}
             its_status.plugins["collectors"][c].capture()
             status['collect'][c]['duration'] = time.time() - status['collect'][c]['start']
+
         for c in its_status.plugins['collectors']:
-            status[c] = its_status.plugins["collectors"][c].collect()
+            s = its_status.plugins["collectors"][c].collect()
+            if c == 'static':
+                status.update(s)
+            else:
+                status[c] = s
+
         status['collect']['duration'] = time.time() - status['collect']['start']
 
         # Here, we'd send them to MQTT or anywhere else
