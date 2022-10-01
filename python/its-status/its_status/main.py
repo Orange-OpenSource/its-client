@@ -15,12 +15,14 @@ STATIC_STATUS = {
 
 
 def main():
-    its_status.init()
-    basic_status = STATIC_STATUS
     with open('/etc/its-status/its-status.cfg') as f:
         cfg = configparser.ConfigParser()
         cfg.read_file(f)
-        basic_status['id'] = cfg['generic']['id']
+
+    basic_status = STATIC_STATUS
+    basic_status['id'] = cfg['generic']['id']
+
+    its_status.init()
 
     def tick(_signum, _frame):
         status = basic_status
