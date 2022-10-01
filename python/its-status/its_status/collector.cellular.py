@@ -8,7 +8,7 @@ import subprocess
 
 
 class Status():
-    def __init__(self):
+    def __init__(self, cfg):
         self.data = list()
 
     def capture(self):

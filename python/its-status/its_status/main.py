@@ -22,7 +22,7 @@ def main():
     basic_status = STATIC_STATUS
     basic_status['id'] = cfg['generic']['id']
 
-    its_status.init()
+    its_status.init(cfg)
 
     def tick(_signum, _frame):
         status = basic_status

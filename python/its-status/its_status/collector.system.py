@@ -7,7 +7,7 @@ import psutil
 
 
 class Status():
-    def __init__(self):
+    def __init__(self, cfg):
         self.data = None
         self.static_data = {'hardware': 'oci'}
         with open('/etc/os-release', 'r') as f:

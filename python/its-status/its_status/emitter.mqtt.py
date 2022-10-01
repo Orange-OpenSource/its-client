@@ -8,7 +8,7 @@ import paho.mqtt.client
 
 
 class Status():
-    def __init__(self):
+    def __init__(self, cfg):
         self.client = paho.mqtt.client.Client(client_id='foo')
         self.client.reconnect_delay_set()
         self.client.connect(host='127.0.0.1', port=1883)

@@ -7,7 +7,7 @@ import json
 
 
 class Status():
-    def __init__(self):
+    def __init__(self, cfg):
         pass
 
     def emit(self, data):

@@ -17,7 +17,7 @@ SRC_STATE = {
 
 
 class Status():
-    def __init__(self):
+    def __init__(self, cfg):
         self.data = list()
         self.refclocks = dict()
         with open('/etc/chrony.conf', 'r') as f:
