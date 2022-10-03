@@ -3,13 +3,42 @@
 # SPDX-License-Identifier: MIT
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
+import json
 import psutil
+import subprocess
 
 
 class Status():
     def __init__(self, cfg):
         self.data = None
-        self.static_data = {'hardware': 'oci'}
+        hw = None
+        lshw_cmd = ['lshw', '-quiet', '-json',
+                    '-disable', 'usb',
+                    '-disable', 'pci',
+                    '-disable', 'pcilegacy',
+                    '-disable', 'isapnp',
+                    '-disable', 'network'
+                    ]
+        try:
+            ret = subprocess.run(lshw_cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            lshw = json.loads(ret.stdout)
+            if 'product' in lshw:
+                hw = lshw['product']
+            else:
+                for child in lshw['children']:
+                    if child['id'] == 'core' and 'product' in child:
+                        hw = child['product']
+                        break
+        except Exception:
+            try:
+                with open('/proc/self/cgroup', 'rb') as f:
+                    lines = f.readlines()
+                if lines[-1].decode().split(':')[2].startswith('/docker/'):
+                    hw = 'oci'
+            except Exception:
+                pass
+
+        self.static_data = {'hardware': hw or "Unknown"}
         with open('/etc/os-release', 'r') as f:
             self.static_data['os_release'] = dict()
             for l in f.readlines():
