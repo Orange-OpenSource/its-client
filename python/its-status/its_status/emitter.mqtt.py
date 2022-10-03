@@ -13,11 +13,14 @@ class Status():
         if self.enabled:
             self.host = cfg.get('mqtt', 'host', fallback='127.0.0.1')
             self.port = cfg.getint('mqtt', 'port', fallback=1883)
+            self.username = cfg.get('mqtt', 'username', fallback=None)
+            self.password = cfg.get('mqtt', 'password', fallback=None)
             self.client_id = cfg.get('mqtt', 'client_id', fallback='its-status')
             self.topic = cfg.get('mqtt', 'topic', fallback='status/system')
 
             self.client = paho.mqtt.client.Client(client_id=self.client_id)
             self.client.reconnect_delay_set()
+            self.client.username_pw_set(self.username, self.password)
             self.client.connect(host=self.host, port=self.port)
             self.client.loop_start()
 
