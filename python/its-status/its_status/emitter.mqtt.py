@@ -21,9 +21,28 @@ class Status():
             self.client = paho.mqtt.client.Client(client_id=self.client_id)
             self.client.reconnect_delay_set()
             self.client.username_pw_set(self.username, self.password)
-            self.client.connect(host=self.host, port=self.port)
-            self.client.loop_start()
+            self.connected = False
+            self._try_connect()
 
     def emit(self, data):
-        if self.enabled:
+        if not self.enabled:
+            return
+
+        if not self.connected:
+            self._try_connect()
+
+        if self.connected:
             self.client.publish(self.topic, json.dumps(data))
+
+    def _try_connect(self):
+        if self.connected:
+            raise RuntimeError('MQTT connection already established')
+
+        try:
+            self.client.connect(host=self.host, port=self.port)
+            self.connected = True
+        except Exception:
+            pass
+
+        if self.connected:
+            self.client.loop_start()
