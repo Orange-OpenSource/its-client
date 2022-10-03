@@ -9,10 +9,18 @@ import paho.mqtt.client
 
 class Status():
     def __init__(self, cfg):
-        self.client = paho.mqtt.client.Client(client_id='foo')
-        self.client.reconnect_delay_set()
-        self.client.connect(host='127.0.0.1', port=1883)
-        self.client.loop_start()
+        self.enabled = cfg.get('mqtt', 'enabled', fallback=True)
+        if self.enabled:
+            self.host = cfg.get('mqtt', 'host', fallback='127.0.0.1')
+            self.port = cfg.getint('mqtt', 'port', fallback=1883)
+            self.client_id = cfg.get('mqtt', 'client_id', fallback='its-status')
+            self.topic = cfg.get('mqtt', 'topic', fallback='status/system')
+
+            self.client = paho.mqtt.client.Client(client_id=self.client_id)
+            self.client.reconnect_delay_set()
+            self.client.connect(host=self.host, port=self.port)
+            self.client.loop_start()
 
     def emit(self, data):
-        self.client.publish('status/system', json.dumps(data))
+        if self.enabled:
+            self.client.publish(self.topic, json.dumps(data))
