@@ -3,14 +3,22 @@
 # SPDX-License-Identifier: MIT
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
+import argparse
 import configparser
 import its_status
 import signal
 import time
 
+CFG = '/etc/its-status/its-status.cfg'
+
 
 def main():
-    with open('/etc/its-status/its-status.cfg') as f:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', '-c', default=CFG,
+                        help=f'Path to the configuration file (default: {CFG})')
+    args = parser.parse_args()
+
+    with open(args.config) as f:
         cfg = configparser.ConfigParser()
         cfg.read_file(f)
 
