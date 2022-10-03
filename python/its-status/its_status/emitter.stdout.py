@@ -8,7 +8,8 @@ import json
 
 class Status():
     def __init__(self, cfg):
-        pass
+        self.enabled = cfg.getboolean('stdout', 'enabled', fallback=False)
 
     def emit(self, data):
-        print(json.dumps(data), flush=True)
+        if self.enabled:
+            print(json.dumps(data), flush=True)
