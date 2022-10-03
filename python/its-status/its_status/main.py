@@ -24,6 +24,7 @@ def main():
 
     its_status.init(cfg)
     collect_ts = cfg.getboolean('generic', 'timestamp_collect', fallback=False)
+    freq = cfg.getfloat('generic', 'frequency', fallback=1.0)
 
     def tick(_signum, _frame):
         status = dict()
@@ -52,7 +53,7 @@ def main():
             its_status.plugins['emitters'][e].emit(status)
 
     signal.signal(signal.SIGALRM, tick)
-    signal.setitimer(signal.ITIMER_REAL, 1.0, 1.0)
+    signal.setitimer(signal.ITIMER_REAL, 1/freq, 1/freq)
 
     while True:
         time.sleep(60)
