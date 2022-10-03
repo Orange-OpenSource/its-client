@@ -23,14 +23,18 @@ def main():
         cfg.read_file(f)
 
     its_status.init(cfg)
+    collect_ts = cfg.getboolean('generic', 'timestamp_collect', fallback=False)
 
     def tick(_signum, _frame):
         status = dict()
-        status['collect'] = {'start': time.time()}
+        if collect_ts:
+            status['collect'] = {'start': time.time()}
         for c in its_status.plugins['collectors']:
-            status['collect'][c] = {'start': time.time()}
+            if collect_ts:
+                status['collect'][c] = {'start': time.time()}
             its_status.plugins["collectors"][c].capture()
-            status['collect'][c]['duration'] = time.time() - status['collect'][c]['start']
+            if collect_ts:
+                status['collect'][c]['duration'] = time.time() - status['collect'][c]['start']
 
         for c in its_status.plugins['collectors']:
             s = its_status.plugins["collectors"][c].collect()
@@ -39,7 +43,8 @@ def main():
             else:
                 status[c] = s
 
-        status['collect']['duration'] = time.time() - status['collect']['start']
+        if collect_ts:
+            status['collect']['duration'] = time.time() - status['collect']['start']
 
         # Here, we'd send them to MQTT or anywhere else
         status['timestamp'] = time.time()
