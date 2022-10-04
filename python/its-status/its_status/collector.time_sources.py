@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
+import time
 from its_status import helpers
 
 CHRONYC = ['chronyc', '-c', '-n', 'sources']
@@ -19,6 +20,8 @@ SRC_STATE = {
 class Status():
     def __init__(self, cfg):
         self.data = list()
+        self.validity = cfg.getfloat('timesources', 'validity', fallback=10.0)
+        self.last_valid = 0.0
         self.refclocks = dict()
         self.enabled = True
         try:
@@ -38,10 +41,14 @@ class Status():
     def capture(self):
         if not self.enabled:
             return
-        data = list()
+        now = time.time()
         ret = helpers.run(CHRONYC)
         if ret.returncode != 0:
+            if self.data and now - self.last_valid > self.validity:
+                self.data = list()
             return
+
+        data = list()
         for l in ret.stdout.decode().splitlines():
             fields = l.split(',')
             src = {
@@ -61,6 +68,7 @@ class Status():
                 src['host'] = name
                 src['stratum'] = int(fields[3])
             data.append(src)
+        self.last_valid = now
         self.data = data
 
     def collect(self):
