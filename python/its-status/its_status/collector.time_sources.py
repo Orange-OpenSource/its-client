@@ -20,17 +20,24 @@ class Status():
     def __init__(self, cfg):
         self.data = list()
         self.refclocks = dict()
-        with open('/etc/chrony.conf', 'r') as f:
-            for l in f.readlines():
-                if not l.startswith('refclock '):
-                    continue
-                fields = l.rstrip().split(' ')
-                for i in range(len(fields)):
-                    if fields[i] == 'refid':
-                        self.refclocks[fields[i+1]] = fields[1].lower()
-                        break
+        self.enabled = True
+        try:
+            with open('/etc/chrony.conf', 'r') as f:
+                for l in f.readlines():
+                    if not l.startswith('refclock '):
+                        continue
+                    fields = l.rstrip().split(' ')
+                    for i in range(len(fields)):
+                        if fields[i] == 'refid':
+                            self.refclocks[fields[i+1]] = fields[1].lower()
+                            break
+        except FileNotFoundError:
+            # No chrony config file means chrony not installed
+            self.enabled = False
 
     def capture(self):
+        if not self.enabled:
+            return
         data = list()
         ret = helpers.run(CHRONYC)
         if ret.returncode != 0:
