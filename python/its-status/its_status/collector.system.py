@@ -5,7 +5,7 @@
 
 import json
 import psutil
-import subprocess
+from its_status import helpers
 
 
 class Status():
@@ -19,8 +19,8 @@ class Status():
                     '-disable', 'isapnp',
                     '-disable', 'network'
                     ]
-        try:
-            ret = subprocess.run(lshw_cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        ret = helpers.run(lshw_cmd)
+        if ret.returncode == 0:
             lshw = json.loads(ret.stdout)
             if 'product' in lshw:
                 hw = lshw['product']
@@ -29,7 +29,7 @@ class Status():
                     if child['id'] == 'core' and 'product' in child:
                         hw = child['product']
                         break
-        except Exception:
+        if hw is None:
             try:
                 with open('/proc/self/cgroup', 'rb') as f:
                     lines = f.readlines()

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
-import subprocess
+from its_status import helpers
 
 CHRONYC = ['chronyc', '-c', '-n', 'sources']
 SRC_STATE = {
@@ -32,7 +32,7 @@ class Status():
 
     def capture(self):
         data = list()
-        ret = subprocess.run(CHRONYC, capture_output=True)
+        ret = helpers.run(CHRONYC)
         if ret.returncode != 0:
             return
         for l in ret.stdout.decode().splitlines():

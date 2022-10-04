@@ -4,7 +4,7 @@
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
 import json
-import subprocess
+from its_status import helpers
 
 
 class Status():
@@ -61,12 +61,4 @@ class Status():
 
     def _mmcli(self, *args):
         cmd = ['mmcli', '-J'] + list(args)
-        try:
-            return subprocess.run(cmd, capture_output=True)
-        except FileNotFoundError:
-            return subprocess.CompletedProcess(
-                args=cmd,
-                returncode=127,
-                stdout=b'',
-                stderr=f'{cmd[0]}: command not found'.encode()
-            )
+        return helpers.run(cmd)
