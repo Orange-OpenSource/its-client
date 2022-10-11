@@ -4,12 +4,12 @@
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
 
-class Status():
+class Status:
     def __init__(self, cfg):
         self.data = {
-            'version': '1.0.0',
-            'type': 'obu',
-            'id': cfg['generic']['id'],
+            "version": "1.0.0",
+            "type": "obu",
+            "id": cfg["generic"]["id"],
         }
 
     def capture(self):

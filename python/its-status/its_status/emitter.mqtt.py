@@ -7,16 +7,16 @@ import json
 import paho.mqtt.client
 
 
-class Status():
+class Status:
     def __init__(self, cfg):
-        self.enabled = cfg.get('mqtt', 'enabled', fallback=True)
+        self.enabled = cfg.get("mqtt", "enabled", fallback=True)
         if self.enabled:
-            self.host = cfg.get('mqtt', 'host', fallback='127.0.0.1')
-            self.port = cfg.getint('mqtt', 'port', fallback=1883)
-            self.username = cfg.get('mqtt', 'username', fallback=None)
-            self.password = cfg.get('mqtt', 'password', fallback=None)
-            self.client_id = cfg.get('mqtt', 'client_id', fallback='its-status')
-            self.topic = cfg.get('mqtt', 'topic', fallback='status/system')
+            self.host = cfg.get("mqtt", "host", fallback="127.0.0.1")
+            self.port = cfg.getint("mqtt", "port", fallback=1883)
+            self.username = cfg.get("mqtt", "username", fallback=None)
+            self.password = cfg.get("mqtt", "password", fallback=None)
+            self.client_id = cfg.get("mqtt", "client_id", fallback="its-status")
+            self.topic = cfg.get("mqtt", "topic", fallback="status/system")
 
             self.client = paho.mqtt.client.Client(client_id=self.client_id)
             self.client.reconnect_delay_set()
@@ -28,7 +28,7 @@ class Status():
         self._emit(self.topic, data)
 
     def error(self, data):
-        self._emit(self.topic + '/errors', data)
+        self._emit(self.topic + "/errors", data)
 
     def _emit(self, topic, data):
         if not self.enabled:
@@ -42,7 +42,7 @@ class Status():
 
     def _try_connect(self):
         if self.connected:
-            raise RuntimeError('MQTT connection already established')
+            raise RuntimeError("MQTT connection already established")
 
         try:
             self.client.connect(host=self.host, port=self.port)

@@ -6,9 +6,9 @@
 import json
 
 
-class Status():
+class Status:
     def __init__(self, cfg):
-        self.enabled = cfg.getboolean('stdout', 'enabled', fallback=False)
+        self.enabled = cfg.getboolean("stdout", "enabled", fallback=False)
 
     def emit(self, data):
         if self.enabled:

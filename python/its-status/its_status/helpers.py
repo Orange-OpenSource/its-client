@@ -13,6 +13,6 @@ def run(cmd):
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=127,
-            stdout=b'',
-            stderr=f'{cmd[0]}: command not found'.encode()
+            stdout=b"",
+            stderr=f"{cmd[0]}: command not found".encode(),
         )
