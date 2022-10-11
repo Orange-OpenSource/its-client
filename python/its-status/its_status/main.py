@@ -7,6 +7,7 @@ import argparse
 import configparser
 import its_status
 import signal
+import sys
 import time
 
 CFG = '/etc/its-status/its-status.cfg'
@@ -27,6 +28,25 @@ def main():
     freq = cfg.getfloat('generic', 'frequency', fallback=1.0)
 
     def tick(_signum, _frame):
+        tick.tick += 1
+
+        errors = None
+        if tick.in_tick:
+            if tick.missed == 0:
+                print(f'tick: missed #{tick.tick}', file=sys.stderr)
+            tick.missed += 1
+            return
+        elif tick.missed:
+            print(f'tick: resuming #{tick.tick} after {tick.missed} missed ticks', file=sys.stderr)
+            errors = {
+                'timestamp': time.time(),
+                'type': 'status',
+                'tick': tick.tick,
+                'missed_ticks': tick.missed
+            }
+            tick.missed = 0
+        tick.in_tick = True
+
         status = dict()
         if collect_ts:
             status['collect'] = {'start': time.time()}
@@ -50,7 +70,15 @@ def main():
         # Here, we'd send them to MQTT or anywhere else
         status['timestamp'] = time.time()
         for e in its_status.plugins['emitters']:
+            if errors is not None:
+                its_status.plugins['emitters'][e].error(errors)
             its_status.plugins['emitters'][e].emit(status)
+
+        tick.in_tick = False
+
+    setattr(tick, 'in_tick', False)
+    setattr(tick, 'tick', 0)
+    setattr(tick, 'missed', 0)
 
     signal.signal(signal.SIGALRM, tick)
     signal.setitimer(signal.ITIMER_REAL, 1/freq, 1/freq)
