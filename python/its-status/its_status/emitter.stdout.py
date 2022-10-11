@@ -13,3 +13,6 @@ class Status():
     def emit(self, data):
         if self.enabled:
             print(json.dumps(data), flush=True)
+
+    def error(self, data):
+        self.emit(data)

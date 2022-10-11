@@ -25,6 +25,12 @@ class Status():
             self._try_connect()
 
     def emit(self, data):
+        self._emit(self.topic, data)
+
+    def error(self, data):
+        self._emit(self.topic + '/errors', data)
+
+    def _emit(self, topic, data):
         if not self.enabled:
             return
 
@@ -32,7 +38,7 @@ class Status():
             self._try_connect()
 
         if self.connected:
-            self.client.publish(self.topic, json.dumps(data))
+            self.client.publish(topic, json.dumps(data))
 
     def _try_connect(self):
         if self.connected:
