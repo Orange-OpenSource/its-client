@@ -32,24 +32,16 @@ class MQTTClient(object):
 
     def __init__(
         self,
-        client_id: str,
-        hostname: str,
-        port: int,
+        broker: dict,
         geo_position: GeoPosition,
-        username=None,
-        password=None,
         stop_signal=None,
     ):
-        self.client = None
-        self.gateway_name = "broker"
-        self.client_id = client_id
-        self.host = hostname
-        self.port = port
-        self.username = username
-        self.password = password
+        self.broker = broker
         self.geo_position = geo_position
-        self.new_connection = False
         self.stop_signal = stop_signal
+        self.gateway_name = "broker"
+        self.client = None
+        self.new_connection = False
 
     def on_disconnect(self, client, userdata, rc):
         logging.debug(
@@ -91,7 +83,7 @@ class MQTTClient(object):
                 root_cam_topic = f"{self.CAM_RECEPTION_QUEUE}/{sender}"
                 lon, lat = self.geo_position.get_current_position()
                 monitoring.monitore_cam(
-                    vehicle_id=self.client_id,
+                    vehicle_id=self.broker["client_id"],
                     direction="received_on",
                     station_id=message_dict["message"]["station_id"],
                     generation_delta_time=message_dict["message"][
@@ -110,7 +102,7 @@ class MQTTClient(object):
                 message_dict = json.loads(message.payload)
                 lon, lat = self.geo_position.get_current_position()
                 monitoring.monitore_denm(
-                    vehicle_id=self.client_id,
+                    vehicle_id=self.broker["client_id"],
                     station_id=message_dict["message"]["station_id"],
                     originating_station_id=message_dict["message"][
                         "management_container"
@@ -139,7 +131,7 @@ class MQTTClient(object):
             root_cpm_topic = f"{self.CPM_RECEPTION_QUEUE}/{sender}"
             lon, lat = self.geo_position.get_current_position()
             monitoring.monitore_cpm(
-                vehicle_id=self.client_id,
+                vehicle_id=self.broker["client_id"],
                 direction="received_on",
                 station_id=message_dict["message"]["station_id"],
                 generation_delta_time=message_dict["message"]["generation_delta_time"],
@@ -184,9 +176,12 @@ class MQTTClient(object):
 
     def _connect(self):
         logging.info("connecting...")
-        self.client = paho.mqtt.client.Client(client_id=self.client_id)
-        if self.username is not None:
-            self.client.username_pw_set(self.username, self.password)
+        self.client = paho.mqtt.client.Client(client_id=self.broker["client_id"])
+        if self.broker["username"]:
+            self.client.username_pw_set(
+                self.broker["username"],
+                self.broker["password"],
+            )
         self.client.on_connect = self.on_connect
         self.client.on_disconnect = self.on_disconnect
         self.client.on_message = self.on_message
@@ -198,7 +193,11 @@ class MQTTClient(object):
         self.client.on_socket_register_write = self.on_socket_register_write
         self.client.max_inflight_messages_set(20)
         self.client.max_queued_messages_set(100)
-        self.client.connect(host=self.host, port=self.port, keepalive=60)
+        self.client.connect(
+            host=self.broker["host"],
+            port=self.broker["port"],
+            keepalive=60,
+        )
 
     def subscribe(self, topic):
         logging.debug(self._format_log(f"subscribing to {topic}..."))
@@ -248,4 +247,4 @@ class MQTTClient(object):
         return self.client.is_connected()
 
     def _format_log(self, message=""):
-        return f"{type(self).__name__}[{self.client_id}]::{getouterframes(currentframe())[1][3]} {message}"
+        return f"{type(self).__name__}[{self.broker['client_id']}]::{getouterframes(currentframe())[1][3]} {message}"

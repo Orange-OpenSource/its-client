@@ -69,22 +69,27 @@ def main():
     logging.debug("handling stop signal...")
     signal.signal(signal.SIGINT, signal_handler)
 
+    broker = {
+        # Not handling TLS, as we're not ready for it yet.
+        "host": config.get(section="broker", option="host"),
+        "port": config.getint(section="broker", option="port"),
+        "username": config.get(section="broker", option="username"),
+        "password": config.get(section="broker", option="password"),
+        "client_id": config.get(section="broker", option="client_id"),
+    }
     logging.info("starting mqtt client...")
-    client_id = config.get(section="broker", option="client_id")
     mqtt_client = MQTTClient(
-        client_id=client_id,
-        hostname=config.get(section="broker", option="host"),
-        port=config.getint(section="broker", option="port"),
+        broker=broker,
         geo_position=position_client,
-        username=config.get(section="broker", option="username"),
-        password=config.get(section="broker", option="password"),
         stop_signal=stop_signal,
     )
     mqtt_client.loop_start()
 
     logging.info("starting worker...")
     worker = MqttWorker(
-        mqtt_client=mqtt_client, client_name=client_id, geo_position=position_client
+        mqtt_client=mqtt_client,
+        client_name=broker["client_id"],
+        geo_position=position_client,
     )
     worker_process = threading.Thread(target=worker.run, args=(stop_signal,))
     worker_process.start()
