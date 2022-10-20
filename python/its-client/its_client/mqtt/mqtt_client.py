@@ -55,10 +55,6 @@ class MQTTClient(object):
         logging.debug(
             self._format_log(f" called for {client.socket()} with {userdata}")
         )
-        if rc != 0:
-            logging.warning("unexpected disconnection")
-            self.loop_stop()
-            self.stop_signal.set()
 
     def on_connect(self, client, userdata, flags, rc):
         logging.debug(
