@@ -21,10 +21,16 @@ def build(args=None) -> ConfigParser:
         help="port of the MQTT broker",
     )
     parser.add_argument(
-        "--mqtt-tls-port",
-        "-T",
-        type=int,
-        help="TLS port of the MQTT broker",
+        "--mqtt-tls",
+        action="store_true",
+        default=None,  # store_true defaults to False, but we don't want a default
+        help="use TLS when connecting to the MQTT broker",
+    )
+    parser.add_argument(
+        "--mqtt-no-tls",
+        action="store_false",
+        dest="mqtt_tls",
+        help="use TLS when connecting to the MQTT broker",
     )
     parser.add_argument(
         "--mqtt-username",
@@ -100,8 +106,8 @@ def build(args=None) -> ConfigParser:
         config.set(section="broker", option="host", value=args.mqtt_host)
     if args.mqtt_port is not None:
         config.set(section="broker", option="port", value=str(args.mqtt_port))
-    if args.mqtt_tls_port is not None:
-        config.set(section="broker", option="tls_port", value=str(args.mqtt_tls_port))
+    if args.mqtt_tls is not None:
+        config.set(section="broker", option="tls", value=str(args.mqtt_tls))
     if args.mqtt_username is not None:
         config.set(section="broker", option="username", value=args.mqtt_username)
     if args.mqtt_password is not None:

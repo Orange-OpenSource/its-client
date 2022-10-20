@@ -7,7 +7,7 @@ from its_client import configuration
 def _create_args(
     broker_host=None,
     broker_port=None,
-    broker_tls_port=None,
+    broker_tls=None,
     broker_username=None,
     broker_password=None,
     broker_client_id=None,
@@ -21,9 +21,8 @@ def _create_args(
     if broker_port is not None:
         args.append("--mqtt-port")
         args.append(str(broker_port))
-    if broker_tls_port is not None:
-        args.append("--mqtt-tls-port")
-        args.append(str(broker_tls_port))
+    if broker_tls is not None:
+        args.append("--mqtt-tls")
     if broker_username is not None:
         args.append("--mqtt-username")
         args.append(broker_username)
@@ -56,7 +55,7 @@ class TestConfiguration(unittest.TestCase):
     def test_from_parameter(self):
         broker_host = "parameter_host"
         broker_port = 19
-        broker_tls_port = 89
+        broker_tls = True
         broker_username = "parameter_user"
         broker_password = "parameter_password"
         broker_client_id = "parameter_client_id"
@@ -64,7 +63,7 @@ class TestConfiguration(unittest.TestCase):
         args = _create_args(
             broker_host=broker_host,
             broker_port=broker_port,
-            broker_tls_port=broker_tls_port,
+            broker_tls=broker_tls,
             broker_username=broker_username,
             broker_password=broker_password,
             broker_client_id=broker_client_id,
@@ -74,7 +73,7 @@ class TestConfiguration(unittest.TestCase):
         self._check_parameter_list(
             broker_host=broker_host,
             broker_port=broker_port,
-            broker_tls_port=broker_tls_port,
+            broker_tls=broker_tls,
             broker_username=broker_username,
             broker_password=broker_password,
             broker_client_id=broker_client_id,
@@ -99,11 +98,11 @@ class TestConfiguration(unittest.TestCase):
         self.config = configuration.build(args)
         self._check_parameter_list(broker_port=broker_port)
 
-    def test_broker_tls_port_from_parameter(self):
-        broker_tls_port = 90
-        args = _create_args(broker_tls_port=broker_tls_port)
+    def test_broker_tls_from_parameter(self):
+        broker_tls = True
+        args = _create_args(broker_tls=broker_tls)
         self.config = configuration.build(args)
-        self._check_parameter_list(broker_tls_port=broker_tls_port)
+        self._check_parameter_list(broker_tls=broker_tls)
 
     def test_broker_username_from_parameter(self):
         broker_username = "unique_name"
@@ -133,7 +132,7 @@ class TestConfiguration(unittest.TestCase):
         self,
         broker_host="test_host",
         broker_port=18,
-        broker_tls_port=88,
+        broker_tls=True,
         broker_username="test_user",
         broker_password="test_password",
         broker_client_id="test_client_id",
@@ -147,7 +146,7 @@ class TestConfiguration(unittest.TestCase):
     ):
         self.assertEqual(self.config.get("broker", "host"), broker_host)
         self.assertEqual(self.config.getint("broker", "port"), broker_port)
-        self.assertEqual(self.config.getint("broker", "tls_port"), broker_tls_port)
+        self.assertEqual(self.config.getboolean("broker", "tls"), broker_tls)
         self.assertEqual(self.config.get("broker", "username"), broker_username)
         self.assertEqual(self.config.get("broker", "password"), broker_password)
         self.assertEqual(self.config.get("broker", "client_id"), broker_client_id)
