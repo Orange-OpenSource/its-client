@@ -193,6 +193,7 @@ class MQTTClient(object):
         self.client.on_socket_register_write = self.on_socket_register_write
         self.client.max_inflight_messages_set(20)
         self.client.max_queued_messages_set(100)
+        self.client.reconnect_delay_set(1, 2)
         self.client.connect(
             host=self.broker["host"],
             port=self.broker["port"],
