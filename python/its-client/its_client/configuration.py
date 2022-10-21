@@ -47,6 +47,43 @@ def build(args=None) -> ConfigParser:
         help="identifier of MQTT client. This must be unique in the broker",
     )
     parser.add_argument(
+        "--mqtt-mirror-host",
+        help="mirror all messages sent to and received from --mqtt-host to this broker",
+    )
+    parser.add_argument(
+        "--mqtt-mirror-port",
+        type=int,
+        default=1883,
+        help="port of the mirror MQTT broker",
+    )
+    parser.add_argument(
+        "--mqtt-mirror-tls",
+        action="store_true",
+        default=None,  # store_true defaults to False, but we don't want a default
+        help="use TLS when connecting to the mirror MQTT broker",
+    )
+    parser.add_argument(
+        "--mqtt-mirror-no-tls",
+        action="store_false",
+        dest="mqtt_mirror_tls",
+        help="use TLS when connecting to the mirror MQTT broker",
+    )
+    parser.add_argument(
+        "--mqtt-mirror-username",
+        help="username to use when connecting to the mirror MQTT broker",
+    )
+    parser.add_argument(
+        "--mqtt-mirror-password",
+        help="password to use when connecting to the mirror MQTT broker",
+    )
+    parser.add_argument(
+        "--mqtt-mirror-client-id",
+        help=(
+            "unique MQTT client ID on the mirror MQTT broker,"
+            " if different from --mqtt-client-id."
+        ),
+    )
+    parser.add_argument(
         "--static",
         "-s",
         action="store_true",
@@ -112,6 +149,43 @@ def build(args=None) -> ConfigParser:
         config.set(section="broker", option="username", value=args.mqtt_username)
     if args.mqtt_password is not None:
         config.set(section="broker", option="password", value=args.mqtt_password)
+
+    if not config.has_section("mirror-broker"):
+        config.add_section("mirror-broker")
+    if args.mqtt_mirror_host is not None:
+        config.set(section="mirror-broker", option="host", value=args.mqtt_mirror_host)
+    if args.mqtt_mirror_port is not None:
+        config.set(
+            section="mirror-broker",
+            option="port",
+            value=str(args.mqtt_mirror_port),
+        )
+    if args.mqtt_mirror_tls is not None:
+        config.set(
+            section="mirror-broker",
+            option="tls",
+            value=str(args.mqtt_mirror_tls),
+        )
+    if args.mqtt_mirror_username is not None:
+        config.set(
+            section="mirror-broker",
+            option="username",
+            value=args.mqtt_mirror_username or "",
+        )
+    if args.mqtt_mirror_password is not None:
+        config.set(
+            section="mirror-broker",
+            option="password",
+            value=args.mqtt_mirror_password or "",
+        )
+    if args.mqtt_mirror_client_id is not None:
+        config.set(
+            section="mirror-broker",
+            option="client_id",
+            value=args.mqtt_mirror_client_id or "",
+        )
+    if config.get("mirror-broker", "host", fallback=None) is None:
+        config.remove_section("mirror-broker")
 
     # list all used contents
     logging.info("used configuration:")

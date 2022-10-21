@@ -81,9 +81,29 @@ def main():
         "password": config.get(section="broker", option="password"),
         "client_id": config.get(section="broker", option="client_id"),
     }
+    if config.has_section("mirror-broker"):
+        if config.getboolean("mirror-broker", "tls", fallback=False):
+            logging.error("TLS not yet supported on mirror broker")
+            exit(1)
+        mirror_broker = {
+            # Not handling TLS, as we're not ready for it yet.
+            "host": config.get("mirror-broker", "host"),
+            "port": config.getint("mirror-broker", "port"),
+            "username": config.get("mirror-broker", "username", fallback=""),
+            "password": config.get("mirror-broker", "password", fallback=""),
+            "client_id": config.get(
+                "mirror-broker",
+                "client_id",
+                fallback=config.get(section="broker", option="client_id"),
+            ),
+        }
+    else:
+        mirror_broker = None
+
     logging.info("starting mqtt client...")
     mqtt_client = MQTTClient(
         broker=broker,
+        mirror_broker=mirror_broker,
         geo_position=position_client,
         stop_signal=stop_signal,
     )

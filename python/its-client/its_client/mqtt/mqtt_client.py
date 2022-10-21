@@ -33,14 +33,17 @@ class MQTTClient(object):
     def __init__(
         self,
         broker: dict,
+        mirror_broker: dict,
         geo_position: GeoPosition,
         stop_signal=None,
     ):
         self.broker = broker
+        self.mirror_broker = mirror_broker
         self.geo_position = geo_position
         self.stop_signal = stop_signal
         self.gateway_name = "broker"
         self.client = None
+        self.mirror_client = None
         self.new_connection = False
 
     def on_disconnect(self, client, userdata, rc):
@@ -67,6 +70,13 @@ class MQTTClient(object):
         logging.debug(
             self._format_log(f"mid: {message.mid}, payload: {message.payload}")
         )
+        if self.mirror_client:
+            self.mirror_client.publish(
+                message.topic,
+                message.payload,
+                message.qos,
+                message.retain,
+            )
         if message.topic.endswith("5GCroCo/outQueue/info/broker"):
             logging.debug(
                 self._format_log(
@@ -167,6 +177,24 @@ class MQTTClient(object):
 
     def _connect(self):
         logging.info("connecting...")
+        # Connect on the mirror client first, so that it is ready to
+        # forward any message incoming from the main broker
+        if self.mirror_broker:
+            self.mirror_client = paho.mqtt.client.Client(
+                client_id=self.mirror_broker["client_id"]
+            )
+            if self.mirror_broker["username"]:
+                self.mirror_client.username_pw_set(
+                    self.mirror_broker["username"],
+                    self.mirror_broker["password"],
+                )
+            self.mirror_client.reconnect_delay_set()
+            self.mirror_client.connect(
+                host=self.mirror_broker["host"],
+                port=self.mirror_broker["port"],
+                keepalive=60,
+            )
+
         self.client = paho.mqtt.client.Client(client_id=self.broker["client_id"])
         if self.broker["username"]:
             self.client.username_pw_set(
@@ -220,22 +248,30 @@ class MQTTClient(object):
             logging.warning(
                 f"message not sent on topic {topic} because we aren't connected"
             )
+        if self.mirror_client is not None:
+            self.mirror_client.publish(topic, payload, qos, retain, properties)
 
     def loop_start(self):
         logging.debug(self._format_log(f"starting loop..."))
         self._connect()
         self.client.loop_start()
+        if self.mirror_client is not None:
+            self.mirror_client.loop_start()
 
     def loop_stop(self):
         logging.debug(self._format_log(f"stopping loop..."))
         self.client.loop_stop()
         self.client.disconnect()
+        if self.mirror_client is not None:
+            self.mirror_client.loop_stop()
+            self.mirror_client.disconnect()
 
     def loop_restart(self):
         self.loop_stop()
         self.loop_start()
 
     def is_connected(self):
+        # We're only interested about the connection to the main broker
         return self.client.is_connected()
 
     def _format_log(self, message=""):
