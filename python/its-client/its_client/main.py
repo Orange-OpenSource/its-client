@@ -44,6 +44,10 @@ def main():
 
     config = configuration.build()
 
+    if config.getboolean("broker", "tls", fallback=False):
+        logging.error("TLS not yet supported")
+        exit(1)
+
     logging.info(f"started at {int(round(start_time * 1000))}")
 
     if config.getboolean("position", "static"):
