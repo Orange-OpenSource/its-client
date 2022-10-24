@@ -96,6 +96,11 @@ def main():
                 "client_id",
                 fallback=config.get(section="broker", option="client_id"),
             ),
+            "mirror-self": config.getboolean(
+                "mirror-broker",
+                "mirror-self",
+                fallback=False,
+            ),
         }
     else:
         mirror_broker = None

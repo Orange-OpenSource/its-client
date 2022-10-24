@@ -90,12 +90,17 @@ class MQTTClient(object):
             message_dict = dict()
 
         if self.mirror_client:
-            self.mirror_client.publish(
-                message.topic,
-                message.payload,
-                message.qos,
-                message.retain,
-            )
+            if (
+                message_dict.get("source_uuid", "") != self.broker["client_id"]
+                or self.mirror_broker["mirror-self"]
+            ):
+                logging.debug(f"mid: {message.mid}: forwarding to mirror broker")
+                self.mirror_client.publish(
+                    message.topic,
+                    message.payload,
+                    message.qos,
+                    message.retain,
+                )
 
         if not message.payload:
             logging.debug(f"mid: {message.mid}, empty payload, skipping message")

@@ -84,6 +84,18 @@ def build(args=None) -> ConfigParser:
         ),
     )
     parser.add_argument(
+        "--mqtt-mirror-self",
+        action="store_true",
+        default=None,  # store_true defaults to False, but we don't want a default
+        help="do forward self messages received back from main broker",
+    )
+    parser.add_argument(
+        "--mqtt-mirror-no-self",
+        action="store_false",
+        dest="mqtt_mirror_self",
+        help="don't forward self messages received back from main broker",
+    )
+    parser.add_argument(
         "--static",
         "-s",
         action="store_true",
@@ -183,6 +195,12 @@ def build(args=None) -> ConfigParser:
             section="mirror-broker",
             option="client_id",
             value=args.mqtt_mirror_client_id or "",
+        )
+    if args.mqtt_mirror_self is not None:
+        config.set(
+            section="mirror-broker",
+            option="mirror-self",
+            value=str(args.mqtt_mirror_self),
         )
     if config.get("mirror-broker", "host", fallback=None) is None:
         config.remove_section("mirror-broker")
