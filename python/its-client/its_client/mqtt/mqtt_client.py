@@ -74,58 +74,50 @@ class MQTTClient(object):
                 )
             )
             self.gateway_name = json.loads(message.payload)["instance_id"]
-        elif self.CAM_RECEPTION_QUEUE in message.topic:
-            if message.topic is not None and len(message.payload) > 0:
-                message_dict = json.loads(message.payload)
-                sender = message.topic.replace(self.CAM_RECEPTION_QUEUE, "").split("/")[
-                    1
-                ]
-                root_cam_topic = f"{self.CAM_RECEPTION_QUEUE}/{sender}"
-                lon, lat = self.geo_position.get_current_position()
-                monitoring.monitore_cam(
-                    vehicle_id=self.broker["client_id"],
-                    direction="received_on",
-                    station_id=message_dict["message"]["station_id"],
-                    generation_delta_time=message_dict["message"][
-                        "generation_delta_time"
-                    ],
-                    latitude=lat,
-                    longitude=lon,
-                    timestamp=int(round(time.time() * 1000)),
-                    partner=self.gateway_name,
-                    root_queue=root_cam_topic,
-                )
-                json_cam = json.dumps(message_dict)
-                its.record(json_cam)
-        elif self.DENM_RECEPTION_QUEUE in message.topic:
-            if message.topic is not None and len(message.payload) > 0:
-                message_dict = json.loads(message.payload)
-                lon, lat = self.geo_position.get_current_position()
-                monitoring.monitore_denm(
-                    vehicle_id=self.broker["client_id"],
-                    station_id=message_dict["message"]["station_id"],
-                    originating_station_id=message_dict["message"][
-                        "management_container"
-                    ]["action_id"]["originating_station_id"],
-                    sequence_number=message_dict["message"]["management_container"][
-                        "action_id"
-                    ]["sequence_number"],
-                    reference_time=message_dict["message"]["management_container"][
-                        "reference_time"
-                    ],
-                    detection_time=message_dict["message"]["management_container"][
-                        "detection_time"
-                    ],
-                    latitude=lat,
-                    longitude=lon,
-                    timestamp=int(round(time.time() * 1000)),
-                    partner=self.gateway_name,
-                    root_queue=self.DENM_RECEPTION_QUEUE,
-                    sender=message_dict["source_uuid"],
-                )
-                json_denm = json.dumps(message_dict)
-                its.record(json_denm)
-        elif self.CPM_RECEPTION_QUEUE in message.topic:
+        elif self.CAM_RECEPTION_QUEUE in message.topic and message.payload:
+            message_dict = json.loads(message.payload)
+            sender = message.topic.replace(self.CAM_RECEPTION_QUEUE, "").split("/")[1]
+            root_cam_topic = f"{self.CAM_RECEPTION_QUEUE}/{sender}"
+            lon, lat = self.geo_position.get_current_position()
+            monitoring.monitore_cam(
+                vehicle_id=self.broker["client_id"],
+                direction="received_on",
+                station_id=message_dict["message"]["station_id"],
+                generation_delta_time=message_dict["message"]["generation_delta_time"],
+                latitude=lat,
+                longitude=lon,
+                timestamp=int(round(time.time() * 1000)),
+                partner=self.gateway_name,
+                root_queue=root_cam_topic,
+            )
+            its.record(message.payload.decode())
+        elif self.DENM_RECEPTION_QUEUE in message.topic and message.payload:
+            message_dict = json.loads(message.payload)
+            lon, lat = self.geo_position.get_current_position()
+            monitoring.monitore_denm(
+                vehicle_id=self.broker["client_id"],
+                station_id=message_dict["message"]["station_id"],
+                originating_station_id=message_dict["message"]["management_container"][
+                    "action_id"
+                ]["originating_station_id"],
+                sequence_number=message_dict["message"]["management_container"][
+                    "action_id"
+                ]["sequence_number"],
+                reference_time=message_dict["message"]["management_container"][
+                    "reference_time"
+                ],
+                detection_time=message_dict["message"]["management_container"][
+                    "detection_time"
+                ],
+                latitude=lat,
+                longitude=lon,
+                timestamp=int(round(time.time() * 1000)),
+                partner=self.gateway_name,
+                root_queue=self.DENM_RECEPTION_QUEUE,
+                sender=message_dict["source_uuid"],
+            )
+            its.record(message.payload.decode())
+        elif self.CPM_RECEPTION_QUEUE in message.topic and message.payload:
             message_dict = json.loads(message.payload)
             sender = message.topic.replace(self.CPM_RECEPTION_QUEUE, "").split("/")[1]
             root_cpm_topic = f"{self.CPM_RECEPTION_QUEUE}/{sender}"
@@ -141,8 +133,7 @@ class MQTTClient(object):
                 partner=self.gateway_name,
                 root_queue=root_cpm_topic,
             )
-            json_denm = json.dumps(message_dict)
-            its.record(json_denm)
+            its.record(message.payload.decode())
 
     def on_publish(self, client, userdata, _mid):
         logging.debug(
