@@ -70,6 +70,25 @@ class MQTTClient(object):
         logging.debug(
             self._format_log(f"mid: {message.mid}, payload: {message.payload}")
         )
+        try:
+            message_dict = json.loads(message.payload)
+        except json.decoder.JSONDecodeError as e:
+            if message.payload:
+                logging.error(
+                    self._format_log(
+                        f"Non-JSON payload on {message.topic}: {message.payload}"
+                    )
+                )
+            else:
+                # Empty payload: most probably a delete of a retained message.
+                logging.debug(
+                    self._format_log(
+                        f"Non-JSON payload on {message.topic}: {message.payload}"
+                    )
+                )
+            # Not bailing out, we may need to forward it to the mirror borker, below
+            message_dict = dict()
+
         if self.mirror_client:
             self.mirror_client.publish(
                 message.topic,
@@ -77,15 +96,17 @@ class MQTTClient(object):
                 message.qos,
                 message.retain,
             )
+
+        if not message.payload:
+            logging.debug(f"mid: {message.mid}, empty payload, skipping message")
+            return
+
         if message.topic.endswith("5GCroCo/outQueue/info/broker"):
             logging.debug(
-                self._format_log(
-                    f"Instance id: {json.loads(message.payload)['instance_id']}"
-                )
+                self._format_log(f"Instance id: {message_dict['instance_id']}")
             )
-            self.gateway_name = json.loads(message.payload)["instance_id"]
-        elif self.CAM_RECEPTION_QUEUE in message.topic and message.payload:
-            message_dict = json.loads(message.payload)
+            self.gateway_name = message_dict["instance_id"]
+        elif self.CAM_RECEPTION_QUEUE in message.topic:
             sender = message.topic.replace(self.CAM_RECEPTION_QUEUE, "").split("/")[1]
             root_cam_topic = f"{self.CAM_RECEPTION_QUEUE}/{sender}"
             lon, lat = self.geo_position.get_current_position()
@@ -101,8 +122,7 @@ class MQTTClient(object):
                 root_queue=root_cam_topic,
             )
             its.record(message.payload.decode())
-        elif self.DENM_RECEPTION_QUEUE in message.topic and message.payload:
-            message_dict = json.loads(message.payload)
+        elif self.DENM_RECEPTION_QUEUE in message.topic:
             lon, lat = self.geo_position.get_current_position()
             monitoring.monitore_denm(
                 vehicle_id=self.broker["client_id"],
@@ -127,8 +147,7 @@ class MQTTClient(object):
                 sender=message_dict["source_uuid"],
             )
             its.record(message.payload.decode())
-        elif self.CPM_RECEPTION_QUEUE in message.topic and message.payload:
-            message_dict = json.loads(message.payload)
+        elif self.CPM_RECEPTION_QUEUE in message.topic:
             sender = message.topic.replace(self.CPM_RECEPTION_QUEUE, "").split("/")[1]
             root_cpm_topic = f"{self.CPM_RECEPTION_QUEUE}/{sender}"
             lon, lat = self.geo_position.get_current_position()
