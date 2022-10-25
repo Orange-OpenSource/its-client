@@ -1,0 +1,31 @@
+name: Python its-status
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          cd python/its-status
+          python -m pip install --upgrade pip
+          pip install black wheel
+      - name: Run black
+        run: |
+          cd python/its-status
+          black --diff --check .
+      - name: Run package creation
+        run: |
+          cd python/its-status
+          python setup.py bdist_wheel
+      - name: Archive package
+        uses: actions/upload-artifact@v2
+        with:
+          name: its_status
+          path: python/its-status/dist
