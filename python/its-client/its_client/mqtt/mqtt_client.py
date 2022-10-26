@@ -26,9 +26,8 @@ class MQTTClient(object):
     MQTT client.
     """
 
-    CAM_RECEPTION_QUEUE = "5GCroCo/outQueue/v2x/cam"
-    CPM_RECEPTION_QUEUE = "5GCroCo/outQueue/v2x/cpm"
-    DENM_RECEPTION_QUEUE = "5GCroCo/outQueue/v2x/denm"
+    SUB_ROOT = "5GCroCo/outQueue"
+    PREFIX = "v2x"
 
     def __init__(
         self,
@@ -45,6 +44,11 @@ class MQTTClient(object):
         self.client = None
         self.mirror_client = None
         self.new_connection = False
+        self.recv_queues = {
+            "CAM": MQTTClient.SUB_ROOT + "/" + MQTTClient.PREFIX + "/cam",
+            "CPM": MQTTClient.SUB_ROOT + "/" + MQTTClient.PREFIX + "/cpm",
+            "DENM": MQTTClient.SUB_ROOT + "/" + MQTTClient.PREFIX + "/denm",
+        }
 
     def on_disconnect(self, client, userdata, rc):
         logging.debug(
@@ -111,9 +115,9 @@ class MQTTClient(object):
                 self._format_log(f"Instance id: {message_dict['instance_id']}")
             )
             self.gateway_name = message_dict["instance_id"]
-        elif self.CAM_RECEPTION_QUEUE in message.topic:
-            sender = message.topic.replace(self.CAM_RECEPTION_QUEUE, "").split("/")[1]
-            root_cam_topic = f"{self.CAM_RECEPTION_QUEUE}/{sender}"
+        elif self.recv_queues["CAM"] in message.topic:
+            sender = message.topic.replace(self.recv_queues["CAM"], "").split("/")[1]
+            root_cam_topic = f"{self.recv_queues['CAM']}/{sender}"
             lon, lat = self.geo_position.get_current_position()
             monitoring.monitore_cam(
                 vehicle_id=self.broker["client_id"],
@@ -127,7 +131,7 @@ class MQTTClient(object):
                 root_queue=root_cam_topic,
             )
             its.record(message.payload.decode())
-        elif self.DENM_RECEPTION_QUEUE in message.topic:
+        elif self.recv_queues["DENM"] in message.topic:
             lon, lat = self.geo_position.get_current_position()
             monitoring.monitore_denm(
                 vehicle_id=self.broker["client_id"],
@@ -148,13 +152,13 @@ class MQTTClient(object):
                 longitude=lon,
                 timestamp=int(round(time.time() * 1000)),
                 partner=self.gateway_name,
-                root_queue=self.DENM_RECEPTION_QUEUE,
+                root_queue=self.recv_queues["DENM"],
                 sender=message_dict["source_uuid"],
             )
             its.record(message.payload.decode())
-        elif self.CPM_RECEPTION_QUEUE in message.topic:
-            sender = message.topic.replace(self.CPM_RECEPTION_QUEUE, "").split("/")[1]
-            root_cpm_topic = f"{self.CPM_RECEPTION_QUEUE}/{sender}"
+        elif self.recv_queues["CPM"] in message.topic:
+            sender = message.topic.replace(self.recv_queues["CPM"], "").split("/")[1]
+            root_cpm_topic = f"{self.recv_queues['CPM']}/{sender}"
             lon, lat = self.geo_position.get_current_position()
             monitoring.monitore_cpm(
                 vehicle_id=self.broker["client_id"],
@@ -299,13 +303,8 @@ class MQTTClient(object):
         return self.client.is_connected()
 
     def get_recv_queue(self, name):
-        if name == "CAM":
-            return self.CAM_RECEPTION_QUEUE
-        if name == "CPM":
-            return self.CPM_RECEPTION_QUEUE
-        if name == "DENM":
-            return self.DENM_RECEPTION_QUEUE
-        return None
+        # Let the caller handle KeyError is they asked for a non-existing queue
+        return self.recv_queues[name]
 
     def _format_log(self, message=""):
         return f"{type(self).__name__}[{self.broker['client_id']}]::{getouterframes(currentframe())[1][3]} {message}"
