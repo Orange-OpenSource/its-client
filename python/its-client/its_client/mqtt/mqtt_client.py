@@ -26,10 +26,6 @@ class MQTTClient(object):
     MQTT client.
     """
 
-    PUB_ROOT = "5GCroCo/inQueue"
-    SUB_ROOT = "5GCroCo/outQueue"
-    PREFIX = "v2x"
-
     def __init__(
         self,
         broker: dict,
@@ -46,13 +42,13 @@ class MQTTClient(object):
         self.mirror_client = None
         self.new_connection = False
         self.recv_queues = {
-            "INFO": MQTTClient.SUB_ROOT + "/info/broker",
-            "CAM": MQTTClient.SUB_ROOT + "/" + MQTTClient.PREFIX + "/cam",
-            "CPM": MQTTClient.SUB_ROOT + "/" + MQTTClient.PREFIX + "/cpm",
-            "DENM": MQTTClient.SUB_ROOT + "/" + MQTTClient.PREFIX + "/denm",
+            "INFO": broker["root_sub"] + "/info/broker",
+            "CAM": broker["root_sub"] + "/" + broker["prefix"] + "/cam",
+            "CPM": broker["root_sub"] + "/" + broker["prefix"] + "/cpm",
+            "DENM": broker["root_sub"] + "/" + broker["prefix"] + "/denm",
         }
         self.send_queues = {
-            "CAM": MQTTClient.PUB_ROOT + "/" + MQTTClient.PREFIX + "/cam",
+            "CAM": broker["root_pub"] + "/" + broker["prefix"] + "/cam",
         }
 
     def on_disconnect(self, client, userdata, rc):

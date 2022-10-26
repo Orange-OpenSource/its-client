@@ -47,6 +47,18 @@ def build(args=None) -> ConfigParser:
         help="identifier of MQTT client. This must be unique in the broker",
     )
     parser.add_argument(
+        "--mqtt-root-pub",
+        help="root of all MQTT published topics",
+    )
+    parser.add_argument(
+        "--mqtt-root-sub",
+        help="root of all MQTT subscribed topics",
+    )
+    parser.add_argument(
+        "--mqtt-prefix",
+        help="prefix to all MQTT topics, subscribed or published, after --mqtt-root",
+    )
+    parser.add_argument(
         "--mqtt-mirror-host",
         help="mirror all messages sent to and received from --mqtt-host to this broker",
     )
@@ -161,6 +173,12 @@ def build(args=None) -> ConfigParser:
         config.set(section="broker", option="username", value=args.mqtt_username)
     if args.mqtt_password is not None:
         config.set(section="broker", option="password", value=args.mqtt_password)
+    if args.mqtt_root_pub is not None:
+        config.set(section="broker", option="root_pub", value=args.mqtt_root_pub)
+    if args.mqtt_root_sub is not None:
+        config.set(section="broker", option="root_sub", value=args.mqtt_root_sub)
+    if args.mqtt_prefix is not None:
+        config.set(section="broker", option="prefix", value=args.mqtt_prefix)
 
     if not config.has_section("mirror-broker"):
         config.add_section("mirror-broker")

@@ -80,6 +80,9 @@ def main():
         "username": config.get(section="broker", option="username"),
         "password": config.get(section="broker", option="password"),
         "client_id": config.get(section="broker", option="client_id"),
+        "root_pub": config.get(section="broker", option="root_pub"),
+        "root_sub": config.get(section="broker", option="root_sub"),
+        "prefix": config.get(section="broker", option="prefix"),
     }
     if config.has_section("mirror-broker"):
         if config.getboolean("mirror-broker", "tls", fallback=False):
