@@ -45,6 +45,7 @@ class MQTTClient(object):
         self.mirror_client = None
         self.new_connection = False
         self.recv_queues = {
+            "INFO": MQTTClient.SUB_ROOT + "/info/broker",
             "CAM": MQTTClient.SUB_ROOT + "/" + MQTTClient.PREFIX + "/cam",
             "CPM": MQTTClient.SUB_ROOT + "/" + MQTTClient.PREFIX + "/cpm",
             "DENM": MQTTClient.SUB_ROOT + "/" + MQTTClient.PREFIX + "/denm",
@@ -64,8 +65,7 @@ class MQTTClient(object):
         if rc == 0:
             logging.info("connected to mqtt broker")
             # gather the gateway name
-            topic = "5GCroCo/outQueue/info/broker"
-            self.subscribe(topic)
+            self.subscribe(topic=self.recv_queues["INFO"])
             # save the new connection status to trigger the subscriptions
             self.new_connection = True
 
@@ -110,7 +110,7 @@ class MQTTClient(object):
             logging.debug(f"mid: {message.mid}, empty payload, skipping message")
             return
 
-        if message.topic.endswith("5GCroCo/outQueue/info/broker"):
+        if self.recv_queues["INFO"] in message.topic:
             logging.debug(
                 self._format_log(f"Instance id: {message_dict['instance_id']}")
             )
