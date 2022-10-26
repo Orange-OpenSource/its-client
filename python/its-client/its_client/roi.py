@@ -73,12 +73,12 @@ class RegionOfInterest:
         )
         if new_position != self.cam_position:
             self.cam_position = self._update_subscription(
-                new_position, self.cam_position, client.CAM_RECEPTION_QUEUE, client
+                new_position, self.cam_position, client.get_recv_queue("CAM"), client
             )
             self._update_neighborhood_subscription(
                 set(self.cam_subscription),
                 set(quadtree.get_neighborhood(self.cam_position)),
-                client.CAM_RECEPTION_QUEUE,
+                client.get_recv_queue("CAM"),
                 client,
             )
 
@@ -91,12 +91,12 @@ class RegionOfInterest:
         )
         if new_position != self.cpm_position:
             self.cpm_position = self._update_subscription(
-                new_position, self.cpm_position, client.CPM_RECEPTION_QUEUE, client
+                new_position, self.cpm_position, client.get_recv_queue("CPM"), client
             )
             self._update_neighborhood_subscription(
                 set(self.cpm_subscription),
                 set(quadtree.get_neighborhood(self.cpm_position)),
-                client.CPM_RECEPTION_QUEUE,
+                client.get_recv_queue("CPM"),
                 client,
             )
 
@@ -109,12 +109,12 @@ class RegionOfInterest:
         )
         if new_position != self.denm_position:
             self.denm_position = self._update_subscription(
-                new_position, self.denm_position, client.DENM_RECEPTION_QUEUE, client
+                new_position, self.denm_position, client.get_recv_queue("DENM"), client
             )
             self._update_neighborhood_subscription(
                 set(self.denm_subscription),
                 set(quadtree.get_neighborhood(self.denm_position)),
-                client.DENM_RECEPTION_QUEUE,
+                client.get_recv_queue("DENM"),
                 client,
             )
 

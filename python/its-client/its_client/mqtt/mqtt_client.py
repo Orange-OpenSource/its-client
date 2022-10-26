@@ -298,5 +298,14 @@ class MQTTClient(object):
         # We're only interested about the connection to the main broker
         return self.client.is_connected()
 
+    def get_recv_queue(self, name):
+        if name == "CAM":
+            return self.CAM_RECEPTION_QUEUE
+        if name == "CPM":
+            return self.CPM_RECEPTION_QUEUE
+        if name == "DENM":
+            return self.DENM_RECEPTION_QUEUE
+        return None
+
     def _format_log(self, message=""):
         return f"{type(self).__name__}[{self.broker['client_id']}]::{getouterframes(currentframe())[1][3]} {message}"
