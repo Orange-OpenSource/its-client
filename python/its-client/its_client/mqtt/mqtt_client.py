@@ -26,6 +26,7 @@ class MQTTClient(object):
     MQTT client.
     """
 
+    PUB_ROOT = "5GCroCo/inQueue"
     SUB_ROOT = "5GCroCo/outQueue"
     PREFIX = "v2x"
 
@@ -49,6 +50,9 @@ class MQTTClient(object):
             "CAM": MQTTClient.SUB_ROOT + "/" + MQTTClient.PREFIX + "/cam",
             "CPM": MQTTClient.SUB_ROOT + "/" + MQTTClient.PREFIX + "/cpm",
             "DENM": MQTTClient.SUB_ROOT + "/" + MQTTClient.PREFIX + "/denm",
+        }
+        self.send_queues = {
+            "CAM": MQTTClient.PUB_ROOT + "/" + MQTTClient.PREFIX + "/cam",
         }
 
     def on_disconnect(self, client, userdata, rc):
@@ -305,6 +309,10 @@ class MQTTClient(object):
     def get_recv_queue(self, name):
         # Let the caller handle KeyError is they asked for a non-existing queue
         return self.recv_queues[name]
+
+    def get_send_queue(self, name):
+        # Let the caller handle KeyError is they asked for a non-existing queue
+        return self.send_queues[name]
 
     def _format_log(self, message=""):
         return f"{type(self).__name__}[{self.broker['client_id']}]::{getouterframes(currentframe())[1][3]} {message}"
