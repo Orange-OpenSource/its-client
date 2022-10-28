@@ -6,6 +6,8 @@ import os.path
 import sys
 
 BROKEN = [
+    "cam_schema_1-1-0.json",
+    "cam_schema_1-1-1.json",
 ]
 
 

@@ -1,0 +1,585 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tigroo31.github.io/its-client/schema/cam",
+  "description": "CPM JSon schema",
+  "type": "object",
+  "required": [
+    "type",
+    "origin",
+    "version",
+    "source_uuid",
+    "timestamp",
+    "message"
+  ],
+  "properties": {
+    "type": {
+      "enum": [
+        "cpm"
+      ]
+    },
+    "origin": {
+      "type": "string",
+      "enum": [
+        "self",
+        "global_application",
+        "mec_application",
+        "on_board_application"
+      ],
+      "description": "The entity responsible for this message"
+    },
+    "version": {
+      "type": "string",
+      "description": "json message format version",
+      "default": "1.0.0",
+      "examples": [
+        "0.1.0",
+        "0.2.0",
+        "1.0.0"
+      ]
+    },
+    "source_uuid": {
+      "type": "string",
+      "description": "Identifier"
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01)",
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
+    },
+    "message": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "station_id",
+        "message_id",
+        "generation_delta_time",
+        "management_container",
+        "number_of_perceived_objects"
+      ],
+      "properties": {
+        "protocol_version": {
+          "type": "integer",
+          "description": "Version of the ITS message and/or communication protocol",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "station_id": {
+          "type": "integer",
+          "description": "Identifier for an ITS-S",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "message_id": {
+          "type": "integer",
+          "description": "Type of ITS message",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "generation_delta_time": {
+          "type": "integer",
+          "description": "Unit: millisecond. Time of the reference position in the CPM, considered as time of the CPM generation. TimestampIts mod 65 536. TimestampIts represents an integer value in milliseconds since 2004-01-01T00:00:00:000Z",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "management_container": {
+          "type": "object",
+          "required": [
+            "station_type",
+            "reference_position",
+            "confidence"
+          ],
+          "properties": {
+            "station_type": {
+              "description": "Station type of the originating ITS-S. unknown(0), pedestrian(1), cyclist(2), moped(3), motorcycle(4), passengerCar(5), bus(6), lightTruck(7), heavyTruck(8), trailer(9), specialVehicles(10), tram(11), roadSideUnit(15)",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            },
+            "reference_position": {
+              "type": "object",
+              "required": [
+                "latitude",
+                "longitude",
+                "altitude"
+              ],
+              "properties": {
+                "latitude": {
+                  "type": "integer",
+                  "description": "Unit: 0.1 microdegree. oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10), unavailable(900000001)",
+                  "minimum": -900000000,
+                  "maximum": 900000001
+                },
+                "longitude": {
+                  "type": "integer",
+                  "description": "Unit: 0.1 microdegree. oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(1800000001)",
+                  "minimum": -1800000000,
+                  "maximum": 1800000001
+                },
+                "altitude": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 meter. referenceEllipsoidSurface(0), oneCentimeter(1), unavailable(800001)",
+                  "minimum": -100000,
+                  "maximum": 800001
+                }
+              }
+            },
+            "confidence": {
+              "type": "object",
+              "required": [
+                "position_confidence_ellipse",
+                "altitude"
+              ],
+              "properties": {
+                "position_confidence_ellipse": {
+                  "type": "object",
+                  "required": [
+                    "semi_major_confidence",
+                    "semi_minor_confidence",
+                    "semi_major_orientation"
+                  ],
+                  "properties": {
+                    "semi_major_confidence": {
+                      "type": "integer",
+                      "description": "Unit: 1 cm. oneCentimeter(1), outOfRange(4094), unavailable(4095)",
+                      "minimum": 0,
+                      "maximum": 4095
+                    },
+                    "semi_minor_confidence": {
+                      "type": "integer",
+                      "description": "Unit: 1 cm. oneCentimeter(1), outOfRange(4094), unavailable(4095)",
+                      "minimum": 0,
+                      "maximum": 4095
+                    },
+                    "semi_major_orientation": {
+                      "type": "integer",
+                      "description": "Unit: 0.1 degree. wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), unavailable(3601)",
+                      "minimum": 0,
+                      "maximum": 3601
+                    }
+                  }
+                },
+                "altitude": {
+                  "type": "integer",
+                  "description": "alt-000-01 (0), alt-000-02 (1), alt-000-05 (2), alt-000-10 (3), alt-000-20 (4), alt-000-50 (5), alt-001-00 (6), alt-002-00 (7), alt-005-00 (8), alt-010-00 (9), alt-020-00 (10), alt-050-00 (11), alt-100-00 (12), alt-200-00 (13), outOfRange (14), unavailable (15)",
+                  "minimum": 0,
+                  "maximum": 15
+                }
+              }
+            }
+          }
+        },
+        "station_data_container": {
+          "type": "object",
+          "properties": {
+            "originating_vehicle_container": {
+              "type": "object",
+              "required": [
+                "heading",
+                "speed",
+                "confidence"
+              ],
+              "properties": {
+                "heading": {
+                  "type": "integer",
+                  "description": "Unit: 0.1 degree. Heading of the vehicle movement of the originating ITS-S with regards to the true north; wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), unavailable(3601)",
+                  "minimum": 0,
+                  "maximum": 3601
+                },
+                "speed": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 m/s. Driving speed of the originating ITS-S; standstill(0), oneCentimeterPerSec(1), unavailable(16383)",
+                  "minimum": 0,
+                  "maximum": 16383
+                },
+                "drive_direction": {
+                  "type": "integer",
+                  "description": "forward (0), backward (1), unavailable (2)",
+                  "default": 2,
+                  "minimum": 0,
+                  "maximum": 2
+                },
+                "vehicle_length": {
+                  "type": "integer",
+                  "description": "tenCentimeters(1), outOfRange(1022), unavailable(1023)",
+                  "default": 1023,
+                  "minimum": 1,
+                  "maximum": 1023
+                },
+                "vehicle_width": {
+                  "type": "integer",
+                  "description": "tenCentimeters(1), outOfRange(61), unavailable(62)",
+                  "default": 62,
+                  "minimum": 1,
+                  "maximum": 62
+                },
+                "longitudinal_acceleration": {
+                  "description": "unit: 0,1 m/s2. pointOneMeterPerSecSquaredForward(1), pointOneMeterPerSecSquaredBackward(-1), unavailable(161)",
+                  "type": "integer",
+                  "default": 161,
+                  "minimum": -160,
+                  "maximum": 161
+                },
+                "yaw_rate": {
+                  "type": "integer",
+                  "description": "Unit: 0,01 degree/s: straight(0), degSec-000-01ToRight(-1), degSec-000-01ToLeft(1), unavailable(32767)",
+                  "default": 32767,
+                  "minimum": -32766,
+                  "maximum": 32767
+                },
+                "lateral_acceleration": {
+                  "type": "integer",
+                  "description": "Unit: 0.1 m/s2. pointOneMeterPerSecSquaredToRight(-1), pointOneMeterPerSecSquaredToLeft(1), unavailable(161)",
+                  "minimum": -160,
+                  "maximum": 161
+                },
+                "vertical_acceleration": {
+                  "type": "integer",
+                  "description": "Unit: 0.1 m/s2. pointOneMeterPerSecSquaredUp(1), pointOneMeterPerSecSquaredDown(-1), unavailable(161)",
+                  "minimum": -160,
+                  "maximum": 161
+                },
+                "confidence": {
+                  "type": "object",
+                  "required": [
+                    "heading",
+                    "speed"
+                  ],
+                  "properties": {
+                    "heading": {
+                      "type": "integer",
+                      "description": "Unit: 0.1 degree. Heading accuracy of the vehicle movement of the originating ITS-S with regards to the true north; equalOrWithinZeroPointOneDegree (1), equalOrWithinOneDegree (10), outOfRange(126), unavailable(127)",
+                      "minimum": 1,
+                      "maximum": 127
+                    },
+                    "speed": {
+                      "type": "integer",
+                      "description": "Unit: 0.01 m/s. Speed accuracy of the originating ITS-S; equalOrWithinOneCentimeterPerSec(1), equalOrWithinOneMeterPerSec(100), outOfRange(126), unavailable(127)",
+                      "minimum": 1,
+                      "maximum": 127
+                    },
+                    "vehicle_length": {
+                      "type": "integer",
+                      "description": "noTrailerPresent(0), trailerPresentWithKnownLength(1), trailerPresentWithUnknownLength(2), trailerPresenceIsUnknown(3), unavailable(4)",
+                      "default": 4,
+                      "minimum": 0,
+                      "maximum": 4
+                    },
+                    "yaw_rate": {
+                      "type": "integer",
+                      "description": "degSec-000-01 (0), degSec-000-05 (1), degSec-000-10 (2), degSec-001-00 (3), degSec-005-00 (4), degSec-010-00 (5), degSec-100-00 (6), outOfRange (7), unavailable (8)",
+                      "default": 8,
+                      "minimum": 0,
+                      "maximum": 8
+                    },
+                    "longitudinal_acceleration": {
+                      "type": "integer",
+                      "description": "pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102)",
+                      "minimum": 0,
+                      "maximum": 102
+                    },
+                    "lateral_acceleration": {
+                      "type": "integer",
+                      "description": "Unit: 0,1 m/s2. pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102)",
+                      "minimum": 0,
+                      "maximum": 102
+                    },
+                    "vertical_acceleration": {
+                      "type": "integer",
+                      "description": "Unit: 0,1 m/s2. pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102)",
+                      "minimum": 0,
+                      "maximum": 102
+                    }
+                  }
+                }
+              }
+            },
+            "originating_rsu_container": {
+              "type": "object",
+              "properties": {
+                "intersection_reference_id": {
+                  "type": "object",
+                  "required": [
+                    "intersection_id"
+                  ],
+                  "properties": {
+                    "road_regulator_id": {
+                      "type": "integer",
+                      "description": "Road regulator id. When is present the intersection_id is guaranteed to be globally unique.",
+                      "minimum": 0,
+                      "maximum": 4294967295
+                    },
+                    "intersection_id": {
+                      "type": "integer",
+                      "description": "Intersection id. Unique within that region.",
+                      "minimum": 0,
+                      "maximum": 4294967295
+                    }
+                  }
+                },
+                "road_segment_reference_id": {
+                  "type": "integer",
+                  "description": "Intersection id. Unique within that region.",
+                  "minimum": 0,
+                  "maximum": 4294967295
+                }
+              }
+            }
+          }
+        },
+        "sensor_information_container": {
+          "type": "array",
+          "description": "List of information for individual sensor(s) which are mounted to a a vehicle or roadside",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {
+            "type": "object",
+            "required": [
+              "sensor_id",
+              "type",
+              "detection_area"
+            ],
+            "properties": {
+              "sensor_id": {
+                "type": "integer",
+                "description": "Sensor identifier",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "type": {
+                "type": "integer",
+                "description": "Type of attached sensor. undefined(0), radar(1), lidar(2), monovideo(3), stereovision(4), nightvision(5), ultrasonic(6), pmd(7), fusion(8), inductionloop(9), sphericalCamera(10), itssaggregation(11)",
+                "minimum": 0,
+                "maximum": 15
+              },
+              "detection_area": {
+                "type": "object",
+                "properties": {
+                  "vehicle_sensor": {
+                    "type": "object",
+                    "required": [
+                      "ref_point_id",
+                      "x_sensor_offset",
+                      "y_sensor_offset",
+                      "vehicle_sensor_property_list"
+                    ],
+                    "properties": {
+                      "ref_point_id": {
+                        "type": "integer",
+                        "description": "Increasing counter of the trailer reference point (corresponding to the hitch point)",
+                        "default": 0,
+                        "minimum": 0,
+                        "maximum": 255
+                      },
+                      "x_sensor_offset": {
+                        "type": "integer",
+                        "description": "Unit: 0.01 meter. Mounting position of sensor in negative x-direction from Reference Point indicated by the refPointID. negativeZeroPointZeroOneMeter(-1), negativeOneMeter(-100)",
+                        "minimum": -5000,
+                        "maximum": 0
+                      },
+                      "y_sensor_offset": {
+                        "type": "integer",
+                        "description": "Unit: 0.01 meter. Mounting position of sensor in y-direction from Reference Point indicated by the refPointID. zeroPointZeroOneMeter(1), oneMeter(100). zeroPointZeroOneMeter(1), oneMeter(100)",
+                        "minimum": -1000,
+                        "maximum": 1000
+                      },
+                      "z_sensor_offset": {
+                        "type": "integer",
+                        "description": "Unit: 0.01 meter. Mounting position of sensor in z-direction from Reference Point indicated by the refPointID",
+                        "minimum": 0,
+                        "maximum": 1000
+                      },
+                      "vehicle_sensor_property_list": {
+                        "type": "array",
+                        "description": "List of information for individual sensor(s) which are mounted to a a vehicle or roadside",
+                        "minItems": 1,
+                        "maxItems": 10,
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "range",
+                            "horizontal_opening_angle_start",
+                            "horizontal_opening_angle_end"
+                          ],
+                          "properties": {
+                            "range": {
+                              "type": "integer",
+                              "description": "Unit: 0.1 meter. Range of sensor within the indicated azimuth angle defined by the start and end opening angle. zeroPointOneMeter(1), oneMeter(10)",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "horizontal_opening_angle_start": {
+                              "type": "integer",
+                              "description": "Unit: 0.1 degrees. Start of the sensor's horizontal OpeningAngle extension relative to the body of the vehicle. The value is provided with respect to a body-fixed coordinate system according to the ISO 8855 [i.2] specification with angles counted positive in the counter-clockwise direction starting from the X-axis. The opening angle always extends from the horizontalOpeningAngleStart to horizontalOpeningAngleEnd in counter-clockwise direction. zeroPointOneDegree(1), oneDegree(10), unavailable(3601)",
+                              "minimum": 0,
+                              "maximum": 3601
+                            },
+                            "horizontal_opening_angle_end": {
+                              "type": "integer",
+                              "description": "Unit: 0.1 degrees. End of the sensor's horizontal OpeningAngle extension relative to the body of the vehicle. The value is provided with respect to a body-fixed coordinate system according to the ISO 8855 [i.2] specification with angles counted positive in the counter-clockwise direction starting from the X-axis. The opening angle always extends from the horizontalOpeningAngleStart to the horizontalOpeningAngleEnd in counter-clockwise direction. zeroPointOneDegree(1), oneDegree(10), unavailable(3601)",
+                              "minimum": 0,
+                              "maximum": 3601
+                            },
+                            "vertical_opening_angle_start": {
+                              "type": "integer",
+                              "description": "Unit: 0.1 degrees. Start of the sensor's vertical OpeningAngle extension. This is an optional DE. The angle refers to a rotation about the y-axis of a sensor-specific coordinate system with its origin located at the location defined by the offset. The x-axis of the sensor's coordinate system points in the direction of half of the horizontalOpeningAngle. zeroPointOneDegree(1), oneDegree(10), unavailable(3601)",
+                              "minimum": 0,
+                              "maximum": 3601
+                            },
+                            "vertical_opening_angle_end": {
+                              "type": "integer",
+                              "description": "Unit: 0.1 degrees. End of the sensor's vertical OpeningAngle extension. This is an optional DE. The angle refers to a rotation about the y-axis of a sensor-specific coordinate system with its origin located at the location defined by the offset. The X-axis of the sensor's coordinate system points in the direction of half of the horizontalOpeningAngle. zeroPointOneDegree(1), oneDegree(10), unavailable(3601)",
+                              "minimum": 0,
+                              "maximum": 3601
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "perceived_object_container": {
+          "type": "array",
+          "description": "List of information for individual perceived object",
+          "minItems": 0,
+          "maxItems": 128,
+          "items": {
+            "type": "object",
+            "required": [
+              "object_id",
+              "time_of_measurement",
+              "object_confidence",
+              "distance",
+              "distance_confidence",
+              "speed",
+              "speed_confidence",
+              "object_ref_point"
+            ],
+            "properties": {
+              "object_id": {
+                "type": "integer",
+                "description": "Identifier assigned to a detected object",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "time_of_measurement": {
+                "type": "integer",
+                "description": "Unit: milliseconds. Time difference from the message's generation delta time to the time of the measurement of the object",
+                "minimum": -1500,
+                "maximum": 1500
+              },
+              "object_confidence": {
+                "type": "integer",
+                "description": "The confidence associated to the object; unknown(0), onePercent(1), oneHundredPercent(100),unavailable(101)",
+                "default": 0,
+                "minimum": 0,
+                "maximum": 101
+              },
+              "distance": {
+                "type": "object",
+                "required": [
+                  "x_distance",
+                  "y_distance"
+                ],
+                "properties": {
+                  "x_distance": {
+                    "type": "integer",
+                    "description": "Unit: 0.01 meter. Distance value to detected object from the ITS-S's reference point in x-direction at the time of measurement; zeroPointZeroOneMeter(1), oneMeter(100)",
+                    "minimum": -132768,
+                    "maximum": 132767
+                  },
+                  "y_distance": {
+                    "type": "integer",
+                    "description": "Unit: 0.01 meter. Distance value to detected object from the ITS-S's reference point in y-direction at the time of measurement; zeroPointZeroOneMeter(1), oneMeter(100)",
+                    "minimum": -132768,
+                    "maximum": 132767
+                  }
+                }
+              },
+              "distance_confidence": {
+                "type": "object",
+                "required": [
+                  "x_distance",
+                  "y_distance"
+                ],
+                "properties": {
+                  "x_distance": {
+                    "type": "integer",
+                    "description": "Unit: 0.01 meter. Distance confidence to detected object from the ITS-S's reference point in x-direction at the time of measurement; zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101), unavailable(102)",
+                    "minimum": 0,
+                    "maximum": 102
+                  },
+                  "y_distance": {
+                    "type": "integer",
+                    "description": "Unit: 0.01 meter. Distance confidence to detected object from the ITS-S's reference point in y-direction at the time of measurement; zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101), unavailable(102)",
+                    "minimum": 0,
+                    "maximum": 102
+                  }
+                }
+              },
+              "speed": {
+                "type": "object",
+                "required": [
+                  "x_speed",
+                  "y_speed"
+                ],
+                "properties": {
+                  "x_speed": {
+                    "type": "integer",
+                    "description": "Unit: 0.01 m/s. Speed value of detected object from the ITS-S's reference point in x-direction at the time of measurement; standstill(0), oneCentimeterPerSec(1),unavailable(16383)",
+                    "minimum": -16383,
+                    "maximum": 16383
+                  },
+                  "y_speed": {
+                    "type": "integer",
+                    "description": "Unit: 0.01 m/s. Speed value of detected object from the ITS-S's reference point in y-direction at the time of measurement; standstill(0), oneCentimeterPerSec(1),unavailable(16383)",
+                    "minimum": -16383,
+                    "maximum": 16383
+                  }
+                }
+              },
+              "speed_confidence": {
+                "type": "object",
+                "required": [
+                  "x_speed",
+                  "y_speed"
+                ],
+                "properties": {
+                  "x_speed": {
+                    "type": "integer",
+                    "description": "Unit: 0.01 m/s. Speed confidence of detected object from the ITS-S's reference point in x-direction at the time of measurement; equalOrWithinOneCentimeterPerSec(1),equalOrWithinOneMeterPerSec(100), outOfRange(126), unavailable(127)",
+                    "minimum": 1,
+                    "maximum": 127
+                  },
+                  "y_speed": {
+                    "type": "integer",
+                    "description": "Unit: 0.01 m/s. Speed confidence of detected object from the ITS-S's reference point in y-direction at the time of measurement; equalOrWithinOneCentimeterPerSec(1),equalOrWithinOneMeterPerSec(100), outOfRange(126), unavailable(127)",
+                    "minimum": 1,
+                    "maximum": 127
+                  }
+                }
+              },
+              "object_ref_point": {
+                "type": "integer",
+                "description": "The reference point on the perceived object relative to which the measurement data is provided. In case no object reference - point can be determined, it is assumed to be the center point of the detected object. {mid(0), bottomLeft(1), midLeft(2), topLeft(3), bottomMid(4), topMid(5), bottomRight(6), midRight(7), topRight(8)",
+                "default": 0,
+                "minimum": 0,
+                "maximum": 8
+              }
+            }
+          }
+        },
+        "number_of_perceived_objects": {
+          "type": "integer",
+          "description": "The number of perceived objects by the transmitting ITS-S. This number does not have to match up with the number of objects included in the transmitted message due to the object inclusion scheme. ",
+          "minimum": 0,
+          "maximum": 255
+        }
+      }
+    }
+  }
+}
