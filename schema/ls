@@ -5,10 +5,17 @@ import json
 import os.path
 import sys
 
+BROKEN = [
+]
+
 
 def main():
     schemas_dir = os.path.dirname(sys.argv[0])
-    schemas = glob.glob(os.path.join(schemas_dir, "*.json"))
+    schemas = [
+        s
+        for s in glob.glob(os.path.join(schemas_dir, "*.json"))
+        if os.path.basename(s) not in BROKEN
+    ]
     print(json.dumps(sorted(schemas), separators=(",", ":")))
 
 
