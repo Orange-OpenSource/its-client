@@ -10,7 +10,8 @@
     "timestamp",
     "system",
     "time_sources",
-    "cellular"
+    "cellular",
+    "gnss"
   ],
   "properties": {
     "version": {
@@ -160,6 +161,65 @@
               }
             }
           }
+        }
+      }
+    },
+    "gnss": {
+      "description": "status of the GNSS subsystem",
+      "type": "object",
+      "$comment": "modelled after the gpsd protocol; references like {gpsd:XXX:YYY[:ZZZ...]} refer to gpsd object XXX, field YYY (sub-field ZZZ, etc...) as defined in the gpsd JSON protocol documentation: https://gpsd.io/gpsd_json.html",
+      "required": [
+        "software",
+        "model",
+        "mode"
+      ],
+      "properties": {
+        "software": {
+          "description": "name and version of the gnss daemon (free form)",
+          "type": "string",
+          "$comment": "typically: literal 'gpsd' followed by {gpsd:VERSION:release}"
+        },
+        "model": {
+          "description": "Brand and model of the GNSS device (free form)",
+          "type": "string",
+          "$comment": "concatenation of the three fields: {gpsd:DEVICE:driver}, {gpsd:DEVICE:subtype}, and {gpsd:DEVICE:subtype1}"
+        },
+        "rate": {
+          "description": "mesaurement rate {gpsd:DEVICE:cycle}",
+          "type": "number",
+          "$comment": "seconds with arbitrary sub-second precision",
+          "exclusiveMinimum": 0.0
+        },
+        "mode": {
+          "description": "FIX mode {gpsd:TPV:mode}",
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "$comment": "0: unkown; 1: none; 2: 2D-FIX; 3: 3D-FIX"
+        },
+        "status": {
+          "description": "FIX status {gpsd:TPV:status}",
+          "type": "integer",
+          "enum": [
+            2,
+            3,
+            4
+          ],
+          "$comment": "2: DGPS; 3: RTK-fixed; 4: RTK-floating"
+        },
+        "nSat": {
+          "description": "Number of satellites seen {gpsd:SKY:nSat}",
+          "type": "integer",
+          "minimum": 1
+        },
+        "uSat": {
+          "description": "Number of satellites used in navigation solution {gpsd:SKY:uSat}",
+          "type": "integer",
+          "minimum": 1
         }
       }
     }
