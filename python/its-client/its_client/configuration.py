@@ -120,6 +120,36 @@ def build(args=None) -> ConfigParser:
         help="logging level: CRITICAL, ERROR, WARNING, INFO or DEBUG",
     )
     parser.add_argument(
+        "--log-sending-max-bytes",
+        type=int,
+        help="rotate sending logfiles after max-bytes",
+    )
+    parser.add_argument(
+        "--log-sending-max-files",
+        type=int,
+        help="keep the last max-files sending logfiles",
+    )
+    parser.add_argument(
+        "--log-reception-max-bytes",
+        type=int,
+        help="rotate reception logfiles after max-bytes",
+    )
+    parser.add_argument(
+        "--log-reception-max-files",
+        type=int,
+        help="keep the last max-files reception logfiles",
+    )
+    parser.add_argument(
+        "--log-monitoring-max-bytes",
+        type=int,
+        help="rotate monitoring logfiles after max-bytes",
+    )
+    parser.add_argument(
+        "--log-monitoring-max-files",
+        type=int,
+        help="keep the last max-files monitoring logfiles",
+    )
+    parser.add_argument(
         "--config-path",
         "-c",
         default=os.path.dirname(os.path.realpath(__file__)),
@@ -221,10 +251,63 @@ def build(args=None) -> ConfigParser:
     if config.get("mirror-broker", "host", fallback=None) is None:
         config.remove_section("mirror-broker")
 
+    if not config.has_section("log.sending"):
+        config.add_section("log.sending")
+    if args.log_sending_max_bytes is not None:
+        config.set(
+            section="log.sending", option="max_bytes", value=args.log_sending_max_bytes
+        )
+    if args.log_sending_max_files is not None:
+        config.set(
+            section="log.sending", option="max_files", value=args.log_sending_max_files
+        )
+
+    if not config.has_section("log.reception"):
+        config.add_section("log.reception")
+    if args.log_reception_max_bytes is not None:
+        config.set(
+            section="log.reception",
+            option="max_bytes",
+            value=args.log_reception_max_bytes,
+        )
+    if args.log_reception_max_files is not None:
+        config.set(
+            section="log.reception",
+            option="max_files",
+            value=args.log_reception_max_files,
+        )
+
+    if not config.has_section("log.monitoring"):
+        config.add_section("log.monitoring")
+    if args.log_monitoring_max_bytes is not None:
+        config.set(
+            section="log.monitoring",
+            option="max_bytes",
+            value=args.log_monitoring_max_bytes,
+        )
+    if args.log_monitoring_max_files is not None:
+        config.set(
+            section="log.monitoring",
+            option="max_files",
+            value=args.log_monitoring_max_files,
+        )
+
     # Configure the rest of the loggers
     logger.log_setup2(
         directory=config.get(section="log", option="directory"),
         log_level=config.get(section="log", option="default_level"),
+        sending={
+            "max_bytes": config.getint(section="log.sending", option="max_bytes"),
+            "max_files": config.getint(section="log.sending", option="max_files"),
+        },
+        reception={
+            "max_bytes": config.getint(section="log.reception", option="max_bytes"),
+            "max_files": config.getint(section="log.reception", option="max_files"),
+        },
+        monitoring={
+            "max_bytes": config.getint(section="log.monitoring", option="max_bytes"),
+            "max_files": config.getint(section="log.monitoring", option="max_files"),
+        },
     )
 
     # list all used contents

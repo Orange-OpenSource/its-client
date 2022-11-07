@@ -54,6 +54,9 @@ def log_setup(log_level=logging.WARNING):
 def log_setup2(
     directory: str = "/data",
     log_level=logging.WARNING,
+    sending: dict = {},
+    reception: dict = {},
+    monitoring: dict = {},
 ):
     path = Path(directory + "/its_client")
     path.mkdir(parents=True, exist_ok=True)
@@ -61,8 +64,8 @@ def log_setup2(
     monitoring_logger = logging.getLogger("monitoring")
     monitoring_handler = logging.handlers.RotatingFileHandler(
         filename=path / "monitoring.csv",
-        maxBytes=2000000,
-        backupCount=10,
+        maxBytes=monitoring["max_bytes"],
+        backupCount=monitoring["max_files"],
     )
     monitoring_handler.addFilter(filter_monitoring)
     monitoring_logger.addHandler(monitoring_handler)
@@ -72,7 +75,9 @@ def log_setup2(
     # reception
     reception_logger = logging.getLogger("reception")
     reception_handler = logging.handlers.RotatingFileHandler(
-        filename=path / "reception.txt", maxBytes=200000000, backupCount=10
+        filename=path / "reception.txt",
+        maxBytes=reception["max_bytes"],
+        backupCount=reception["max_files"],
     )
     reception_handler.addFilter(filter_reception)
     reception_logger.addHandler(reception_handler)
@@ -82,8 +87,8 @@ def log_setup2(
     sending_logger = logging.getLogger("sending")
     sending_handler = logging.handlers.RotatingFileHandler(
         filename=path / "sending.txt",
-        maxBytes=2000000,
-        backupCount=10,
+        maxBytes=sending["max_bytes"],
+        backupCount=sending["max_files"],
     )
     sending_handler.addFilter(filter_sending)
     sending_logger.addHandler(sending_handler)
