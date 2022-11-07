@@ -145,10 +145,8 @@ def build(args=None) -> ConfigParser:
     if args.log_level is not None:
         config.set(section="log", option="default_level", value=args.log_level)
     # set up the logger with the configuration to be able to well log as soon as possible
-    logger.log_setup(
-        directory=config.get(section="log", option="directory"),
-        log_level=config.get(section="log", option="default_level"),
-    )
+    # this only initiliases the stdout logger for now
+    logger.log_setup(log_level=config.get(section="log", option="default_level"))
     logging.info(f"config loaded from {config_file}")
 
     logging.info("argument configuration:")
@@ -222,6 +220,12 @@ def build(args=None) -> ConfigParser:
         )
     if config.get("mirror-broker", "host", fallback=None) is None:
         config.remove_section("mirror-broker")
+
+    # Configure the rest of the loggers
+    logger.log_setup2(
+        directory=config.get(section="log", option="directory"),
+        log_level=config.get(section="log", option="default_level"),
+    )
 
     # list all used contents
     logging.info("used configuration:")

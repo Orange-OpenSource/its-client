@@ -39,7 +39,22 @@ def filter_default(record):
     )
 
 
-def log_setup(directory: str = "/data", log_level=logging.WARNING):
+def log_setup(log_level=logging.WARNING):
+    # default log
+    logger = logging.getLogger()
+    logger_handler = logging.StreamHandler(stream=sys.stdout)
+    # this is just to make the output look nice
+    logger_formatter = logging.Formatter(fmt="%(asctime)s %(levelname)s: %(message)s")
+    logger_handler.setFormatter(logger_formatter)
+    logger_handler.addFilter(filter_default)
+    logger.addHandler(logger_handler)
+    logger.setLevel(log_level)
+
+
+def log_setup2(
+    directory: str = "/data",
+    log_level=logging.WARNING,
+):
     path = Path(directory + "/its_client")
     path.mkdir(parents=True, exist_ok=True)
     # monitoring
@@ -73,13 +88,3 @@ def log_setup(directory: str = "/data", log_level=logging.WARNING):
     sending_handler.addFilter(filter_sending)
     sending_logger.addHandler(sending_handler)
     sending_logger.setLevel(log_level)
-
-    # default log
-    logger = logging.getLogger()
-    logger_handler = logging.StreamHandler(stream=sys.stdout)
-    # this is just to make the output look nice
-    logger_formatter = logging.Formatter(fmt="%(asctime)s %(levelname)s: %(message)s")
-    logger_handler.setFormatter(logger_formatter)
-    logger_handler.addFilter(filter_default)
-    logger.addHandler(logger_handler)
-    logger.setLevel(log_level)
