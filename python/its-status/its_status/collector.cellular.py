@@ -41,6 +41,10 @@ class Status:
                     if int(s_j["modem"]["signal"]["refresh"]["rate"]) == 0:
                         self._mmcli("-m", modem, "--signal-setup", "5")
                     else:
+                        if tech in ["hsdpa", "hsupa"]:
+                            # ModemManager stores hsdpa/hsupa signal
+                            # KPIs in the umts key.
+                            tech = "umts"
                         try:
                             for k in s_j["modem"]["signal"][tech]:
                                 try:
