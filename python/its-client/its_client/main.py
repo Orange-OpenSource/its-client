@@ -44,6 +44,10 @@ def main():
 
     config = configuration.build()
 
+    if config.getboolean("broker", "tls", fallback=False):
+        logging.error("TLS not yet supported")
+        exit(1)
+
     logging.info(f"started at {int(round(start_time * 1000))}")
 
     if config.getboolean("position", "static"):
@@ -69,22 +73,52 @@ def main():
     logging.debug("handling stop signal...")
     signal.signal(signal.SIGINT, signal_handler)
 
+    broker = {
+        # Not handling TLS, as we're not ready for it yet.
+        "host": config.get(section="broker", option="host"),
+        "port": config.getint(section="broker", option="port"),
+        "username": config.get(section="broker", option="username"),
+        "password": config.get(section="broker", option="password"),
+        "client_id": config.get(section="broker", option="client_id"),
+    }
+    if config.has_section("mirror-broker"):
+        if config.getboolean("mirror-broker", "tls", fallback=False):
+            logging.error("TLS not yet supported on mirror broker")
+            exit(1)
+        mirror_broker = {
+            # Not handling TLS, as we're not ready for it yet.
+            "host": config.get("mirror-broker", "host"),
+            "port": config.getint("mirror-broker", "port"),
+            "username": config.get("mirror-broker", "username", fallback=""),
+            "password": config.get("mirror-broker", "password", fallback=""),
+            "client_id": config.get(
+                "mirror-broker",
+                "client_id",
+                fallback=config.get(section="broker", option="client_id"),
+            ),
+            "mirror-self": config.getboolean(
+                "mirror-broker",
+                "mirror-self",
+                fallback=False,
+            ),
+        }
+    else:
+        mirror_broker = None
+
     logging.info("starting mqtt client...")
-    client_id = config.get(section="broker", option="client_id")
     mqtt_client = MQTTClient(
-        client_id=client_id,
-        hostname=config.get(section="broker", option="host"),
-        port=config.getint(section="broker", option="port"),
+        broker=broker,
+        mirror_broker=mirror_broker,
         geo_position=position_client,
-        username=config.get(section="broker", option="username"),
-        password=config.get(section="broker", option="password"),
         stop_signal=stop_signal,
     )
     mqtt_client.loop_start()
 
     logging.info("starting worker...")
     worker = MqttWorker(
-        mqtt_client=mqtt_client, client_name=client_id, geo_position=position_client
+        mqtt_client=mqtt_client,
+        client_name=broker["client_id"],
+        geo_position=position_client,
     )
     worker_process = threading.Thread(target=worker.run, args=(stop_signal,))
     worker_process.start()

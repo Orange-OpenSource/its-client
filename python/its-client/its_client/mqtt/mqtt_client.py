@@ -32,33 +32,24 @@ class MQTTClient(object):
 
     def __init__(
         self,
-        client_id: str,
-        hostname: str,
-        port: int,
+        broker: dict,
+        mirror_broker: dict,
         geo_position: GeoPosition,
-        username=None,
-        password=None,
         stop_signal=None,
     ):
-        self.client = None
-        self.gateway_name = "broker"
-        self.client_id = client_id
-        self.host = hostname
-        self.port = port
-        self.username = username
-        self.password = password
+        self.broker = broker
+        self.mirror_broker = mirror_broker
         self.geo_position = geo_position
-        self.new_connection = False
         self.stop_signal = stop_signal
+        self.gateway_name = "broker"
+        self.client = None
+        self.mirror_client = None
+        self.new_connection = False
 
     def on_disconnect(self, client, userdata, rc):
         logging.debug(
             self._format_log(f" called for {client.socket()} with {userdata}")
         )
-        if rc != 0:
-            logging.warning("unexpected disconnection")
-            self.loop_stop()
-            self.stop_signal.set()
 
     def on_connect(self, client, userdata, flags, rc):
         logging.debug(
@@ -79,71 +70,94 @@ class MQTTClient(object):
         logging.debug(
             self._format_log(f"mid: {message.mid}, payload: {message.payload}")
         )
+        try:
+            message_dict = json.loads(message.payload)
+        except json.decoder.JSONDecodeError as e:
+            if message.payload:
+                logging.error(
+                    self._format_log(
+                        f"Non-JSON payload on {message.topic}: {message.payload}"
+                    )
+                )
+            else:
+                # Empty payload: most probably a delete of a retained message.
+                logging.debug(
+                    self._format_log(
+                        f"Non-JSON payload on {message.topic}: {message.payload}"
+                    )
+                )
+            # Not bailing out, we may need to forward it to the mirror borker, below
+            message_dict = dict()
+
+        if self.mirror_client:
+            if (
+                message_dict.get("source_uuid", "") != self.broker["client_id"]
+                or self.mirror_broker["mirror-self"]
+            ):
+                logging.debug(f"mid: {message.mid}: forwarding to mirror broker")
+                self.mirror_client.publish(
+                    message.topic,
+                    message.payload,
+                    message.qos,
+                    message.retain,
+                )
+
+        if not message.payload:
+            logging.debug(f"mid: {message.mid}, empty payload, skipping message")
+            return
+
         if message.topic.endswith("5GCroCo/outQueue/info/broker"):
             logging.debug(
-                self._format_log(
-                    f"Instance id: {json.loads(message.payload)['instance_id']}"
-                )
+                self._format_log(f"Instance id: {message_dict['instance_id']}")
             )
-            self.gateway_name = json.loads(message.payload)["instance_id"]
+            self.gateway_name = message_dict["instance_id"]
         elif self.CAM_RECEPTION_QUEUE in message.topic:
-            if message.topic is not None and len(message.payload) > 0:
-                message_dict = json.loads(message.payload)
-                sender = message.topic.replace(self.CAM_RECEPTION_QUEUE, "").split("/")[
-                    1
-                ]
-                root_cam_topic = f"{self.CAM_RECEPTION_QUEUE}/{sender}"
-                lon, lat = self.geo_position.get_current_position()
-                monitoring.monitore_cam(
-                    vehicle_id=self.client_id,
-                    direction="received_on",
-                    station_id=message_dict["message"]["station_id"],
-                    generation_delta_time=message_dict["message"][
-                        "generation_delta_time"
-                    ],
-                    latitude=lat,
-                    longitude=lon,
-                    timestamp=int(round(time.time() * 1000)),
-                    partner=self.gateway_name,
-                    root_queue=root_cam_topic,
-                )
-                json_cam = json.dumps(message_dict)
-                its.record(json_cam)
+            sender = message.topic.replace(self.CAM_RECEPTION_QUEUE, "").split("/")[1]
+            root_cam_topic = f"{self.CAM_RECEPTION_QUEUE}/{sender}"
+            lon, lat = self.geo_position.get_current_position()
+            monitoring.monitore_cam(
+                vehicle_id=self.broker["client_id"],
+                direction="received_on",
+                station_id=message_dict["message"]["station_id"],
+                generation_delta_time=message_dict["message"]["generation_delta_time"],
+                latitude=lat,
+                longitude=lon,
+                timestamp=int(round(time.time() * 1000)),
+                partner=self.gateway_name,
+                root_queue=root_cam_topic,
+            )
+            its.record(message.payload.decode())
         elif self.DENM_RECEPTION_QUEUE in message.topic:
-            if message.topic is not None and len(message.payload) > 0:
-                message_dict = json.loads(message.payload)
-                lon, lat = self.geo_position.get_current_position()
-                monitoring.monitore_denm(
-                    vehicle_id=self.client_id,
-                    station_id=message_dict["message"]["station_id"],
-                    originating_station_id=message_dict["message"][
-                        "management_container"
-                    ]["action_id"]["originating_station_id"],
-                    sequence_number=message_dict["message"]["management_container"][
-                        "action_id"
-                    ]["sequence_number"],
-                    reference_time=message_dict["message"]["management_container"][
-                        "reference_time"
-                    ],
-                    detection_time=message_dict["message"]["management_container"][
-                        "detection_time"
-                    ],
-                    latitude=lat,
-                    longitude=lon,
-                    timestamp=int(round(time.time() * 1000)),
-                    partner=self.gateway_name,
-                    root_queue=self.DENM_RECEPTION_QUEUE,
-                    sender=message_dict["source_uuid"],
-                )
-                json_denm = json.dumps(message_dict)
-                its.record(json_denm)
+            lon, lat = self.geo_position.get_current_position()
+            monitoring.monitore_denm(
+                vehicle_id=self.broker["client_id"],
+                station_id=message_dict["message"]["station_id"],
+                originating_station_id=message_dict["message"]["management_container"][
+                    "action_id"
+                ]["originating_station_id"],
+                sequence_number=message_dict["message"]["management_container"][
+                    "action_id"
+                ]["sequence_number"],
+                reference_time=message_dict["message"]["management_container"][
+                    "reference_time"
+                ],
+                detection_time=message_dict["message"]["management_container"][
+                    "detection_time"
+                ],
+                latitude=lat,
+                longitude=lon,
+                timestamp=int(round(time.time() * 1000)),
+                partner=self.gateway_name,
+                root_queue=self.DENM_RECEPTION_QUEUE,
+                sender=message_dict["source_uuid"],
+            )
+            its.record(message.payload.decode())
         elif self.CPM_RECEPTION_QUEUE in message.topic:
-            message_dict = json.loads(message.payload)
             sender = message.topic.replace(self.CPM_RECEPTION_QUEUE, "").split("/")[1]
             root_cpm_topic = f"{self.CPM_RECEPTION_QUEUE}/{sender}"
             lon, lat = self.geo_position.get_current_position()
             monitoring.monitore_cpm(
-                vehicle_id=self.client_id,
+                vehicle_id=self.broker["client_id"],
                 direction="received_on",
                 station_id=message_dict["message"]["station_id"],
                 generation_delta_time=message_dict["message"]["generation_delta_time"],
@@ -153,8 +167,7 @@ class MQTTClient(object):
                 partner=self.gateway_name,
                 root_queue=root_cpm_topic,
             )
-            json_denm = json.dumps(message_dict)
-            its.record(json_denm)
+            its.record(message.payload.decode())
 
     def on_publish(self, client, userdata, _mid):
         logging.debug(
@@ -188,9 +201,30 @@ class MQTTClient(object):
 
     def _connect(self):
         logging.info("connecting...")
-        self.client = paho.mqtt.client.Client(client_id=self.client_id)
-        if self.username is not None:
-            self.client.username_pw_set(self.username, self.password)
+        # Connect on the mirror client first, so that it is ready to
+        # forward any message incoming from the main broker
+        if self.mirror_broker:
+            self.mirror_client = paho.mqtt.client.Client(
+                client_id=self.mirror_broker["client_id"]
+            )
+            if self.mirror_broker["username"]:
+                self.mirror_client.username_pw_set(
+                    self.mirror_broker["username"],
+                    self.mirror_broker["password"],
+                )
+            self.mirror_client.reconnect_delay_set()
+            self.mirror_client.connect(
+                host=self.mirror_broker["host"],
+                port=self.mirror_broker["port"],
+                keepalive=60,
+            )
+
+        self.client = paho.mqtt.client.Client(client_id=self.broker["client_id"])
+        if self.broker["username"]:
+            self.client.username_pw_set(
+                self.broker["username"],
+                self.broker["password"],
+            )
         self.client.on_connect = self.on_connect
         self.client.on_disconnect = self.on_disconnect
         self.client.on_message = self.on_message
@@ -202,7 +236,12 @@ class MQTTClient(object):
         self.client.on_socket_register_write = self.on_socket_register_write
         self.client.max_inflight_messages_set(20)
         self.client.max_queued_messages_set(100)
-        self.client.connect(host=self.host, port=self.port, keepalive=60)
+        self.client.reconnect_delay_set(1, 2)
+        self.client.connect(
+            host=self.broker["host"],
+            port=self.broker["port"],
+            keepalive=60,
+        )
 
     def subscribe(self, topic):
         logging.debug(self._format_log(f"subscribing to {topic}..."))
@@ -233,23 +272,31 @@ class MQTTClient(object):
             logging.warning(
                 f"message not sent on topic {topic} because we aren't connected"
             )
+        if self.mirror_client is not None:
+            self.mirror_client.publish(topic, payload, qos, retain, properties)
 
     def loop_start(self):
         logging.debug(self._format_log(f"starting loop..."))
         self._connect()
         self.client.loop_start()
+        if self.mirror_client is not None:
+            self.mirror_client.loop_start()
 
     def loop_stop(self):
         logging.debug(self._format_log(f"stopping loop..."))
         self.client.loop_stop()
         self.client.disconnect()
+        if self.mirror_client is not None:
+            self.mirror_client.loop_stop()
+            self.mirror_client.disconnect()
 
     def loop_restart(self):
         self.loop_stop()
         self.loop_start()
 
     def is_connected(self):
+        # We're only interested about the connection to the main broker
         return self.client.is_connected()
 
     def _format_log(self, message=""):
-        return f"{type(self).__name__}[{self.client_id}]::{getouterframes(currentframe())[1][3]} {message}"
+        return f"{type(self).__name__}[{self.broker['client_id']}]::{getouterframes(currentframe())[1][3]} {message}"
