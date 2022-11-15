@@ -171,6 +171,7 @@
         "type",
         "stratum",
         "state",
+        "offset",
         "error"
       ],
       "properties": {
@@ -188,6 +189,10 @@
           "description": "state of the source",
           "type": "string",
           "enum": [ "best", "combined", "not_combined", "maybe_error", "unstable", "unusable" ]
+        },
+        "offset": {
+          "description": "measured offset in seconds, with arbitrary sub-second precision",
+          "type": "number"
         },
         "error": {
           "description": "estimated error in seconds, with arbitrary sub-second precision",

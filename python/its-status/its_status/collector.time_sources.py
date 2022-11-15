@@ -53,6 +53,7 @@ class Status:
             fields = l.split(",")
             src = {
                 "state": SRC_STATE[fields[1]],
+                "offset": float(fields[-2]),
                 "error": float(fields[-1]),
             }
             name = fields[2]
