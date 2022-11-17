@@ -24,9 +24,9 @@
       "type": "string"
     },
     "type": {
-      "description": "type of the server",
+      "description": "type of the message",
       "type": "string",
-      "enum": [ "obu", "other" ]
+      "const": "status"
     },
     "timestamp": {
       "description": "date the information was generated, in seconds since 1970-01-01 00:00:00 +00:00, with arbitrary sub-second precision",
@@ -38,6 +38,7 @@
       "type": "object",
       "additionalProperties": true,
       "required": [
+        "type",
         "hardware",
         "os_release",
         "memory",
@@ -45,6 +46,11 @@
         "cpu_load"
       ],
       "properties": {
+        "type": {
+          "description": "type of device",
+          "type": "string",
+          "enum": [ "obu", "other" ]
+        },
         "hardware": {
           "description": "type of hardware",
           "type": "string",

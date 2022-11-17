@@ -8,7 +8,7 @@ class Status:
     def __init__(self, cfg):
         self.data = {
             "version": "1.0.0",
-            "type": "obu",
+            "type": "status",
             "id": cfg["generic"]["id"],
         }
 

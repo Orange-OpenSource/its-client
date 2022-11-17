@@ -50,7 +50,10 @@ class Status:
             except Exception:
                 pass
 
-        self.static_data = {"hardware": hw or "Unknown"}
+        self.static_data = {
+            "type": "obu",
+            "hardware": hw or "Unknown",
+        }
         with open("/etc/os-release", "r") as f:
             self.static_data["os_release"] = dict()
             for l in f.readlines():
