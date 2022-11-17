@@ -17,8 +17,7 @@
     "version": {
       "description": "version of the format of this JSON message",
       "type": "string",
-      "const": "1.0.99",
-      "$comment": "Development version"
+      "const": "1.1.0"
     },
     "id": {
       "description": "unique id all over the world for this device",
