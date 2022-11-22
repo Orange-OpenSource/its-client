@@ -20,8 +20,6 @@ from its_client.position import GeoPosition
 
 
 class MqttWorker:
-    QUEUE = "5GCroCo/inQueue/v2x/cam"
-
     def __init__(self, mqtt_client, client_name, geo_position: GeoPosition):
         self.mqtt_client = mqtt_client
         self.client_name = client_name
@@ -67,7 +65,9 @@ class MqttWorker:
             )
             if heading is not None and alt is not None:
                 # topic
-                root_cam_topic = f"{self.QUEUE}/{self.client_name}"
+                root_cam_topic = (
+                    f"{self.mqtt_client.get_send_queue('CAM')}/{self.client_name}"
+                )
                 cam_topic = f"{root_cam_topic}{quadtree.lat_lng_to_quad_key(lat, lon, 22, True)}"
                 # time
                 now = datetime.now()
