@@ -6,8 +6,7 @@
 import argparse
 import configparser
 import its_status
-import os
-import signal
+import linuxfd
 import sys
 import time
 import traceback
@@ -20,18 +19,13 @@ def loop(freq, collect_ts=False):
     # kernel will close it for us. That's not quite clean, but it is
     # so much easier rather than enclosing the whole loop in a big
     # try-except.
-    evt_fd = os.eventfd(0)
-
-    def tick(_signum, _frame):
-        os.eventfd_write(evt_fd, 1)
-
-    signal.signal(signal.SIGALRM, tick)
-    signal.setitimer(signal.ITIMER_REAL, 1 / freq, 1 / freq)
+    timer = linuxfd.timerfd(closeOnExec=True)
+    timer.settime(value=1.0 / freq, interval=1.0 / freq)
 
     tick = 0
     while True:
         try:
-            evt = os.eventfd_read(evt_fd)
+            evt = timer.read()
         except InterruptedError:
             # Someone sent a signal to this thread...
             continue
