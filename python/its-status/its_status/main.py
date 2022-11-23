@@ -6,53 +6,38 @@
 import argparse
 import configparser
 import its_status
+import os
 import signal
 import sys
 import time
+import traceback
 
 CFG = "/etc/its-status/its-status.cfg"
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--config",
-        "-c",
-        default=CFG,
-        help=f"Path to the configuration file (default: {CFG})",
-    )
-    args = parser.parse_args()
+def loop(evt_fd, collect_ts=False):
+    tick = 0
+    while True:
+        try:
+            evt = os.eventfd_read(evt_fd)
+        except InterruptedError:
+            # Someone sent a signal to this thread...
+            continue
 
-    with open(args.config) as f:
-        cfg = configparser.ConfigParser()
-        cfg.read_file(f)
-
-    its_status.init(cfg)
-    collect_ts = cfg.getboolean("generic", "timestamp_collect", fallback=False)
-    freq = cfg.getfloat("generic", "frequency", fallback=1.0)
-
-    def tick(_signum, _frame):
         now = time.time()
-        tick.tick += 1
+        tick += evt
 
         status = dict()
-        if tick.in_tick:
-            if tick.missed == 0:
-                print(f"tick: missed #{tick.tick}", file=sys.stderr)
-            tick.missed += 1
-            return
-        elif tick.missed:
-            print(
-                f"tick: resuming #{tick.tick} after {tick.missed} missed ticks",
-                file=sys.stderr,
-            )
+        if evt > 1:
             status["errors"] = {
                 "timestamp": now,
-                "tick": tick.tick,
-                "missed_ticks": tick.missed,
+                "tick": tick,
+                "missed_ticks": evt - 1,
             }
-            tick.missed = 0
-        tick.in_tick = True
+            print(
+                f"tick: resuming #{tick} after {evt-1} missed ticks",
+                file=sys.stderr,
+            )
 
         if collect_ts:
             status["collect"] = {"start": now}
@@ -80,14 +65,39 @@ def main():
         for e in its_status.plugins["emitters"]:
             its_status.plugins["emitters"][e].emit(status)
 
-        tick.in_tick = False
 
-    setattr(tick, "in_tick", False)
-    setattr(tick, "tick", 0)
-    setattr(tick, "missed", 0)
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config",
+        "-c",
+        default=CFG,
+        help=f"Path to the configuration file (default: {CFG})",
+    )
+    args = parser.parse_args()
+
+    with open(args.config) as f:
+        cfg = configparser.ConfigParser()
+        cfg.read_file(f)
+
+    its_status.init(cfg)
+    collect_ts = cfg.getboolean("generic", "timestamp_collect", fallback=False)
+    freq = cfg.getfloat("generic", "frequency", fallback=1.0)
+
+    evt_fd = os.eventfd(0)
+
+    def tick(_signum, _frame):
+        os.eventfd_write(evt_fd, 1)
 
     signal.signal(signal.SIGALRM, tick)
     signal.setitimer(signal.ITIMER_REAL, 1 / freq, 1 / freq)
 
-    while True:
-        time.sleep(60)
+    try:
+        loop(evt_fd, collect_ts)
+    except KeyboardInterrupt:
+        pass
+    except Exception as e:
+        traceback.print_exc()
+        print(e)
+
+    os.close(evt_fd)
