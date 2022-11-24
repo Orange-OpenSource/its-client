@@ -32,6 +32,7 @@ def main():
     freq = cfg.getfloat("generic", "frequency", fallback=1.0)
 
     def tick(_signum, _frame):
+        now = time.time()
         tick.tick += 1
 
         status = dict()
@@ -46,7 +47,7 @@ def main():
                 file=sys.stderr,
             )
             status["errors"] = {
-                "timestamp": time.time(),
+                "timestamp": now,
                 "tick": tick.tick,
                 "missed_ticks": tick.missed,
             }
@@ -54,7 +55,7 @@ def main():
         tick.in_tick = True
 
         if collect_ts:
-            status["collect"] = {"start": time.time()}
+            status["collect"] = {"start": now}
         for c in its_status.plugins["collectors"]:
             if collect_ts:
                 status["collect"][c] = {"start": time.time()}
