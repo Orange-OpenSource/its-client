@@ -34,7 +34,7 @@ def main():
     def tick(_signum, _frame):
         tick.tick += 1
 
-        errors = None
+        status = dict()
         if tick.in_tick:
             if tick.missed == 0:
                 print(f"tick: missed #{tick.tick}", file=sys.stderr)
@@ -45,16 +45,14 @@ def main():
                 f"tick: resuming #{tick.tick} after {tick.missed} missed ticks",
                 file=sys.stderr,
             )
-            errors = {
+            status["errors"] = {
                 "timestamp": time.time(),
-                "type": "status",
                 "tick": tick.tick,
                 "missed_ticks": tick.missed,
             }
             tick.missed = 0
         tick.in_tick = True
 
-        status = dict()
         if collect_ts:
             status["collect"] = {"start": time.time()}
         for c in its_status.plugins["collectors"]:
@@ -79,8 +77,6 @@ def main():
         # Here, we'd send them to MQTT or anywhere else
         status["timestamp"] = time.time()
         for e in its_status.plugins["emitters"]:
-            if errors is not None:
-                its_status.plugins["emitters"][e].error(errors)
             its_status.plugins["emitters"][e].emit(status)
 
         tick.in_tick = False

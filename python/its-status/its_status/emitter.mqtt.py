@@ -27,9 +27,6 @@ class Status:
     def emit(self, data):
         self._emit(self.topic, data)
 
-    def error(self, data):
-        self._emit(self.topic + "/errors", data)
-
     def _emit(self, topic, data):
         if not self.enabled:
             return
