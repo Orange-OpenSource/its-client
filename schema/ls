@@ -1,16 +1,25 @@
-#!/bin/sh
+#!/usr/bin/env python3
 
-main() {
-    first=true
-    printf '['
-    for schema in "${my_dir}/"*".json"; do
-        ${first} || printf ','
-        first=false
-        printf '"%s"' "${schema}"
-    done
-    printf ']'
-}
+import glob
+import json
+import os.path
+import sys
 
-my_name="${0##*/}"
-my_dir="${0%/*}"
-main "${@}"
+BROKEN = [
+    "cam_schema_1-1-0.json",
+    "cam_schema_1-1-1.json",
+]
+
+
+def main():
+    schemas_dir = os.path.dirname(sys.argv[0])
+    schemas = [
+        s
+        for s in glob.glob(os.path.join(schemas_dir, "*.json"))
+        if os.path.basename(s) not in BROKEN
+    ]
+    print(json.dumps(sorted(schemas), separators=(",", ":")))
+
+
+if __name__ == "__main__":
+    main()
