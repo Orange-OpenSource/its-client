@@ -15,7 +15,19 @@ import traceback
 CFG = "/etc/its-status/its-status.cfg"
 
 
-def loop(evt_fd, collect_ts=False):
+def loop(freq, collect_ts=False):
+    # We never close it, because we always need it; when we exit, the
+    # kernel will close it for us. That's not quite clean, but it is
+    # so much easier rather than enclosing the whole loop in a big
+    # try-except.
+    evt_fd = os.eventfd(0)
+
+    def tick(_signum, _frame):
+        os.eventfd_write(evt_fd, 1)
+
+    signal.signal(signal.SIGALRM, tick)
+    signal.setitimer(signal.ITIMER_REAL, 1 / freq, 1 / freq)
+
     tick = 0
     while True:
         try:
@@ -84,20 +96,10 @@ def main():
     collect_ts = cfg.getboolean("generic", "timestamp_collect", fallback=False)
     freq = cfg.getfloat("generic", "frequency", fallback=1.0)
 
-    evt_fd = os.eventfd(0)
-
-    def tick(_signum, _frame):
-        os.eventfd_write(evt_fd, 1)
-
-    signal.signal(signal.SIGALRM, tick)
-    signal.setitimer(signal.ITIMER_REAL, 1 / freq, 1 / freq)
-
     try:
-        loop(evt_fd, collect_ts)
+        loop(freq, collect_ts)
     except KeyboardInterrupt:
         pass
     except Exception as e:
         traceback.print_exc()
         print(e)
-
-    os.close(evt_fd)
