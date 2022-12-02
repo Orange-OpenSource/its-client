@@ -27,7 +27,7 @@ class Status:
 
         self.thread = threading.Thread(
             target=self.__loop,
-            name="gnss",
+            name=f"{__name__}.gpsd_client",
             daemon=True,
         )
         self.sock = None
