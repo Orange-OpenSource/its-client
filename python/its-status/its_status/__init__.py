@@ -5,7 +5,10 @@
 
 import glob
 import importlib.util
+import linuxfd
 import os.path
+import sys
+import time
 
 plugins = {
     "collectors": {},
@@ -34,3 +37,61 @@ def init(*args, **kwargs):
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
         plugins[plugin_type][name] = mod.Status(*args, **kwargs)
+
+
+def loop(freq, collect_ts=False):
+    # We never close it, because we always need it; when we exit, the
+    # kernel will close it for us. That's not quite clean, but it is
+    # so much easier rather than enclosing the whole loop in a big
+    # try-except.
+    timer = linuxfd.timerfd(closeOnExec=True)
+    timer.settime(value=1.0 / freq, interval=1.0 / freq)
+
+    tick = 0
+    while True:
+        try:
+            evt = timer.read()
+        except InterruptedError:
+            # Someone sent a signal to this thread...
+            continue
+
+        now = time.time()
+        tick += evt
+
+        status = dict()
+        if evt > 1:
+            status["errors"] = {
+                "timestamp": now,
+                "tick": tick,
+                "missed_ticks": evt - 1,
+            }
+            print(
+                f"tick: resuming #{tick} after {evt-1} missed ticks",
+                file=sys.stderr,
+            )
+
+        if collect_ts:
+            status["collect"] = {"start": now}
+        for c in plugins["collectors"]:
+            if collect_ts:
+                status["collect"][c] = {"start": time.time()}
+            plugins["collectors"][c].capture()
+            if collect_ts:
+                status["collect"][c]["duration"] = (
+                    time.time() - status["collect"][c]["start"]
+                )
+
+        for c in plugins["collectors"]:
+            s = plugins["collectors"][c].collect()
+            if c == "static":
+                status.update(s)
+            else:
+                status[c] = s
+
+        if collect_ts:
+            status["collect"]["duration"] = time.time() - status["collect"]["start"]
+
+        # Here, we'd send them to MQTT or anywhere else
+        status["timestamp"] = time.time()
+        for e in plugins["emitters"]:
+            plugins["emitters"][e].emit(status)
