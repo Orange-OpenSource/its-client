@@ -9,7 +9,7 @@ from its_status import helpers
 
 
 class Status:
-    def __init__(self, cfg):
+    def __init__(self, *, _cfg):
         self.data = None
         hw = None
 

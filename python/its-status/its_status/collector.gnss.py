@@ -10,7 +10,7 @@ import time
 
 
 class Status:
-    def __init__(self, cfg):
+    def __init__(self, *, cfg):
         self.cfg = cfg["gnss"]
         self.data = None
         self.version = None
@@ -189,7 +189,7 @@ if __name__ == "__main__":
 
     try:
         gnss = Status(
-            {
+            cfg={
                 "gnss": {
                     "host": sys.argv[1],
                     "port": sys.argv[2],

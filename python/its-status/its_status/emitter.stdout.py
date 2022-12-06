@@ -7,7 +7,7 @@ import json
 
 
 class Status:
-    def __init__(self, cfg):
+    def __init__(self, *, cfg):
         self.enabled = cfg.getboolean("stdout", "enabled", fallback=False)
 
     def emit(self, data):

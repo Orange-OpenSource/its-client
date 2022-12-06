@@ -18,7 +18,7 @@ SRC_STATE = {
 
 
 class Status:
-    def __init__(self, cfg):
+    def __init__(self, *, cfg):
         self.data = list()
         self.validity = cfg.getfloat("timesources", "validity", fallback=10.0)
         self.last_valid = 0.0
