@@ -112,7 +112,7 @@
         ],
         "properties": {
           "hardware": {
-            "description": "harddware informatsion",
+            "description": "hardware information",
             "type": "object",
             "properties": {
               "vendor": { "type": "string" },
