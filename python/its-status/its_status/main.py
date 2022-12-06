@@ -25,12 +25,10 @@ def main():
         cfg = configparser.ConfigParser()
         cfg.read_file(f)
 
-    its_status.init(cfg)
-    collect_ts = cfg.getboolean("generic", "timestamp_collect", fallback=False)
-    freq = cfg.getfloat("generic", "frequency", fallback=1.0)
+    its_status.init(cfg=cfg)
 
     try:
-        its_status.loop(freq, collect_ts)
+        its_status.loop(cfg=cfg)
     except KeyboardInterrupt:
         pass
     except Exception as e:

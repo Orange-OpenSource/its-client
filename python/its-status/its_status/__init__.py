@@ -39,7 +39,12 @@ def init(*args, **kwargs):
         plugins[plugin_type][name] = mod.Status(*args, **kwargs)
 
 
-def loop(freq, collect_ts=False):
+def loop(*args, **kwargs):
+    freq = kwargs["cfg"].getfloat("generic", "frequency", fallback=1.0)
+    collect_ts = kwargs["cfg"].getboolean(
+        "generic", "timestamp_collect", fallback=False
+    )
+
     # We never close it, because we always need it; when we exit, the
     # kernel will close it for us. That's not quite clean, but it is
     # so much easier rather than enclosing the whole loop in a big
