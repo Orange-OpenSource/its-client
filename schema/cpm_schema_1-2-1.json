@@ -1,0 +1,1266 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/cpm",
+  "description": "CPM JSon schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "origin",
+    "version",
+    "source_uuid",
+    "timestamp",
+    "message"
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "message type",
+      "const": "cpm"
+    },
+    "origin": {
+      "type": "string",
+      "enum": [
+        "self",
+        "global_application",
+        "mec_application",
+        "on_board_application"
+      ],
+      "description": "the entity responsible for this message"
+    },
+    "version": {
+      "type": "string",
+      "description": "json message format version",
+      "const": "1.2.1"
+    },
+    "source_uuid": {
+      "type": "string",
+      "description": "identifier",
+      "examples": [
+        "ora_car_42"
+      ]
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01).",
+      "examples": [
+        1574778515424
+      ],
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
+    },
+    "message": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "station_id",
+        "generation_delta_time",
+        "management_container"
+      ],
+      "properties": {
+        "protocol_version": {
+          "type": "integer",
+          "description": "version of the message and/or communication protocol",
+          "minimum": 0,
+          "maximum": 255,
+          "examples": [
+            1
+          ]
+        },
+        "station_id": {
+          "type": "integer",
+          "description": "identifier",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "examples": [
+            1,
+            42
+          ]
+        },
+        "generation_delta_time": {
+          "type": "integer",
+          "description": "time of the reference position in the CAM, considered as time of the CAM generation. TimestampIts mod 65 536. TimestampIts represents an integer value in milliseconds since 2004-01-01T00:00:00:000Z. oneMilliSec(1).",
+          "minimum": 0,
+          "maximum": 65535,
+          "examples": [
+            1,
+            1245
+          ]
+        },
+        "management_container": {
+          "type": "object",
+          "required": [
+            "station_type",
+            "reference_position",
+            "confidence"
+          ],
+          "properties": {
+            "station_type": {
+              "$comment": "if not provided, 'station_type' = 0 (unknown).",
+              "description": "unknown(0), pedestrian(1), cyclist(2), moped(3), motorcycle(4), passengerCar(5), bus(6), lightTruck(7), heavyTruck(8), trailer(9), specialVehicles(10), tram(11), roadSideUnit(15).",
+              "type": "integer",
+              "default": 0,
+              "minimum": 0,
+              "maximum": 254
+            },
+            "reference_position": {
+              "type": "object",
+              "required": [
+                "latitude",
+                "longitude",
+                "altitude"
+              ],
+              "properties": {
+                "latitude": {
+                  "type": "integer",
+                  "description": "Unit: 0.1 microdegree. oneMicrodegreeNorth(10), oneMicrodegreeSouth(-10), unavailable(900000001).",
+                  "default": 900000001,
+                  "minimum": -900000000,
+                  "maximum": 900000001
+                },
+                "longitude": {
+                  "type": "integer",
+                  "description": "Unit: 0.1 microdegree. oneMicrodegreeEast(10), oneMicrodegreeWest(-10), unavailable(1800000001).",
+                  "default": 1800000001,
+                  "minimum": -1800000000,
+                  "maximum": 1800000001
+                },
+                "altitude": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 meter. referenceEllipsoidSurface(0), oneCentimeter(1), unavailable(800001).",
+                  "default": 800001,
+                  "minimum": -100000,
+                  "maximum": 800001
+                }
+              }
+            },
+            "confidence": {
+              "type": "object",
+              "required": [
+                "position_confidence_ellipse",
+                "altitude"
+              ],
+              "properties": {
+                "position_confidence_ellipse": {
+                  "type": "object",
+                  "required": [
+                    "semi_major_confidence",
+                    "semi_minor_confidence",
+                    "semi_major_orientation"
+                  ],
+                  "properties": {
+                    "semi_major_confidence": {
+                      "$comment": "if not provided, 'semi_major_confidence' = 4095 (unavailable).",
+                      "type": "integer",
+                      "description": "oneCentimeter(1), outOfRange(4094), unavailable(4095).",
+                      "default": 4095,
+                      "minimum": 0,
+                      "maximum": 4095
+                    },
+                    "semi_minor_confidence": {
+                      "$comment": "if not provided, 'semi_minor_confidence' = 4095 (unavailable).",
+                      "type": "integer",
+                      "description": "oneCentimeter(1), outOfRange(4094), unavailable(4095).",
+                      "default": 4095,
+                      "minimum": 0,
+                      "maximum": 4095
+                    },
+                    "semi_major_orientation": {
+                      "$comment": "if not provided, 'semi_major_orientation' = 3601 (unavailable).",
+                      "type": "integer",
+                      "description": "wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), unavailable(3601).",
+                      "default": 3601,
+                      "minimum": 0,
+                      "maximum": 3601
+                    }
+                  }
+                },
+                "altitude": {
+                  "$comment": "if not provided, 'altitude' = 15 (unavailable).",
+                  "type": "integer",
+                  "description": "alt-000-01 (0), alt-000-02 (1), alt-000-05 (2), alt-000-10 (3), alt-000-20 (4), alt-000-50 (5), alt-001-00 (6), alt-002-00 (7), alt-005-00 (8), alt-010-00 (9), alt-020-00 (10), alt-050-00 (11), alt-100-00 (12), alt-200-00 (13), outOfRange (14), unavailable (15).",
+                  "default": 15,
+                  "minimum": 0,
+                  "maximum": 15
+                }
+              }
+            }
+          }
+        },
+        "station_data_container": {
+          "type": "object",
+          "oneOf": [{
+            "required": [
+              "originating_vehicle_container"
+            ]
+          },
+            {
+              "required": [
+                "originating_rsu_container"
+              ]
+            }
+          ],
+          "properties": {
+            "originating_vehicle_container": {
+              "type": "object",
+              "required": [
+                "heading",
+                "speed",
+                "confidence"
+              ],
+              "properties": {
+                "heading": {
+                  "type": "integer",
+                  "description": "Unit: 0.1 degree. Heading of the vehicle movement with regards to the true north; wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), unavailable(3601).",
+                  "minimum": 0,
+                  "maximum": 3601
+                },
+                "speed": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 m/s. Driving speed. standstill(0), oneCentimeterPerSec(1), unavailable(16383).",
+                  "minimum": 0,
+                  "maximum": 16383
+                },
+                "drive_direction": {
+                  "type": "integer",
+                  "description": "forward (0), backward (1), unavailable (2).",
+                  "default": 2,
+                  "minimum": 0,
+                  "maximum": 2
+                },
+                "vehicle_length": {
+                  "type": "integer",
+                  "description": "tenCentimeters(1), outOfRange(1022), unavailable(1023).",
+                  "default": 1023,
+                  "minimum": 1,
+                  "maximum": 1023
+                },
+                "vehicle_width": {
+                  "type": "integer",
+                  "description": "tenCentimeters(1), outOfRange(61), unavailable(62).",
+                  "default": 62,
+                  "minimum": 1,
+                  "maximum": 62
+                },
+                "longitudinal_acceleration": {
+                  "description": "unit: 0.1 m/s2. pointOneMeterPerSecSquaredForward(1), pointOneMeterPerSecSquaredBackward(-1), unavailable(161).",
+                  "type": "integer",
+                  "default": 161,
+                  "minimum": -160,
+                  "maximum": 161
+                },
+                "yaw_rate": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 degree/s: straight(0), degSec-000-01ToRight(-1), degSec-000-01ToLeft(1), unavailable(32767).",
+                  "default": 32767,
+                  "minimum": -32766,
+                  "maximum": 32767
+                },
+                "lateral_acceleration": {
+                  "type": "integer",
+                  "description": "Unit: 0.1 m/s2. pointOneMeterPerSecSquaredToRight(-1), pointOneMeterPerSecSquaredToLeft(1), unavailable(161).",
+                  "minimum": -160,
+                  "maximum": 161
+                },
+                "vertical_acceleration": {
+                  "type": "integer",
+                  "description": "Unit: 0.1 m/s2. pointOneMeterPerSecSquaredUp(1), pointOneMeterPerSecSquaredDown(-1), unavailable(161).",
+                  "minimum": -160,
+                  "maximum": 161
+                },
+                "confidence": {
+                  "type": "object",
+                  "required": [
+                    "heading",
+                    "speed"
+                  ],
+                  "properties": {
+                    "heading": {
+                      "type": "integer",
+                      "description": "Unit: 0.1 degree. Heading accuracy of the vehicle movement with regards to the true north. equalOrWithinZeroPointOneDegree (1), equalOrWithinOneDegree (10), outOfRange(126), unavailable(127).",
+                      "minimum": 1,
+                      "maximum": 127
+                    },
+                    "speed": {
+                      "type": "integer",
+                      "description": "Unit: 0.01 m/s. Speed accuracy. equalOrWithinOneCentimeterPerSec(1), equalOrWithinOneMeterPerSec(100), outOfRange(126), unavailable(127).",
+                      "minimum": 1,
+                      "maximum": 127
+                    },
+                    "vehicle_length": {
+                      "type": "integer",
+                      "description": "noTrailerPresent(0), trailerPresentWithKnownLength(1), trailerPresentWithUnknownLength(2), trailerPresenceIsUnknown(3), unavailable(4).",
+                      "default": 4,
+                      "minimum": 0,
+                      "maximum": 4
+                    },
+                    "yaw_rate": {
+                      "type": "integer",
+                      "description": "degSec-000-01 (0), degSec-000-05 (1), degSec-000-10 (2), degSec-001-00 (3), degSec-005-00 (4), degSec-010-00 (5), degSec-100-00 (6), outOfRange (7), unavailable (8).",
+                      "default": 8,
+                      "minimum": 0,
+                      "maximum": 8
+                    },
+                    "longitudinal_acceleration": {
+                      "type": "integer",
+                      "description": "pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102).",
+                      "minimum": 0,
+                      "maximum": 102
+                    },
+                    "lateral_acceleration": {
+                      "type": "integer",
+                      "description": "Unit: 0.1 m/s2. pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102).",
+                      "minimum": 0,
+                      "maximum": 102
+                    },
+                    "vertical_acceleration": {
+                      "type": "integer",
+                      "description": "Unit: 0.1 m/s2. pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102).",
+                      "minimum": 0,
+                      "maximum": 102
+                    }
+                  }
+                }
+              }
+            },
+            "originating_rsu_container": {
+              "type": "object",
+              "properties": {
+                "region": {
+                  "type": "integer",
+                  "description": "Road regulator id. When is present the intersection or road segment reference id is guaranteed to be globally unique.",
+                  "minimum": 0,
+                  "maximum": 65535
+                },
+                "intersection_reference_id": {
+                  "type": "integer",
+                  "description": "Intersection id. Unique within that region.",
+                  "minimum": 0,
+                  "maximum": 65535
+                },
+                "road_segment_reference_id": {
+                  "type": "integer",
+                  "description": "Road segment id. Unique within that region.",
+                  "minimum": 0,
+                  "maximum": 65535
+                }
+              }
+            }
+          }
+        },
+        "sensor_information_container": {
+          "type": "array",
+          "description": "List of information for individual sensor(s) which are mounted to a a vehicle or roadside.",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {
+            "type": "object",
+            "required": [
+              "sensor_id",
+              "type",
+              "detection_area"
+            ],
+            "properties": {
+              "sensor_id": {
+                "type": "integer",
+                "description": "Sensor identifier",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "type": {
+                "type": "integer",
+                "description": "Type of attached sensor. undefined(0), radar(1), lidar(2), monovideo(3), stereovision(4), nightvision(5), ultrasonic(6), pmd(7), fusion(8), inductionloop(9), sphericalCamera(10), itssaggregation(11).",
+                "minimum": 0,
+                "maximum": 15
+              },
+              "detection_area": {
+                "type": "object",
+                "properties": {
+                  "vehicle_sensor": {
+                    "type": "object",
+                    "required": [
+                      "x_sensor_offset",
+                      "y_sensor_offset",
+                      "vehicle_sensor_property_list"
+                    ],
+                    "properties": {
+                      "ref_point_id": {
+                        "type": "integer",
+                        "description": "Increasing counter of the trailer reference point (corresponding to the hitch point).",
+                        "default": 0,
+                        "minimum": 0,
+                        "maximum": 255
+                      },
+                      "x_sensor_offset": {
+                        "type": "integer",
+                        "description": "Unit: 0.01 meter. Mounting position of sensor in negative x-direction from Reference Point indicated by the ref point id. negativeZeroPointZeroOneMeter(-1), negativeOneMeter(-100), negativeOutOfRange(-3094), positiveOneMeter(100),positiveOutOfRange(1001).",
+                        "minimum": -3094,
+                        "maximum": 1001
+                      },
+                      "y_sensor_offset": {
+                        "type": "integer",
+                        "description": "Unit: 0.01 meter. Mounting position of sensor in y-direction from Reference Point indicated by the ref point id. zeroPointZeroOneMeter(1), oneMeter(100).",
+                        "minimum": -1000,
+                        "maximum": 1000
+                      },
+                      "z_sensor_offset": {
+                        "type": "integer",
+                        "description": "Unit: 0.01 meter. Mounting position of sensor in z-direction from Reference Point indicated by the ref point id. zeroPointZeroOneMeter(1), oneMeter(100).",
+                        "minimum": 0,
+                        "maximum": 1000
+                      },
+                      "vehicle_sensor_property_list": {
+                        "type": "array",
+                        "description": "List of information for individual sensor(s) which are mounted to a a vehicle or roadside.",
+                        "minItems": 1,
+                        "maxItems": 10,
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "range",
+                            "horizontal_opening_angle_start",
+                            "horizontal_opening_angle_end"
+                          ],
+                          "properties": {
+                            "range": {
+                              "type": "integer",
+                              "description": "Unit: 0.1 meter. Range of sensor within the indicated azimuth angle defined by the start and end opening angle. zeroPointOneMeter(1), oneMeter(10).",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "horizontal_opening_angle_start": {
+                              "type": "integer",
+                              "description": "Unit: 0.1 degrees. Start of the sensor's horizontal opening angle extension relative to the body of the vehicle. The value is provided with respect to a body-fixed coordinate system according to the ISO 8855 [i.2] specification with angles counted positive in the counter-clockwise direction starting from the X-axis. The opening angle always extends from the horizontal opening angle start to horizontal opening angle end in counter-clockwise direction. zeroPointOneDegree(1), oneDegree(10), unavailable(3601).",
+                              "minimum": 0,
+                              "maximum": 3601
+                            },
+                            "horizontal_opening_angle_end": {
+                              "type": "integer",
+                              "description": "Unit: 0.1 degrees. End of the sensor's horizontal opening angle extension relative to the body of the vehicle. The value is provided with respect to a body-fixed coordinate system according to the ISO 8855 [i.2] specification with angles counted positive in the counter-clockwise direction starting from the X-axis. The opening angle always extends from the horizontal opening angle start to horizontal opening angle end in counter-clockwise direction. zeroPointOneDegree(1), oneDegree(10), unavailable(3601).",
+                              "minimum": 0,
+                              "maximum": 3601
+                            },
+                            "vertical_opening_angle_start": {
+                              "type": "integer",
+                              "description": "Unit: 0.1 degrees. Start of the sensor's vertical opening angle extension. The angle refers to a rotation about the y-axis of a sensor-specific coordinate system with its origin located at the location defined by the offset. The x-axis of the sensor's coordinate system points in the direction of half of the horizontal opening angle. zeroPointOneDegree(1), oneDegree(10), unavailable(3601).",
+                              "minimum": 0,
+                              "maximum": 3601
+                            },
+                            "vertical_opening_angle_end": {
+                              "type": "integer",
+                              "description": "Unit: 0.1 degrees. End of the sensor's vertical opening angle extension. The angle refers to a rotation about the y-axis of a sensor-specific coordinate system with its origin located at the location defined by the offset. The X-axis of the sensor's coordinate system points in the direction of half of the horizontal opening angle. zeroPointOneDegree(1), oneDegree(10), unavailable(3601).",
+                              "minimum": 0,
+                              "maximum": 3601
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "stationary_sensor_radial": {
+                    "type": "object",
+                    "required": [
+                      "range",
+                      "horizontal_opening_angle_start",
+                      "horizontal_opening_angle_end"
+                    ],
+                    "properties": {
+                      "range": {
+                        "type": "integer",
+                        "description": "Unit: 0.1 meter. The radial range of the sensor from the reference point or sensor point offset. zeroPointOneMeter(1), oneMeter(10).",
+                        "minimum": 0,
+                        "maximum": 10000
+                      },
+                      "horizontal_opening_angle_start": {
+                        "type": "integer",
+                        "description": "Unit: 0.1 degrees. The orientation indicating the start of the stationary sensor’s horizontal opening angle in positive angular direction with respect to the WGS84 coordinate system. wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), unavailable (3601).",
+                        "minimum": 0,
+                        "maximum": 3601
+                      },
+                      "horizontal_opening_angle_end": {
+                        "type": "integer",
+                        "description": "Unit: 0.1 degrees. The orientation indicating the end of the stationary sensor’s horizontal opening angle in positive angular direction with respect to the WGS84 coordinate system. wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), unavailable (3601).",
+                        "minimum": 0,
+                        "maximum": 3601
+                      },
+                      "vertical_opening_angle_start": {
+                        "type": "integer",
+                        "description": "Unit: 0.1 degrees. The orientation indicating the start of the stationary sensor’s vertical opening angle in positive angular direction of a Cartesian coordinate system with its x-axis located in the north-east plane of the WGS84 coordinate system. zeroPointOneDegree(1), oneDegree(10), unavailable(3601).",
+                        "minimum": 0,
+                        "maximum": 3601
+                      },
+                      "vertical_opening_angle_end": {
+                        "type": "integer",
+                        "description": "Unit: 0.1 degrees. The orientation indicating the end of the stationary sensor’s vertical opening angle in positive angular direction of a Cartesian coordinate system with its x-axis located in the north-east plane of the WGS84 coordinate system. zeroPointOneDegree(1), oneDegree(10), unavailable(3601).",
+                        "minimum": 0,
+                        "maximum": 3601
+                      },
+                      "sensor_position_offset": {
+                        "description": "The offset of the mounting point of this sensor from the station's reference position.",
+                        "$ref": "#/$defs/offset"
+                      }
+                    }
+                  },
+                  "stationary_sensor_polygon": {
+                    "$ref": "#/$defs/area_polygon"
+                  },
+                  "stationary_sensor_circular": {
+                    "$ref": "#/$defs/area_circular"
+                  },
+                  "stationary_sensor_ellipse": {
+                    "$ref": "#/$defs/area_ellipse"
+                  },
+                  "stationary_sensor_rectangle": {
+                    "$ref": "#/$defs/area_rectangle"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "perceived_object_container": {
+          "type": "array",
+          "description": "List of information for individual perceived object. The total number of detected objects by the station at the time of generating the message. Due to the dynamic message generation rules, this number does not have to reflect the number of objects included in this message but states the number of objects known to the sender at the time of generating the message.",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {
+            "type": "object",
+            "required": [
+              "object_id",
+              "time_of_measurement",
+              "x_distance",
+              "y_distance",
+              "x_speed",
+              "y_speed",
+              "object_age",
+              "confidence"
+            ],
+            "properties": {
+              "object_id": {
+                "type": "integer",
+                "description": "Identifier assigned to a detected object which remains constant as long as the object is perceived. Numbers are assigned in an increasing round-robin fashion. When the last identifier in the allowed range has been used, the first counter for the identifier starts from the beginning of the range again.",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "time_of_measurement": {
+                "type": "integer",
+                "description": "Unit: 1 millisecond. Time difference from the message’s generation delta time to the time of the measurement of the object.",
+                "minimum": -1500,
+                "maximum": 1500
+              },
+              "x_distance": {
+                "type": "integer",
+                "description": "Unit: 0.01 meter. Distance to detected object from the reference point in x-direction for the time of measurement. For a vehicle, the distance is reported in a body-fixed coordinate system as provided by ISO 8855. For a RSU, the distance is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z-axis to the vertical direction. zeroPointZeroOneMeter(1), oneMeter(100).",
+                "minimum": -132768,
+                "maximum": 132767
+              },
+              "y_distance": {
+                "type": "integer",
+                "description": "Unit: 0.01 meter. Distance to detected object from the reference point in y-direction for the time of measurement. For a vehicle, the distance is reported in a body-fixed coordinate system as provided by ISO 8855. For a RSU, the distance is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z-axis to the vertical direction. zeroPointZeroOneMeter(1), oneMeter(100).",
+                "minimum": -132768,
+                "maximum": 132767
+              },
+              "z_distance": {
+                "type": "integer",
+                "description": "Unit: 0.01 meter. Distance to detected object from the reference point in z-direction for the time of measurement. For a vehicle, the distance is reported in a body-fixed coordinate system as provided by ISO 8855. For a RSU, the distance is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z-axis to the vertical direction. zeroPointZeroOneMeter(1), oneMeter(100).",
+                "minimum": -132768,
+                "maximum": 132767
+              },
+              "x_speed": {
+                "type": "integer",
+                "description": "Unit: 0.01 m/s. Speed of the detected object in the detecting reference system in x-direction for the time of measurement (i.e. speed of the object relative to the origin of the station’s reference system). For a vehicle, the speed is reported in a body-fixed coordinate system as provided by ISO 8855 originating at the station’s reference point. For a RSU, the speed is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z-axis to the vertical direction. negativeSpeedMaximum(-16383), standstill(0), oneCentimeterPerSec(1), speedMaximum(16382), unavailable(16383).",
+                "minimum": -16383,
+                "maximum": 16383
+              },
+              "y_speed": {
+                "type": "integer",
+                "description": "Unit: 0.01 m/s. Speed of the detected object in the detecting reference system in y-direction for the time of measurement (i.e. speed of the object relative to the origin of the station’s reference system). For a vehicle, the speed is reported in a body-fixed coordinate system as provided by ISO 8855 originating at the station’s reference point. For a RSU, the speed is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z-axis to the vertical direction. negativeSpeedMaximum(-16383), standstill(0), oneCentimeterPerSec(1), speedMaximum(16382), unavailable(16383).",
+                "minimum": -16383,
+                "maximum": 16383
+              },
+              "z_speed": {
+                "type": "integer",
+                "description": "Unit: 0.01 m/s. Speed of the detected object in the detecting reference system in z-direction for the time of measurement (i.e. speed of the object relative to the origin of the station’s reference system). For a vehicle, the speed is reported in a body-fixed coordinate system as provided by ISO 8855 originating at the station’s reference point. For a RSU, the speed is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z-axis to the vertical direction. negativeSpeedMaximum(-16383), standstill(0), oneCentimeterPerSec(1), speedMaximum(16382), unavailable(16383).",
+                "minimum": -16383,
+                "maximum": 16383
+              },
+              "x_acceleration": {
+                "type": "integer",
+                "description": "Unit: 0.1 m/s2. Acceleration of the detected object from the reference point in x-direction for the time of measurement. For a vehicle, the acceleration is reported in a body-fixed coordinate system as provided by ISO 8855 originating at the station’s reference point. For a RSU, the acceleration is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z-axis to the vertical direct. pointOneMeterPerSecSquared(1), minusPointOneMeterPerSecSquared(-1), unavailable(161).",
+                "minimum": -160,
+                "maximum": 161
+              },
+              "y_acceleration": {
+                "type": "integer",
+                "description": "Unit: 0.1 m/s2. Acceleration of the detected object from the reference point in y-direction for the time of measurement. For a vehicle, the acceleration is reported in a body-fixed coordinate system as provided by ISO 8855 originating at the station’s reference point. For a RSU, the acceleration is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z-axis to the vertical direct. pointOneMeterPerSecSquared(1), minusPointOneMeterPerSecSquared(-1), unavailable(161).",
+                "minimum": -160,
+                "maximum": 161
+              },
+              "z_acceleration": {
+                "type": "integer",
+                "description": "Unit: 0.1 m/s2. Acceleration of the detected object from the reference point in z-direction for the time of measurement. For a vehicle, the acceleration is reported in a body-fixed coordinate system as provided by ISO 8855 originating at the station’s reference point. For a RSU, the acceleration is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z-axis to the vertical direct. pointOneMeterPerSecSquared(1), minusPointOneMeterPerSecSquared(-1), unavailable(161).",
+                "minimum": -160,
+                "maximum": 161
+              },
+              "roll_angle": {
+                "type": "integer",
+                "description": "Unit: 0.1 degrees. Roll angle of object from the reference point. For a vehicle, the angle is reported in a body-fixed coordinate system as provided by ISO 8855 originating at the station’s reference point. For a RSU, the angle is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction. The angle is measured with positive values considering the object orientation turning counter-clockwise around the x-axis. zeroPointOneDegree(1), oneDegree(10), unavailable(3601).",
+                "minimum": 0,
+                "maximum": 3601
+              },
+              "pitch_angle": {
+                "type": "integer",
+                "description": "Unit: 0.1 degrees. Pitch angle of object from the reference point. For a vehicle, the angle is reported in a body-fixed coordinate system as provided by ISO 8855 originating at the station’s reference point. For a RSU, the angle is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction. The angle is measured with positive values considering the object orientation turning counter-clockwise around the y-axis. zeroPointOneDegree(1), oneDegree(10), unavailable(3601).",
+                "minimum": 0,
+                "maximum": 3601
+              },
+              "yaw_angle": {
+                "type": "integer",
+                "description": "Unit: 0.1 degrees. Yaw angle of object from the reference point. For a vehicle, the angle is reported in a body-fixed coordinate system as provided by ISO 8855 originating at the station’s reference point. For a RSU, the angle is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction. The angle is measured with positive values considering the object orientation turning counter-clockwise around the z-axis. zeroPointOneDegree(1), oneDegree(10), unavailable(3601).",
+                "minimum": 0,
+                "maximum": 3601
+              },
+              "roll_rate": {
+                "type": "integer",
+                "description": "Unit: 0.01 degrees/s. Roll rate of object from the reference point. For a vehicle, the angular rate is reported in a body-fixed coordinate system as provided by ISO 8855 originating at the station’s reference point. For a RSU, the angular rate is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction. The angular rate is measured with positive values considering the object orientation turning counter-clockwise around the x-axis. An angular speed value described in a local Cartesian coordinate system, counted positive in a right-hand local coordinate system from the abscissa. noSpeed(0), oneDegreePerSecondAntiClockwise(100), oneDegreePerSecondClockwise(-100).",
+                "minimum": -32766,
+                "maximum": 32767
+              },
+              "pitch_rate": {
+                "type": "integer",
+                "description": "Unit: 0.01 degrees/s. Pitch rate of object from the reference point. For a vehicle, the angular rate is reported in a body-fixed coordinate system as provided by ISO 8855 originating at the station’s reference point. For a RSU, the angular rate is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction. The angular rate is measured with positive values considering the object orientation turning counter-clockwise around the x-axis. An angular speed value described in a local Cartesian coordinate system, counted positive in a right-hand local coordinate system from the abscissa. noSpeed(0), oneDegreePerSecondAntiClockwise(100), oneDegreePerSecondClockwise(-100).",
+                "minimum": -32766,
+                "maximum": 32767
+              },
+              "yaw_rate": {
+                "type": "integer",
+                "description": "Unit: 0.01 degrees/s. Yaw rate of object from the reference point. For a vehicle, the angular rate is reported in a body-fixed coordinate system as provided by ISO 8855 originating at the station’s reference point. For a RSU, the angular rate is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction. The angular rate is measured with positive values considering the object orientation turning counter-clockwise around the x-axis. An angular speed value described in a local Cartesian coordinate system, counted positive in a right-hand local coordinate system from the abscissa. noSpeed(0), oneDegreePerSecondAntiClockwise(100), oneDegreePerSecondClockwise(-100).",
+                "minimum": -32766,
+                "maximum": 32767
+              },
+              "roll_acceleration": {
+                "type": "integer",
+                "description": "Unit: 0.01 degrees/s^2 (degrees per second squared). Roll acceleration of object from the reference point. For a vehicle, the angular acceleration is reported in a body-fixed coordinate system as provided by ISO 8855 originating at the station’s reference point. For a RSU, the angular acceleration is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction. The angular acceleration is measured with positive values considering the object orientation turning counter-clockwise around the x-axis. An angular acceleration value described in a local Cartesian coordinate system, counted positive in a right-hand local coordinate system from the abscissa. noAcceleration(0), oneDegreePerSecondSquaredAntiClockwise(100), oneDegreePerSecondSquaredClockwise(-100).",
+                "minimum": -32766,
+                "maximum": 32767
+              },
+              "pitch_acceleration": {
+                "type": "integer",
+                "description": "Unit: 0.01 degrees/s^2 (degrees per second squared). Pitch acceleration of object from the reference point. For a vehicle, the angular acceleration is reported in a body-fixed coordinate system as provided by ISO 8855 originating at the station’s reference point. For a RSU, the angular acceleration is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction. The angular acceleration is measured with positive values considering the object orientation turning counter-clockwise around the x-axis. An angular acceleration value described in a local Cartesian coordinate system, counted positive in a right-hand local coordinate system from the abscissa. noAcceleration(0), oneDegreePerSecondSquaredAntiClockwise(100), oneDegreePerSecondSquaredClockwise(-100).",
+                "minimum": -32766,
+                "maximum": 32767
+              },
+              "yaw_acceleration": {
+                "type": "integer",
+                "description": "Unit: 0.01 degrees/s^2 (degrees per second squared). Yaw acceleration of object from the reference point. For a vehicle, the angular acceleration is reported in a body-fixed coordinate system as provided by ISO 8855 originating at the station’s reference point. For a RSU, the angular acceleration is reported in a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction. The angular acceleration is measured with positive values considering the object orientation turning counter-clockwise around the x-axis. An angular acceleration value described in a local Cartesian coordinate system, counted positive in a right-hand local coordinate system from the abscissa. noAcceleration(0), oneDegreePerSecondSquaredAntiClockwise(100), oneDegreePerSecondSquaredClockwise(-100).",
+                "minimum": -32766,
+                "maximum": 32767
+              },
+              "lower_triangular_correlation_matrix_columns": {
+                "type": "array",
+                "description": "Provides the columns of a lower triangular positive semi definite correlation matrix for the kinematic state and attitude space provided for this object. The order of the columns and rows of the correlation matrix is as follows: x_distance , y_distance , z_distance , x_speed , y_speed , z_speed , x_acceleration , y_acceleration , z_acceleration , roll_angle , pitch_angle , yaw_angle , roll_rate , pitch_rate , yaw_rate , roll_acceleration , pitch_acceleration , yaw_acceleration The number of lower_triangular_correlation_matrix_columns to be included k is thereby the number of provided values n of the kinematic state and attitude space minus 1: k = n-1. Each column i of the lower_triangular_correlation_matrix_columns contains k-(i-1) values. In case certain values of the kinematic state and attitude space are not provided, they are omitted from the lower_triangular_correlation_matrix_columns. A general data frame to express the elements of a lower triangular positive semi-definite matrix, not including the main diagonal elements of the matrix. Given a matrix A of size n x n, the number of columns to be included in the lower triangular matrix is k=n-1.",
+                "minItems": 1,
+                "maxItems": 17,
+                "items": {
+                  "type": "array",
+                  "description": "The column of the lower triangular positive semi-definite matrix consists of correlation row values. Given a matrix A of size n x n, the number of columns to be included in the lower triangular matrix is k=n-1. Each column i of the lower triangular then contains k-(i-1) values, where i refers to the column number count starting at 1 from the left.",
+                  "minItems": 1,
+                  "maxItems": 17,
+                  "items": {
+                    "type": "integer",
+                    "description": "The Bravais-Pearson correlation value for each cell of the lower triangular correlation matrix. Scaled by 100. full-negative-correlation(-100) full negative correlation, no-correlation(0) if not correlated or unavailable, point-one(10), full-positive-correlation(100) full positive correlation",
+                    "minimum": -100,
+                    "maximum": 100
+                  }
+                }
+              },
+              "planar_object_dimension_1": {
+                "type": "integer",
+                "description": "Unit: 0.1 m. First dimension of object as provided by the sensor or environment model. This dimension is always contained in the plane which is oriented perpendicular to the direction of the angle indicated by the yawAngle and which contains the object's reference point. A dimension for an object. zeroPointOneMeter(1), oneMeter(10).",
+                "minimum": 0,
+                "maximum": 1023
+              },
+              "planar_object_dimension_2": {
+                "type": "integer",
+                "description": "Unit: 0.1 m. Second dimension of the object as provided by the sensor environment model. This dimension is contained in the plane oriented in the direction of the angle indicated by the yawAngle and the object's reference point. A dimension for an object. zeroPointOneMeter(1), oneMeter(10).",
+                "minimum": 0,
+                "maximum": 1023
+              },
+              "vertical_object_dimension": {
+                "type": "integer",
+                "description": "Unit: 0.1 m. Vertical dimension of object as provided by the sensor or object model. A dimension for an object. zeroPointOneMeter(1), oneMeter(10).",
+                "minimum": 0,
+                "maximum": 1023
+              },
+              "object_ref_point": {
+                "type": "integer",
+                "description": "The reference point on the perceived object. The kinematic attitude and state data provided for this object are valid for this reference point of the object. In case no object reference point can be determined, it is assumed to be the center point of the detected object. {mid(0), bottomLeft(1), midLeft(2), topLeft(3), bottomMid(4), topMid(5), bottomRight(6), midRight(7), topRight(8).",
+                "default": 0,
+                "minimum": 0,
+                "maximum": 8
+              },
+              "object_age": {
+                "type": "integer",
+                "description": "Unit: 1 ms. Provides the age of the detected and described object. Age of object in milliseconds, i.e. for how long the object has been observed by the disseminating station. oneMiliSec(1), moreThan1Point5Second(1500).",
+                "minimum": 0,
+                "maximum": 1500
+              },
+              "sensor_id_list": {
+                "type": "array",
+                "description": "List of sensor-IDs which provided the measurement data.",
+                "minItems": 1,
+                "maxItems": 128,
+                "items": {
+                  "type": "integer",
+                  "description": "Sensor identifier",
+                  "minimum": 0,
+                  "maximum": 255
+                }
+              },
+              "dynamic_status": {
+                "type": "integer",
+                "description": "Indicated the dynamic capabilities of a detected object. Indication whether the detected object is classified as a dynamic (i.e. moving) object. This value indicates whether an object has the general capability to move, i.e. change its position. dynamic(0) the object is moving, hasBeenDynamic(1) indicates whether an object has been dynamic before, e.g., a car stopping at a traffic light, static(2) shall be used in case an object is identified to be not moving throughout any previous observation",
+                "minimum": 0,
+                "maximum": 2
+              },
+              "classification": {
+                "type": "array",
+                "description": "Provides the classification of the described object. Multi-dimensional classification may be provided.",
+                "minItems": 1,
+                "maxItems": 8,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "object_class",
+                    "confidence"
+                  ],
+                  "properties": {
+                    "object_class": {
+                      "type": "object",
+                      "description": "The class that best describes the detected object. The object can be classified into one of three main categories: vehicle, VRU and other.",
+                      "oneOf": [{
+                        "required": [
+                          "vehicle"
+                        ]
+                      },
+                        {
+                          "required": [
+                            "single_vru"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "vru_group"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "other"
+                          ]
+                        }
+                      ],
+                      "properties": {
+                        "vehicle": {
+                          "type": "integer",
+                          "description": "Describes the subclass of a detected object for class vehicle. unknown(0) the type of vehicle is unknown, passengerCar(1) the detected object is a small passenger car, bus(2) the detected object is a large passenger vehicle, lightTruck(3) the detected object is a light goods vehicle, heavyTruck(4) the detected object is a heavy goods vehicle, trailer(5) the detected object is an unpowered vehicle that is intended to be towed by a powered vehicle, specialVehicles(6) the detected object is a vehicle which has a special purpose other than the above (e.g. moving road works vehicle), tram(7) the detected object is a vehicle running on tracks along public streets, emergencyVehicle(8) the detected object is a vehicle used in an emergency situation, such as an ambulance, police car or fire engine, agricultural(9) the detected object is a vehicle used for agricultural purposes.",
+                          "minimum": 0,
+                          "maximum": 255
+                        },
+                        "single_vru": {
+                          "type": "object",
+                          "oneOf": [{
+                            "required": [
+                              "pedestrian"
+                            ]
+                          },
+                            {
+                              "required": [
+                                "bicyclist"
+                              ]
+                            },
+                            {
+                              "required": [
+                                "motorcylist"
+                              ]
+                            },
+                            {
+                              "required": [
+                                "animal"
+                              ]
+                            }
+                          ],
+                          "properties": {
+                            "pedestrian": {
+                              "type": "integer",
+                              "description": "unavailable(0), ordinary-pedestrian(1), road-worker(2), first-responder(3), max(15).",
+                              "minimum": 0,
+                              "maximum": 15
+                            },
+                            "bicyclist": {
+                              "type": "integer",
+                              "description": "unavailable(0), bicyclist(1), wheelchair-user(2), horse-and-rider(3), rollerskater(4), e-scooter(5), personal-transporter(6), pedelec(7), speed-pedelec(8), max(15).",
+                              "minimum": 0,
+                              "maximum": 15
+                            },
+                            "motorcylist": {
+                              "type": "integer",
+                              "description": "unavailable(0), moped(1), motorcycle(2), motorcycle-and-sidecar-right(3), motorcycle-and-sidecar-left(4), max(15).",
+                              "minimum": 0,
+                              "maximum": 15
+                            },
+                            "animal": {
+                              "type": "integer",
+                              "description": "unavailable(0), wild-animal(1), farm-animal(2), service-animal(3), max(15).",
+                              "minimum": 0,
+                              "maximum": 15
+                            }
+                          }
+                        },
+                        "vru_group": {
+                          "type": "object",
+                          "description": "group of VRUs",
+                          "required": [
+                            "group_type",
+                            "group_size"
+                          ],
+                          "properties": {
+                            "group_type": {
+                              "type": "object",
+                              "required": [
+                                "pedestrian",
+                                "bicyclist",
+                                "motorcyclist",
+                                "animal"
+                              ],
+                              "properties": {
+                                "pedestrian": {
+                                  "type": "boolean"
+                                },
+                                "bicyclist": {
+                                  "type": "boolean"
+                                },
+                                "motorcyclist": {
+                                  "type": "boolean"
+                                },
+                                "animal": {
+                                  "type": "boolean"
+                                }
+                              }
+                            },
+                            "group_size": {
+                              "type": "integer",
+                              "description": "Indicates an estimation of the number of VRUs in the group. unavailable(0), onlyLeader(1).",
+                              "minimum": 0,
+                              "maximum": 255
+                            },
+                            "cluster_id": {
+                              "type": "integer",
+                              "description": "If the group is associated to a VRU cluster, this element indicates the ID of the associated cluster. The ClusterId can only be assigned if a VRU cluster which is transmitting VAMs has been detected.",
+                              "minimum": 0,
+                              "maximum": 255
+                            }
+                          }
+                        },
+                        "other": {
+                          "type": "integer",
+                          "description": "Detected object for class other. unknown(0), roadSideUnit(1).",
+                          "minimum": 0,
+                          "maximum": 255
+                        }
+                      }
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "Describes the confidence value for the type of a detected object. unknown(0) in case the confidence value is unknown but the reported classification is still valid, onePercent(1), oneHundredPercent(100), unavailable(101) in case the class confidence value computation is not available for this object, indicates that the class assignment is invalid",
+                      "minimum": 0,
+                      "maximum": 101
+                    }
+                  }
+                }
+              },
+              "matched_position": {
+                "description": "Unit: . The map-matched position of an object. This requires that a MAP-message is provided. Conveys an assigned index that is unique within the intersection.",
+                "type": "object",
+                "properties": {
+                  "lane_id": {
+                    "type": "integer",
+                    "description": "Conveys an assigned index that is unique within the intersection.",
+                    "minimum": 0,
+                    "maximum": 255
+                  },
+                  "longitudinal_lane_position": {
+                    "type": "integer",
+                    "description": "Unit: 0.1 meter. Indicates the longitudinal offset of the map-matched position of a particular object along the matched lane, beginning from the lane’s starting point. zeroPointOneMeter(1).",
+                    "minimum": 0,
+                    "maximum": 32767
+                  }
+                }
+              },
+              "confidence": {
+                "required": [
+                  "x_distance",
+                  "y_distance",
+                  "x_speed",
+                  "y_speed",
+                  "object"
+                ],
+                "x_distance": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 meter. Distance confidence to detected object from the reference point in x-direction at the time of measurement. Absolute accuracy of measurement to a confidence level of 95%. zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(4094), unavailable(4095).",
+                  "minimum": 0,
+                  "maximum": 4095
+                },
+                "y_distance": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 meter. Distance confidence to detected object from the reference point in y-direction at the time of measurement. Absolute accuracy of measurement to a confidence level of 95%. zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(4094), unavailable(4095).",
+                  "minimum": 0,
+                  "maximum": 4095
+                },
+                "z_distance": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 meter. Distance confidence to detected object from the reference point in z-direction at the time of measurement. Absolute accuracy of measurement to a confidence level of 95%. zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(4094), unavailable(4095).",
+                  "minimum": 0,
+                  "maximum": 4095
+                },
+                "x_speed": {
+                  "type": "integer",
+                  "description": "Speed confidence of detected object from the reference point in x-direction at the time of measurement. unavailable(0) Not Equipped or unavailable, prec100ms(1) 100  meters / sec, prec10ms(2) 10 meters / sec, prec5ms(3) 5 meters / sec, prec1ms(4) 1 meters / sec, prec0-1ms(5) 0.1 meters / sec, prec0-05ms(6) 0.05 meters / sec, prec0-01ms(7) 0.01 meters / sec",
+                  "minimum": 0,
+                  "maximum": 7
+                },
+                "y_speed": {
+                  "type": "integer",
+                  "description": "Speed confidence of detected object from the reference point in y-direction at the time of measurement. unavailable(0) Not Equipped or unavailable, prec100ms(1) 100  meters / sec, prec10ms(2) 10 meters / sec, prec5ms(3) 5 meters / sec, prec1ms(4) 1 meters / sec, prec0-1ms(5) 0.1 meters / sec, prec0-05ms(6) 0.05 meters / sec, prec0-01ms(7) 0.01 meters / sec",
+                  "minimum": 0,
+                  "maximum": 7
+                },
+                "z_speed": {
+                  "type": "integer",
+                  "description": "Speed confidence of detected object from the reference point in z-direction at the time of measurement. unavailable(0) Not Equipped or unavailable, prec100ms(1) 100  meters / sec, prec10ms(2) 10 meters / sec, prec5ms(3) 5 meters / sec, prec1ms(4) 1 meters / sec, prec0-1ms(5) 0.1 meters / sec, prec0-05ms(6) 0.05 meters / sec, prec0-01ms(7) 0.01 meters / sec",
+                  "minimum": 0,
+                  "maximum": 7
+                },
+                "x_acceleration": {
+                  "type": "integer",
+                  "description": "Acceleration confidence of detected object from the reference point in x-direction at the time of measurement. pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102).",
+                  "minimum": 0,
+                  "maximum": 102
+                },
+                "y_acceleration": {
+                  "type": "integer",
+                  "description": "Acceleration confidence of detected object from the reference point in y-direction at the time of measurement. pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102).",
+                  "minimum": 0,
+                  "maximum": 102
+                },
+                "z_acceleration": {
+                  "type": "integer",
+                  "description": "Acceleration confidence of detected object from the reference point in z-direction at the time of measurement. pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102).",
+                  "minimum": 0,
+                  "maximum": 102
+                },
+                "roll_angle": {
+                  "type": "integer",
+                  "description": "Roll angle confidence. The absolute accuracy of a reported angle value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. zeroPointOneDegree(1), oneDegree(10), outOfRange(126), unavailable(127).",
+                  "minimum": 1,
+                  "maximum": 127
+                },
+                "pitch_angle": {
+                  "type": "integer",
+                  "description": "Pitch angle confidence. The absolute accuracy of a reported angle value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. zeroPointOneDegree(1), oneDegree(10), outOfRange(126), unavailable(127).",
+                  "minimum": 1,
+                  "maximum": 127
+                },
+                "yaw_angle": {
+                  "type": "integer",
+                  "description": "Yaw angle confidence. The absolute accuracy of a reported angle value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. zeroPointOneDegree(1), oneDegree(10), outOfRange(126), unavailable(127).",
+                  "minimum": 1,
+                  "maximum": 127
+                },
+                "roll_rate": {
+                  "type": "integer",
+                  "description": "Roll rate confidence. The absolute accuracy of a reported angular speed value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSec-000-01(0) if the accuracy is equal to or less than 0.01 degree/second, degSec-000-05(1) if the accuracy is equal to or less than 0.05 degrees/second, degSec-000-10(2) if the accuracy is equal to or less than 0.1 degree/second, degSec-001-00(3) if the accuracy is equal to or less than 1 degree/second, degSec-005-00(4) if the accuracy is equal to or less than 5 degrees/second, degSec-010-00(5) if the accuracy is equal to or less than 10 degrees/second, degSec-100-00(6) if the accuracy is equal to or less than 100 degrees/second, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second, unavailable(8) if the accuracy information is unavailable",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "pitch_rate": {
+                  "type": "integer",
+                  "description": "Pitch rate confidence. The absolute accuracy of a reported angular speed value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSec-000-01(0) if the accuracy is equal to or less than 0.01 degree/second, degSec-000-05(1) if the accuracy is equal to or less than 0.05 degrees/second, degSec-000-10(2) if the accuracy is equal to or less than 0.1 degree/second, degSec-001-00(3) if the accuracy is equal to or less than 1 degree/second, degSec-005-00(4) if the accuracy is equal to or less than 5 degrees/second, degSec-010-00(5) if the accuracy is equal to or less than 10 degrees/second, degSec-100-00(6) if the accuracy is equal to or less than 100 degrees/second, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second, unavailable(8) if the accuracy information is unavailable",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "yaw_rate": {
+                  "type": "integer",
+                  "description": "Yaw rate confidence. The absolute accuracy of a reported angular speed value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSec-000-01(0) if the accuracy is equal to or less than 0.01 degree/second, degSec-000-05(1) if the accuracy is equal to or less than 0.05 degrees/second, degSec-000-10(2) if the accuracy is equal to or less than 0.1 degree/second, degSec-001-00(3) if the accuracy is equal to or less than 1 degree/second, degSec-005-00(4) if the accuracy is equal to or less than 5 degrees/second, degSec-010-00(5) if the accuracy is equal to or less than 10 degrees/second, degSec-100-00(6) if the accuracy is equal to or less than 100 degrees/second, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second, unavailable(8) if the accuracy information is unavailable",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "roll_acceleration": {
+                  "type": "integer",
+                  "description": "Roll acceleration confidence.The absolute accuracy of a reported angular acceleration value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSecSquared-000-01(0) if the accuracy is equal to or less than 0.01 degree/second^2, degSecSquared-000-05(1) if the accuracy is equal to or less than 0.05 degrees/second^2, degSecSquared-000-10(2) if the accuracy is equal to or less than 0.1 degree/second^2, degSecSquared-001-00(3) if the accuracy is equal to or less than 1 degree/second^2, degSecSquared-005-00(4) if the accuracy is equal to or less than 5 degrees/second^2, degSecSquared-010-00(5) if the accuracy is equal to or less than 10 degrees/second^2, degSecSquared-100-00(6) if the accuracy is equal to or less than 100 degrees/second^2, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second^2, unavailable(8) if the accuracy information is unavailable",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "pitch_acceleration": {
+                  "type": "integer",
+                  "description": "Pitch acceleration confidence.The absolute accuracy of a reported angular acceleration value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSecSquared-000-01(0) if the accuracy is equal to or less than 0.01 degree/second^2, degSecSquared-000-05(1) if the accuracy is equal to or less than 0.05 degrees/second^2, degSecSquared-000-10(2) if the accuracy is equal to or less than 0.1 degree/second^2, degSecSquared-001-00(3) if the accuracy is equal to or less than 1 degree/second^2, degSecSquared-005-00(4) if the accuracy is equal to or less than 5 degrees/second^2, degSecSquared-010-00(5) if the accuracy is equal to or less than 10 degrees/second^2, degSecSquared-100-00(6) if the accuracy is equal to or less than 100 degrees/second^2, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second^2, unavailable(8) if the accuracy information is unavailable",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "yaw_acceleration": {
+                  "type": "integer",
+                  "description": "Yaw acceleration confidence.The absolute accuracy of a reported angular acceleration value for a predefined confidence level (e.g. 95 %). The required confidence level is defined by the corresponding standards. For correlation computation, maximum interval levels shall be assumed. degSecSquared-000-01(0) if the accuracy is equal to or less than 0.01 degree/second^2, degSecSquared-000-05(1) if the accuracy is equal to or less than 0.05 degrees/second^2, degSecSquared-000-10(2) if the accuracy is equal to or less than 0.1 degree/second^2, degSecSquared-001-00(3) if the accuracy is equal to or less than 1 degree/second^2, degSecSquared-005-00(4) if the accuracy is equal to or less than 5 degrees/second^2, degSecSquared-010-00(5) if the accuracy is equal to or less than 10 degrees/second^2, degSecSquared-100-00(6) if the accuracy is equal to or less than 100 degrees/second^2, outOfRange(7) if the accuracy is out of range, i.e. greater than 100 degrees/second^2, unavailable(8) if the accuracy information is unavailable",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "planar_object_dimension_1": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 m. Accuracy of first provided dimension value with a predefined confidence level (e.g. 95%). zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101), unavailable(102).",
+                  "minimum": 0,
+                  "maximum": 102
+                },
+                "planar_object_dimension_2": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 m. Accuracy of second provided dimension value with a predefined confidence level (e.g. 95%). zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101), unavailable(102).",
+                  "minimum": 0,
+                  "maximum": 102
+                },
+                "vertical_object_dimension": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 m. Accuracy of vertical provided dimension value with a predefined confidence level (e.g. 95%). zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101), unavailable(102).",
+                  "minimum": 0,
+                  "maximum": 102
+                },
+                "longitudinal_lane_position": {
+                  "type": "integer",
+                  "description": "Unit: 0.01 m. Absolute accuracy of longitudinal lane position measurement to a confidence level of 95%. zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101) shall be set if the accuracy is out of range, unavailable(102) shall be set if the accuracy data is unavailable",
+                  "minimum": 0,
+                  "maximum": 102
+                },
+                "object": {
+                  "type": "integer",
+                  "description": "The confidence associated to the object. The computation of the object confidence is based on a sensor's or, fusion system's specific detection confidence, the binary detection success that is, if an object has been successfully detected by the last measurement and the object age. A single-value indication about the overall information quality of a perceived object. Its computation is based on several scaling factors and moving averages. noConfidence(0) no confidence in detected object, e.g. for ghost-objects or if confidence could not be computed, fullConfidence(15) full confidence in detected object",
+                  "minimum": 0,
+                  "maximum": 15
+                }
+              }
+            }
+          }
+        },
+        "free_space_addendum_container": {
+          "type": "array",
+          "description": "List of information for individual perceived object",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {
+            "type": "object",
+            "description": "This container shall only be added if the confidence indication needs to be altered with respect to the isotropic @see FreeSpace Confidence confidence level indication provided in the Sensor Information.",
+            "requires": [
+              "free_space_area",
+              "free_space_confidence"
+            ],
+            "properties": {
+              "free_space_area": {
+                "description": "free space area for which the free space confidence of this addendum container is valid. The described area that is considered as not occupied by any traffic participant or obstacle.",
+                "type": "object",
+                "oneOf": [{
+                  "required": [
+                    "free_space_polygon"
+                  ]
+                },
+                  {
+                    "required": [
+                      "free_space_circular"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "free_space_ellipse"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "free_space_rectangle"
+                    ]
+                  }
+                ],
+                "properties": {
+                  "free_space_polygon": {
+                    "$ref": "#/$defs/area_polygon"
+                  },
+                  "free_space_circular": {
+                    "$ref": "#/$defs/area_circular"
+                  },
+                  "free_space_ellipse": {
+                    "$ref": "#/$defs/area_ellipse"
+                  },
+                  "free_space_rectangle": {
+                    "$ref": "#/$defs/area_rectangle"
+                  }
+                }
+              },
+              "free_space_confidence": {
+                "type": "integer",
+                "description": "Isotropic free space confidence that applies to the entire area as defined in the free space area of a particular free space addendum container. Confidence indicating that an area is not occupied by a traffic participant or obstacle. unknown(0) if the free space confidence is unknown for the described area, onePercent(1), oneHundredPercent(100), unavailable(101) if the confidence could not be computed and does not apply.",
+                "minimum": 0,
+                "maximum": 101
+              },
+              "sensor_id_list": {
+                "type": "array",
+                "description": "list of pseudonym sensor id which performed the measurement to indicate the free space.",
+                "minItems": 1,
+                "maxItems": 128,
+                "items": {
+                  "type": "integer",
+                  "description": "Sensor identifier",
+                  "minimum": 0,
+                  "maximum": 255
+                }
+              },
+              "shadowing_applies": {
+                "description": "if simple shadowing mechanism applies within the area described by the free space area.",
+                "type": "boolean",
+                "default": true
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "offset": {
+      "description": "Offset JSon schema. Describes an offset position in a two- or three-dimensional plane.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y"
+      ],
+      "properties": {
+        "x": {
+          "type": "integer",
+          "description": "node is within 327.67m of last node",
+          "minimum": -32768,
+          "maximum": 32767
+        },
+        "y": {
+          "type": "integer",
+          "description": "node is within 327.67m of last node",
+          "minimum": -32768,
+          "maximum": 32767
+        },
+        "z": {
+          "type": "integer",
+          "description": "node is within 327.67m of last node",
+          "minimum": -32768,
+          "maximum": 32767
+        }
+      }
+    },
+    "area_polygon": {
+      "type": "array",
+      "description": "Polygonal area constructed by connecting the offset points in the sequence provided. The last point shall be connected with the first point to close the polygon.",
+      "minItems": 3,
+      "maxItems": 16,
+      "items": {
+        "$ref": "#/$defs/offset"
+      }
+    },
+    "area_circular": {
+      "type": "object",
+      "description": "a circular area. The circle is centred about the reference point or about the nodeCenterPoint (if provided).",
+      "required": [
+        "radius"
+      ],
+      "properties": {
+        "node_center_point": {
+          "$ref": "#/$defs/offset"
+        },
+        "radius": {
+          "type": "integer",
+          "description": "Unit: 0.1 meter. The radius of the circular area. zeroPointZeroOneMeter(1), oneMeter(10).",
+          "minimum": 0,
+          "maximum": 10000
+        }
+      }
+    },
+    "area_ellipse": {
+      "type": "object",
+      "description": "An elliptical area. The ellipse is centred about the reference point or about the node center point (if provided).",
+      "required": [
+        "semi_major_range_length",
+        "semi_minor_range_length",
+        "semi_major_range_orientation"
+      ],
+      "properties": {
+        "node_center_point": {
+          "description": "Offset point about which the ellipse is centred with respect to the reference position.",
+          "$ref": "#/$defs/offset"
+        },
+        "semi_major_range_length": {
+          "type": "integer",
+          "description": "Unit: 0.1 meter. Major radius of the ellipse. zeroPointOneMeter(1), oneMeter(10).",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "semi_minor_range_length": {
+          "type": "integer",
+          "description": "Unit: 0.1 meter. Minor radius of the ellipse. zeroPointOneMeter(1), oneMeter(10).",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "semi_major_range_orientation": {
+          "description": "Unit: 0.1 degrees. Orientation of the semi major range length of the ellipse in the WGS84 coordinate system. wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), unavailable(3601).",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3601
+        },
+        "semi_height": {
+          "type": "integer",
+          "description": "Unit: 0.1 meter. zeroPointOneMeter(1), oneMeter(10).",
+          "minimum": 0,
+          "maximum": 10000
+        }
+      }
+    },
+    "area_rectangle": {
+      "type": "object",
+      "description": "A rectangular area. The rectangle is centred about the reference point or about the node center point (if provided).",
+      "required": [
+        "semi_major_range_length",
+        "semi_minor_range_length",
+        "semi_major_range_orientation"
+      ],
+      "properties": {
+        "node_center_point": {
+          "description": "Offset point about which the rectangle is centred with respect to the reference position.",
+          "$ref": "#/$defs/offset"
+        },
+        "semi_major_range_length": {
+          "type": "integer",
+          "description": "Unit: 0.1 meter. Half length of the rectangle. zeroPointOneMeter(1), oneMeter(10).",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "semi_minor_range_length": {
+          "type": "integer",
+          "description": "Unit: 0.1 meter. Half width of the rectangle. zeroPointOneMeter(1), oneMeter(10).",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "semi_major_range_orientation": {
+          "description": "Unit: 0.1 degrees.Orientation of the semi major range length of the rectangle in the WGS84 coordinate system. wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), unavailable(3601).",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3601
+        },
+        "semi_height": {
+          "type": "integer",
+          "description": "Unit: 0.1 meter. zeroPointOneMeter(1), oneMeter(10).",
+          "minimum": 0,
+          "maximum": 10000
+        }
+      }
+    }
+  }
+}
