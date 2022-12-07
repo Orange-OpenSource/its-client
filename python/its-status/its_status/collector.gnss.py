@@ -12,7 +12,6 @@ import time
 class Status:
     def __init__(self, *, cfg):
         self.cfg = cfg["gnss"]
-        self.data = None
         self.version = None
         self.model = None
         self.rate = None
@@ -175,10 +174,7 @@ class Status:
                     [s for s in last_sky["sky"]["satellites"] if s["used"]]
                 )
 
-        self.data = data
-
-    def collect(self):
-        return self.data
+        return data
 
 
 # To test this collector standalone:

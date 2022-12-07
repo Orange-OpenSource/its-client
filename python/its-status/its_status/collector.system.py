@@ -10,7 +10,6 @@ from its_status import helpers
 
 class Status:
     def __init__(self, *, _cfg):
-        self.data = None
         hw = None
 
         # This is the ugly-dirty code style unamically dictated by black
@@ -68,7 +67,5 @@ class Status:
         data["memory"] = (mem.total, mem.available)
         disk = psutil.disk_usage("/data")
         data["storage"] = (disk.total, disk.free)
-        self.data = data
 
-    def collect(self):
-        return self.data
+        return data

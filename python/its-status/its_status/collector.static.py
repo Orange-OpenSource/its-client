@@ -13,7 +13,4 @@ class Status:
         }
 
     def capture(self):
-        pass
-
-    def collect(self):
         return self.data

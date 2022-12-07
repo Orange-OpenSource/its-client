@@ -150,13 +150,11 @@ def _plugin_loop(plugin, *args, **kwargs):
 
         if collect_ts:
             start = time.time()
-        plugin["obj"].capture()
+        plugin["data"] = plugin["obj"].capture()
         if collect_ts:
             plugin["collect_ts"] = {
                 "start": start,
                 "duration": time.time() - start,
             }
-
-        plugin["data"] = plugin["obj"].collect()
 
         os.eventfd_write(plugin["release_fd"], 1)
