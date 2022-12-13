@@ -137,7 +137,7 @@ class Status:
         now = time.time()
 
         data = {
-            "version": f"gpsd {self.version}" if self.version else "unknown",
+            "software": f"gpsd {self.version}" if self.version else "unknown",
             "model": self.model or "unknown",
             "mode": 0,
         }
