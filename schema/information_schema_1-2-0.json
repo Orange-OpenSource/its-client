@@ -24,7 +24,7 @@
     "version": {
       "type": "string",
       "description": "json message format version",
-      "const": "1.1.99"
+      "const": "1.2.0"
     },
     "instance_id": {
       "description": "unique id all other the world for a server",
