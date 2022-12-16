@@ -34,6 +34,7 @@
       "description": "type of instance",
       "type": "string",
       "enum": [
+        "local",
         "edge",
         "central"
       ]
