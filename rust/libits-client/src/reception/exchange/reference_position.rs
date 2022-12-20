@@ -91,6 +91,17 @@ impl ReferencePosition {
             get_coordinate(self.longitude),
         )
     }
+
+    pub fn get_offset_destination(&self, easting_offset: f64, northing_offset: f64) -> Self {
+        let origin = self.as_geo_point();
+        let ruler: CheapRuler<f64> = CheapRuler::new(origin.y(), DistanceUnit::Meters);
+        let destination = ruler.offset(&origin, easting_offset, northing_offset);
+        ReferencePosition {
+            longitude: get_etsi_coordinate(destination.x()),
+            latitude: get_etsi_coordinate(destination.y()),
+            altitude: self.altitude,
+        }
+    }
 }
 
 impl fmt::Display for ReferencePosition {

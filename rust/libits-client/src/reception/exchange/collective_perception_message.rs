@@ -32,25 +32,35 @@ pub struct CollectivePerceptionMessage {
 
 impl CollectivePerceptionMessage {
     pub fn mobile_perceived_object_list(&self) -> Vec<MobilePerceivedObject> {
-        if let Some(station_data_container) = &self.station_data_container {
-            if let Some(originating_vehicle_container) =
-                &station_data_container.originating_vehicle_container
-            {
-                return self
-                    .perceived_object_container
-                    .iter()
-                    .map(|perceived_object| {
-                        MobilePerceivedObject::new(
-                            //assumed clone : we store a copy into the MobilePerceivedObject container
-                            // TODO use a lifetime to propage the lifecycle betwwen PerceivedObject and MobilePerceivedObject instead of clone
-                            perceived_object.clone(),
-                            self.station_id,
-                            &self.management_container.reference_position,
-                            originating_vehicle_container.heading,
-                        )
-                    })
-                    .collect();
+        let cpm_heading = match &self.station_data_container {
+            Some(station_data_container) => {
+                if let Some(originating_vehicle_container) =
+                    &station_data_container.originating_vehicle_container
+                {
+                    Some(originating_vehicle_container.heading)
+                } else {
+                    None
+                }
             }
+            None => None,
+        };
+
+        if !self.perceived_object_container.is_empty() {
+            return self
+                .perceived_object_container
+                .iter()
+                .map(|perceived_object| {
+                    MobilePerceivedObject::new(
+                        //assumed clone : we store a copy into the MobilePerceivedObject container
+                        // TODO use a lifetime to propage the lifecycle betwwen PerceivedObject and MobilePerceivedObject instead of clone
+                        perceived_object.clone(),
+                        self.management_container.station_type,
+                        self.station_id,
+                        &self.management_container.reference_position,
+                        cpm_heading,
+                    )
+                })
+                .collect();
         }
         Vec::new()
     }
