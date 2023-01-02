@@ -13,7 +13,6 @@ use crate::reception::exchange::collective_perception_message::CollectivePercept
 use crate::reception::exchange::cooperative_awareness_message::CooperativeAwarenessMessage;
 use crate::reception::exchange::decentralized_environmental_notification_message::DecentralizedEnvironmentalNotificationMessage;
 use crate::reception::exchange::mobile::Mobile;
-use crate::reception::exchange::ReferencePosition;
 use crate::reception::mortal::{etsi_timestamp, Mortal};
 use crate::reception::typed::Typed;
 
@@ -57,6 +56,20 @@ impl Message {
                 // TODO update the generation delta time
                 station_id
             }
+        }
+    }
+
+    pub fn as_mobile(&self) -> Result<&dyn Mobile, &'static str> {
+        match self {
+            Message::CAM(cam) => Ok(cam),
+            Message::CPM(cpm) => match &cpm.station_data_container {
+                Some(container) => match container.originating_vehicle_container {
+                    Some(_) => Ok(cpm),
+                    None => Err("RSU originating CPM is not a mobile"),
+                },
+                None => Err("No station data container; cannot convert as Mobile"),
+            },
+            Message::DENM(denm) => Ok(denm),
         }
     }
 }
