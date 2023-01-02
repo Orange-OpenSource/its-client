@@ -49,6 +49,8 @@ pub async fn run<T: Analyser>(
             format!("{}/v2x/cam", mqtt_root_topic),
             format!("{}/v2x/cpm", mqtt_root_topic),
             format!("{}/v2x/denm", mqtt_root_topic),
+            format!("{}/v2x/map", mqtt_root_topic),
+            format!("{}/v2x/spat", mqtt_root_topic),
             format!("{}/info", mqtt_root_topic),
         ];
 
