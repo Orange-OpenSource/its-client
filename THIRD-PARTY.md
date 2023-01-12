@@ -18,6 +18,9 @@
 #### flexi_logger
 - [Source code](https://github.com/emabee/flexi_logger)
 
+#### geo
+- [Source code](https://github.com/georust/geo)
+
 #### integer-sqrt
 - [Source code](https://github.com/derekdreery/integer-sqrt-rs)
 - Copyright (c) 2017 Richard Dodd
@@ -48,6 +51,9 @@
 #### serde_json
 - [Source code](https://github.com/serde-rs/json)
 
+#### serde_repr
+- [Source code](https://github.com/dtolnay/serde-repr)
+
 #### serde_with
 - [Source code](https://github.com/jonasbb/serde_with)
 
@@ -59,6 +65,9 @@
 
 #### flexi_logger
 - [Source code](https://github.com/emabee/flexi_logger)
+
+#### geo
+- [Source code](https://github.com/georust/geo)
 
 #### integer-sqrt
 - [Source code](https://github.com/derekdreery/integer-sqrt-rs)
@@ -93,6 +102,9 @@
 #### serde_json
 - [Source code](https://github.com/serde-rs/json)
 - Copyright
+
+#### serde_repr
+- [Source code](https://github.com/dtolnay/serde-repr)
 
 #### serde_with
 - [Source code](https://github.com/jonasbb/serde_with)

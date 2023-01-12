@@ -10,6 +10,7 @@ use core::fmt;
 use std::f64::consts;
 
 use cheap_ruler::{CheapRuler, DistanceUnit};
+use geo::Point;
 use navigation::Location;
 use serde::{Deserialize, Serialize};
 
@@ -72,6 +73,29 @@ impl ReferencePosition {
         let cr = CheapRuler::new(latitude_coordinate, DistanceUnit::Meters);
         let p1 = (longitude_coordinate, latitude_coordinate).into();
         let destination = cr.destination(&p1, distance, bearing);
+        ReferencePosition {
+            longitude: get_etsi_coordinate(destination.x()),
+            latitude: get_etsi_coordinate(destination.y()),
+            altitude: self.altitude,
+        }
+    }
+
+    pub fn as_geo_point(&self) -> Point<f64> {
+        let (lat, lon) = self.get_coordinates();
+        (lon, lat).into()
+    }
+
+    fn get_coordinates(&self) -> (f64, f64) {
+        (
+            get_coordinate(self.latitude),
+            get_coordinate(self.longitude),
+        )
+    }
+
+    pub fn get_offset_destination(&self, easting_offset: f64, northing_offset: f64) -> Self {
+        let origin = self.as_geo_point();
+        let ruler: CheapRuler<f64> = CheapRuler::new(origin.y(), DistanceUnit::Meters);
+        let destination = ruler.offset(&origin, easting_offset, northing_offset);
         ReferencePosition {
             longitude: get_etsi_coordinate(destination.x()),
             latitude: get_etsi_coordinate(destination.y()),

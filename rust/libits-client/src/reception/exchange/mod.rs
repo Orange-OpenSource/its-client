@@ -19,11 +19,13 @@ use crate::reception::Reception;
 pub mod collective_perception_message;
 pub mod cooperative_awareness_message;
 pub mod decentralized_environmental_notification_message;
+pub mod map_extended_message;
 pub mod message;
 pub mod mobile;
 pub mod mobile_perceived_object;
 pub mod perceived_object;
 pub mod reference_position;
+pub mod signal_phase_and_timing_extended_message;
 
 #[serde_with::skip_serializing_none]
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1097,5 +1099,414 @@ mod tests {
     fn it_should_panic_when_deserializing_a_denm_with_protocol_version_bigger_than_u8() {
         let json = bad_denm_with_protocol_version_u32();
         let _: Exchange = serde_json::from_str(json).unwrap();
+    }
+
+    #[test]
+    fn spat_exchange_deserialization() {
+        let spat_str = r#"{
+            "origin": "remoteSender",
+            "source_uuid": "uuid_3101",
+            "type": "spat",
+            "message": {
+                "sendingStationId": 2327711328,
+                "protocolVersion": 1,
+                "id": 1654,
+                "region": 751,
+                "timestamp": 1665994085248,
+                "revision": 1,
+                "states": [{
+                    "ttc": 17352,
+                    "toc": 1665994102644,
+                    "nextChange": 1665994102644,
+                    "id": 1,
+                    "state": 6,
+                    "nextChanges": [{
+                        "ttc": 17352,
+                        "toc": 1665994102644,
+                        "nextChange": 1665994102644,
+                        "state": 6
+                    }]
+                }, {
+                    "ttc": 21352,
+                    "toc": 1665994106644,
+                    "nextChange": 1665994106644,
+                    "id": 2,
+                    "state": 3,
+                    "nextChanges": [{
+                        "ttc": 21352,
+                        "toc": 1665994106644,
+                        "nextChange": 1665994106644,
+                        "state": 3
+                    }]
+                }, {
+                    "ttc": 10452,
+                    "toc": 1665994095744,
+                    "nextChange": 1665994095744,
+                    "id": 3,
+                    "state": 6,
+                    "nextChanges": [{
+                        "ttc": 10452,
+                        "toc": 1665994095744,
+                        "nextChange": 1665994095744,
+                        "state": 6
+                    }]
+                }, {
+                    "ttc": 16352,
+                    "toc": 1665994101644,
+                    "nextChange": 1665994101644,
+                    "id": 4,
+                    "state": 3,
+                    "nextChanges": [{
+                        "ttc": 16352,
+                        "toc": 1665994101644,
+                        "nextChange": 1665994101644,
+                        "state": 3
+                    }]
+                }, {
+                    "ttc": 16352,
+                    "toc": 1665994101644,
+                    "nextChange": 1665994101644,
+                    "id": 5,
+                    "state": 3,
+                    "nextChanges": [{
+                        "ttc": 16352,
+                        "toc": 1665994101644,
+                        "nextChange": 1665994101644,
+                        "state": 3
+                    }]
+                }, {
+                    "ttc": 23352,
+                    "toc": 1665994108644,
+                    "nextChange": 1665994108644,
+                    "id": 6,
+                    "state": 3,
+                    "nextChanges": [{
+                        "ttc": 23352,
+                        "toc": 1665994108644,
+                        "nextChange": 1665994108644,
+                        "state": 3
+                    }]
+                }, {
+                    "ttc": 11352,
+                    "toc": 1665994096644,
+                    "nextChange": 1665994096644,
+                    "id": 7,
+                    "state": 6,
+                    "nextChanges": [{
+                        "ttc": 11352,
+                        "toc": 1665994096644,
+                        "nextChange": 1665994096644,
+                        "state": 6
+                    }]
+                }, {
+                    "ttc": 17352,
+                    "toc": 1665994102644,
+                    "nextChange": 1665994102644,
+                    "id": 8,
+                    "state": 3,
+                    "nextChanges": [{
+                        "ttc": 17352,
+                        "toc": 1665994102644,
+                        "nextChange": 1665994102644,
+                        "state": 3
+                    }]
+                }, {
+                    "ttc": 17352,
+                    "toc": 1665994102644,
+                    "nextChange": 1665994102644,
+                    "id": 9,
+                    "state": 6,
+                    "nextChanges": [{
+                        "ttc": 17352,
+                        "toc": 1665994102644,
+                        "nextChange": 1665994102644,
+                        "state": 6
+                    }]
+                }, {
+                    "ttc": 15352,
+                    "toc": 1665994100644,
+                    "nextChange": 1665994100644,
+                    "id": 10,
+                    "state": 6,
+                    "nextChanges": [{
+                        "ttc": 15352,
+                        "toc": 1665994100644,
+                        "nextChange": 1665994100644,
+                        "state": 6
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 11,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 12,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 13,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 14,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 15,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 16,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 17,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 18,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 19,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 20,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 21,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 22,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 23,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 24,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 25,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 26,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 27,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 28,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 29,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 30,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 31,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 32,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 33,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 34,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 35,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }, {
+                    "toc": 0,
+                    "nextChange": 0,
+                    "id": 36,
+                    "state": 8,
+                    "nextChanges": [{
+                        "toc": 0,
+                        "nextChange": 0,
+                        "state": 8
+                    }]
+                }]
+            },
+            "version": "1.0.0",
+            "timestamp": 1665994085292
+        }"#;
+
+        match serde_json::from_str::<Exchange>(spat_str) {
+            Ok(exchange) => {
+                assert_eq!(exchange.type_field, "spat");
+            }
+            Err(e) => {
+                assert_eq!(e.to_string(), "");
+            }
+        }
     }
 }

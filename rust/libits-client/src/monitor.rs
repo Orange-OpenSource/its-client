@@ -21,7 +21,7 @@ pub fn monitor(
 ) {
     match &exchange.message {
         // FIXME find how to call position() on any Message implementing Mobile
-        Message::CAM(message) => {
+        Message::CAM(cam) => {
             // log to monitoring platform
             println!(
                 "{} {} {} {} {}/{} at {}",
@@ -29,12 +29,12 @@ pub fn monitor(
                 exchange.type_field,
                 direction,
                 partner,
-                message.station_id,
-                message.generation_delta_time,
+                cam.station_id,
+                cam.generation_delta_time,
                 now()
             );
         }
-        Message::DENM(message) => {
+        Message::DENM(denm) => {
             // log to monitoring platform
             println!(
                 "{} {} {} {} {}/{}/{}/{}/{}{} at {}",
@@ -42,19 +42,16 @@ pub fn monitor(
                 exchange.type_field,
                 direction,
                 partner,
-                message.station_id,
-                message
-                    .management_container
-                    .action_id
-                    .originating_station_id,
-                message.management_container.action_id.sequence_number,
-                message.management_container.reference_time,
-                message.management_container.detection_time,
+                denm.station_id,
+                denm.management_container.action_id.originating_station_id,
+                denm.management_container.action_id.sequence_number,
+                denm.management_container.reference_time,
+                denm.management_container.detection_time,
                 get_cause_str(cause),
                 now()
             );
         }
-        Message::CPM(message) => {
+        Message::CPM(cpm) => {
             // log to monitoring platform
             println!(
                 "{} {} {} {} {}/{} at {}",
@@ -62,8 +59,34 @@ pub fn monitor(
                 exchange.type_field,
                 direction,
                 partner,
-                message.station_id,
-                message.generation_delta_time,
+                cpm.station_id,
+                cpm.generation_delta_time,
+                now()
+            );
+        }
+        Message::MAPEM(map) => {
+            println!(
+                "{} {} {} {} {}/{}/{} at {}",
+                component,
+                exchange.type_field,
+                direction,
+                partner,
+                map.sending_station_id.unwrap_or_default(),
+                map.id,
+                map.region.unwrap_or_default(),
+                now()
+            );
+        }
+        Message::SPATEM(spat) => {
+            println!(
+                "{} {} {} {} {}/{}/{} at {}",
+                component,
+                exchange.type_field,
+                direction,
+                partner,
+                spat.sending_station_id.unwrap_or_default(),
+                spat.id,
+                spat.region.unwrap_or_default(),
                 now()
             );
         }

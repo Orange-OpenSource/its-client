@@ -12,8 +12,9 @@ use crate::analyse::configuration::Configuration;
 use crate::reception::exchange::collective_perception_message::CollectivePerceptionMessage;
 use crate::reception::exchange::cooperative_awareness_message::CooperativeAwarenessMessage;
 use crate::reception::exchange::decentralized_environmental_notification_message::DecentralizedEnvironmentalNotificationMessage;
+use crate::reception::exchange::map_extended_message::MAPExtendedMessage;
 use crate::reception::exchange::mobile::Mobile;
-use crate::reception::exchange::ReferencePosition;
+use crate::reception::exchange::signal_phase_and_timing_extended_message::SignalPhaseAndTimingExtendedMessage;
 use crate::reception::mortal::{etsi_timestamp, Mortal};
 use crate::reception::typed::Typed;
 
@@ -21,8 +22,10 @@ use crate::reception::typed::Typed;
 #[serde(untagged)]
 pub enum Message {
     CAM(CooperativeAwarenessMessage),
-    DENM(DecentralizedEnvironmentalNotificationMessage),
     CPM(CollectivePerceptionMessage),
+    DENM(DecentralizedEnvironmentalNotificationMessage),
+    MAPEM(MAPExtendedMessage),
+    SPATEM(SignalPhaseAndTimingExtendedMessage),
 }
 
 impl Message {
@@ -32,6 +35,8 @@ impl Message {
             Message::CAM(_) => CooperativeAwarenessMessage::get_type(),
             Message::DENM(_) => DecentralizedEnvironmentalNotificationMessage::get_type(),
             Message::CPM(_) => CollectivePerceptionMessage::get_type(),
+            Message::SPATEM(_) => SignalPhaseAndTimingExtendedMessage::get_type(),
+            Message::MAPEM(_) => MAPExtendedMessage::get_type(),
         }
     }
 
@@ -57,6 +62,34 @@ impl Message {
                 // TODO update the generation delta time
                 station_id
             }
+            Message::MAPEM(ref mut map) => {
+                let station_id = configuration
+                    .station_id(Some(map.sending_station_id.unwrap_or_default() as u32));
+                map.sending_station_id = Some(station_id as u64);
+                station_id
+            }
+            Message::SPATEM(ref mut spat) => {
+                let station_id = configuration
+                    .station_id(Some(spat.sending_station_id.unwrap_or_default() as u32));
+                spat.sending_station_id = Some(station_id as u64);
+                station_id
+            }
+        }
+    }
+
+    pub fn as_mobile(&self) -> Result<&dyn Mobile, &'static str> {
+        match self {
+            Message::CAM(cam) => Ok(cam),
+            Message::CPM(cpm) => match &cpm.station_data_container {
+                Some(container) => match container.originating_vehicle_container {
+                    Some(_) => Ok(cpm),
+                    None => Err("RSU originating CPM is not a mobile"),
+                },
+                None => Err("No station data container; cannot convert as Mobile"),
+            },
+            Message::DENM(denm) => Ok(denm),
+            Message::SPATEM(_) => Err("SPATEM does not impl Mobile"),
+            Message::MAPEM(_) => Err("MAPEM does not implement Mobile"),
         }
     }
 }
@@ -83,52 +116,5 @@ impl Mortal for Message {
         }
         // TODO implement a timeout on the cam and cpm
         false
-    }
-}
-
-impl Mobile for Message {
-    fn mobile_id(&self) -> u32 {
-        match self {
-            // FIXME find how to call mobile_id() on any Message implementing Mobile
-            Message::CAM(message) => message.mobile_id(),
-            Message::DENM(message) => message.mobile_id(),
-            Message::CPM(message) => message.mobile_id(),
-        }
-    }
-
-    fn position(&self) -> &ReferencePosition {
-        match self {
-            // FIXME find how to call position() on any Message implementing Mobile
-            Message::CAM(message) => message.position(),
-            Message::DENM(message) => message.position(),
-            Message::CPM(message) => message.position(),
-        }
-    }
-
-    fn speed(&self) -> Option<u16> {
-        match self {
-            // FIXME find how to call speed() on any Message implementing Mobile
-            Message::CAM(message) => message.speed(),
-            Message::DENM(message) => message.speed(),
-            Message::CPM(message) => message.speed(),
-        }
-    }
-
-    fn heading(&self) -> Option<u16> {
-        match self {
-            // FIXME find how to call speed() on any Message implementing Mobile
-            Message::CAM(message) => message.heading(),
-            Message::DENM(message) => message.heading(),
-            Message::CPM(message) => message.heading(),
-        }
-    }
-
-    fn stopped(&self) -> bool {
-        match self {
-            // FIXME find how to call stopped() on any Message implementing Mobile
-            Message::CAM(message) => message.stopped(),
-            Message::DENM(message) => message.stopped(),
-            Message::CPM(message) => message.stopped(),
-        }
     }
 }

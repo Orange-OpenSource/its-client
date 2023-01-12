@@ -7,6 +7,7 @@
 // Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 use core::cmp;
+use std::f32::consts::PI;
 
 use crate::reception::exchange::mobile;
 use crate::reception::exchange::mobile::{speed_from_yaw_angle, Mobile};
@@ -28,19 +29,30 @@ pub struct MobilePerceivedObject {
 impl MobilePerceivedObject {
     pub(crate) fn new(
         perceived_object: PerceivedObject,
+        cpm_station_type: u8,
         cpm_station_id: u32,
         cpm_position: &ReferencePosition,
-        cpm_heading: u16,
+        cpm_heading: Option<u16>,
     ) -> Self {
         let compute_mobile_id = compute_id(perceived_object.object_id, cpm_station_id);
-        let computed_reference_position = compute_position(
-            perceived_object.x_distance,
-            perceived_object.y_distance,
-            cpm_position,
-            cpm_heading,
-        );
+        let computed_reference_position = match cpm_station_type {
+            15 => cpm_position.get_offset_destination(
+                perceived_object.x_distance.into(),
+                perceived_object.y_distance.into(),
+            ),
+            _ => compute_position_from_mobile(
+                perceived_object.x_distance,
+                perceived_object.y_distance,
+                cpm_position,
+                cpm_heading.unwrap_or_default(),
+            ),
+        };
         let computed_speed = compute_speed(perceived_object.x_speed, perceived_object.y_speed);
-        let computed_heading = compute_heading(perceived_object.y_distance, cpm_heading);
+
+        let computed_heading = match cpm_station_type {
+            15 => compute_heading_from_rsu(&perceived_object),
+            _ => compute_heading_from_mobile(&perceived_object, cpm_heading.unwrap_or_default()),
+        };
 
         Self {
             perceived_object,
@@ -100,7 +112,7 @@ fn compute_id(object_id: u8, cpm_station_id: u32) -> u32 {
     }
 }
 
-fn compute_position(
+fn compute_position_from_mobile(
     x_distance: i32,
     y_distance: i32,
     cpm_position: &ReferencePosition,
@@ -118,26 +130,81 @@ fn compute_speed(x_speed: i16, y_speed: i16) -> u16 {
     speed_from_yaw_angle(x_speed, y_speed)
 }
 
-fn compute_heading(y_distance: i32, cpm_heading: u16) -> u16 {
-    match y_distance {
-        y if y < 0 => (cpm_heading + 1800) % 3600,
+fn compute_heading_from_mobile(perceived_object: &PerceivedObject, cpm_heading: u16) -> u16 {
+    // FIXME this does not compute the real PO's heading
+    match perceived_object.y_distance {
+        y if y < 0 => (cpm_heading - 1800) % 3600,
         _ => cpm_heading,
     }
+}
+
+// https://support.nortekgroup.com/hc/en-us/articles/360012774640-How-do-I-calculate-current-speed-and-direction-from-three-beam-ADCP-velocity-components-
+/// Computes the heading of the perceived object based on its `x` and `y` speed
+/// where `x` is West <-> East axis (negative `x` is West, positive `x` is East)
+/// and `y` is North <-> South axis (negative `y` is South, positive y is North)
+///
+fn compute_heading_from_rsu(perceived_object: &PerceivedObject) -> u16 {
+    let y_speed = f32::from(perceived_object.y_speed);
+    let x_speed = f32::from(perceived_object.x_speed);
+
+    let radians = -x_speed.atan2(-y_speed);
+    let degrees = radians * 180. / PI;
+    let heading = 180. + degrees;
+    (heading * 10.) as u16
 }
 
 #[cfg(test)]
 mod tests {
     use crate::reception::exchange::mobile_perceived_object::{
-        compute_heading, compute_id, compute_position, MobilePerceivedObject,
+        compute_heading_from_mobile, compute_heading_from_rsu, compute_id,
+        compute_position_from_mobile, MobilePerceivedObject,
     };
     use crate::reception::exchange::perceived_object::PerceivedObject;
     use crate::reception::exchange::reference_position::ReferencePosition;
+
+    macro_rules! po {
+        ($x_speed:expr, $y_speed:expr) => {
+            PerceivedObject {
+                object_id: 0,
+                time_of_measurement: 0,
+                confidence: Default::default(),
+                x_distance: 0,
+                y_distance: 0,
+                z_distance: None,
+                x_speed: $x_speed,
+                y_speed: $y_speed,
+                z_speed: None,
+                object_age: 0,
+                object_ref_point: None,
+                x_acceleration: None,
+                y_acceleration: None,
+                z_acceleration: None,
+                roll_angle: None,
+                pitch_angle: None,
+                yaw_angle: None,
+                roll_rate: None,
+                pitch_rate: None,
+                yaw_rate: None,
+                roll_acceleration: None,
+                pitch_acceleration: None,
+                yaw_acceleration: None,
+                lower_triangular_correlation_matrix_columns: vec![],
+                planar_object_dimension_1: None,
+                planar_object_dimension_2: None,
+                vertical_object_dimension: None,
+                sensor_id_list: vec![],
+                dynamic_status: None,
+                classification: vec![],
+                matched_position: None,
+            }
+        };
+    }
 
     #[test]
     fn it_can_compute_a_position() {
         //south with x
         assert_eq!(
-            compute_position(
+            compute_position_from_mobile(
                 50000,
                 0,
                 &ReferencePosition {
@@ -155,7 +222,7 @@ mod tests {
         );
         // east with y
         assert_eq!(
-            compute_position(
+            compute_position_from_mobile(
                 0,
                 10000,
                 &ReferencePosition {
@@ -184,15 +251,27 @@ mod tests {
 
     #[test]
     fn it_can_compute_a_heading() {
+        let pos_y_distance_po = PerceivedObject {
+            object_id: 1,
+            x_distance: 50000,
+            y_distance: 10000,
+            ..Default::default()
+        };
+        let neg_y_distance_po = PerceivedObject {
+            object_id: 1,
+            x_distance: 50000,
+            y_distance: -10000,
+            ..Default::default()
+        };
         //east
-        assert_eq!(compute_heading(50000, 900), 900);
-        assert_eq!(compute_heading(-50000, 2700), 900);
+        assert_eq!(compute_heading_from_mobile(&pos_y_distance_po, 900), 900);
+        assert_eq!(compute_heading_from_mobile(&neg_y_distance_po, 2700), 900);
         //south
-        assert_eq!(compute_heading(50000, 1800), 1800);
-        assert_eq!(compute_heading(-50000, 1800), 0);
+        assert_eq!(compute_heading_from_mobile(&pos_y_distance_po, 1800), 1800);
+        assert_eq!(compute_heading_from_mobile(&neg_y_distance_po, 1800), 0);
         //west
-        assert_eq!(compute_heading(50000, 2700), 2700);
-        assert_eq!(compute_heading(-50000, 2700), 900);
+        assert_eq!(compute_heading_from_mobile(&pos_y_distance_po, 2700), 2700);
+        assert_eq!(compute_heading_from_mobile(&neg_y_distance_po, 2700), 900);
     }
 
     #[test]
@@ -206,13 +285,14 @@ mod tests {
                     y_distance: 10000,
                     ..Default::default()
                 },
+                5,
                 10,
                 &ReferencePosition {
                     latitude: 434667520,
                     longitude: 1205862,
                     altitude: 220000,
                 },
-                1800,
+                Some(1800),
             ),
             MobilePerceivedObject {
                 perceived_object: PerceivedObject {
@@ -231,5 +311,77 @@ mod tests {
                 heading: 1800,
             }
         );
+    }
+
+    #[test]
+    fn east_heading_rsu_computation() {
+        let perceived_object = po! {90, 0};
+
+        let heading = compute_heading_from_rsu(&perceived_object);
+
+        assert_eq!(900, heading);
+    }
+
+    #[test]
+    fn west_heading_rsu_computation() {
+        let perceived_object = po! {-270, 0};
+
+        let heading = compute_heading_from_rsu(&perceived_object);
+
+        assert_eq!(2700, heading);
+    }
+
+    #[test]
+    fn north_heading_rsu_computation() {
+        let perceived_object = po! {0, 360};
+
+        let heading = compute_heading_from_rsu(&perceived_object);
+
+        assert_eq!(0, heading);
+    }
+
+    #[test]
+    fn south_heading_rsu_computation() {
+        let perceived_object = po! {0,  -180};
+
+        let heading = compute_heading_from_rsu(&perceived_object);
+
+        assert_eq!(1800, heading);
+    }
+
+    #[test]
+    fn north_east_heading_rsu_computation() {
+        let perceived_object = po! {45, 45};
+
+        let heading = compute_heading_from_rsu(&perceived_object);
+
+        assert_eq!(450, heading);
+    }
+
+    #[test]
+    fn south_east_heading_rsu_computation() {
+        let perceived_object = po! {135, -135};
+
+        let heading = compute_heading_from_rsu(&perceived_object);
+
+        assert_eq!(1350, heading);
+    }
+
+    #[test]
+    fn south_west_heading_rsu_computation() {
+        let perceived_object = po! {-225, -225};
+
+        let heading = compute_heading_from_rsu(&perceived_object);
+
+        assert_eq!(2250, heading);
+    }
+
+    #[test]
+    fn north_west_heading_rsu_computation() {
+        let perceived_object = po! {-315, 315};
+
+        let heading = compute_heading_from_rsu(&perceived_object);
+
+        assert_eq!(3150, heading);
     }
 }
