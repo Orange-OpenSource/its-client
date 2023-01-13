@@ -277,6 +277,14 @@ class MQTTClient(object):
                 f"message not sent on topic {topic} because we aren't connected"
             )
         if self.mirror_client is not None:
+            # If we mirror ourselves, then we will propagate the message
+            # on the outQueue when we receive it from the central broker,
+            # so here we will want to keep the original topic unchanged.
+            # However, if we do not mirror ourselves, then we need to
+            # send the message on the outQueue, as if it were coming
+            # from the central broker.
+            if not self.mirror_broker["mirror-self"]:
+                topic = topic.replace("/inQueue/", "/outQueue/")
             self.mirror_client.publish(topic, payload, qos, retain, properties)
 
     def loop_start(self):
