@@ -43,7 +43,7 @@ version = "1.9"
 features = ["json"]
 
 [dependencies.tokio]
-version = "1.8"
+version = "1.23"
 features = ["full", "macros"]
 
 [dependencies.async-channel]
