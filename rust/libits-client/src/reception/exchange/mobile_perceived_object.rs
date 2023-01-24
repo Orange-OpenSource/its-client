@@ -138,10 +138,13 @@ fn compute_heading_from_mobile(perceived_object: &PerceivedObject, cpm_heading: 
     }
 }
 
-// https://support.nortekgroup.com/hc/en-us/articles/360012774640-How-do-I-calculate-current-speed-and-direction-from-three-beam-ADCP-velocity-components-
 /// Computes the heading of the perceived object based on its `x` and `y` speed
 /// where `x` is West <-> East axis (negative `x` is West, positive `x` is East)
 /// and `y` is North <-> South axis (negative `y` is South, positive y is North)
+///
+/// References:
+/// - https://www.omnicalculator.com/math/vector-direction
+/// - https://support.nortekgroup.com/hc/en-us/articles/360012774640-How-do-I-calculate-current-speed-and-direction-from-three-beam-ADCP-velocity-components-
 ///
 fn compute_heading_from_rsu(perceived_object: &PerceivedObject) -> u16 {
     let y_speed = f32::from(perceived_object.y_speed);
