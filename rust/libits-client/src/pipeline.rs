@@ -61,6 +61,8 @@ pub async fn run<T: Analyser>(
             mqtt_client_id,
             mqtt_username,
             mqtt_password,
+            None,
+            None,
         );
 
         let configuration = Arc::new(Configuration::new(
