@@ -7,7 +7,7 @@
 // Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 use crate::mqtt::topic::parse_error::ParseError;
-use std::{cmp, convert, fmt, hash, str};
+use std::{fmt, hash, str};
 
 #[derive(Debug, Clone)]
 pub(crate) enum MessageType {
@@ -16,6 +16,8 @@ pub(crate) enum MessageType {
     DENM,
     CPM,
     INFO,
+    MAP,
+    SPAT,
 }
 
 impl fmt::Display for MessageType {
@@ -29,12 +31,14 @@ impl fmt::Display for MessageType {
                 MessageType::DENM => "denm".to_string(),
                 MessageType::CPM => "cpm".to_string(),
                 MessageType::INFO => "info".to_string(),
+                MessageType::MAP => "map".to_string(),
+                MessageType::SPAT => "spat".to_string(),
             }
         )
     }
 }
 
-impl cmp::PartialEq for MessageType {
+impl PartialEq for MessageType {
     fn eq(&self, other: &Self) -> bool {
         self.to_string() == other.to_string()
     }
@@ -46,7 +50,7 @@ impl Default for MessageType {
     }
 }
 
-impl convert::From<&str> for MessageType {
+impl From<&str> for MessageType {
     fn from(s: &str) -> Self {
         match s {
             "+" => MessageType::Any,
@@ -54,6 +58,8 @@ impl convert::From<&str> for MessageType {
             "denm" => MessageType::DENM,
             "cpm" => MessageType::CPM,
             "info" => MessageType::INFO,
+            "map" => MessageType::MAP,
+            "spat" => MessageType::SPAT,
             // no Result on the From trait : use FromStr trait instead
             element => panic!(
                 "Unable to convert from the element {} as a MessageType, use from_str instead",
@@ -63,7 +69,7 @@ impl convert::From<&str> for MessageType {
     }
 }
 
-impl convert::From<String> for MessageType {
+impl From<String> for MessageType {
     fn from(s: String) -> Self {
         MessageType::from(s.as_str())
     }
@@ -80,7 +86,7 @@ impl str::FromStr for MessageType {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "+" | "cam" | "denm" | "cpm" | "info" => Ok(MessageType::from(s)),
+            "+" | "cam" | "denm" | "cpm" | "info" | "map" | "spat" => Ok(MessageType::from(s)),
             element => Err(ParseError {
                 element: element.to_string(),
             }),
