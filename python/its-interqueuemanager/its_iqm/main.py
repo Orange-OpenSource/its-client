@@ -23,7 +23,7 @@ DEFAULTS = {
         "client_id": "iqm",
         "interqueue": "interQueue",
     },
-    "central": {
+    "authority": {
         "type": "file",
         "path": "/etc/its/neighbours.cfg",
     },

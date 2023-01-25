@@ -6,6 +6,7 @@
 from __future__ import annotations
 import configparser
 import its_iqm.mqtt_client
+import its_iqm.authority
 import logging
 import time
 
@@ -40,27 +41,24 @@ class IQM:
             ],
         )
 
-        central_type = self.cfg["central"]["type"]
-        if central_type != "file":
+        # The central authority will call our update_cb(), for which we
+        # will need to have a valid local_qm to pass to the neighbours
+        # queue managers, so we need to handle the central authority
+        # after we create the local QM.
+        authority_type = self.cfg["authority"]["type"]
+        if authority_type == "file":
+            self.authority = its_iqm.authority.file.Authority(self.cfg, self.update_cb)
+        else:
             raise ValueError(f"unknown central authority type {central_type}")
 
     def run_forever(self):
         self.neighbours = dict()
         self.neighbours_clients = dict()
         self.local_qm.start()
-        self.__load_path()
+        self.authority.start()
         try:
             while True:
-                if "reload" in self.cfg["central"]:
-                    # This does not give us a period that is perfectly
-                    # "reload" seconds, but we do not care much here, as
-                    # it is solely to update the list of neighbours,
-                    # which does not happen so frequently anyway, and we
-                    # just need to reload it in a "timely manner"...
-                    time.sleep(self.cfg["central"]["reload"])
-                    self.__load_path()
-                else:
-                    self.sleep(60)
+                time.sleep(60)
         except KeyboardInterrupt:
             # Ctrl-C on a controlling tty
             pass
@@ -70,18 +68,10 @@ class IQM:
 
         for nghb_id in self.neighbours:
             self.neighbours_clients[nghb_id].stop()
+        self.authority.stop()
         self.local_qm.stop()
 
-    def __load_path(self):
-        logging.info("loading neighbours")
-        loaded_nghbs = configparser.ConfigParser(defaults=DEFAULT_AUTH)
-        try:
-            with open(self.cfg["central"]["path"], "r") as fd:
-                loaded_nghbs.read_file(fd)
-        except FileNotFoundError:
-            # No file -> no neigbour defined, i.e. empty list
-            pass
-
+    def update_cb(self, loaded_nghbs):
         # Old neighbours are either those that are no longer
         # present, or those which description changed.
         old_nghbs_ids = [
