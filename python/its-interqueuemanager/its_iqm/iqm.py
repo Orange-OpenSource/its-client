@@ -48,6 +48,8 @@ class IQM:
         authority_type = self.cfg["authority"]["type"]
         if authority_type == "file":
             self.authority = its_iqm.authority.file.Authority(self.cfg, self.update_cb)
+        elif authority_type == "http":
+            self.authority = its_iqm.authority.http.Authority(self.cfg, self.update_cb)
         else:
             raise ValueError(f"unknown central authority type {central_type}")
 
