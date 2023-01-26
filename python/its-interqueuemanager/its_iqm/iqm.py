@@ -50,6 +50,8 @@ class IQM:
             self.authority = its_iqm.authority.file.Authority(self.cfg, self.update_cb)
         elif authority_type == "http":
             self.authority = its_iqm.authority.http.Authority(self.cfg, self.update_cb)
+        elif authority_type == "mqtt":
+            self.authority = its_iqm.authority.mqtt.Authority(self.cfg, self.update_cb)
         else:
             raise ValueError(f"unknown central authority type {central_type}")
 

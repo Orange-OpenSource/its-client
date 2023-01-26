@@ -26,6 +26,9 @@ DEFAULTS = {
     "authority": {
         "type": "file",
         "path": "/etc/its/neighbours.cfg",
+        "username": None,
+        "password": None,
+        "client_id": None,
     },
     "neighbours": {},
 }
