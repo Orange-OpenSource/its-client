@@ -32,6 +32,7 @@ setup(
     platforms="LINUX",
     install_requires=[
         "paho-mqtt==1.6.1",
+        "psutil==5.8.0",
     ],
     entry_points={"console_scripts": ["its-status = its_status.main:main"]},
 )
