@@ -10,9 +10,8 @@ import time
 
 
 class Status:
-    def __init__(self, cfg):
+    def __init__(self, *, cfg):
         self.cfg = cfg["gnss"]
-        self.data = None
         self.version = None
         self.model = None
         self.rate = None
@@ -27,7 +26,7 @@ class Status:
 
         self.thread = threading.Thread(
             target=self.__loop,
-            name="gnss",
+            name=f"{__name__}.gpsd_client",
             daemon=True,
         )
         self.sock = None
@@ -175,10 +174,7 @@ class Status:
                     [s for s in last_sky["sky"]["satellites"] if s["used"]]
                 )
 
-        self.data = data
-
-    def collect(self):
-        return self.data
+        return data
 
 
 # To test this collector standalone:
@@ -189,7 +185,7 @@ if __name__ == "__main__":
 
     try:
         gnss = Status(
-            {
+            cfg={
                 "gnss": {
                     "host": sys.argv[1],
                     "port": sys.argv[2],

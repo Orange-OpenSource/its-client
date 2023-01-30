@@ -8,8 +8,8 @@ from its_status import helpers
 
 
 class Status:
-    def __init__(self, cfg):
-        self.data = list()
+    def __init__(self, *, _cfg):
+        pass
 
     def capture(self):
         data = list()
@@ -55,10 +55,8 @@ class Status:
                         except KeyError:
                             pass
             data.append(item)
-        self.data = data
 
-    def collect(self):
-        return self.data
+        return data
 
     def _modem_list(self):
         ret = self._mmcli("-L")

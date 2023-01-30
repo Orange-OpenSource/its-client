@@ -5,7 +5,7 @@
 
 
 class Status:
-    def __init__(self, cfg):
+    def __init__(self, *, cfg):
         self.data = {
             "version": "1.1.0",
             "type": "status",
@@ -13,7 +13,4 @@ class Status:
         }
 
     def capture(self):
-        pass
-
-    def collect(self):
         return self.data

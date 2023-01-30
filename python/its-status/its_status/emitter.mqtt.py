@@ -8,7 +8,7 @@ import paho.mqtt.client
 
 
 class Status:
-    def __init__(self, cfg):
+    def __init__(self, *, cfg):
         self.enabled = cfg.get("mqtt", "enabled", fallback=True)
         if self.enabled:
             self.host = cfg.get("mqtt", "host", fallback="127.0.0.1")
@@ -26,9 +26,6 @@ class Status:
 
     def emit(self, data):
         self._emit(self.topic, data)
-
-    def error(self, data):
-        self._emit(self.topic + "/errors", data)
 
     def _emit(self, topic, data):
         if not self.enabled:

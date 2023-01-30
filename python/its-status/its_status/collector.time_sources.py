@@ -18,8 +18,8 @@ SRC_STATE = {
 
 
 class Status:
-    def __init__(self, cfg):
-        self.data = list()
+    def __init__(self, *, cfg):
+        self.last_data = list()
         self.validity = cfg.getfloat("timesources", "validity", fallback=10.0)
         self.last_valid = 0.0
         self.refclocks = dict()
@@ -44,9 +44,9 @@ class Status:
         now = time.time()
         ret = helpers.run(CHRONYC)
         if ret.returncode != 0:
-            if self.data and now - self.last_valid > self.validity:
-                self.data = list()
-            return
+            if self.last_data and now - self.last_valid > self.validity:
+                self.last_data = list()
+            return self.last_data
 
         data = list()
         for l in ret.stdout.decode().splitlines():
@@ -70,7 +70,6 @@ class Status:
                 src["stratum"] = int(fields[3])
             data.append(src)
         self.last_valid = now
-        self.data = data
+        self.last_data = data
 
-    def collect(self):
-        return self.data
+        return data
