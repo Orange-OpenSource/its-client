@@ -9,7 +9,7 @@ from its_status import helpers
 
 
 class Status:
-    def __init__(self, *, _cfg):
+    def __init__(self, *, cfg):
         hw = None
 
         # This is the ugly-dirty code style unamically dictated by black

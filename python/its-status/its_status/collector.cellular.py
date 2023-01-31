@@ -8,7 +8,7 @@ from its_status import helpers
 
 
 class Status:
-    def __init__(self, *, _cfg):
+    def __init__(self, *, cfg):
         pass
 
     def capture(self):
