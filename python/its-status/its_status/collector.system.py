@@ -10,6 +10,8 @@ from its_status import helpers
 
 class Status:
     def __init__(self, *, cfg):
+        self.cfg = cfg
+
         hw = None
 
         # This is the ugly-dirty code style unamically dictated by black
@@ -65,7 +67,7 @@ class Status:
         data["cpu_load"] = psutil.getloadavg()
         mem = psutil.virtual_memory()
         data["memory"] = (mem.total, mem.available)
-        disk = psutil.disk_usage("/data")
+        disk = psutil.disk_usage(self.cfg["system"]["data-dir"])
         data["storage"] = (disk.total, disk.free)
 
         return data
