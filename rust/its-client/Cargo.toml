@@ -39,7 +39,7 @@ features = ["async", "compress"]
 version = "0.4"
 
 [dependencies.tokio]
-version = "1.23.1"
+version = "1.24.2"
 features = ["full", "macros"]
 
 [dependencies.libits-client]
