@@ -80,7 +80,7 @@ impl Information {
     }
 
     pub(crate) fn instance_id_number(&self) -> u32 {
-        let instance_id_split: Vec<&str> = self.instance_id.split("_").collect();
+        let instance_id_split: Vec<&str> = self.instance_id.split('_').collect();
         // TODO generate a cache to not compute the same value each time again
         match instance_id_split.get(2) {
             Some(number) => u32::from_str(number).unwrap_or(31470),

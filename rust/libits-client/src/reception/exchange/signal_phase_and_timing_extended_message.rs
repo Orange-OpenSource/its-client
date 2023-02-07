@@ -72,7 +72,7 @@ impl PartialEq<Self> for SignalPhaseAndTimingExtendedMessage {
     }
 }
 
-#[derive(Serialize, Deserialize_repr, PartialEq, Debug, Clone, Hash, Copy)]
+#[derive(Serialize, Deserialize_repr, PartialEq, Eq, Debug, Clone, Hash, Copy)]
 #[repr(u8)]
 pub enum TrafficLightState {
     Unavailable = 0,

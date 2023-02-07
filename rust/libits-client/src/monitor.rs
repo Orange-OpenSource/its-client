@@ -94,8 +94,8 @@ pub fn monitor(
 }
 
 fn get_cause_str(cause: Option<Cause>) -> String {
-    return match cause {
+    match cause {
         Some(cause) => format!("/cause_type:{}/cause_id:{}", cause.m_type, cause.id),
         None => String::new(),
-    };
+    }
 }

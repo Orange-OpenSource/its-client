@@ -21,7 +21,7 @@ pub trait Mortal {
     fn terminated(&self) -> bool;
 
     fn remaining_time(&self) -> u128 {
-        return (self.timeout() - now()) / 1000;
+        (self.timeout() - now()) / 1000
     }
 }
 

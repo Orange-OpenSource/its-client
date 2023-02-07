@@ -121,9 +121,9 @@ fn compute_position_from_mobile(
     let x_offset_meters = x_distance as f64 / 100.0;
     let y_offset_meters = y_distance as f64 / 100.0;
     let heading_in_degrees = mobile::heading_in_degrees(cpm_heading);
-    return cpm_position
+    cpm_position
         .get_destination(x_offset_meters, heading_in_degrees)
-        .get_destination(y_offset_meters, (heading_in_degrees - 90.0 + 360.0) % 360.0);
+        .get_destination(y_offset_meters, (heading_in_degrees - 90.0 + 360.0) % 360.0)
 }
 
 fn compute_speed(x_speed: i16, y_speed: i16) -> u16 {

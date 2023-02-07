@@ -27,7 +27,7 @@ impl Cause {
     }
 
     pub fn from_exchange(exchange: &Exchange) -> Option<Cause> {
-        return match &exchange.message {
+        match &exchange.message {
             Message::CAM(message) => Some(Cause::new(
                 exchange.type_field.clone(),
                 format!("{}/{}", message.station_id, message.generation_delta_time),
@@ -37,6 +37,6 @@ impl Cause {
                 format!("{}/{}", message.station_id, message.generation_delta_time),
             )),
             _ => None,
-        };
+        }
     }
 }

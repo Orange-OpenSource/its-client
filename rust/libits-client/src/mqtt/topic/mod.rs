@@ -67,7 +67,7 @@ impl Topic {
                 Some(into_queue) => into_queue.into(),
                 None => MessageType::default(),
             },
-            uuid: uuid.unwrap_or("+".to_string()),
+            uuid: uuid.unwrap_or_else(|| "+".to_string()),
             geo_extension: geo_extension.unwrap_or_default(),
 
             ..Default::default()

@@ -42,7 +42,7 @@ pub struct ManagementContainer {
     pub confidence: Option<PositionConfidence>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct ActionId {
     pub originating_station_id: u32,
     pub sequence_number: u16,

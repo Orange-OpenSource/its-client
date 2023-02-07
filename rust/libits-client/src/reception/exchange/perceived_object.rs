@@ -9,7 +9,7 @@
 use serde::{Deserialize, Serialize};
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PerceivedObject {
     pub object_id: u8,
     pub time_of_measurement: i16,
@@ -48,7 +48,7 @@ pub struct PerceivedObject {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ObjectConfidence {
     pub x_distance: u16,
     pub y_distance: u16,
@@ -58,14 +58,14 @@ pub struct ObjectConfidence {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ObjectClassification {
     pub object_class: ObjectClass,
     pub confidence: u8,
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ObjectClass {
     Vehicle(u8),
@@ -75,7 +75,7 @@ pub enum ObjectClass {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SingleVruClass {
     Pedestrian(u8),
@@ -85,7 +85,7 @@ pub enum SingleVruClass {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct VruGroupClass {
     pub group_size: u8,
     pub group_type: VruGroupType,
@@ -93,7 +93,7 @@ pub struct VruGroupClass {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct VruGroupType {
     pub pedestrian: bool,
     pub bicyclist: bool,
@@ -102,7 +102,7 @@ pub struct VruGroupType {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MatchedPosition {
     pub lane_id: u8,
     pub longitudinal_lane_position: u16,

@@ -210,7 +210,7 @@ fn ellipsoid_flattening() -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::reception::exchange::reference_position::{get_coordinate, get_etsi_coordinate};
+    use crate::reception::exchange::reference_position::get_etsi_coordinate;
     use navigation::Location;
 
     use crate::reception::exchange::ReferencePosition;

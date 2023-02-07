@@ -100,7 +100,7 @@ impl Hash for Lane {
     }
 }
 
-#[derive(Serialize, Deserialize_repr, PartialEq, Debug, Clone)]
+#[derive(Serialize, Deserialize_repr, PartialEq, Eq, Debug, Clone)]
 #[repr(u8)]
 pub enum Action {
     Left = 0,
