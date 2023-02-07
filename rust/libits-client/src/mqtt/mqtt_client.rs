@@ -12,6 +12,9 @@ use log::{debug, error, info, trace, warn};
 use rumqttc::{AsyncClient, Event, EventLoop, MqttOptions, QoS, SubscribeFilter};
 use std::time::Duration;
 
+const DEFAULT_INPUT_SIZE_LIMIT: usize = 256 * 1024;
+const DEFAULT_OUTPUT_SIZE_LIMIT: usize = 256 * 1024;
+
 pub(crate) struct Client {
     client: AsyncClient,
 }
@@ -23,6 +26,8 @@ impl<'client> Client {
         mqtt_client_id: &str,
         mqtt_username: Option<&str>,
         mqtt_password: Option<&str>,
+        input_size_limit: Option<usize>,
+        output_size_limit: Option<usize>,
     ) -> (Self, EventLoop) {
         let mqtt_options = orange_broker(
             mqtt_host,
@@ -30,6 +35,8 @@ impl<'client> Client {
             mqtt_client_id,
             mqtt_username,
             mqtt_password,
+            input_size_limit,
+            output_size_limit,
         );
         let (client, event_loop) = AsyncClient::new(mqtt_options, 1000);
         (Client { client }, event_loop)
@@ -79,9 +86,15 @@ fn orange_broker(
     mqtt_client_id: &str,
     mqtt_username: Option<&str>,
     mqtt_password: Option<&str>,
+    input_size_limit: Option<usize>,
+    output_size_limit: Option<usize>,
 ) -> MqttOptions {
     let mut mqttoptions = MqttOptions::new(mqtt_client_id, mqtt_host, mqtt_port);
     mqttoptions.set_keep_alive(Duration::from_secs(5));
+    mqttoptions.set_max_packet_size(
+        input_size_limit.unwrap_or(DEFAULT_INPUT_SIZE_LIMIT),
+        output_size_limit.unwrap_or(DEFAULT_OUTPUT_SIZE_LIMIT),
+    );
     match mqtt_username {
         None => {}
         Some(username) => match mqtt_password {
