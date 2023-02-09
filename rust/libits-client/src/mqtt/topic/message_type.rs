@@ -10,6 +10,7 @@ use crate::mqtt::topic::parse_error::ParseError;
 use std::{fmt, hash, str};
 
 #[derive(Debug, Clone)]
+#[allow(clippy::upper_case_acronyms)]
 pub(crate) enum MessageType {
     Any,
     CAM,
