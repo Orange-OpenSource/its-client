@@ -158,6 +158,14 @@ pub struct VehicleSensorProperty {
     pub vertical_opening_angle_end: Option<u16>,
 }
 
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Offset {
+    pub x: i32,
+    pub y: i32,
+    pub z: Option<i32>,
+}
+
 impl Mobile for CollectivePerceptionMessage {
     fn mobile_id(&self) -> u32 {
         self.station_id
@@ -199,7 +207,7 @@ impl Typed for CollectivePerceptionMessage {
 #[cfg(test)]
 mod tests {
     use crate::reception::exchange::collective_perception_message::{
-        CollectivePerceptionMessage, DetectionArea, ManagementContainer,
+        CollectivePerceptionMessage, DetectionArea, ManagementContainer, Offset,
         OriginatingVehicleContainer, SensorInformation, StationDataContainer, VehicleSensor,
         VehicleSensorProperty,
     };
@@ -1143,6 +1151,41 @@ mod tests {
             Err(e) => {
                 panic!("Failed to deserialize CPM: '{}'", e);
             }
+        }
+    }
+
+    #[test]
+    fn test_deserialize_minimal_offset() {
+        let data = r#"{
+            "x": 123456,
+            "y": 654321
+        }"#;
+
+        match serde_json::from_str::<Offset>(data) {
+            Ok(offset) => {
+                assert_eq!(offset.x, 123456);
+                assert_eq!(offset.y, 654321);
+                assert!(offset.z.is_none());
+            }
+            Err(e) => panic!("Failed to deserialize minimal Offset: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn test_deserialize_full_offset() {
+        let data = r#"{
+            "x": 123456,
+            "y": 654321,
+            "z": 456789
+        }"#;
+
+        match serde_json::from_str::<Offset>(data) {
+            Ok(offset) => {
+                assert_eq!(offset.x, 123456);
+                assert_eq!(offset.y, 654321);
+                assert_eq!(offset.z, Some(456789));
+            }
+            Err(e) => panic!("Failed to deserialize minimal Offset: '{}'", e),
         }
     }
 }
