@@ -135,6 +135,7 @@ pub struct SensorInformation {
 #[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
 pub struct DetectionArea {
     pub vehicle_sensor: Option<VehicleSensor>,
+    pub stationary_sensor_polygon: Option<Vec<Offset>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -339,6 +340,23 @@ mod tests {
                             vertical_opening_angle_end: None,
                         }],
                     }),
+                    stationary_sensor_polygon: Some(vec![
+                        Offset {
+                            x: 1,
+                            y: 2,
+                            z: Some(0),
+                        },
+                        Offset {
+                            x: 11,
+                            y: 22,
+                            z: Some(1),
+                        },
+                        Offset {
+                            x: 111,
+                            y: 222,
+                            z: Some(2),
+                        },
+                    ]),
                 },
             }],
             perceived_object_container: vec![
