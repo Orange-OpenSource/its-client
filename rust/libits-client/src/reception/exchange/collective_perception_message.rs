@@ -136,6 +136,7 @@ pub struct SensorInformation {
 pub struct DetectionArea {
     pub vehicle_sensor: Option<VehicleSensor>,
     pub stationary_sensor_polygon: Option<Vec<Offset>>,
+    pub stationary_sensor_radial: Option<StationarySensorRadial>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -157,6 +158,17 @@ pub struct VehicleSensorProperty {
     pub horizontal_opening_angle_end: u16,
     pub vertical_opening_angle_start: Option<u16>,
     pub vertical_opening_angle_end: Option<u16>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StationarySensorRadial {
+    pub range: u16,
+    pub horizontal_opening_angle_start: u16,
+    pub horizontal_opening_angle_end: u16,
+    pub vertical_opening_angle_start: Option<u16>,
+    pub vertical_opening_angle_end: Option<u16>,
+    pub sensor_position_offset: Option<Offset>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -209,8 +221,8 @@ impl Typed for CollectivePerceptionMessage {
 mod tests {
     use crate::reception::exchange::collective_perception_message::{
         CollectivePerceptionMessage, DetectionArea, ManagementContainer, Offset,
-        OriginatingVehicleContainer, SensorInformation, StationDataContainer, VehicleSensor,
-        VehicleSensorProperty,
+        OriginatingVehicleContainer, SensorInformation, StationDataContainer,
+        StationarySensorRadial, VehicleSensor, VehicleSensorProperty,
     };
     use crate::reception::exchange::mobile_perceived_object::MobilePerceivedObject;
     use crate::reception::exchange::perceived_object::{ObjectConfidence, PerceivedObject};
@@ -357,6 +369,18 @@ mod tests {
                             z: Some(2),
                         },
                     ]),
+                    stationary_sensor_radial: Some(StationarySensorRadial {
+                        range: 10000,
+                        horizontal_opening_angle_start: 900,
+                        horizontal_opening_angle_end: 2700,
+                        vertical_opening_angle_start: None,
+                        vertical_opening_angle_end: None,
+                        sensor_position_offset: Some(Offset {
+                            x: 1,
+                            y: 2,
+                            z: None,
+                        }),
+                    }),
                 },
             }],
             perceived_object_container: vec![
@@ -1204,6 +1228,77 @@ mod tests {
                 assert_eq!(offset.z, Some(456789));
             }
             Err(e) => panic!("Failed to deserialize minimal Offset: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn test_deserialize_minimal_stationary_sensor_radial() {
+        let data = r#"{
+            "range": 1,
+            "horizontal_opening_angle_start": 2,
+            "horizontal_opening_angle_end": 3
+        }"#;
+
+        match serde_json::from_str::<StationarySensorRadial>(data) {
+            Ok(stationary_sensor_radial) => {
+                assert_eq!(stationary_sensor_radial.range, 1);
+                assert_eq!(stationary_sensor_radial.horizontal_opening_angle_start, 2);
+                assert_eq!(stationary_sensor_radial.horizontal_opening_angle_end, 3);
+                assert!(stationary_sensor_radial.sensor_position_offset.is_none());
+                assert!(stationary_sensor_radial
+                    .vertical_opening_angle_start
+                    .is_none());
+                assert!(stationary_sensor_radial
+                    .vertical_opening_angle_end
+                    .is_none());
+            }
+            Err(e) => panic!(
+                "Failed to deserialize minimal StationarySensorRadial: '{}'",
+                e
+            ),
+        }
+    }
+
+    #[test]
+    fn test_deserialize_full_stationary_sensor_radial() {
+        let data = r#"{
+            "range": 1,
+            "horizontal_opening_angle_start": 2,
+            "horizontal_opening_angle_end": 3,
+            "sensor_position_offset": {
+                "x": 123456,
+                "y": 654321
+            },
+            "vertical_opening_angle_start": 123,
+            "vertical_opening_angle_end": 456
+        }"#;
+
+        match serde_json::from_str::<StationarySensorRadial>(data) {
+            Ok(stationary_sensor_radial) => {
+                assert_eq!(stationary_sensor_radial.range, 1);
+                assert_eq!(stationary_sensor_radial.horizontal_opening_angle_start, 2);
+                assert_eq!(stationary_sensor_radial.horizontal_opening_angle_end, 3);
+                assert_eq!(
+                    stationary_sensor_radial.sensor_position_offset,
+                    Some(Offset {
+                        x: 123456,
+                        y: 654321,
+                        z: None
+                    })
+                );
+                assert_eq!(
+                    stationary_sensor_radial.vertical_opening_angle_start,
+                    Some(123)
+                );
+                assert_eq!(
+                    stationary_sensor_radial.vertical_opening_angle_end,
+                    Some(456)
+                );
+            }
+            Err(e) => panic!(
+                "Failed to deserialize minimal StationarySensorRadial: '{}'",
+                e
+            ),
         }
     }
 }
