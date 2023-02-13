@@ -1,0 +1,350 @@
+@startuml
+skinparam BoxPadding 40
+skinparam LifelineStrategy nosolid
+skinparam ParticipantPadding 20
+skinparam sequenceMessageAlign direction
+
+box "Geoserver C"
+    Participant "IQM" as iqm_C
+    Queue "MQTT Broker" as broker_C
+endbox
+box "Geoserver B"
+    Participant "IQM" as iqm_B
+    Queue "MQTT Broker" as broker_B
+endbox
+box "Geoserver A"
+    Participant "IQM" as iqm_A
+    Queue "MQTT Broker" as broker_A
+endbox
+box "Central Authority"
+  Queue "MQTT Broker" as central_broker
+  Participant "Neighborhood Compute" as nghb_app
+end box
+
+group Central authority startup
+  ?-> nghb_app: Startup event
+  activate nghb_app
+  nghb_app o--> central_broker: ROOT/register
+  nghb_app o--> central_broker: ROOT/unregister
+  deactivate nghb_app
+end
+
+group Geoserver A startup
+  ?-> iqm_A: Startup event
+  activate iqm_A
+  group Register geoserver
+    iqm_A o--> broker_A: ROOT/info
+    iqm_A o--> central_broker: ROOT/neighborhood/ID_A
+    iqm_A -> central_broker: ROOT/register < {"id": ID_A, "host": HOST, "port": PORT, "RoR": {...}}}
+    deactivate iqm_A
+    activate central_broker
+  end
+
+  central_broker -> nghb_app: ROOT/register > {"id": ID_A, "host": HOST, "port": PORT, "RoR": {...}}}
+  deactivate central_broker
+  activate nghb_app
+
+  group Compute Neighbourhood
+    nghb_app -> central_broker: ROOT/neighborhood/ID_A < []
+    deactivate nghb_app
+    activate central_broker
+  end
+
+  central_broker -> iqm_A: ROOT/neighborhood/ID_A > []
+  deactivate central_broker
+
+  note over iqm_A
+    No neighbour
+    to connect to
+  end note
+end
+
+group Geoserver B startup
+  note over broker_B, iqm_A
+    Geoservers A and B are neighbours.
+  end note
+
+  ?-> iqm_B: Startup event
+  activate iqm_B
+  group Register geoserver
+    iqm_B o--> broker_A: ROOT/info
+    iqm_B o--> central_broker: ROOT/neighborhood/ID_B
+    iqm_B -> central_broker: ROOT/register < {"id": ID_B, "host": HOST, "port": PORT, "RoR": {...}}}
+    deactivate iqm_B
+    activate central_broker
+  end
+
+  central_broker -> nghb_app: ROOT/register > {"id": ID_B, "host": HOST, "port": PORT, "RoR": {...}}:
+  deactivate central_broker
+  activate nghb_app
+
+  group Compute neighbourhood
+    nghb_app -> central_broker: ROOT/neighborhood/ID_B < [{"id": ID_A, "host": HOST, "port": PORT}]
+    activate central_broker
+    nghb_app -> central_broker: ROOT/neighborhood/ID_A < [{"id": ID_B, "host": HOST, "port": PORT}]
+    deactivate nghb_app
+    activate central_broker
+  end
+
+  central_broker -> iqm_B: ROOT/neighborhood/ID_B > [{"id": ID_A, "host": HOST, "port": PORT}]
+  deactivate central_broker
+  activate iqm_B
+  central_broker -> iqm_A: ROOT/neighborhood/ID_A > [{"id": ID_B, "host": HOST, "port": PORT}]
+  deactivate central_broker
+    note right
+      Message order does not
+      matter, but is preserved.
+    end note
+  activate iqm_A
+
+  group Look for interesting quadkeys on neighbour
+    iqm_A o--> broker_B: ROOT/info
+    deactivate iqm_A
+    activate broker_B
+    broker_B o-> iqm_A: ROOT/info > {"RoR": {...}}
+    deactivate broker_B
+    activate iqm_A
+    iqm_A o--> broker_B: ROOT/interQueue/+/QUADKEYS/#
+    deactivate iqm_A
+
+    iqm_B o--> broker_A: ROOT/info
+    deactivate iqm_B
+    activate broker_A
+    broker_A o-> iqm_B: ROOT/info > {"RoR": {...}}
+    deactivate broker_A
+    activate iqm_B
+    iqm_B o--> broker_A: ROOT/interQueue/+/QUADKEYS/#
+    deactivate iqm_B
+  end
+end
+
+group Geoserver A updates its RoR
+  note over iqm_A, broker_A
+    The RoR of geoserver A changes, geoserver B stays a neighbour.
+    The component responsible for computing the geoserver A's
+    RoR, and not represented here, sends a message on ROOT/info.
+  end note
+
+  ?-> broker_A: ROOT/info < {"RoR": {...}}
+  activate broker_A
+  broker_A -> iqm_A: ROOT/info > {"RoR": {...}}
+  deactivate broker_A
+  activate iqm_A
+  group Geoserver A propagates its new RoR
+    iqm_A -> central_broker: ROOT/register < {"id": ID_A, "host": HOST, "port": PORT, "RoR": {...}}}
+    activate central_broker
+    iqm_A o--X broker_B: ROOT/interQueue/+/OLD_QUADKEYS/#
+    iqm_A o--> broker_B: ROOT/interQueue/+/NEW_QUADKEYS/#
+    iqm_A -> broker_B: ROOT/info < {"RoR": {...}}
+    deactivate iqm_A
+    activate broker_B
+  end
+
+  central_broker -> nghb_app: ROOT/register > {"id": ID_A, "host": HOST, "port": PORT, "RoR": {...}}}
+  deactivate central_broker
+  activate nghb_app
+
+  group Geoserver B recomputes neighbouring tiles
+    broker_B -> iqm_B: ROOT/info > {"RoR": {...}}
+    deactivate broker_B
+    activate iqm_B
+    iqm_B o--X broker_A: ROOT/interQueue/+/OLD_QUADKEYS/#
+    iqm_B o--> broker_A: ROOT/interQueue/+/NEW_QUADKEYS/#
+    deactivate iqm_B
+  end
+
+  group Compute neighbourhood
+    nghb_app -> central_broker: ROOT/neighborhood/ID_B < [{"id": ID_A, "host": HOST, "port": PORT}]
+    activate central_broker
+    nghb_app -> central_broker: ROOT/neighborhood/ID_A < [{"id": ID_B, "host": HOST, "port": PORT}]
+    deactivate nghb_app
+    activate central_broker
+  end
+
+  central_broker -> iqm_B: ROOT/neighborhood/ID_B > [{"id": ID_A, "host": HOST, "port": PORT}]
+  deactivate central_broker
+  activate iqm_B
+  central_broker -> iqm_A: ROOT/neighborhood/ID_A > [{"id": ID_B, "host": HOST, "port": PORT}]
+  deactivate central_broker
+  activate iqm_A
+
+  group Look for interesting quadkeys on neighbour
+    ' Hack: use messages to self, to properly
+    ' terminate the activation of IQMs
+    iqm_B -> iqm_B:
+    deactivate iqm_B
+    iqm_A -> iqm_A:
+    deactivate iqm_A
+    note over iqm_B, broker_B
+      Geoserver B is already susbcribed
+      to topics on geoserver A.
+    end note
+    / note over iqm_A, broker_A
+      Geoserver A is already susbcribed
+      to topics on geoserver B.
+    end note
+  end
+end
+
+group Geoserver C startup
+  note over broker_C, iqm_B
+    Geoserver B is neighbour to A and C; geoservers A and C are not neighbours.
+  end note
+
+  ?-> iqm_C: Startup event
+  activate iqm_C
+  group Register geoserver
+    iqm_C o--> central_broker: ROOT/neighborhood/ID_C
+    iqm_C -> central_broker: ROOT/register < {"id": ID_C, "host": HOST, "port": PORT, "RoR": {...}}}
+    deactivate iqm_C
+    activate central_broker
+  end
+
+  central_broker -> nghb_app: ROOT/register > {"id": ID_C, "host": HOST, "port": PORT, "RoR": {...}}:
+  deactivate central_broker
+  activate nghb_app
+
+  group Compute Neighbourhood
+    nghb_app -> central_broker: ROOT/neighborhood/ID_C < [{"id": ID_B, "host": HOST, "port": PORT}]
+    activate central_broker
+    nghb_app -> central_broker: ROOT/neighborhood/ID_B < [{"id": ID_A, "host": HOST, "port": PORT},\n{"id": ID_C, "host": HOST, "port": PORT}]
+    deactivate nghb_app
+    activate central_broker
+  end
+
+  central_broker -> iqm_C: ROOT/neighborhood/ID_C > [{"id": ID_B, "host": HOST, "port": PORT}]
+  deactivate central_broker
+  activate iqm_C
+  central_broker -> iqm_B: ROOT/neighborhood/ID_B > [{"id": ID_A, "host": HOST, "port": PORT},\n{"id": ID_C, "host": HOST, "port": PORT}]
+  deactivate central_broker
+  activate iqm_B
+
+  group Look for interesting quadkeys on neighbour
+    iqm_B o--> broker_C: ROOT/info
+    deactivate iqm_B
+    activate broker_C
+    broker_C o-> iqm_B: ROOT/info > {"RoR": {...}}
+    deactivate broker_C
+    activate iqm_B
+    iqm_B o--> broker_C: ROOT/interQueue/+/QUADKEYS/#
+    deactivate iqm_B
+    note over iqm_B, broker_B
+      Geoserver B is already susbcribed
+      to topics on geoserver A.
+    end note
+
+    iqm_C o--> broker_B: ROOT/info
+    deactivate iqm_C
+    activate broker_B
+    broker_B o-> iqm_C: ROOT/info > {"RoR": {...}}
+    deactivate broker_B
+    activate iqm_C
+    iqm_C o--> broker_B: ROOT/interQueue/+/QUADKEYS/#
+    deactivate iqm_C
+  end
+end
+
+group Geoserver B shutdown
+  note over broker_C, iqm_A
+    Geoserver B was neighbour to A and C; geoservers A and C are still not neighbours.
+  end note
+
+  ?-> iqm_B: Shutdown event
+  activate iqm_B
+  group Deregister geoserver
+    iqm_B o--X central_broker: ROOT/neighborhood/ID_B
+    iqm_B o--X broker_A: ROOT/info
+    iqm_B o--X broker_A: ROOT/interQueue/+/QUADKEYS/#
+    iqm_B o--X broker_C: ROOT/info
+    iqm_B o--X broker_C: ROOT/interQueue/+/QUADKEYS/#
+    iqm_B -> central_broker: ROOT/unregister < {"id": ID_B}
+    deactivate iqm_B
+    activate central_broker
+  end
+
+  central_broker -> nghb_app: ROOT/unregister > {"id": ID_B}:
+  deactivate central_broker
+  activate nghb_app
+
+  group Compute neighbourhood
+    nghb_app -> central_broker: ROOT/neighborhood/ID_C < {}
+    activate central_broker
+    nghb_app -> central_broker: ROOT/neighborhood/ID_A < {}
+    deactivate nghb_app
+    activate central_broker
+  end
+
+  central_broker -> iqm_C: ROOT/neighborhood/ID_C > {}
+  deactivate central_broker
+  activate iqm_C
+  central_broker -> iqm_A: ROOT/neighborhood/ID_A > {}
+  deactivate central_broker
+  activate iqm_A
+
+  group Drop subscriptions to neighbour
+    iqm_C o--X iqm_B: ROOT/info
+    iqm_C o--X iqm_B: ROOT/interQueue/+/QUADKEYS/#
+    deactivate iqm_C
+    iqm_A o--X iqm_B: ROOT/info
+    iqm_A o--X iqm_B: ROOT/interQueue/+/QUADKEYS/#
+    deactivate iqm_A
+  end
+end
+
+group Geoserver A updates its RoR
+  note over broker_C, iqm_A
+    The RoR of geoserver A changes, geoserver C becomes a neighbour.
+  end note
+
+  ?-> broker_A: ROOT/info < {"RoR": {...}}
+  activate broker_A
+  broker_A -> iqm_A: ROOT/info > {"RoR": {...}}
+  deactivate broker_A
+  activate iqm_A
+  group Geoserver A propagates its new RoR
+    iqm_A -> central_broker: ROOT/register < {"id": ID_A, "host": HOST, "port": PORT, "RoR": {...}}}
+    deactivate iqm_A
+    activate central_broker
+  end
+
+  central_broker -> nghb_app: ROOT/register > {"id": ID_A, "host": HOST, "port": PORT, "RoR": {...}}}
+  deactivate central_broker
+  activate nghb_app
+
+  group Compute neighbourhood
+    nghb_app -> central_broker: ROOT/neighborhood/ID_C < [{"id": ID_A, "host": HOST, "port": PORT}]
+    activate central_broker
+    nghb_app -> central_broker: ROOT/neighborhood/ID_A < [{"id": ID_C, "host": HOST, "port": PORT}]
+    deactivate nghb_app
+    activate central_broker
+  end
+
+  central_broker -> iqm_C: ROOT/neighborhood/ID_C > [{"id": ID_A, "host": HOST, "port": PORT}]
+  deactivate central_broker
+  activate iqm_C
+  central_broker -> iqm_A: ROOT/neighborhood/ID_A > [{"id": ID_C, "host": HOST, "port": PORT}]
+  deactivate central_broker
+  activate iqm_A
+
+  group Look for interesting quadkeys on neighbour
+    iqm_A o--> broker_C: ROOT/info
+    deactivate iqm_A
+    activate broker_C
+    broker_C o-> iqm_A: ROOT/info > {"RoR": {...}}
+    deactivate broker_C
+    activate iqm_A
+    iqm_A o--> broker_C: ROOT/interQueue/+/QUADKEYS/#
+    deactivate iqm_A
+
+    iqm_C o--> broker_A: ROOT/info
+    deactivate iqm_C
+    activate broker_A
+    broker_A o-> iqm_C: ROOT/info > {"RoR": {...}}
+    deactivate broker_A
+    activate iqm_C
+    iqm_C o--> broker_A: ROOT/interQueue/+/QUADKEYS/#
+    deactivate iqm_C
+  end
+end
+
+@enduml
