@@ -27,7 +27,8 @@ pub struct CollectivePerceptionMessage {
     pub sensor_information_container: Vec<SensorInformation>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub perceived_object_container: Vec<PerceivedObject>,
-    // TODO add free_space_addendum_container
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub free_space_addendum_container: Vec<FreeSpaceAddendum>,
 }
 
 impl CollectivePerceptionMessage {
@@ -209,6 +210,25 @@ pub struct Offset {
     pub z: Option<i32>,
 }
 
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FreeSpaceAddendum {
+    pub free_space_area: FreeSpaceArea,
+    pub free_space_confidence: u8,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub sensor_id_list: Vec<u8>,
+    pub shadowing_applies: Option<bool>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FreeSpaceArea {
+    pub free_space_polygon: Option<Vec<Offset>>,
+    pub free_space_circular: Option<CircularArea>,
+    pub free_space_ellipse: Option<EllipticArea>,
+    pub free_space_rectangle: Option<RectangleArea>,
+}
+
 impl Mobile for CollectivePerceptionMessage {
     fn mobile_id(&self) -> u32 {
         self.station_id
@@ -250,9 +270,10 @@ impl Typed for CollectivePerceptionMessage {
 #[cfg(test)]
 mod tests {
     use crate::reception::exchange::collective_perception_message::{
-        CircularArea, CollectivePerceptionMessage, DetectionArea, EllipticArea,
-        ManagementContainer, Offset, OriginatingVehicleContainer, RectangleArea, SensorInformation,
-        StationDataContainer, StationarySensorRadial, VehicleSensor, VehicleSensorProperty,
+        CircularArea, CollectivePerceptionMessage, DetectionArea, EllipticArea, FreeSpaceAddendum,
+        FreeSpaceArea, ManagementContainer, Offset, OriginatingVehicleContainer, RectangleArea,
+        SensorInformation, StationDataContainer, StationarySensorRadial, VehicleSensor,
+        VehicleSensorProperty,
     };
     use crate::reception::exchange::mobile_perceived_object::MobilePerceivedObject;
     use crate::reception::exchange::perceived_object::{ObjectConfidence, PerceivedObject};
@@ -447,6 +468,38 @@ mod tests {
                 create_perceived_object_in_front(),
                 create_perceived_object_behind(),
             ],
+            free_space_addendum_container: vec![FreeSpaceAddendum {
+                free_space_area: FreeSpaceArea {
+                    free_space_polygon: Some(vec![
+                        Offset {
+                            x: 1,
+                            y: 2,
+                            z: None,
+                        },
+                        Offset {
+                            x: 11,
+                            y: 22,
+                            z: None,
+                        },
+                        Offset {
+                            x: 111,
+                            y: 222,
+                            z: None,
+                        },
+                        Offset {
+                            x: 1111,
+                            y: 2222,
+                            z: None,
+                        },
+                    ]),
+                    free_space_circular: None,
+                    free_space_ellipse: None,
+                    free_space_rectangle: None,
+                },
+                free_space_confidence: 50,
+                sensor_id_list: vec![1, 2, 3, 4, 5],
+                shadowing_applies: Some(false),
+            }],
         }
     }
 
@@ -1483,6 +1536,100 @@ mod tests {
                 assert!(elliptic_area.semi_height.is_some());
             }
             Err(e) => panic!("Failed to deserialize RectangleArea: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn deserialize_minimal_frees_space_area() {
+        let data = r#"{
+            "free_space_area": {
+                "free_space_polygon": [{
+                        "x": -32768,
+                        "y": 32767,
+                        "z": 0
+                    },
+                    {
+                        "x": 10,
+                        "y": 20,
+                        "z": 30
+                    },
+                    {
+                        "x": 32767,
+                        "y": -32768,
+                        "z": 0
+                    }
+                ]
+            },
+            "free_space_confidence": 12
+        }"#;
+
+        match serde_json::from_str::<FreeSpaceAddendum>(data) {
+            Ok(free_space_addendum) => {
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_polygon
+                    .is_some());
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_circular
+                    .is_none());
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_rectangle
+                    .is_none());
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_ellipse
+                    .is_none());
+                assert_eq!(free_space_addendum.free_space_confidence, 12);
+                assert!(free_space_addendum.sensor_id_list.is_empty());
+                assert!(free_space_addendum.shadowing_applies.is_none());
+            }
+            Err(e) => panic!("Failed to deserialize FreeSpaceAddendum: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn d() {
+        let data = r#"{
+            "free_space_area": {
+                "free_space_circular": {
+                    "radius": 10000,
+                    "node_center_point": {
+                        "x": 32767,
+                        "y": -32768,
+                        "z": 0
+                    }
+                }
+            },
+            "free_space_confidence": 101,
+            "sensor_id_list": [10, 20, 30],
+            "shadowing_applies": true
+        }"#;
+
+        match serde_json::from_str::<FreeSpaceAddendum>(data) {
+            Ok(free_space_addendum) => {
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_polygon
+                    .is_none());
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_circular
+                    .is_some());
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_rectangle
+                    .is_none());
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_ellipse
+                    .is_none());
+                assert_eq!(free_space_addendum.free_space_confidence, 101);
+                assert_eq!(free_space_addendum.sensor_id_list.len(), 3);
+                assert_eq!(free_space_addendum.shadowing_applies, Some(true))
+            }
+            Err(e) => panic!("Failed to deserialize FreeSpaceAddendum: '{}'", e),
         }
     }
 }
