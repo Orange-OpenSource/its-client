@@ -138,6 +138,7 @@ pub struct DetectionArea {
     pub stationary_sensor_polygon: Option<Vec<Offset>>,
     pub stationary_sensor_radial: Option<StationarySensorRadial>,
     pub stationary_sensor_circular: Option<CircularArea>,
+    pub stationary_sensor_ellipse: Option<EllipticArea>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -177,6 +178,16 @@ pub struct StationarySensorRadial {
 pub struct CircularArea {
     pub node_center_point: Option<Offset>,
     pub radius: u16,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EllipticArea {
+    pub semi_major_range_length: u16,
+    pub semi_minor_range_length: u16,
+    pub semi_major_range_orientation: u16,
+    pub node_center_point: Option<Offset>,
+    pub semi_height: Option<u16>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -228,9 +239,9 @@ impl Typed for CollectivePerceptionMessage {
 #[cfg(test)]
 mod tests {
     use crate::reception::exchange::collective_perception_message::{
-        CircularArea, CollectivePerceptionMessage, DetectionArea, ManagementContainer, Offset,
-        OriginatingVehicleContainer, SensorInformation, StationDataContainer,
-        StationarySensorRadial, VehicleSensor, VehicleSensorProperty,
+        CircularArea, CollectivePerceptionMessage, DetectionArea, EllipticArea,
+        ManagementContainer, Offset, OriginatingVehicleContainer, SensorInformation,
+        StationDataContainer, StationarySensorRadial, VehicleSensor, VehicleSensorProperty,
     };
     use crate::reception::exchange::mobile_perceived_object::MobilePerceivedObject;
     use crate::reception::exchange::perceived_object::{ObjectConfidence, PerceivedObject};
@@ -394,6 +405,17 @@ mod tests {
                         node_center_point: Some(Offset {
                             x: 1,
                             y: 2,
+                            z: None,
+                        }),
+                    }),
+                    stationary_sensor_ellipse: Some(EllipticArea {
+                        semi_major_range_length: 1,
+                        semi_minor_range_length: 2,
+                        semi_major_range_orientation: 3,
+                        semi_height: Some(4),
+                        node_center_point: Some(Offset {
+                            x: 5,
+                            y: 6,
                             z: None,
                         }),
                     }),
@@ -1349,6 +1371,51 @@ mod tests {
                 assert!(circular_area.node_center_point.is_some());
             }
             Err(e) => panic!("Failed to deserialize: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn deserialize_minimal_elliptic_area() {
+        let data = r#"{
+            "semi_major_range_length": 1,
+            "semi_minor_range_length": 2,
+            "semi_major_range_orientation": 3
+        }"#;
+
+        match serde_json::from_str::<EllipticArea>(data) {
+            Ok(elliptic_area) => {
+                assert_eq!(elliptic_area.semi_major_range_length, 1);
+                assert_eq!(elliptic_area.semi_minor_range_length, 2);
+                assert_eq!(elliptic_area.semi_major_range_orientation, 3);
+                assert!(elliptic_area.node_center_point.is_none());
+                assert!(elliptic_area.semi_height.is_none());
+            }
+            Err(e) => panic!("Failed to deserialize EllipticArea: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn deserialize_full_elliptic_area() {
+        let data = r#"{
+            "semi_major_range_length": 1,
+            "semi_minor_range_length": 2,
+            "semi_major_range_orientation": 3,
+            "semi_height": 4,
+            "node_center_point": {
+                "x": 5,
+                "y": 6
+            }
+        }"#;
+
+        match serde_json::from_str::<EllipticArea>(data) {
+            Ok(elliptic_area) => {
+                assert_eq!(elliptic_area.semi_major_range_length, 1);
+                assert_eq!(elliptic_area.semi_minor_range_length, 2);
+                assert_eq!(elliptic_area.semi_major_range_orientation, 3);
+                assert!(elliptic_area.node_center_point.is_some());
+                assert!(elliptic_area.semi_height.is_some());
+            }
+            Err(e) => panic!("Failed to deserialize EllipticArea: '{}'", e),
         }
     }
 }
