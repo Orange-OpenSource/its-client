@@ -137,6 +137,7 @@ pub struct DetectionArea {
     pub vehicle_sensor: Option<VehicleSensor>,
     pub stationary_sensor_polygon: Option<Vec<Offset>>,
     pub stationary_sensor_radial: Option<StationarySensorRadial>,
+    pub stationary_sensor_circular: Option<CircularArea>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -169,6 +170,13 @@ pub struct StationarySensorRadial {
     pub vertical_opening_angle_start: Option<u16>,
     pub vertical_opening_angle_end: Option<u16>,
     pub sensor_position_offset: Option<Offset>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CircularArea {
+    pub node_center_point: Option<Offset>,
+    pub radius: u16,
 }
 
 #[serde_with::skip_serializing_none]
@@ -220,7 +228,7 @@ impl Typed for CollectivePerceptionMessage {
 #[cfg(test)]
 mod tests {
     use crate::reception::exchange::collective_perception_message::{
-        CollectivePerceptionMessage, DetectionArea, ManagementContainer, Offset,
+        CircularArea, CollectivePerceptionMessage, DetectionArea, ManagementContainer, Offset,
         OriginatingVehicleContainer, SensorInformation, StationDataContainer,
         StationarySensorRadial, VehicleSensor, VehicleSensorProperty,
     };
@@ -376,6 +384,14 @@ mod tests {
                         vertical_opening_angle_start: None,
                         vertical_opening_angle_end: None,
                         sensor_position_offset: Some(Offset {
+                            x: 1,
+                            y: 2,
+                            z: None,
+                        }),
+                    }),
+                    stationary_sensor_circular: Some(CircularArea {
+                        radius: 10000,
+                        node_center_point: Some(Offset {
                             x: 1,
                             y: 2,
                             z: None,
@@ -1299,6 +1315,40 @@ mod tests {
                 "Failed to deserialize minimal StationarySensorRadial: '{}'",
                 e
             ),
+        }
+    }
+
+    #[test]
+    fn deserialize_minimal_circular_area() {
+        let data = r#"{
+            "radius": 999
+        }"#;
+
+        match serde_json::from_str::<CircularArea>(data) {
+            Ok(circular_area) => {
+                assert_eq!(circular_area.radius, 999);
+                assert!(circular_area.node_center_point.is_none());
+            }
+            Err(e) => panic!("Failed to deserialize: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn deserialize_full_circular_area() {
+        let data = r#"{
+            "radius": 999,
+            "node_center_point": {
+                "x": 1,
+                "y": 2
+            }
+        }"#;
+
+        match serde_json::from_str::<CircularArea>(data) {
+            Ok(circular_area) => {
+                assert_eq!(circular_area.radius, 999);
+                assert!(circular_area.node_center_point.is_some());
+            }
+            Err(e) => panic!("Failed to deserialize: '{}'", e),
         }
     }
 }
