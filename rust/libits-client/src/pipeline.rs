@@ -15,7 +15,7 @@ use std::thread::JoinHandle;
 use std::time::Duration;
 
 use log::{debug, error, info, trace, warn};
-use rumqttc::{Event, EventLoop, Publish};
+use rumqttc::{Event, EventLoop, MqttOptions, Publish};
 use serde::de::DeserializeOwned;
 
 use crate::analyse::analyser::Analyser;
@@ -32,11 +32,7 @@ use crate::reception::typed::Typed;
 use crate::reception::Reception;
 
 pub async fn run<T: Analyser>(
-    mqtt_host: &str,
-    mqtt_port: u16,
-    mqtt_client_id: &str,
-    mqtt_username: Option<&str>,
-    mqtt_password: Option<&str>,
+    mqtt_options: MqttOptions,
     mqtt_root_topic: &str,
     region_of_responsibility: bool,
     custom_settings: HashMap<String, String>,
@@ -53,18 +49,10 @@ pub async fn run<T: Analyser>(
         ];
 
         //initialize the client
-        let (mut client, event_loop) = Client::new(
-            mqtt_host,
-            mqtt_port,
-            mqtt_client_id,
-            mqtt_username,
-            mqtt_password,
-            None,
-            None,
-        );
+        let (mut client, event_loop) = Client::new(&mqtt_options);
 
         let configuration = Arc::new(Configuration::new(
-            mqtt_client_id.to_string(),
+            mqtt_options.client_id(),
             region_of_responsibility,
             custom_settings.clone(),
         ));

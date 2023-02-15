@@ -9,10 +9,12 @@ use std::collections::HashMap;
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 use std::fs;
 use std::path::Path;
+use std::time::Duration;
 
 use clap::{App, Arg};
 use flexi_logger::{with_thread, Cleanup, Criterion, FileSpec, Logger, Naming, WriteMode};
-use log::{info, warn};
+use log::{error, info, warn};
+use rumqttc::MqttOptions;
 
 #[cfg(feature = "copycat")]
 use libits_copycat::CopyCat;
@@ -157,13 +159,21 @@ async fn main() {
         info!("  mqtt_password: No password provided");
     }
 
+    let mut mqtt_options = MqttOptions::new(mqtt_client_id, mqtt_host, mqtt_port);
+    mqtt_options.set_keep_alive(Duration::from_secs(5));
+    match mqtt_username {
+        None => {}
+        Some(username) => match mqtt_password {
+            None => error!("username is given but password is not: specify the password"),
+            Some(password) => {
+                mqtt_options.set_credentials(username.to_owned(), password.to_owned());
+            }
+        },
+    }
+
     #[cfg(feature = "copycat")]
     libits_client::pipeline::run::<CopyCat>(
-        mqtt_host,
-        mqtt_port,
-        mqtt_client_id,
-        mqtt_username,
-        mqtt_password,
+        mqtt_options,
         mqtt_root_topic,
         region_of_responsibility,
         HashMap::new(),

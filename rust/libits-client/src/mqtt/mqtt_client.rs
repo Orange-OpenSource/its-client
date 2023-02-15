@@ -10,35 +10,14 @@ use crate::analyse::item::Item;
 use crate::reception::exchange::Exchange;
 use log::{debug, error, info, trace, warn};
 use rumqttc::{AsyncClient, Event, EventLoop, MqttOptions, QoS, SubscribeFilter};
-use std::time::Duration;
-
-const DEFAULT_INPUT_SIZE_LIMIT: usize = 256 * 1024;
-const DEFAULT_OUTPUT_SIZE_LIMIT: usize = 256 * 1024;
 
 pub(crate) struct Client {
     client: AsyncClient,
 }
 
 impl<'client> Client {
-    pub fn new(
-        mqtt_host: &str,
-        mqtt_port: u16,
-        mqtt_client_id: &str,
-        mqtt_username: Option<&str>,
-        mqtt_password: Option<&str>,
-        input_size_limit: Option<usize>,
-        output_size_limit: Option<usize>,
-    ) -> (Self, EventLoop) {
-        let mqtt_options = orange_broker(
-            mqtt_host,
-            mqtt_port,
-            mqtt_client_id,
-            mqtt_username,
-            mqtt_password,
-            input_size_limit,
-            output_size_limit,
-        );
-        let (client, event_loop) = AsyncClient::new(mqtt_options, 1000);
+    pub fn new(options: &MqttOptions) -> (Self, EventLoop) {
+        let (client, event_loop) = AsyncClient::new(options.clone(), 1000);
         (Client { client }, event_loop)
     }
 
@@ -78,33 +57,6 @@ impl<'client> Client {
             ),
         };
     }
-}
-
-fn orange_broker(
-    mqtt_host: &str,
-    mqtt_port: u16,
-    mqtt_client_id: &str,
-    mqtt_username: Option<&str>,
-    mqtt_password: Option<&str>,
-    input_size_limit: Option<usize>,
-    output_size_limit: Option<usize>,
-) -> MqttOptions {
-    let mut mqttoptions = MqttOptions::new(mqtt_client_id, mqtt_host, mqtt_port);
-    mqttoptions.set_keep_alive(Duration::from_secs(5));
-    mqttoptions.set_max_packet_size(
-        input_size_limit.unwrap_or(DEFAULT_INPUT_SIZE_LIMIT),
-        output_size_limit.unwrap_or(DEFAULT_OUTPUT_SIZE_LIMIT),
-    );
-    match mqtt_username {
-        None => {}
-        Some(username) => match mqtt_password {
-            None => error!("username is given but password is not: specify the password"),
-            Some(password) => {
-                mqttoptions.set_credentials(username.to_owned(), password.to_owned());
-            }
-        },
-    }
-    mqttoptions
 }
 
 pub async fn listen(mut event_loop: EventLoop, sender: std::sync::mpsc::Sender<Event>) {
