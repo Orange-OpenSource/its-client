@@ -16,8 +16,9 @@ DEFAULTS = {
         "suffix": "v2x",
     },
     "local": {
-        "host": "127.0.0.1",
-        "port": 1883,
+        "host": None,
+        "port": None,
+        "socket-path": None,
         "username": None,
         "password": None,
         "client_id": "iqm",

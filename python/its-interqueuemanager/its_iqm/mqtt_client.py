@@ -8,6 +8,13 @@ import logging
 import paho.mqtt.client
 import re
 
+try:
+    import paho_socket
+
+    paho_socket_available = True
+except ModuleNotFoundError:
+    paho_socket_available = False
+
 
 class MQTTClient:
     def __init__(
@@ -15,6 +22,7 @@ class MQTTClient:
         name: str,
         host: str,
         port: int,
+        socket: str,
         username: typing.Union[str, None],
         password: typing.Union[str, None],
         client_id: str,
@@ -27,6 +35,7 @@ class MQTTClient:
         self.name = name
         self.host = host
         self.port = port
+        self.socket = socket
         self.local_qm = local_qm
         self.prefix = prefix
         self.suffix = suffix
@@ -34,7 +43,19 @@ class MQTTClient:
         self.re = re.compile(rf"(^|/){copy_from}/")
         self.copy_to = copy_to
 
-        logging.info(f"[{self.name}]: create to {self.host}:{self.port}")
+        if self.socket:
+            if not paho_socket_available:
+                raise RuntimeError(
+                    f"[{self.name}]: using socket-path {self.socket} requires python module paho_socket"
+                )
+            self.path = self.socket
+        elif self.host and self.port:
+            self.path = f"{self.host}:{self.port}"
+        else:
+            raise LookupError(
+                "Either host and port, or socket-path, are required for local MQTT client"
+            )
+        logging.info(f"[{self.name}]: create to {self.path}")
 
         self.topic_root = str()
         if self.prefix is not None:  # can be an empty string for a /-rooted queue
@@ -44,7 +65,7 @@ class MQTTClient:
             self.topic_root += f"/{self.suffix}"
 
         self.connected = False
-        self.client = paho.mqtt.client.Client(
+        self.client = (paho_socket.Client if self.socket else paho.mqtt.client.Client)(
             client_id=client_id,
             protocol=paho.mqtt.client.MQTTv5,
         )
@@ -54,18 +75,24 @@ class MQTTClient:
         self.client.on_connect = self.__on_connect
         self.client.on_disconnect = self.__on_disconnect
         self.client.on_socket_close = self.__on_socket_close
-        self.client.connect_async(
-            host=self.host,
-            port=int(self.port),
-            clean_start=True,
-        )
+        if self.socket:
+            self.client.sock_connect_async(
+                self.socket,
+                clean_start=True,
+            )
+        else:
+            self.client.connect_async(
+                host=self.host,
+                port=int(self.port),
+                clean_start=True,
+            )
 
     def start(self):
-        logging.info(f"[{self.name}]: starting for {self.host}:{self.port}")
+        logging.info(f"[{self.name}]: starting for {self.path}")
         self.client.loop_start()
 
     def stop(self):
-        logging.info(f"[{self.name}]: stopping for {self.host}:{self.port}")
+        logging.info(f"[{self.name}]: stopping for {self.path}")
         self.client.disconnect()
         self.client.loop_stop()
 
@@ -88,14 +115,14 @@ class MQTTClient:
 
     def __on_message(self, _client, _userdata, message: paho.mqtt.MQTTMessage):
         logging.debug(
-            f"[{self.name}]: received message from {self.host}:{self.port} on {message.topic}: {abbrev(message.payload)}"
+            f"[{self.name}]: received message on {message.topic}: {abbrev(message.payload)}"
         )
         for cp_to in self.copy_to:
             topic = self.re.sub(rf"\1{cp_to}/", message.topic, count=1)
             (self.local_qm or self).publish(topic, message.payload)
 
     def __on_connect(self, _client, _userdata, _flags, _rc, _properties=None):
-        logging.info(f"[{self.name}]: connected to {self.host}:{self.port}")
+        logging.info(f"[{self.name}]: connected to {self.path}")
         # For neighbours, we'll eventually restrict that to sub-quad-keys,
         # but for now, we subscribe to the whole of the sub-tree. For the
         # local broker, we will always want to listen to the full sub-tree.
@@ -105,11 +132,11 @@ class MQTTClient:
         self.connected = True
 
     def __on_disconnect(self, _client, _userdata, _rc, _properties=None):
-        logging.info(f"[{self.name}]: disconnected from {self.host}:{self.port}")
+        logging.info(f"[{self.name}]: disconnected from {self.path}")
         self.connected = False
 
     def __on_socket_close(self, _client, _userdata, _sock):
-        logging.debug(f"[{self.name}]: disconnected (socket) from {self.host}:{self.port}")
+        logging.debug(f"[{self.name}]: disconnected (socket) from {self.path}")
         self.connected = False
 
 
