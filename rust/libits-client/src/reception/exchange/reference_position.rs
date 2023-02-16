@@ -133,6 +133,7 @@ fn get_altitude(etsi_altitude: i32) -> f64 {
 
 #[cfg(test)]
 mod tests {
+    use crate::reception::exchange::reference_position::{get_coordinate, get_etsi_coordinate};
     use navigation::Location;
 
     use crate::reception::exchange::ReferencePosition;
@@ -296,5 +297,43 @@ mod tests {
         };
         assert_eq!(position.get_destination(100.0, 270.0), other_position);
         assert_eq!(position.get_destination(100.0, -90.0), other_position);
+    }
+
+    #[test]
+    fn offset_destination_hunder_meters_north() {
+        let reference_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63816914950018),
+            longitude: get_etsi_coordinate(1.4031882),
+            altitude: 0,
+        };
+        let expected_destination = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63906919748),
+            longitude: get_etsi_coordinate(1.4031882),
+            altitude: 0,
+        };
+
+        let offset_destination = reference_point.get_offset_destination(0., 100.);
+
+        assert_eq!(offset_destination.latitude, expected_destination.latitude);
+        assert_eq!(offset_destination.longitude, expected_destination.longitude);
+    }
+
+    #[test]
+    fn offset_destination_hundred_meters_east() {
+        let reference_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63816914950018),
+            longitude: get_etsi_coordinate(1.4031881568425872),
+            altitude: 0,
+        };
+        let expected_destination = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63816910008),
+            longitude: get_etsi_coordinate(1.4044273),
+            altitude: 0,
+        };
+
+        let offset_destination = reference_point.get_offset_destination(100., 0.);
+
+        assert_eq!(offset_destination.latitude, expected_destination.latitude);
+        assert_eq!(offset_destination.longitude, expected_destination.longitude);
     }
 }
