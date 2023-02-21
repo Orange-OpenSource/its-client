@@ -10,6 +10,8 @@ from its_status import helpers
 
 class Status:
     def __init__(self, *, cfg):
+        self.cfg = cfg
+
         hw = None
 
         # This is the ugly-dirty code style unamically dictated by black
@@ -33,13 +35,20 @@ class Status:
         ret = helpers.run(lshw_cmd)
         if ret.returncode == 0:
             lshw = json.loads(ret.stdout)
+            if type(lshw) is list:
+                # Very old version of lshw, let's hope for the best...
+                lshw = lshw[0]
             if "product" in lshw:
                 hw = lshw["product"]
             else:
-                for child in lshw["children"]:
-                    if child["id"] == "core" and "product" in child:
-                        hw = child["product"]
-                        break
+                try:
+                    for child in lshw["children"]:
+                        if child["id"] == "core" and "product" in child:
+                            hw = child["product"]
+                            break
+                except TypeError:
+                    # lshw output does not match our expectations, ignore
+                    pass
         if hw is None:
             try:
                 with open("/proc/self/cgroup", "rb") as f:
@@ -65,7 +74,7 @@ class Status:
         data["cpu_load"] = psutil.getloadavg()
         mem = psutil.virtual_memory()
         data["memory"] = (mem.total, mem.available)
-        disk = psutil.disk_usage("/data")
+        disk = psutil.disk_usage(self.cfg["system"]["data-dir"])
         data["storage"] = (disk.total, disk.free)
 
         return data
