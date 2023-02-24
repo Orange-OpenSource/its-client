@@ -33,6 +33,10 @@
 - [Source code](https://github.com/andygrove/rust-navigation)
 - Copyright (c) Andy Grove
 
+#### ndarray
+- [Source code](https://github.com/rust-ndarray/ndarray)
+- Copyright (c) 2015 - 2021 Ulrik Sverdrup "bluss", Jim Turner, and ndarray developers
+
 #### pin-utils
 - [Source code](https://github.com/rust-lang/pin-utils)
 - Copyright (c) 2018 The pin-utils authors
@@ -83,6 +87,10 @@
 #### navigation
 - [Source code](https://github.com/andygrove/rust-navigation)
 - Copyright (c) Andy Grove
+
+#### ndarray
+- [Source code](https://github.com/rust-ndarray/ndarray)
+- Copyright (c) 2015 - 2021 Ulrik Sverdrup "bluss", Jim Turner, and ndarray developers
 
 #### pin-utils
 - [Source code](https://github.com/rust-lang/pin-utils)
