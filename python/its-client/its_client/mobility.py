@@ -37,23 +37,12 @@ def compute_velocity(distance, time_start, time_end) -> float:
 
 
 def compute_acceleration(
-    latitude_start: float,
-    longitude_start: float,
-    latitude_end: float,
-    longitude_end: float,
+    speed_start: float,
+    speed_end: float,
     time_start,
     time_end,
 ) -> float:
-    return compute_velocity(
-        distance=compute_distance(
-            latitude_start=latitude_start,
-            longitude_start=longitude_start,
-            latitude_end=latitude_end,
-            longitude_end=longitude_end,
-        ),
-        time_start=time_start,
-        time_end=time_end,
-    )
+    return (speed_end - speed_start) / (time_end - time_start)
 
 
 def kmph_to_mps(kmph):
