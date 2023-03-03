@@ -86,7 +86,7 @@ class MqttWorker:
                     or self.previous_step_lat is None
                     or self.previous_step_lon is None
                 ):
-                    acceleration = 161
+                    acceleration = None
                 else:
                     acceleration = mobility.compute_acceleration(
                         latitude_start=self.previous_step_lat,
