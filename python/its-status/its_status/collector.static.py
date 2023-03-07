@@ -7,7 +7,7 @@
 class Status:
     def __init__(self, *, cfg):
         self.data = {
-            "version": "1.1.0",
+            "version": "1.2.0",
             "type": "status",
             "id": cfg["generic"]["id"],
         }

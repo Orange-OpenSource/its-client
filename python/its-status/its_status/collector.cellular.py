@@ -33,7 +33,7 @@ class Status:
                 tech = m_j["modem"]["generic"]["access-technologies"][0]
                 item["connection"] = {
                     "technology": tech,
-                    "signal": {},
+                    "signal": [],
                 }
                 s_ret = self._mmcli("-m", modem, "--signal-get")
                 if s_ret.returncode == 0:
@@ -41,19 +41,18 @@ class Status:
                     if int(s_j["modem"]["signal"]["refresh"]["rate"]) == 0:
                         self._mmcli("-m", modem, "--signal-setup", "5")
                     else:
-                        if tech in ["hsdpa", "hsupa"]:
-                            # ModemManager stores hsdpa/hsupa signal
-                            # KPIs in the umts key.
-                            tech = "umts"
-                        try:
-                            for k in s_j["modem"]["signal"][tech]:
+                        for tech in s_j["modem"]["signal"]:
+                            if tech == "refresh":
+                                continue
+                            kpis = dict()
+                            for kpi in s_j["modem"]["signal"][tech]:
                                 try:
-                                    v = float(s_j["modem"]["signal"][tech][k])
+                                    kpis[kpi] = float(s_j["modem"]["signal"][tech][kpi])
                                 except ValueError:
-                                    continue
-                                item["connection"]["signal"][k] = v
-                        except KeyError:
-                            pass
+                                    pass
+                            if kpis:
+                                kpis["technology"] = tech
+                                item["connection"]["signal"].append(kpis)
             data.append(item)
 
         return data
