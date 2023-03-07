@@ -139,6 +139,7 @@
             "type": "object",
             "properties": {
               "technology": {
+                "description": "technology used to establish the connection",
                 "type": "string",
                 "examples": [
                   "gsm", "cdma1x", "evdo", "umts", "lte", "5G"
@@ -146,16 +147,22 @@
               },
               "signal": {
                 "description": "signal quality metrics",
-                "type": "object",
-                "properties": {
-                  "ecio": { "type": "number" },
-                  "io": { "type": "number" },
-                  "rscp": { "type": "number" },
-                  "rsrp": { "type": "number" },
-                  "rsrq": { "type": "number" },
-                  "rssi": { "type": "number" },
-                  "sinr": { "type": "number" },
-                  "snr": { "type": "number" }
+                "type": "array",
+                "items": {
+                  "description": "signal quality metrics for specific transport technology",
+                  "type": "object",
+                  "required": [ "technology" ],
+                  "properties": {
+                    "technology": { "type": "string" },
+                    "ecio": { "type": "number" },
+                    "io": { "type": "number" },
+                    "rscp": { "type": "number" },
+                    "rsrp": { "type": "number" },
+                    "rsrq": { "type": "number" },
+                    "rssi": { "type": "number" },
+                    "sinr": { "type": "number" },
+                    "snr": { "type": "number" }
+                  }
                 }
               }
             }
