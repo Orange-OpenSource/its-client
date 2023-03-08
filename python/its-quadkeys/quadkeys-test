@@ -207,6 +207,30 @@ def test_quadzone():
         "031133", "031131",
         # fmt: on
     ]
+    """
+    ... and when we optimise the zone with its level-7 and -6 neighbours:
+    """
+    expected_big_z_7 = [
+        # fmt: off
+        "0311131", "0311133", "0311311", "0311313",
+        "0311331", "0311333", "0313111", "120002",
+        "1200030", "1200032", "1200033", "1200122",
+        "12002", "120030", "1200312", "1200313",
+        "120032", "120033", "1201202", "1201203",
+        "120122", "1202000", "1202001", "1202010",
+        "1202011", "1202100", "1202101", "1202110",
+        "1202111", "1203000"
+        # fmt: on
+    ]
+    expected_big_z_6 = [
+        # fmt: off
+        "031113", "031131", "031133", "031311",
+        "120002", "120003", "120012", "12002",
+        "12003",
+        "120120", "120122", "120200", "120201",
+        "120210", "120211", "120300"
+        # fmt: on
+    ]
 
     print("QuadZone optimise: ", end="", flush=True)
     z.optimise()
@@ -226,6 +250,18 @@ def test_quadzone():
     print("QuadZone neighbours (depth 6): ", end="", flush=True)
     nz_6 = z.neighbours(depth=6)
     check_zone(nz_6, expected_nzl_6)
+    print("OK")
+
+    print("QuadZone addition (neighbours 7): ", end="", flush=True)
+    big_z = its_quadkeys.QuadZone(z)
+    big_z += nz_7
+    big_z.optimise()
+    check_zone(big_z, expected_big_z_7)
+    print("OK")
+    print("QuadZone addition (neighbours 6): ", end="", flush=True)
+    big_z += nz_6
+    big_z.optimise()
+    check_zone(big_z, expected_big_z_6)
     print("OK")
 
 

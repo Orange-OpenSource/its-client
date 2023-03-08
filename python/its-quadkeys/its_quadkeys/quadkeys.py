@@ -280,7 +280,7 @@ class QuadZone:
         """Create a new QuadZone from an iterable of QuadKeys"""
         self.quadkeys = set()
         for arg in args:
-            if type(arg) is list:
+            if type(arg) is list or type(arg) is QuadZone:
                 for qk in arg:
                     self.add(qk)
             else:
@@ -420,6 +420,14 @@ class QuadZone:
 
     def __iter__(self):
         return (quadkey for quadkey in self.quadkeys)
+
+    def __iadd__(self, other):
+        for qk in other:
+            self.add(qk)
+        return self
+
+    def __add__(self, other):
+        return QuadZone(self, other)
 
     def __contains__(self, other):
         if type(other) is str:
