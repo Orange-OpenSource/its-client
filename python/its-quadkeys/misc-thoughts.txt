@@ -34,6 +34,16 @@ This gives the following neighbouring relations:
 
 --------------------------------------------------------------------------------
 
+There is a fundamental property of QuadKey:
+  - if two QuadKeys intersect each other, we can have::
+    - the first entirely covers the second, or (non exclusive!)
+    - the second entirely covers the first
+
+This means that the intersection of two QuadKeys is either QuadKeys
+(the deepest one), never a QuadKey deeper than both.
+
+--------------------------------------------------------------------------------
+
 For a vehicle that is in a quadkey, we want to listen to that
 quadkey, as well as all 8 surrounding quadkeys.
 
@@ -161,3 +171,28 @@ made shallower, I, J, L, N, and O will all map to the big QuadKey with
 bold border to the west, labelled Y, and that already contains R, while
 K, M, and P will all map to the big QuadKey to the east, labelled Z,
 and which is bordering R, and is the Eastern neighbour of Y.
+
+--------------------------------------------------------------------------------
+
+Adding two QuadZone together is relatively easy, once we have a way to
+add QuadKeys to a QuadZone, and once we now how to optimise a QuadZone.
+However, substracting a QuadZone from another one is relatively more
+tricky.
+
+The whole problem consist in finding QuadKeys of the two QuadZones, that
+overlap each other, when there is no guarantee that they are of the same
+depth.
+
+The basic idea is to iterate over all the QuadKeys of the first QuadZone
+and drop those that are in the other QuadZone. This removes the QuadKeys
+that are entirely covered by the other QuadZone, but leaves those that
+are only partially covered.
+
+The second pass gets the intersection of the new QuadZone with the other
+one. This gives the QuadKeys of the other QuadZone that still have to be
+removed from the first.
+
+Then, each QuadKey in the first QuadZone, that covers a QuadKey from the
+intersection, is made shallower to the depth of the deepest QuadKey it
+covers; such new shallower QuadKey that is not covered by the intersection
+is then kept in the first QuadZone.

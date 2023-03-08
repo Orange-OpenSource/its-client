@@ -294,6 +294,9 @@ class QuadZone:
         if quadkey not in self:
             self.quadkeys.add(quadkey)
 
+    def remove(self, quadkey: QuadKey):
+        self -= quadkey
+
     def depth(self):
         """Return a tuple of the minimum and maximum depths
 
@@ -446,6 +449,36 @@ class QuadZone:
 
     def __add__(self, other):
         return QuadZone(self, other)
+
+    def __isub__(self, other):
+        if type(other) is not QuadZone:
+            other = QuadZone(other)
+        new_quadkeys = set()
+        for qk in self:
+            if qk not in other:
+                new_quadkeys.add(qk)
+        self.quadkeys = new_quadkeys
+
+        z_and = QuadZone(self) & other
+        new_quadkeys = set()
+        for qk in self:
+            q_and = z_and & qk
+            if not q_and:
+                new_quadkeys.add(qk)
+                continue
+            _, d = q_and.depth()
+            q_z = qk.split(depth=d)
+            for q in q_z:
+                if not q in q_and:
+                    new_quadkeys.add(q)
+
+        self.quadkeys = new_quadkeys
+        return self
+
+    def __sub__(self, other):
+        z_sub = QuadZone(self)
+        z_sub -= other
+        return z_sub
 
     def __contains__(self, other):
         if type(other) is str:

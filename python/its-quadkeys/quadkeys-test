@@ -231,6 +231,33 @@ def test_quadzone():
         "120210", "120211", "120300"
         # fmt: on
     ]
+    """
+    .. and when we remove the level-7 and -6 neigbours:
+    """
+    expected_big_z_7_sub = [
+        # fmt: off
+        "0311130", "0311132", "0311310", "0311312", "0311330",
+        "0311332", "0313110", "0313112", "0313113", "1200022",
+        "1200023", "1200031", "1200120", "1200121", "1200123",
+        "12002", "1200302", "1200310", "1200311", "120032",
+        "120033", "1201200", "1201201", "1201220", "1202002",
+        "1202003", "1202012", "1202013", "1202102", "1202103",
+        "1202112", "1202113", "1203001", "1203002", "1203003"
+        # fmt: on
+    ]
+    expected_big_z_6_sub = [
+        # fmt: off
+        "12002", "120032", "120033",
+        # fmt: on
+    ]
+    "and removing the QuadKeys 1200203 and 1200332"
+    expected_big_z_6_sub_qks = [
+        # fmt: off
+        "1200200", "1200201", "1200202", "120021", "120022", "120023",
+        "120032",
+        "1200330", "1200331", "1200333",
+        # fmt: on
+    ]
 
     print("QuadZone optimise: ", end="", flush=True)
     z.optimise()
@@ -272,6 +299,23 @@ def test_quadzone():
     z_inter &= nz_7
     check_zone(nz_7, expected_nzl_7)
     check_zone(z_inter, expected_nzl_7)
+    print("OK")
+
+    print("QuadZone substraction (neighbours 7): ", end="", flush=True)
+    big_z -= nz_7
+    big_z.optimise()
+    check_zone(big_z, expected_big_z_7_sub)
+    print("OK")
+    print("QuadZone substraction (neighbours 6): ", end="", flush=True)
+    big_z -= nz_6
+    big_z.optimise()
+    check_zone(big_z, expected_big_z_6_sub)
+    print("OK")
+    print("QuadZone substraction (quadkeys): ", end="", flush=True)
+    big_z -= "1200203"
+    big_z.remove("1200332")
+    big_z.optimise()
+    check_zone(big_z, expected_big_z_6_sub_qks)
     print("OK")
 
 
