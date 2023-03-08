@@ -264,6 +264,16 @@ def test_quadzone():
     check_zone(big_z, expected_big_z_6)
     print("OK")
 
+    print("QuadZone intersection: ", end="", flush=True)
+    z_inter = big_z & nz_6
+    check_zone(big_z, expected_big_z_6)
+    check_zone(nz_6, expected_nzl_6)
+    check_zone(z_inter, expected_nzl_6)
+    z_inter &= nz_7
+    check_zone(nz_7, expected_nzl_7)
+    check_zone(z_inter, expected_nzl_7)
+    print("OK")
+
 
 def check_zone(some, expected):
     some_l = list(some)

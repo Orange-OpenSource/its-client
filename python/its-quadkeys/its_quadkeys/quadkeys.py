@@ -421,6 +421,24 @@ class QuadZone:
     def __iter__(self):
         return (quadkey for quadkey in self.quadkeys)
 
+    def __iand__(self, other):
+        if type(other) is not QuadZone:
+            other = QuadZone(other)
+        new_quadkeys = set()
+        for qk in self:
+            if qk in other:
+                new_quadkeys.add(qk)
+        for qk in other:
+            if qk in self:
+                new_quadkeys.add(qk)
+        self.quadkeys = new_quadkeys
+        return self
+
+    def __and__(self, other):
+        z_and = QuadZone(self)
+        z_and &= other
+        return z_and
+
     def __iadd__(self, other):
         for qk in other:
             self.add(qk)
