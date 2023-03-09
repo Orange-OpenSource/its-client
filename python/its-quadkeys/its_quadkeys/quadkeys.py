@@ -480,6 +480,17 @@ class QuadZone:
         z_sub -= other
         return z_sub
 
+    def __ixor__(self, other):
+        self_orig = QuadZone(self)
+        self -= other
+        self += other - self_orig
+        return self
+
+    def __xor__(self, other):
+        z_xor = QuadZone(self)
+        z_xor ^= other
+        return z_xor
+
     def __contains__(self, other):
         if type(other) is str:
             other = QuadKey(other)

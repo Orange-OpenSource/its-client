@@ -258,6 +258,22 @@ def test_quadzone():
         "1200330", "1200331", "1200333",
         # fmt: on
     ]
+    """
+    with the QuadZone in form of a cross, centered on 12002,
+    the symetric substraction is expected to be:
+    """
+    expected_xor = [
+        # fmt: off
+        "0311131", "0311133", "031130", "0311310",
+        "0311312", "031132", "0311330", "0311332",
+        "0313111", "120000", "120001", "1200031",
+        "1200122", "1200310", "1200311", "1201202",
+        "1201203", "120122", "1202002", "1202003",
+        "1202012", "1202013", "120202", "120203",
+        "1202100", "1202101", "1202110", "1202111",
+        "1203000"
+        # fmt: on
+    ]
 
     print("QuadZone optimise: ", end="", flush=True)
     z.optimise()
@@ -316,6 +332,13 @@ def test_quadzone():
     big_z.remove("1200332")
     big_z.optimise()
     check_zone(big_z, expected_big_z_6_sub_qks)
+    print("OK")
+
+    print("QuadZone symmetric substraction (xor): ", end="", flush=True)
+    z2 = its_quadkeys.QuadZone("03113", "12000", "12002", "12003", "12020")
+    z2 ^= z + nz_7
+    z2.optimise()
+    check_zone(z2, expected_xor)
     print("OK")
 
 
