@@ -27,6 +27,7 @@ class MqttWorker:
         self.previous_step_timestamp = None
         self.previous_step_lon = None
         self.previous_step_lat = None
+        self.previous_speed = None
         self.previous_alt = None
         self.previous_alt_step_counter = 0
         self.previous_heading = None
@@ -81,18 +82,12 @@ class MqttWorker:
                     )
 
                 # acceleration
-                if (
-                    self.previous_step_timestamp is None
-                    or self.previous_step_lat is None
-                    or self.previous_step_lon is None
-                ):
-                    acceleration = 161
+                if self.previous_step_timestamp is None or self.previous_speed is None:
+                    acceleration = None
                 else:
                     acceleration = mobility.compute_acceleration(
-                        latitude_start=self.previous_step_lat,
-                        longitude_start=self.previous_step_lon,
-                        latitude_end=lat,
-                        longitude_end=lon,
+                        speed_start=self.previous_speed,
+                        speed_end=speed,
                         time_start=self.previous_step_timestamp,
                         time_end=now.timestamp(),
                     )
@@ -135,6 +130,7 @@ class MqttWorker:
                 self.previous_step_timestamp = now.timestamp()
                 self.previous_step_lat = lat
                 self.previous_step_lon = lon
+                self.previous_speed = speed
                 # threading
                 publish.join()
                 del publish

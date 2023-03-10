@@ -37,7 +37,7 @@ class CooperativeAwarenessMessage:
         longitude=0.0,
         altitude=0.0,
         speed=0.0,
-        acceleration=0.0,
+        acceleration=None,
         heading=0.0,
     ):
         self.uuid = uuid
@@ -46,7 +46,9 @@ class CooperativeAwarenessMessage:
         self.longitude = int(round(longitude * 10000000))
         self.altitude = int(round(altitude * 100))
         self.speed = int(round(kmph_to_mps(speed) * 100))
-        self.acceleration = int(round(acceleration * 10))
+        self.acceleration = (
+            int(round(acceleration * 10)) if acceleration is not None else 161
+        )
         self.heading = int(round(heading * 10))
         self.station_id = station_id(uuid)
 

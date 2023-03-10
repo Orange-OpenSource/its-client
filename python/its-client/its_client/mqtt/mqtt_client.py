@@ -11,6 +11,7 @@
 # for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 import json
 import logging
+import os
 import time
 from inspect import currentframe
 from inspect import getouterframes
@@ -55,6 +56,9 @@ class MQTTClient(object):
         logging.debug(
             self._format_log(f" called for {client.socket()} with {userdata}")
         )
+        if not self.stop_signal.is_set():
+            logging.error("Unexpected MQTT disconnect; emergency exit.")
+            os._exit(42)
 
     def on_connect(self, client, userdata, flags, rc):
         logging.debug(
@@ -197,6 +201,9 @@ class MQTTClient(object):
         logging.debug(
             self._format_log(f" called for {client.socket()} with {userdata}")
         )
+        if not self.stop_signal.is_set():
+            logging.error("Unexpected MQTT disconnect; emergency exit.")
+            os._exit(42)
 
     def on_socket_register_write(self, client, userdata, _sock):
         logging.debug(
