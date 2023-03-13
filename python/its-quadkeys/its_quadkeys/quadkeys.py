@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import collections
 import itertools
+import json
 
 
 class QuadKey(str):
@@ -285,6 +286,14 @@ class QuadZone:
                     self.add(qk)
             else:
                 self.add(arg)
+
+    def load(self, path):
+        with open(path, "r") as fd:
+            self.quadkeys = {QuadKey(qk) for qk in json.load(fd)}
+
+    def save(self, path):
+        with open(path, "w") as fd:
+            json.dump(list(self.quadkeys), fd, separators=(",", ":"))
 
     def add(self, quadkey: QuadKey | str):
         if type(quadkey) is str:
