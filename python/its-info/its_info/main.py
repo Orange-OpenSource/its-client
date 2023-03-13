@@ -11,6 +11,7 @@ import netifaces
 import os
 import paho.mqtt.client
 import time
+from its_quadkeys import QuadZone
 
 
 def main():
@@ -39,6 +40,10 @@ class MQTTInfoClient:
             "password": None,
             "topic": "info",
             "retry": 2,
+        },
+        "RoR": {
+            "type": "none",
+            "reload": False,
         },
     }
 
@@ -75,6 +80,17 @@ class MQTTInfoClient:
                 self.cfg[s] = {}
             for k in MQTTInfoClient.DEFAULTS[s]:
                 _set_default(s, k, MQTTInfoClient.DEFAULTS[s][k])
+
+        if self.cfg["RoR"]["type"] == "none":
+            self.ror = None
+        elif self.cfg["RoR"]["type"] == "static":
+            self.ror = QuadZone()
+            self.ror.load(self.cfg["RoR"]["path"])
+            self.ror.optimise()
+        else:
+            raise RuntimeError(
+                f"{self.cfg['RoR']['type']}: unknown or unimplemented RoR type"
+            )
 
         self.timer = linuxfd.timerfd(closeOnExec=True)
 
@@ -156,6 +172,19 @@ class MQTTInfoClient:
             data["ntp_servers"] = [self.cfg["general"]["ntp_host"]]
         elif ips:
             data["ntp_servers"] = ips
+
+        if self.cfg["RoR"]["type"] == "static" and self.cfg["RoR"]["reload"]:
+            if self.ror is None:
+                self.ror = QuadZone()
+            try:
+                self.ror.load(self.cfg["RoR"]["path"])
+                self.ror.optimise()
+            except FileNotFoundError:
+                # File not found: consider we have no RoR.
+                self.ror = None
+
+        if self.ror is not None:
+            data["service_area"] = {"type": "tiles", "quadkeys": sorted(self.ror)}
 
         self.client.publish(
             topic=self.cfg["mqtt"]["topic"],
