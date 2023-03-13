@@ -54,6 +54,8 @@ class MQTTInfoClient:
         self.topic = cfg.get("mqtt", "topic", fallback="info")
         self.retry = cfg.getint("mqtt", "retry", fallback=2)
 
+        self.timer = linuxfd.timerfd(closeOnExec=True)
+
         self.client = paho.mqtt.client.Client(
             client_id=self.client_id,
         )
@@ -63,8 +65,6 @@ class MQTTInfoClient:
         self.client.on_disconnect = self.on_disconnect
         self.client.on_socket_close = self.on_socket_close
         self.client.connect_async(host=self.host, port=self.port)
-
-        self.timer = linuxfd.timerfd(closeOnExec=True)
 
     def loop_forever(self):
         self.client.loop_start()
