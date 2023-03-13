@@ -32,7 +32,7 @@ setup(
     platforms="LINUX",
     install_requires=[
         "linuxfd==1.5",
-        "netifces==0.11.0",
+        "netifaces==0.11.0",
         "paho-mqtt==1.6.1",
     ],
     entry_points={"console_scripts": ["its-info = its_info.main:main"]},
