@@ -6,13 +6,21 @@
 import argparse
 import configparser
 import logging
+import os
 import sys
+import time
+from . import gpsd
 
 
 CFG = "/etc/its/vehicle.cfg"
 DEFAULTS = {
     "general": {
         "instance-id": None,
+    },
+    "gpsd": {
+        "host": "127.0.0.1",
+        "port": 2947,
+        "heuristic": "order",
     },
 }
 
@@ -59,6 +67,29 @@ def main():
         format="%(asctime)s %(module)s: %(message)s",
         level="DEBUG" if args.debug else "INFO",
     )
+
+    gnss = gpsd.GNSSProvider(cfg=cfg["gpsd"])
+    gnss.start()
+    try:
+        while True:
+            g = gnss.get()
+            logging.info("Got: %s", g)
+            time.sleep(5)
+    except KeyboardInterrupt:
+        # Proper termination, cleanup below
+        pass
+    except Exception as e:
+        # Unexpected situation, we don't know what is still live and well and
+        # running, or what already died, so we don't know what to properly
+        # stop and terminate. We however know that all our threads are daemons,
+        # so any leftover will be forcibly killed by the kernel when the
+        # process exits. So let's throw our hands above our head and exit ASAP,
+        # after dumping the current exception for post-mortem analysis... :-(
+        logging.error("Unexpected exception ¯\_(ツ)_/¯", exc_info=e)
+        os._exit(1)
+
+    logging.debug("Will stop...")
+    gnss.stop()
 
 
 if __name__ == "__main__":
