@@ -84,6 +84,7 @@ pub struct Lane {
     ///
     /// [1]: https://en.wikipedia.org/wiki/World_Geodetic_System#WGS84
     pub geom: Vec<[f32; 2]>,
+    pub is_pedestrian_lane: Option<bool>,
     pub is_vehicle_lane: Option<bool>,
     pub is_bus_lane: Option<bool>,
     pub is_bike_lane: Option<bool>,
@@ -497,7 +498,8 @@ mod test {
                 ],
                 "id": 4,
                 "ingress": true,
-                "isVehicleLane": true,
+                "isVehicleLane": false,
+                "isPedestrianLane": true,
                 "left": false,
                 "nextChange": 0,
                 "right": false,

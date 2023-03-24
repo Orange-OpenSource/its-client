@@ -12,14 +12,15 @@ use std::f64::consts;
 use cheap_ruler::{CheapRuler, DistanceUnit};
 use geo::Point;
 use navigation::Location;
+use ndarray::{arr1, arr2};
 use serde::{Deserialize, Serialize};
 
-const EARTH_RADIUS: u32 = 6371000;
-// in meters
-const LG_MOD: u8 = 180;
-// Max longitude on WGS 84
-const COORDINATE_SIGNIFICANT_DIGIT: u8 = 7;
+const EARTH_RADIUS: u32 = 6_371_000; // in meters
+const EQUATORIAL_RADIUS: f64 = 6_378_137.0; // in meters
+const POLAR_RADIUS: f64 = 6_356_752.3; // in meters
 
+const LG_MOD: u8 = 180; // Max longitude on WGS 84
+const COORDINATE_SIGNIFICANT_DIGIT: u8 = 7;
 const ALTITUDE_SIGNIFICANT_DIGIT: u8 = 3;
 
 #[derive(Clone, Default, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
@@ -102,6 +103,69 @@ impl ReferencePosition {
             altitude: self.altitude,
         }
     }
+
+    /// Converts this position to its [East North Up (ENU) coordinates][1]
+    /// from the reference position `anchor`
+    ///
+    /// Computation is done by first converting the geodetic coordinates (lat, lon, alt)
+    /// of both this point and the reference point to [ECEF][2] coordinates
+    /// Then the [ENU computation][3] can be done
+    ///
+    /// [1]: https://en.wikipedia.org/wiki/Local_tangent_plane_coordinates
+    /// [2]: https://en.wikipedia.org/wiki/Earth-centered,_Earth-fixed_coordinate_system
+    /// [3]: https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates
+    pub fn to_enu(&self, anchor: &ReferencePosition) -> (f64, f64, f64) {
+        let reference_ecef = anchor.to_ecef();
+        let relative_ecef = self.to_ecef();
+
+        let latitude = get_coordinate(anchor.latitude).to_radians();
+        let longitude = get_coordinate(anchor.longitude).to_radians();
+
+        let reference_matrix = arr2(&[
+            [-longitude.sin(), longitude.cos(), 0.],
+            [
+                -latitude.sin() * longitude.cos(),
+                -latitude.sin() * longitude.sin(),
+                latitude.cos(),
+            ],
+            [
+                latitude.cos() * longitude.cos(),
+                latitude.cos() * longitude.sin(),
+                latitude.sin(),
+            ],
+        ]);
+        let relative_vector = arr1(&[
+            relative_ecef.0 - reference_ecef.0,
+            relative_ecef.1 - reference_ecef.1,
+            relative_ecef.2 - reference_ecef.2,
+        ]);
+
+        let enu = reference_matrix.dot(&relative_vector).to_vec();
+        let as_vec = enu.to_vec();
+
+        let x_distance = as_vec[0];
+        let y_distance = as_vec[1];
+        let z_distance = as_vec[2];
+
+        (x_distance.round(), y_distance.round(), z_distance.round())
+    }
+
+    /// Returns the corresponding [Earth Centered, Earth Fixed][1] coordinates for this position
+    ///
+    /// [1]: https://en.wikipedia.org/wiki/Earth-centered,_Earth-fixed_coordinate_system
+    pub fn to_ecef(&self) -> (f64, f64, f64) {
+        let latitude = get_coordinate(self.latitude).to_radians();
+        let longitude = get_coordinate(self.longitude).to_radians();
+        let altitude = get_altitude(self.altitude);
+
+        let n_phi = prime_vertical_radius(latitude);
+
+        let x = (n_phi + altitude) * latitude.cos() * longitude.cos();
+        let y = (n_phi + altitude) * latitude.cos() * longitude.sin();
+        let z = ((1. - ellipsoid_flattening()).powf(2.) * n_phi + altitude) * latitude.sin();
+
+        (x, y, z)
+    }
 }
 
 impl fmt::Display for ReferencePosition {
@@ -131,8 +195,22 @@ fn get_altitude(etsi_altitude: i32) -> f64 {
     etsi_altitude as f64 / base.pow(ALTITUDE_SIGNIFICANT_DIGIT as u32) as f64
 }
 
+fn prime_vertical_radius(phi: f64) -> f64 {
+    let e_square: f64 = 1. - (POLAR_RADIUS.powf(2.) / EQUATORIAL_RADIUS.powf(2.));
+    let sin_phi = phi.sin();
+
+    let n_phi = EQUATORIAL_RADIUS / (1. - e_square * sin_phi.powf(2.)).sqrt();
+
+    n_phi
+}
+
+fn ellipsoid_flattening() -> f64 {
+    1. - POLAR_RADIUS / EQUATORIAL_RADIUS
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::reception::exchange::reference_position::{get_coordinate, get_etsi_coordinate};
     use navigation::Location;
 
     use crate::reception::exchange::ReferencePosition;
@@ -296,5 +374,181 @@ mod tests {
         };
         assert_eq!(position.get_destination(100.0, 270.0), other_position);
         assert_eq!(position.get_destination(100.0, -90.0), other_position);
+    }
+
+    #[test]
+    fn offset_destination_hunder_meters_north() {
+        let reference_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63816914950018),
+            longitude: get_etsi_coordinate(1.4031882),
+            altitude: 0,
+        };
+        let expected_destination = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63906919748),
+            longitude: get_etsi_coordinate(1.4031882),
+            altitude: 0,
+        };
+
+        let offset_destination = reference_point.get_offset_destination(0., 100.);
+
+        assert_eq!(offset_destination.latitude, expected_destination.latitude);
+        assert_eq!(offset_destination.longitude, expected_destination.longitude);
+    }
+
+    #[test]
+    fn offset_destination_hundred_meters_east() {
+        let reference_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63816914950018),
+            longitude: get_etsi_coordinate(1.4031881568425872),
+            altitude: 0,
+        };
+        let expected_destination = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63816910008),
+            longitude: get_etsi_coordinate(1.4044273),
+            altitude: 0,
+        };
+
+        let offset_destination = reference_point.get_offset_destination(100., 0.);
+
+        assert_eq!(offset_destination.latitude, expected_destination.latitude);
+        assert_eq!(offset_destination.longitude, expected_destination.longitude);
+    }
+
+    #[test]
+    fn geodetic_to_enu_150m_east_200m_north() {
+        let reference_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63816914950018),
+            longitude: get_etsi_coordinate(1.4031881568425872),
+            altitude: 0,
+        };
+        let relative_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63996919589),
+            longitude: get_etsi_coordinate(1.40504710005),
+            altitude: 0,
+        };
+        let expected_x_distance = 150.;
+        let expected_y_distance = 200.;
+        let expected_z_distance = 0.;
+
+        let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
+
+        assert_eq!(x_distance, expected_x_distance);
+        assert_eq!(y_distance, expected_y_distance);
+        assert_eq!(z_distance, expected_z_distance);
+    }
+
+    #[test]
+    fn geodetic_to_enu_150m_west_200m_south() {
+        let reference_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63996919589),
+            longitude: get_etsi_coordinate(1.40504710005),
+            altitude: 0,
+        };
+        let relative_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63816914950018),
+            longitude: get_etsi_coordinate(1.4031881568425872),
+            altitude: 0,
+        };
+        let expected_x_distance = -150.;
+        let expected_y_distance = -200.;
+        let expected_z_distance = 0.;
+
+        let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
+
+        assert_eq!(x_distance, expected_x_distance);
+        assert_eq!(y_distance, expected_y_distance);
+        assert_eq!(z_distance, expected_z_distance);
+    }
+
+    #[test]
+    fn geodetic_to_enu_150m_east() {
+        let reference_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63816914950018),
+            longitude: get_etsi_coordinate(1.4031881568425872),
+            altitude: 0,
+        };
+        let relative_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63816910008),
+            longitude: get_etsi_coordinate(1.40504707684),
+            altitude: 0,
+        };
+        let expected_x_distance = 150.;
+        let expected_y_distance = 0.;
+        let expected_z_distance = 0.;
+
+        let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
+
+        assert_eq!(x_distance, expected_x_distance);
+        assert_eq!(y_distance, expected_y_distance);
+        assert_eq!(z_distance, expected_z_distance);
+    }
+
+    #[test]
+    fn geodetic_to_enu_200m_north() {
+        let reference_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63816910008),
+            longitude: get_etsi_coordinate(1.40504707684),
+            altitude: 0,
+        };
+        let relative_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63996919589),
+            longitude: get_etsi_coordinate(1.40504710005),
+            altitude: 0,
+        };
+        let expected_x_distance = 0.;
+        let expected_y_distance = 200.;
+        let expected_z_distance = 0.;
+
+        let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
+
+        assert_eq!(x_distance, expected_x_distance);
+        assert_eq!(y_distance, expected_y_distance);
+        assert_eq!(z_distance, expected_z_distance);
+    }
+
+    #[test]
+    fn geodetic_to_enu_150m_west() {
+        let reference_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63816910008),
+            longitude: get_etsi_coordinate(1.40504707684),
+            altitude: 0,
+        };
+        let relative_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63816914950018),
+            longitude: get_etsi_coordinate(1.4031881568425872),
+            altitude: 0,
+        };
+        let expected_x_distance = -150.;
+        let expected_y_distance = 0.;
+        let expected_z_distance = 0.;
+
+        let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
+
+        assert_eq!(x_distance, expected_x_distance);
+        assert_eq!(y_distance, expected_y_distance);
+        assert_eq!(z_distance, expected_z_distance);
+    }
+
+    #[test]
+    fn geodetic_to_enu_200m_south() {
+        let reference_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63996919589),
+            longitude: get_etsi_coordinate(1.40504710005),
+            altitude: 0,
+        };
+        let relative_point = ReferencePosition {
+            latitude: get_etsi_coordinate(43.63816910008),
+            longitude: get_etsi_coordinate(1.40504707684),
+            altitude: 0,
+        };
+        let expected_x_distance = 0.;
+        let expected_y_distance = -200.;
+        let expected_z_distance = 0.;
+
+        let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
+
+        assert_eq!(x_distance, expected_x_distance);
+        assert_eq!(y_distance, expected_y_distance);
+        assert_eq!(z_distance, expected_z_distance);
     }
 }

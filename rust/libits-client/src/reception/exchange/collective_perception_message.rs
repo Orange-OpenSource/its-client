@@ -27,7 +27,8 @@ pub struct CollectivePerceptionMessage {
     pub sensor_information_container: Vec<SensorInformation>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub perceived_object_container: Vec<PerceivedObject>,
-    // TODO add free_space_addendum_container
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub free_space_addendum_container: Vec<FreeSpaceAddendum>,
 }
 
 impl CollectivePerceptionMessage {
@@ -135,6 +136,11 @@ pub struct SensorInformation {
 #[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
 pub struct DetectionArea {
     pub vehicle_sensor: Option<VehicleSensor>,
+    pub stationary_sensor_polygon: Option<Vec<Offset>>,
+    pub stationary_sensor_radial: Option<StationarySensorRadial>,
+    pub stationary_sensor_circular: Option<CircularArea>,
+    pub stationary_sensor_ellipse: Option<EllipticArea>,
+    pub stationary_sensor_rectangle: Option<RectangleArea>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -156,6 +162,71 @@ pub struct VehicleSensorProperty {
     pub horizontal_opening_angle_end: u16,
     pub vertical_opening_angle_start: Option<u16>,
     pub vertical_opening_angle_end: Option<u16>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StationarySensorRadial {
+    pub range: u16,
+    pub horizontal_opening_angle_start: u16,
+    pub horizontal_opening_angle_end: u16,
+    pub vertical_opening_angle_start: Option<u16>,
+    pub vertical_opening_angle_end: Option<u16>,
+    pub sensor_position_offset: Option<Offset>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CircularArea {
+    pub node_center_point: Option<Offset>,
+    pub radius: u16,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EllipticArea {
+    pub semi_major_range_length: u16,
+    pub semi_minor_range_length: u16,
+    pub semi_major_range_orientation: u16,
+    pub node_center_point: Option<Offset>,
+    pub semi_height: Option<u16>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RectangleArea {
+    pub semi_major_range_length: u16,
+    pub semi_minor_range_length: u16,
+    pub semi_major_range_orientation: u16,
+    pub node_center_point: Option<Offset>,
+    pub semi_height: Option<u16>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Offset {
+    pub x: i32,
+    pub y: i32,
+    pub z: Option<i32>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FreeSpaceAddendum {
+    pub free_space_area: FreeSpaceArea,
+    pub free_space_confidence: u8,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub sensor_id_list: Vec<u8>,
+    pub shadowing_applies: Option<bool>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FreeSpaceArea {
+    pub free_space_polygon: Option<Vec<Offset>>,
+    pub free_space_circular: Option<CircularArea>,
+    pub free_space_ellipse: Option<EllipticArea>,
+    pub free_space_rectangle: Option<RectangleArea>,
 }
 
 impl Mobile for CollectivePerceptionMessage {
@@ -199,8 +270,9 @@ impl Typed for CollectivePerceptionMessage {
 #[cfg(test)]
 mod tests {
     use crate::reception::exchange::collective_perception_message::{
-        CollectivePerceptionMessage, DetectionArea, ManagementContainer,
-        OriginatingVehicleContainer, SensorInformation, StationDataContainer, VehicleSensor,
+        CircularArea, CollectivePerceptionMessage, DetectionArea, EllipticArea, FreeSpaceAddendum,
+        FreeSpaceArea, ManagementContainer, Offset, OriginatingVehicleContainer, RectangleArea,
+        SensorInformation, StationDataContainer, StationarySensorRadial, VehicleSensor,
         VehicleSensorProperty,
     };
     use crate::reception::exchange::mobile_perceived_object::MobilePerceivedObject;
@@ -331,12 +403,103 @@ mod tests {
                             vertical_opening_angle_end: None,
                         }],
                     }),
+                    stationary_sensor_polygon: Some(vec![
+                        Offset {
+                            x: 1,
+                            y: 2,
+                            z: Some(0),
+                        },
+                        Offset {
+                            x: 11,
+                            y: 22,
+                            z: Some(1),
+                        },
+                        Offset {
+                            x: 111,
+                            y: 222,
+                            z: Some(2),
+                        },
+                    ]),
+                    stationary_sensor_radial: Some(StationarySensorRadial {
+                        range: 10000,
+                        horizontal_opening_angle_start: 900,
+                        horizontal_opening_angle_end: 2700,
+                        vertical_opening_angle_start: None,
+                        vertical_opening_angle_end: None,
+                        sensor_position_offset: Some(Offset {
+                            x: 1,
+                            y: 2,
+                            z: None,
+                        }),
+                    }),
+                    stationary_sensor_circular: Some(CircularArea {
+                        radius: 10000,
+                        node_center_point: Some(Offset {
+                            x: 1,
+                            y: 2,
+                            z: None,
+                        }),
+                    }),
+                    stationary_sensor_ellipse: Some(EllipticArea {
+                        semi_major_range_length: 1,
+                        semi_minor_range_length: 2,
+                        semi_major_range_orientation: 3,
+                        semi_height: Some(4),
+                        node_center_point: Some(Offset {
+                            x: 5,
+                            y: 6,
+                            z: None,
+                        }),
+                    }),
+                    stationary_sensor_rectangle: Some(RectangleArea {
+                        semi_major_range_length: 1,
+                        semi_minor_range_length: 2,
+                        semi_major_range_orientation: 3,
+                        semi_height: Some(4),
+                        node_center_point: Some(Offset {
+                            x: 5,
+                            y: 6,
+                            z: None,
+                        }),
+                    }),
                 },
             }],
             perceived_object_container: vec![
                 create_perceived_object_in_front(),
                 create_perceived_object_behind(),
             ],
+            free_space_addendum_container: vec![FreeSpaceAddendum {
+                free_space_area: FreeSpaceArea {
+                    free_space_polygon: Some(vec![
+                        Offset {
+                            x: 1,
+                            y: 2,
+                            z: None,
+                        },
+                        Offset {
+                            x: 11,
+                            y: 22,
+                            z: None,
+                        },
+                        Offset {
+                            x: 111,
+                            y: 222,
+                            z: None,
+                        },
+                        Offset {
+                            x: 1111,
+                            y: 2222,
+                            z: None,
+                        },
+                    ]),
+                    free_space_circular: None,
+                    free_space_ellipse: None,
+                    free_space_rectangle: None,
+                },
+                free_space_confidence: 50,
+                sensor_id_list: vec![1, 2, 3, 4, 5],
+                shadowing_applies: Some(false),
+            }],
         }
     }
 
@@ -1143,6 +1306,330 @@ mod tests {
             Err(e) => {
                 panic!("Failed to deserialize CPM: '{}'", e);
             }
+        }
+    }
+
+    #[test]
+    fn test_deserialize_minimal_offset() {
+        let data = r#"{
+            "x": 123456,
+            "y": 654321
+        }"#;
+
+        match serde_json::from_str::<Offset>(data) {
+            Ok(offset) => {
+                assert_eq!(offset.x, 123456);
+                assert_eq!(offset.y, 654321);
+                assert!(offset.z.is_none());
+            }
+            Err(e) => panic!("Failed to deserialize minimal Offset: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn test_deserialize_full_offset() {
+        let data = r#"{
+            "x": 123456,
+            "y": 654321,
+            "z": 456789
+        }"#;
+
+        match serde_json::from_str::<Offset>(data) {
+            Ok(offset) => {
+                assert_eq!(offset.x, 123456);
+                assert_eq!(offset.y, 654321);
+                assert_eq!(offset.z, Some(456789));
+            }
+            Err(e) => panic!("Failed to deserialize minimal Offset: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn test_deserialize_minimal_stationary_sensor_radial() {
+        let data = r#"{
+            "range": 1,
+            "horizontal_opening_angle_start": 2,
+            "horizontal_opening_angle_end": 3
+        }"#;
+
+        match serde_json::from_str::<StationarySensorRadial>(data) {
+            Ok(stationary_sensor_radial) => {
+                assert_eq!(stationary_sensor_radial.range, 1);
+                assert_eq!(stationary_sensor_radial.horizontal_opening_angle_start, 2);
+                assert_eq!(stationary_sensor_radial.horizontal_opening_angle_end, 3);
+                assert!(stationary_sensor_radial.sensor_position_offset.is_none());
+                assert!(stationary_sensor_radial
+                    .vertical_opening_angle_start
+                    .is_none());
+                assert!(stationary_sensor_radial
+                    .vertical_opening_angle_end
+                    .is_none());
+            }
+            Err(e) => panic!(
+                "Failed to deserialize minimal StationarySensorRadial: '{}'",
+                e
+            ),
+        }
+    }
+
+    #[test]
+    fn test_deserialize_full_stationary_sensor_radial() {
+        let data = r#"{
+            "range": 1,
+            "horizontal_opening_angle_start": 2,
+            "horizontal_opening_angle_end": 3,
+            "sensor_position_offset": {
+                "x": 123456,
+                "y": 654321
+            },
+            "vertical_opening_angle_start": 123,
+            "vertical_opening_angle_end": 456
+        }"#;
+
+        match serde_json::from_str::<StationarySensorRadial>(data) {
+            Ok(stationary_sensor_radial) => {
+                assert_eq!(stationary_sensor_radial.range, 1);
+                assert_eq!(stationary_sensor_radial.horizontal_opening_angle_start, 2);
+                assert_eq!(stationary_sensor_radial.horizontal_opening_angle_end, 3);
+                assert_eq!(
+                    stationary_sensor_radial.sensor_position_offset,
+                    Some(Offset {
+                        x: 123456,
+                        y: 654321,
+                        z: None
+                    })
+                );
+                assert_eq!(
+                    stationary_sensor_radial.vertical_opening_angle_start,
+                    Some(123)
+                );
+                assert_eq!(
+                    stationary_sensor_radial.vertical_opening_angle_end,
+                    Some(456)
+                );
+            }
+            Err(e) => panic!(
+                "Failed to deserialize minimal StationarySensorRadial: '{}'",
+                e
+            ),
+        }
+    }
+
+    #[test]
+    fn deserialize_minimal_circular_area() {
+        let data = r#"{
+            "radius": 999
+        }"#;
+
+        match serde_json::from_str::<CircularArea>(data) {
+            Ok(circular_area) => {
+                assert_eq!(circular_area.radius, 999);
+                assert!(circular_area.node_center_point.is_none());
+            }
+            Err(e) => panic!("Failed to deserialize: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn deserialize_full_circular_area() {
+        let data = r#"{
+            "radius": 999,
+            "node_center_point": {
+                "x": 1,
+                "y": 2
+            }
+        }"#;
+
+        match serde_json::from_str::<CircularArea>(data) {
+            Ok(circular_area) => {
+                assert_eq!(circular_area.radius, 999);
+                assert!(circular_area.node_center_point.is_some());
+            }
+            Err(e) => panic!("Failed to deserialize: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn deserialize_minimal_elliptic_area() {
+        let data = r#"{
+            "semi_major_range_length": 1,
+            "semi_minor_range_length": 2,
+            "semi_major_range_orientation": 3
+        }"#;
+
+        match serde_json::from_str::<EllipticArea>(data) {
+            Ok(elliptic_area) => {
+                assert_eq!(elliptic_area.semi_major_range_length, 1);
+                assert_eq!(elliptic_area.semi_minor_range_length, 2);
+                assert_eq!(elliptic_area.semi_major_range_orientation, 3);
+                assert!(elliptic_area.node_center_point.is_none());
+                assert!(elliptic_area.semi_height.is_none());
+            }
+            Err(e) => panic!("Failed to deserialize EllipticArea: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn deserialize_full_elliptic_area() {
+        let data = r#"{
+            "semi_major_range_length": 1,
+            "semi_minor_range_length": 2,
+            "semi_major_range_orientation": 3,
+            "semi_height": 4,
+            "node_center_point": {
+                "x": 5,
+                "y": 6
+            }
+        }"#;
+
+        match serde_json::from_str::<EllipticArea>(data) {
+            Ok(elliptic_area) => {
+                assert_eq!(elliptic_area.semi_major_range_length, 1);
+                assert_eq!(elliptic_area.semi_minor_range_length, 2);
+                assert_eq!(elliptic_area.semi_major_range_orientation, 3);
+                assert!(elliptic_area.node_center_point.is_some());
+                assert!(elliptic_area.semi_height.is_some());
+            }
+            Err(e) => panic!("Failed to deserialize EllipticArea: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn deserialize_minimal_rectangle_area() {
+        let data = r#"{
+            "semi_major_range_length": 1,
+            "semi_minor_range_length": 2,
+            "semi_major_range_orientation": 3
+        }"#;
+
+        match serde_json::from_str::<RectangleArea>(data) {
+            Ok(elliptic_area) => {
+                assert_eq!(elliptic_area.semi_major_range_length, 1);
+                assert_eq!(elliptic_area.semi_minor_range_length, 2);
+                assert_eq!(elliptic_area.semi_major_range_orientation, 3);
+                assert!(elliptic_area.node_center_point.is_none());
+                assert!(elliptic_area.semi_height.is_none());
+            }
+            Err(e) => panic!("Failed to deserialize RectangleArea: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn deserialize_full_rectangle_area() {
+        let data = r#"{
+            "semi_major_range_length": 1,
+            "semi_minor_range_length": 2,
+            "semi_major_range_orientation": 3,
+            "semi_height": 4,
+            "node_center_point": {
+                "x": 5,
+                "y": 6
+            }
+        }"#;
+
+        match serde_json::from_str::<RectangleArea>(data) {
+            Ok(elliptic_area) => {
+                assert_eq!(elliptic_area.semi_major_range_length, 1);
+                assert_eq!(elliptic_area.semi_minor_range_length, 2);
+                assert_eq!(elliptic_area.semi_major_range_orientation, 3);
+                assert!(elliptic_area.node_center_point.is_some());
+                assert!(elliptic_area.semi_height.is_some());
+            }
+            Err(e) => panic!("Failed to deserialize RectangleArea: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn deserialize_minimal_frees_space_area() {
+        let data = r#"{
+            "free_space_area": {
+                "free_space_polygon": [{
+                        "x": -32768,
+                        "y": 32767,
+                        "z": 0
+                    },
+                    {
+                        "x": 10,
+                        "y": 20,
+                        "z": 30
+                    },
+                    {
+                        "x": 32767,
+                        "y": -32768,
+                        "z": 0
+                    }
+                ]
+            },
+            "free_space_confidence": 12
+        }"#;
+
+        match serde_json::from_str::<FreeSpaceAddendum>(data) {
+            Ok(free_space_addendum) => {
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_polygon
+                    .is_some());
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_circular
+                    .is_none());
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_rectangle
+                    .is_none());
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_ellipse
+                    .is_none());
+                assert_eq!(free_space_addendum.free_space_confidence, 12);
+                assert!(free_space_addendum.sensor_id_list.is_empty());
+                assert!(free_space_addendum.shadowing_applies.is_none());
+            }
+            Err(e) => panic!("Failed to deserialize FreeSpaceAddendum: '{}'", e),
+        }
+    }
+
+    #[test]
+    fn d() {
+        let data = r#"{
+            "free_space_area": {
+                "free_space_circular": {
+                    "radius": 10000,
+                    "node_center_point": {
+                        "x": 32767,
+                        "y": -32768,
+                        "z": 0
+                    }
+                }
+            },
+            "free_space_confidence": 101,
+            "sensor_id_list": [10, 20, 30],
+            "shadowing_applies": true
+        }"#;
+
+        match serde_json::from_str::<FreeSpaceAddendum>(data) {
+            Ok(free_space_addendum) => {
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_polygon
+                    .is_none());
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_circular
+                    .is_some());
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_rectangle
+                    .is_none());
+                assert!(free_space_addendum
+                    .free_space_area
+                    .free_space_ellipse
+                    .is_none());
+                assert_eq!(free_space_addendum.free_space_confidence, 101);
+                assert_eq!(free_space_addendum.sensor_id_list.len(), 3);
+                assert_eq!(free_space_addendum.shadowing_applies, Some(true))
+            }
+            Err(e) => panic!("Failed to deserialize FreeSpaceAddendum: '{}'", e),
         }
     }
 }
