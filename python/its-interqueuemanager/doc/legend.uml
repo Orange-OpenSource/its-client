@@ -1,0 +1,60 @@
+@startuml
+skinparam LifelineStrategy nosolid
+skinparam ParticipantPadding 10
+skinparam SequenceMessageAlign direction
+
+Participant A
+Queue B
+
+note over A
+A is a participant
+or an entity
+end note
+
+/ note over B
+B is an
+MQTT broker
+end note
+
+A o--> B: TOPIC
+note right
+  A subscribes to
+  TOPIC on broker B
+end note
+|||
+
+A -> B: TOPIC < MSG
+note right
+  A sends MSG on
+  TOPIC to broker B
+end note
+|||
+
+B -> A: TOPIC > MSG
+note right
+  Broker B sends MSG
+  from TOPIC to A
+end note
+|||
+
+A ->o B: TOPIC < MSG
+note right
+  A sends MSG to be retained
+  on TOPIC to broker B
+end note
+|||
+
+B o-> A: TOPIC > MSG
+note right
+  Broker B sends retained
+  MSG from TOPIC to A
+end note
+|||
+
+A o--X B: TOPIC
+note right
+  A unsubscribes from
+  TOPIC on broker B
+end note
+
+@enduml

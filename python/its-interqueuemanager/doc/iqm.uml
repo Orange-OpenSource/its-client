@@ -1,0 +1,137 @@
+@startuml
+skinparam BoxPadding 40
+skinparam LifelineStrategy nosolid
+skinparam ParticipantPadding 20
+skinparam SequenceMessageAlign direction
+
+box "Vehicles A"
+    Entity "Car A-0" as car_A0
+    Entity "Car A-1" as car_A1
+endbox
+box "Geoserver A"
+    Queue "Broker" as broker_A
+    Participant "Detector App" as app_A
+    Participant "IQM" as iqm_A
+endbox
+box "Geoserver B"
+    Queue "Broker" as broker_B
+    Participant "Detector App" as app_B
+    Participant "IQM" as iqm_B
+endbox
+box "Vehicles B"
+    Entity "Car B-0" as car_B0
+endbox
+
+group Register
+    ?-> iqm_A: Startup event
+    activate iqm_A
+    iqm_A o--> broker_A: ROOT/inQueue/#
+    iqm_A o--> broker_B: ROOT/interQueue/+/QUADKEYS/#
+    note right
+        Neighbourhood discovery is
+        handled on a dedicated diagram
+    end note
+    deactivate iqm_A
+
+    ?-> app_A: Startup event
+    activate app_A
+    app_A o--> broker_A: ROOT/outQueue/#
+    deactivate app_A
+
+    ?-> iqm_B: Startup event
+    activate iqm_B
+    iqm_B o--> broker_B: ROOT/inQueue/#
+    iqm_B o--> broker_A: ROOT/interQueue/+/QUADKEYS/#
+    deactivate iqm_B
+
+    ?-> app_B: Startup event
+    activate app_B
+    app_B o--> broker_B: ROOT/outQueue/#
+    deactivate app_B
+
+    ?-> car_A0: Startup event
+    activate car_A0
+    car_A0 o--> broker_A: ROOT/outQueue/+/QUADKEYS/#
+    deactivate car_A0
+
+    ?-> car_A1: Startup event
+    activate car_A1
+    car_A1 o--> broker_A: ROOT/outQueue/+/QUADKEYS/#
+    deactivate car_A1
+
+    ?-> car_B0: Startup event
+    activate car_B0
+    car_B0 o--> broker_B: ROOT/outQueue/+/QUADKEYS/#
+    deactivate car_B0
+end
+
+group Message from local vehicle
+  car_A0 -> broker_A: ROOT/inQueue/cam/QUADKEY < {"type": "CAM", ...}
+  activate broker_A
+
+  group Local delivery
+    broker_A -> iqm_A: ROOT/inQueue/cam/QUADKEY > {"type": "CAM", ...}
+    deactivate broker_A
+    activate iqm_A
+    iqm_A -> broker_A: ROOT/outQueue/cam/QUADKEY < {"type": "CAM", ...}
+    activate broker_A
+    broker_A -> app_A: ROOT/outQueue/cam/QUADKEY > {"type": "CAM", ...}
+    activate app_A
+    note right of car_A0
+      Car 0 receives its own message because
+      it is emitted in its RoI; it can just ignore it.
+    end note
+    broker_A -> car_A0: ROOT/outQueue/cam/QUADKEY > {"type": "CAM", ...}
+    broker_A -> car_A1: ROOT/outQueue/cam/QUADKEY > {"type": "CAM", ...}
+    deactivate broker_A
+  end
+
+  group Delivery to neighbour
+    iqm_A -> broker_A: ROOT/interQueue/cam/QUADKEY < {"type": "CAM", ...}
+    deactivate iqm_A
+    activate broker_A
+    broker_A -> iqm_B: ROOT/interQueue/cam/QUADKEY > {"type": "CAM", ...}
+    deactivate broker_A
+    activate iqm_B
+    iqm_B -> broker_B: ROOT/outQueue/cam/QUADKEY < {"type": "CAM", ...}
+    deactivate iqm_B
+    activate broker_B
+    broker_B -> app_B: ROOT/outQueue/cam/QUADKEY > {"type": "CAM", ...}
+    broker_B -> car_B0: ROOT/outQueue/cam/QUADKEY > {"type": "CAM", ...}
+    deactivate broker_B
+  end
+end
+
+group Message from local application
+  app_A -> broker_A: ROOT/inQueue/denm/QUADKEY < {"type": "DENM", ...}
+  deactivate app_A
+
+  group Local delivery
+    activate broker_A
+    broker_A -> iqm_A: ROOT/inQueue/denm/QUADKEY > {"type": "DENM", ...}
+    deactivate broker_A
+    activate iqm_A
+    iqm_A -> broker_A: ROOT/outQueue/denm/QUADKEY < {"type": "DENM", ...}
+    activate broker_A
+    broker_A -> car_A0: ROOT/outQueue/denm/QUADKEY > {"type": "DENM", ...}
+    broker_A -> car_A1: ROOT/outQueue/denm/QUADKEY > {"type": "DENM", ...}
+    deactivate broker_A
+  end
+
+  group Delivery to neighbour
+    iqm_A -> broker_A: ROOT/interQueue/denm/QUADKEY < {"type": "DENM", ...}
+    deactivate iqm_A
+    activate broker_A
+    broker_A -> iqm_B: ROOT/interQueue/denm/QUADKEY > {"type": "DENM", ...}
+    deactivate broker_A
+    activate iqm_B
+    iqm_B -> broker_B: ROOT/outQueue/denm/QUADKEY < {"type": "DENM", ...}
+    deactivate iqm_B
+    activate broker_B
+    broker_B -> app_B: ROOT/outQueue/denm/QUADKEY > {"type": "DENM", ...}
+    broker_B -> car_B0: ROOT/outQueue/denm/QUADKEY > {"type": "DENM", ...}
+    deactivate broker_B
+  end
+end
+
+@enduml
