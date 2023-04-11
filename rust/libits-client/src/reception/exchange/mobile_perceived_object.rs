@@ -15,7 +15,7 @@ use crate::reception::exchange::mobile::{speed_from_yaw_angle, Mobile};
 use crate::reception::exchange::perceived_object::PerceivedObject;
 use crate::reception::exchange::reference_position::ReferencePosition;
 use crate::reception::typed::Typed;
-use log::warn;
+use log::trace;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -114,7 +114,7 @@ fn compute_id(object_id: u8, cpm_station_id: u32) -> u32 {
     match string_id.parse() {
         Ok(id) => id,
         Err(_err) => {
-            warn!(
+            trace!(
                 "unable to generate a mobile id with {}, we create a short one",
                 string_id
             );
