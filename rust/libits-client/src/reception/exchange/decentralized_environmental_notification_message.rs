@@ -180,6 +180,59 @@ impl DecentralizedEnvironmentalNotificationMessage {
     }
 
     #[allow(clippy::too_many_arguments)]
+    pub fn new_collision_risk(
+        station_id: u32,
+        originating_station_id: u32,
+        event_position: ReferencePosition,
+        sequence_number: u16,
+        etsi_timestamp: u128,
+        subcause: Option<u8>,
+        relevance_distance: Option<u8>,
+        relevance_traffic_direction: Option<u8>,
+        event_speed: Option<u16>,
+        event_position_heading: Option<u16>,
+    ) -> Self {
+        // collisionRisk
+        Self::new(
+            station_id,
+            originating_station_id,
+            event_position,
+            sequence_number,
+            etsi_timestamp,
+            97,
+            subcause,
+            relevance_distance,
+            relevance_traffic_direction,
+            event_speed,
+            event_position_heading,
+        )
+    }
+
+    pub fn update_collision_risk(
+        mut denm: Self,
+        event_position: ReferencePosition,
+        etsi_timestamp: u128,
+        relevance_distance: Option<u8>,
+        relevance_traffic_direction: Option<u8>,
+        event_speed: Option<u16>,
+        event_position_heading: Option<u16>,
+    ) -> Self {
+        // collisionRisk
+        denm.management_container.event_position = event_position;
+        denm.management_container.reference_time = etsi_timestamp as u64;
+        denm.management_container.relevance_distance = relevance_distance;
+        denm.management_container.relevance_traffic_direction = relevance_traffic_direction;
+        if event_speed.is_some() || event_position_heading.is_some() {
+            denm.location_container = Option::from(LocationContainer {
+                event_speed,
+                event_position_heading,
+                ..Default::default()
+            });
+        }
+        denm
+    }
+
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         station_id: u32,
         originating_station_id: u32,
@@ -233,6 +286,11 @@ impl DecentralizedEnvironmentalNotificationMessage {
     pub fn is_traffic_condition(&self) -> bool {
         self.situation_container.is_some()
             && 1 == self.situation_container.as_ref().unwrap().event_type.cause
+    }
+
+    pub fn is_collision_risk(&self) -> bool {
+        self.situation_container.is_some()
+            && 97 == self.situation_container.as_ref().unwrap().event_type.cause
     }
 }
 
