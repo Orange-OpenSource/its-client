@@ -28,7 +28,9 @@ pub struct MobilePerceivedObject {
 }
 
 impl MobilePerceivedObject {
-    pub(crate) fn new(
+    // TODO FGA: check how to keep it private and manage end to end CPMs with natively
+    //           perceived object mobility
+    pub fn new(
         perceived_object: PerceivedObject,
         cpm_station_type: u8,
         cpm_station_id: u32,
