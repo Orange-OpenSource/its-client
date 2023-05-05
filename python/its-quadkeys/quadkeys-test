@@ -280,6 +280,14 @@ def test_quadzone():
     check_zone(z, expected_zl)
     print("OK")
 
+    print("QuadZone optimise (merge-reduce): ", end="", flush=True)
+    # z0 is a corner-case, where we want to merge QuadKeys that were
+    # reduced in a previous iteration of the optimise() loop.
+    z0 = its_quadkeys.QuadZone("01201", "0120", "0121", "0122", "0123")
+    z0.optimise()
+    check_zone(z0, its_quadkeys.QuadZone("012"))
+    print("OK")
+
     print("QuadZone serialise: ", end="", flush=True)
     if str(z) != str(sorted(expected_zl)):
         raise FailedError(f"{z} != {expected_zl}")
