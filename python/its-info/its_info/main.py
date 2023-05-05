@@ -7,9 +7,11 @@ import argparse
 import configparser
 import json
 import linuxfd
+import logging
 import netifaces
 import os
 import paho.mqtt.client
+import sys
 import time
 from its_quadkeys import QuadZone
 
@@ -55,8 +57,22 @@ class MQTTInfoClient:
             default=MQTTInfoClient.CFG,
             help=f"Path to the configuration file (default: {MQTTInfoClient.CFG})",
         )
+        parser.add_argument(
+            "--debug",
+            action="store_true",
+            help="Print tons of debug messages on stderr",
+        )
         args = parser.parse_args()
 
+        logging.basicConfig(
+            stream=sys.stderr,
+            format="%(asctime)s %(module)s: %(message)s",
+            level=logging.DEBUG if args.debug else logging.INFO,
+        )
+
+        logging.info("instanciating info object")
+
+        logging.debug(f"loading config file {args.config}...")
         self.cfg = configparser.ConfigParser()
         with open(args.config) as f:
             self.cfg.read_file(f)
@@ -85,8 +101,11 @@ class MQTTInfoClient:
             self.ror = None
         elif self.cfg["RoR"]["type"] == "static":
             self.ror = QuadZone()
-            self.ror.load(self.cfg["RoR"]["path"])
-            self.ror.optimise()
+            try:
+                self.ror.load(self.cfg["RoR"]["path"])
+                self.ror.optimise()
+            except FileNotFoundError:
+                self.ror = None
         else:
             raise RuntimeError(
                 f"{self.cfg['RoR']['type']}: unknown or unimplemented RoR type"
@@ -94,6 +113,7 @@ class MQTTInfoClient:
 
         self.timer = linuxfd.timerfd(closeOnExec=True)
 
+        logging.debug("creating MQTT client")
         self.client = paho.mqtt.client.Client(client_id=self.cfg["mqtt"]["client_id"])
         self.client.reconnect_delay_set(
             min_delay=1,
@@ -111,7 +131,10 @@ class MQTTInfoClient:
             port=int(self.cfg["mqtt"]["port"]),
         )
 
+        logging.debug("finished instanciating info object")
+
     def loop_forever(self):
+        logging.info("starting info loop")
         self.client.loop_start()
         while True:
             try:
@@ -119,18 +142,25 @@ class MQTTInfoClient:
                 # fired that we missed; given the periodicity is in the
                 # order of many seconds, it is highly unlikely that we
                 # ever miss a tick...
+                logging.debug("waiting for tick")
                 self.timer.read()
+                logging.debug("got tick")
                 self.info()
             except InterruptedError:
                 # Someone sent a signal to this thread...
+                logging.debug("got signal")
                 continue
             except KeyboardInterrupt:
+                logging.debug("got Ctrl-C")
                 break
 
+        logging.info("stopping info loop")
         self.client.loop_stop()
         self.client.disconnect()
+        logging.debug("stopped info loop")
 
     def on_connect(self, _client, _userdata, _flags, _rc, _properties=None):
+        logging.debug("connected to MQTT broker")
         self.timer.settime(
             value=int(self.cfg["general"]["period"]),
             interval=int(self.cfg["general"]["period"]),
@@ -138,12 +168,15 @@ class MQTTInfoClient:
         self.info()
 
     def on_disconnect(self, _client, _userdata, _rc, _properties=None):
+        logging.debug("disconnected to MQTT broker")
         self.timer.settime(value=0)
 
     def on_socket_close(self, _client, _userdata, _sock):
+        logging.debug("disconnected to MQTT broker (socket closed)")
         self.timer.settime(value=0)
 
     def info(self):
+        logging.debug("preparing info data")
         data = {
             "type": "broker",
             "version": "1.2.0",
@@ -179,6 +212,7 @@ class MQTTInfoClient:
             try:
                 self.ror.load(self.cfg["RoR"]["path"])
                 self.ror.optimise()
+                logging.debug(f"loaded RoR '{self.ror}'")
             except FileNotFoundError:
                 # File not found: consider we have no RoR.
                 self.ror = None
@@ -186,8 +220,13 @@ class MQTTInfoClient:
         if self.ror is not None:
             data["service_area"] = {"type": "tiles", "quadkeys": sorted(self.ror)}
 
+        data_str = json.dumps(data)
+
+        logging.debug(
+            f"sending info data '{data_str[:128]+('...' if len(data_str)>128 else '')}'",
+        )
         self.client.publish(
             topic=self.cfg["mqtt"]["topic"],
-            payload=json.dumps(data),
+            payload=data_str,
             retain=True,
         )
