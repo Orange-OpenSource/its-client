@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::reception::exchange::mobile::Mobile;
 use crate::reception::exchange::{PathHistory, PositionConfidence, ReferencePosition};
+use crate::reception::information;
 use crate::reception::mortal::{etsi_now, timestamp, Mortal};
 use crate::reception::typed::Typed;
 
@@ -286,6 +287,20 @@ impl DecentralizedEnvironmentalNotificationMessage {
         }
     }
 
+    pub fn update_information_quality(&mut self, information_quality: u8) {
+        let mut situation_container = self.situation_container.clone();
+        match situation_container {
+            Some(mut situation_container) => {
+                situation_container.information_quality = Some(information_quality);
+                self.situation_container = Some(situation_container);
+            }
+            None => self.situation_container = Option::from(SituationContainer {
+                information_quality: Some(information_quality),
+                ..Default::default()
+            })
+        }
+    }
+
     pub fn is_stationary_vehicle(&self) -> bool {
         self.situation_container.is_some()
             && 94 == self.situation_container.as_ref().unwrap().event_type.cause
@@ -439,5 +454,17 @@ mod tests {
 
         let etsi_ref_time = etsi_timestamp(reference_timestamp) as u64;
         assert!(denm.management_container.detection_time >= etsi_ref_time + 1000);
+    }
+
+    #[test]
+    fn information_quality_update() {
+        let mut denm = DecentralizedEnvironmentalNotificationMessage::default();
+
+        assert!(denm.situation_container.is_none());
+
+        denm.update_information_quality(5);
+        assert!(denm.situation_container.is_some());
+        let situation_container = denm.situation_container.unwrap();
+        assert_eq!(situation_container.information_quality, Some(5));
     }
 }
