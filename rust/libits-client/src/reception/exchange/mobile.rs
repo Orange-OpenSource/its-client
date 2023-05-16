@@ -62,7 +62,7 @@ pub(crate) fn speed_in_kilometer_per_hour(speed: u16) -> f64 {
     speed_in_meter_per_second(speed) * 3.6
 }
 
-pub(crate) fn speed_from_yaw_angle(x_speed: i16, y_speed: i16) -> u16 {
+pub fn speed_from_yaw_angle(x_speed: i16, y_speed: i16) -> u16 {
     ((x_speed.unsigned_abs() as u32).pow(2) + (y_speed.unsigned_abs() as u32).pow(2)).integer_sqrt()
         as u16
 }
