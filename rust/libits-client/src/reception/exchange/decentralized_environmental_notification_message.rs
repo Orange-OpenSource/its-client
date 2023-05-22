@@ -210,7 +210,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
             relevance_traffic_direction,
             event_speed,
             event_position_heading,
-            Some(1),
+            Some(2),
             Some(200),
         )
     }
