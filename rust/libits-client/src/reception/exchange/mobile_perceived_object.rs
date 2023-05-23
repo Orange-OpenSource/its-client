@@ -40,8 +40,9 @@ impl MobilePerceivedObject {
         let compute_mobile_id = compute_id(perceived_object.object_id, cpm_station_id);
         let computed_reference_position = match cpm_station_type {
             15 => cpm_position.get_offset_destination(
-                (perceived_object.x_distance / 100).into(),
-                (perceived_object.y_distance / 100).into(),
+                perceived_object.x_distance as f64 / 100.,
+                perceived_object.y_distance as f64 / 100.,
+                perceived_object.z_distance.unwrap_or_default() as f64 / 100.,
             ),
             _ => compute_position_from_mobile(
                 perceived_object.x_distance,

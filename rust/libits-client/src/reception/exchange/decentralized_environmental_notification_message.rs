@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::reception::exchange::mobile::Mobile;
 use crate::reception::exchange::{PathHistory, PositionConfidence, ReferencePosition};
-use crate::reception::information;
+
 use crate::reception::mortal::{etsi_now, timestamp, Mortal};
 use crate::reception::typed::Typed;
 
@@ -288,16 +288,18 @@ impl DecentralizedEnvironmentalNotificationMessage {
     }
 
     pub fn update_information_quality(&mut self, information_quality: u8) {
-        let mut situation_container = self.situation_container.clone();
+        let situation_container = self.situation_container.clone();
         match situation_container {
             Some(mut situation_container) => {
                 situation_container.information_quality = Some(information_quality);
                 self.situation_container = Some(situation_container);
             }
-            None => self.situation_container = Option::from(SituationContainer {
-                information_quality: Some(information_quality),
-                ..Default::default()
-            })
+            None => {
+                self.situation_container = Option::from(SituationContainer {
+                    information_quality: Some(information_quality),
+                    ..Default::default()
+                })
+            }
         }
     }
 
