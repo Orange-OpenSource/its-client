@@ -8,6 +8,7 @@
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 use core::cmp;
 use std::f32::consts::PI;
+use std::hash::{Hash, Hasher};
 
 use crate::reception::exchange::mobile;
 use crate::reception::exchange::mobile::{speed_from_yaw_angle, Mobile};
@@ -17,7 +18,7 @@ use crate::reception::typed::Typed;
 use log::warn;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MobilePerceivedObject {
     pub perceived_object: PerceivedObject,
     pub mobile_id: u32,
@@ -89,6 +90,16 @@ impl cmp::PartialEq for MobilePerceivedObject {
             && self.reference_position == other.reference_position
             && self.heading == other.heading
             && self.speed == other.speed
+    }
+}
+
+impl Hash for MobilePerceivedObject {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.perceived_object.hash(state);
+        self.mobile_id.hash(state);
+        self.reference_position.hash(state);
+        self.heading.hash(state);
+        self.speed.hash(state);
     }
 }
 

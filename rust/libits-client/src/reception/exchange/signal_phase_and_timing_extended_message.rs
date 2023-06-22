@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_repr::Deserialize_repr;
 use std::fmt;
 use std::fmt::Formatter;
+use std::hash::{Hash, Hasher};
 
 /// SPATEM representation
 ///
@@ -20,7 +21,7 @@ use std::fmt::Formatter;
 /// **See also:**
 /// - [`MAPExtendedMessage`](crate::map::MAPExtendedMessage)
 ///
-#[derive(Serialize, Deserialize, Clone, Hash, Default)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct SignalPhaseAndTimingExtendedMessage {
     /// Intersection id
@@ -72,6 +73,13 @@ impl PartialEq<Self> for SignalPhaseAndTimingExtendedMessage {
     }
 }
 
+impl Hash for SignalPhaseAndTimingExtendedMessage {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+        self.timestamp.hash(state);
+    }
+}
+
 #[derive(Serialize, Deserialize_repr, PartialEq, Eq, Debug, Clone, Hash, Copy)]
 #[repr(u8)]
 pub enum TrafficLightState {
@@ -93,7 +101,7 @@ impl fmt::Display for TrafficLightState {
     }
 }
 
-#[derive(Serialize, Deserialize, Hash, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct State {
     pub id: u64,
@@ -114,6 +122,13 @@ pub struct State {
 impl PartialEq for State {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id && self.state == other.state
+    }
+}
+
+impl Hash for State {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+        self.state.hash(state);
     }
 }
 

@@ -21,7 +21,7 @@ use std::hash::{Hash, Hasher};
 ///
 /// **See also:**
 /// - [SignalPhaseAndTimingExtendedMessage](crate::spat::SignalPhaseAndTimingExtendedMessage)
-#[derive(Serialize, Deserialize, Debug, Hash, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MAPExtendedMessage {
     pub protocol_version: u16,
@@ -44,6 +44,13 @@ impl Typed for MAPExtendedMessage {
 impl PartialEq<Self> for MAPExtendedMessage {
     fn eq(&self, other: &Self) -> bool {
         self.id.eq(&other.id) && self.timestamp.eq(&other.timestamp)
+    }
+}
+
+impl Hash for MAPExtendedMessage {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+        self.timestamp.hash(state);
     }
 }
 
