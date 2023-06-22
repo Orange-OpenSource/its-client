@@ -200,7 +200,6 @@ impl DecentralizedEnvironmentalNotificationMessage {
                 action_id: ActionId {
                     originating_station_id,
                     sequence_number,
-                    ..Default::default()
                 },
                 // FIXME find why the serde Serializer can't match the u128
                 detection_time: etsi_timestamp as u64,
