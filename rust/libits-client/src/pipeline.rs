@@ -162,10 +162,10 @@ fn mqtt_router_dispatch_thread(
                     Some((topic, reception)) => {
                         // TODO use the From Trait
                         if reception.is::<Exchange>() {
-                            if let Ok(exchange) = reception.downcast::<Exchange>() {
+                            if let Ok(boxed_exchange) = reception.downcast::<Exchange>() {
                                 let item = Item {
                                     topic,
-                                    reception: unbox(exchange),
+                                    reception: *boxed_exchange,
                                 };
                                 //assumed clone, we send to 2 channels
                                 match monitoring_sender.send((item.clone(), None)) {
@@ -183,10 +183,10 @@ fn mqtt_router_dispatch_thread(
                                     }
                                 }
                             }
-                        } else if let Ok(information) = reception.downcast::<Information>() {
+                        } else if let Ok(boxed_information) = reception.downcast::<Information>() {
                             match information_sender.send(Item {
                                 topic,
-                                reception: unbox(information),
+                                reception: *boxed_information,
                             }) {
                                 Ok(()) => trace!("mqtt information sent"),
                                 Err(error) => {
@@ -243,10 +243,6 @@ fn monitor_thread(
         .unwrap();
     info!("monitor reception thread started");
     handle
-}
-
-pub fn unbox<T>(value: Box<T>) -> T {
-    *value
 }
 
 fn analyser_generate_thread<T: Analyser>(
