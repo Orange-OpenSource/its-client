@@ -127,7 +127,7 @@ mod tests {
 
     #[test]
     fn it_can_check_if_moving() {
-        assert_eq!(MovingMobileStub {}.stopped(), false);
+        assert!(!MovingMobileStub {}.stopped());
     }
 
     #[test]
