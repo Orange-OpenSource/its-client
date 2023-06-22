@@ -369,7 +369,7 @@ where
     Option::None
 }
 
-async fn mqtt_client_subscribe(topic_list: &Vec<String>, client: &mut Client) {
+async fn mqtt_client_subscribe(topic_list: &[String], client: &mut Client) {
     info!("mqtt client subscribing starting...");
     let mut topic_subscription_list = Vec::new();
 
