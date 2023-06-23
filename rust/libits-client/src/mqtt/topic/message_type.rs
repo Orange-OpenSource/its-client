@@ -9,9 +9,10 @@
 use crate::mqtt::topic::parse_error::ParseError;
 use std::{fmt, hash, str};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 #[allow(clippy::upper_case_acronyms)]
 pub(crate) enum MessageType {
+    #[default]
     Any,
     CAM,
     DENM,
@@ -42,12 +43,6 @@ impl fmt::Display for MessageType {
 impl PartialEq for MessageType {
     fn eq(&self, other: &Self) -> bool {
         self.to_string() == other.to_string()
-    }
-}
-
-impl Default for MessageType {
-    fn default() -> Self {
-        MessageType::Any
     }
 }
 
