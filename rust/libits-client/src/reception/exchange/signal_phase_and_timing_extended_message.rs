@@ -19,8 +19,9 @@ use std::hash::{Hash, Hasher};
 /// **S**ignal **P**hase **A**nd **T**iming **E**xtendedMessage
 ///
 /// **See also:**
-/// - [`MAPExtendedMessage`](crate::map::MAPExtendedMessage)
+/// - [MAPExtendedMessage][1]
 ///
+/// [1]: crate::reception::exchange::map_extended_message::MAPExtendedMessage
 #[derive(Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct SignalPhaseAndTimingExtendedMessage {
@@ -35,6 +36,7 @@ pub struct SignalPhaseAndTimingExtendedMessage {
     /// State list for each signal group ot he intersection
     pub states: Vec<State>,
 }
+
 impl Typed for SignalPhaseAndTimingExtendedMessage {
     fn get_type() -> String {
         "spat".to_string()

@@ -20,7 +20,9 @@ use std::hash::{Hash, Hasher};
 /// **MAP** (topology) **E**xtended **M**essage
 ///
 /// **See also:**
-/// - [SignalPhaseAndTimingExtendedMessage](crate::spat::SignalPhaseAndTimingExtendedMessage)
+/// - [SignalPhaseAndTimingExtendedMessage][1]
+///
+/// [1]: crate::reception::exchange::signal_phase_and_timing_extended_message::SignalPhaseAndTimingExtendedMessage
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MAPExtendedMessage {
@@ -60,7 +62,7 @@ pub struct Lane {
     pub id: u64,
     /// ID of the signal, corresponding to the [SPAT][1] signal ID
     ///
-    /// [1]: crate::spat::SignalPhaseAndTimingExtendedMessage
+    /// [1]: crate::reception::exchange::signal_phase_and_timing_extended_message::SignalPhaseAndTimingExtendedMessage
     pub signal_id: u64,
     /// ID of the approach (group of lanes)
     pub approach_id: Option<u32>,
