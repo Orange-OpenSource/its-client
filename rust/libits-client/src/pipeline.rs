@@ -31,6 +31,49 @@ use crate::reception::information::Information;
 use crate::reception::typed::Typed;
 use crate::reception::Reception;
 
+/// Struct holding the results of the MQTT dispatcher thread initialization
+///
+/// Holding:
+/// - one [exchange][1] channel receiver
+/// - one [exchange][1]/cause channel receiver for monitoring reception
+/// - one [information][2] channel receiver
+/// - the [join handle][3] to manage the thread's termination
+///
+/// [1]: Exchange
+/// [2]: Information
+/// [3]: JoinHandle
+type DispatcherPipes = (
+    Receiver<Item<Exchange>>,
+    Receiver<(Item<Exchange>, Option<Cause>)>,
+    Receiver<Item<Information>>,
+    JoinHandle<()>,
+);
+
+/// Struct holding the result of the exchange analysis thread initialization
+///
+/// Holding:
+/// - the [exchange][1] channel receiver that will be fed with the exchanges to send
+/// - the [join handle][2] to manage the thread's termination
+///
+/// [1]: Exchange
+/// [2]: JoinHandle
+type AnalyzerPipes = (Receiver<(Item<Exchange>, Option<Cause>)>, JoinHandle<()>);
+
+/// Struct holding the result of the output exchanges filter thread initialization
+///
+/// Holding:
+/// - one [exchange][1] channel receiver for exchange sending monitoring
+/// - one [exchange][1]/cause channel receiver for exchange MQTT publishing
+/// - the [join handle][2] to manage the tread's termination
+///
+/// [1]: Exchange
+/// [2]: JoinHandle
+type FilterPipes = (
+    Receiver<Item<Exchange>>,
+    Receiver<(Item<Exchange>, Option<Cause>)>,
+    JoinHandle<()>,
+);
+
 pub async fn run<T: Analyser>(
     mqtt_options: MqttOptions,
     mqtt_root_topic: &str,
@@ -130,12 +173,7 @@ fn mqtt_router_dispatch_thread(
     topic_list: Vec<String>,
     event_receiver: Receiver<Event>,
     // FIXME manage a Box into the Exchange to use a unique object Trait instead
-) -> (
-    Receiver<Item<Exchange>>,
-    Receiver<(Item<Exchange>, Option<Cause>)>,
-    Receiver<Item<Information>>,
-    JoinHandle<()>,
-) {
+) -> DispatcherPipes {
     info!("starting mqtt router dispatching...");
     let (exchange_sender, exchange_receiver) = channel();
     let (monitoring_sender, monitoring_receiver) = channel();
@@ -248,7 +286,7 @@ fn monitor_thread(
 fn analyser_generate_thread<T: Analyser>(
     configuration: Arc<Configuration>,
     exchange_receiver: Receiver<Item<Exchange>>,
-) -> (Receiver<(Item<Exchange>, Option<Cause>)>, JoinHandle<()>) {
+) -> AnalyzerPipes {
     info!("starting analyser generation...");
     let (analyser_sender, analyser_receiver) = channel();
     let handle = thread::Builder::new()
@@ -279,11 +317,7 @@ fn analyser_generate_thread<T: Analyser>(
 fn filter_thread<T: Analyser>(
     configuration: Arc<Configuration>,
     exchange_receiver: Receiver<(Item<Exchange>, Option<Cause>)>,
-) -> (
-    Receiver<Item<Exchange>>,
-    Receiver<(Item<Exchange>, Option<Cause>)>,
-    JoinHandle<()>,
-) {
+) -> FilterPipes {
     info!("starting filtering...");
     let (publish_sender, publish_receiver) = channel();
     let (monitoring_sender, monitoring_receiver) = channel();
