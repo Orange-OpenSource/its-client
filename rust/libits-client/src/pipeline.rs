@@ -124,7 +124,7 @@ pub async fn run<T: Analyser>(
 
         // filter exchanges on region of responsibility
         let (publish_item_receiver, publish_monitoring_receiver, filter_handle) =
-            filter_thread::<T>(configuration.clone(), analyser_item_receiver);
+            filter_thread(configuration.clone(), analyser_item_receiver);
 
         // in parallel, monitor exchanges publish
         let monitor_publish_handle = monitor_thread(
@@ -314,7 +314,7 @@ fn analyser_generate_thread<T: Analyser>(
     (analyser_receiver, handle)
 }
 
-fn filter_thread<T: Analyser>(
+fn filter_thread(
     configuration: Arc<Configuration>,
     exchange_receiver: Receiver<(Item<Exchange>, Option<Cause>)>,
 ) -> FilterPipes {
