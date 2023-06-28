@@ -1,0 +1,370 @@
+#!/usr/bin/env python3
+# Software Name: its-quadkeys
+# SPDX-FileCopyrightText: Copyright (c) 2023 Orange
+# SPDX-License-Identifier: MIT
+# Author: Yann E. MORIN <yann.morin@orange.com>
+
+import its_quadkeys
+import sys
+
+
+class FailedError(Exception):
+    pass
+
+
+def test_quadkey():
+    """For this arbitrary QuadKey:"""
+    qk = its_quadkeys.QuadKey("12030213")
+    """
+    those QuadKeys are contained or not by it:
+    """
+    qk_in = "12030213120312012"
+    qk_not_in = "12030212130232031"
+    """
+    we expect the following neighbours:
+    """
+    expected_nghbs = {
+        "NW": "12030210",
+        "N": "12030211",
+        "NE": "12030300",
+        "W": "12030212",
+        "E": "12030302",
+        "SW": "12030230",
+        "S": "12030231",
+        "SE": "12030320",
+    }
+    """
+    this is the split QuadKey
+    """
+    expected_split_z_1 = [
+        # fmt: off
+        "120302130",
+        "120302131",
+        "120302132",
+        "120302133",
+        # fmt: on
+    ]
+    expected_split_z_2 = [
+        # fmt: off
+        "1203021300", "1203021301", "1203021302", "1203021303",
+        "1203021310", "1203021311", "1203021312", "1203021313",
+        "1203021320", "1203021321", "1203021322", "1203021323",
+        "1203021330", "1203021331", "1203021332", "1203021333",
+        # fmt: on
+    ]
+
+    print(f"QuadKey in: ", end="", flush=True)
+    if qk_in not in qk:
+        raise FailedError(
+            f"{qk_in} should be in {qk}"
+        )
+    print("OK")
+
+    print(f"QuadKey not in: ", end="", flush=True)
+    if qk_not_in in qk:
+        raise FailedError(
+            f"{qk_not_in} should not be in {qk}"
+        )
+    print("OK")
+
+    print(f"QuadKey split (depth): ", end="", flush=True)
+    qk_split_z = qk.split(depth=9)
+    check_zone(qk_split_z, expected_split_z_1)
+    print("OK")
+    print(f"QuadKey split (extra_depth): ", end="", flush=True)
+    qk_split_z = qk.split(extra_depth=2)
+    check_zone(qk_split_z, expected_split_z_2)
+    print(f"OK")
+
+    print(f"QuadKey neighbours: ", end="", flush=True)
+    nghbs = qk.neighbours()
+    if nghbs._asdict() != expected_nghbs:
+        raise FailedError(
+            f"{ {k:(str(getattr(nghbs,k)),expected_nghbs[k]) for k in nghbs._asdict() if getattr(nghbs,k) != expected_nghbs[k]} }"
+        )
+    print(f"OK")
+
+
+def test_quadzone():
+    """
+    Starting with this QuadZone:
+         +---+---+
+         | K | L |
+         +---+---+---+---+
+         | R | S |       |
+         +---+---+   T   +---+
+         |   Q   |       | M |
+         +-------+-------+---+---+-------+---+
+         |       |       | O | W |       | N |
+         |   U   |   V   +---+---+   +---+---+
+         |       |       | X | Y | P | Z |
+         +-------+-------+---+---+---+---+
+    """
+    z = its_quadkeys.QuadZone(
+        "1200022",  # K
+        "1200023",  # L
+        "1200302",  # M
+        "1201220",  # N
+        "1200320",  # O
+        "1200321",  # W
+        "1200322",  # X
+        "1200323",  # Y
+        "120033",   # P
+        "1200333",  # Z
+        "120020",   # Q
+        "1200200",  # R
+        "1200201",  # S
+        "120021",   # T
+        "120022",   # U
+        "120023",   # V
+    )
+    """
+    ... it should get optimised into:
+         +---+---+
+         | K | L |
+         +---+---+---+---+
+         |               |
+         |               +---+
+         |               | M |
+         |       Q       +---+---+-------+---+
+         |               |       |       | N |
+         |               |   O   |   P   +---+
+         |               |       |       |
+         +---------------+-------+-------+
+    """
+    expected_zl = [
+        "1200022",  # K
+        "1200023",  # L
+        "1200302",  # M
+        "1201220",  # N
+        "120032",   # O
+        "120033",   # P
+        "12002",    # Q
+    ]
+    """
+    ... and its depth-7 neighbours are:
+     ·················
+     : A : ? : ? : ? :
+     ····+---+---+············
+     : ? |   |   | ? : ? : B :
+     ····+---+---+---+---+········
+     : ? |               | ? : ? :
+     ····|               +---+····················
+     : ? |               |   | ? : ? : ? : ? : C :
+     ····|               +---+---+-------+---+····
+     : ? |               |       |       |   | ? :
+     ····|               |       |       +---+····
+     : ? |               |       |       | ? : ? :
+     ····+---------------+-------+-------+········
+     : E : ? : ? : ? : ? : ? : ? : ? : ? : D :
+     ·········································
+    """
+    expected_nzl_7 = [
+        # fmt: off
+        # clock-wise from A:
+        "0311131",  # A
+        "1200020", "1200021", "1200030", "1200032", "1200033",
+        "1200122",  # B
+        "1200300", "1200301", "1200303", "1200312", "1200313", "1201202",
+        "1201203",  # C
+        "1201221", "1201223", "1201222",
+        "1203000",  # D
+        "1202111", "1202110", "1202101", "1202100", "1202011", "1202010", "1202001", "1202000",
+        "0313111",  # E
+        "0311333", "0311331", "0311313", "0311311", "0311133",
+        # fmt: on
+    ]
+    """
+    ... and its depth-6 neighbours are:
+    ·································
+    :       :   ?   :       :       :
+    :   A   +---+---+   ?   :   ?   :
+    :       |   |   |       :       :
+    ········+---+---+---+---+························
+    :       |               |     B :       :       :
+    :   ?   |               +---+   :   ?   :   ?   :
+    :       |               |   |   :       :       :
+    ········|               +---+---+-------+---+····
+    :       |               |       |       |   |   :
+    :   ?   |               |       |       +---+   :
+    :       |               |       |       |    ?  :
+    ········+---------------+-------+-------+········
+    :       :       :       :       :       :       :
+    :   D   :   ?   :   ?   :   ?   :   C   :   ?   :
+    :       :       :       :       :       :       :
+    ·················································
+    """
+    expected_nzl_6 = [
+        # fmt: off
+        # clock-wise from A:
+        "031113",  # A
+        "120002", "120003", "120012",
+        "120030",  # B
+        "120031", "120120", "120122", "120300",
+        "120211",  # C
+        "120210", "120201", "120200",
+        "031311",  # D
+        "031133", "031131",
+        # fmt: on
+    ]
+    """
+    ... and when we optimise the zone with its level-7 and -6 neighbours:
+    """
+    expected_big_z_7 = [
+        # fmt: off
+        "0311131", "0311133", "0311311", "0311313",
+        "0311331", "0311333", "0313111", "120002",
+        "1200030", "1200032", "1200033", "1200122",
+        "12002", "120030", "1200312", "1200313",
+        "120032", "120033", "1201202", "1201203",
+        "120122", "1202000", "1202001", "1202010",
+        "1202011", "1202100", "1202101", "1202110",
+        "1202111", "1203000"
+        # fmt: on
+    ]
+    expected_big_z_6 = [
+        # fmt: off
+        "031113", "031131", "031133", "031311",
+        "120002", "120003", "120012", "12002",
+        "12003",
+        "120120", "120122", "120200", "120201",
+        "120210", "120211", "120300"
+        # fmt: on
+    ]
+    """
+    .. and when we remove the level-7 and -6 neigbours:
+    """
+    expected_big_z_7_sub = [
+        # fmt: off
+        "0311130", "0311132", "0311310", "0311312", "0311330",
+        "0311332", "0313110", "0313112", "0313113", "1200022",
+        "1200023", "1200031", "1200120", "1200121", "1200123",
+        "12002", "1200302", "1200310", "1200311", "120032",
+        "120033", "1201200", "1201201", "1201220", "1202002",
+        "1202003", "1202012", "1202013", "1202102", "1202103",
+        "1202112", "1202113", "1203001", "1203002", "1203003"
+        # fmt: on
+    ]
+    expected_big_z_6_sub = [
+        # fmt: off
+        "12002", "120032", "120033",
+        # fmt: on
+    ]
+    "and removing the QuadKeys 1200203 and 1200332"
+    expected_big_z_6_sub_qks = [
+        # fmt: off
+        "1200200", "1200201", "1200202", "120021", "120022", "120023",
+        "120032",
+        "1200330", "1200331", "1200333",
+        # fmt: on
+    ]
+    """
+    with the QuadZone in form of a cross, centered on 12002,
+    the symetric substraction is expected to be:
+    """
+    expected_xor = [
+        # fmt: off
+        "0311131", "0311133", "031130", "0311310",
+        "0311312", "031132", "0311330", "0311332",
+        "0313111", "120000", "120001", "1200031",
+        "1200122", "1200310", "1200311", "1201202",
+        "1201203", "120122", "1202002", "1202003",
+        "1202012", "1202013", "120202", "120203",
+        "1202100", "1202101", "1202110", "1202111",
+        "1203000"
+        # fmt: on
+    ]
+
+    print("QuadZone optimise: ", end="", flush=True)
+    z.optimise()
+    check_zone(z, expected_zl)
+    print("OK")
+
+    print("QuadZone optimise (merge-reduce): ", end="", flush=True)
+    # z0 is a corner-case, where we want to merge QuadKeys that were
+    # reduced in a previous iteration of the optimise() loop.
+    z0 = its_quadkeys.QuadZone("01201", "0120", "0121", "0122", "0123")
+    z0.optimise()
+    check_zone(z0, its_quadkeys.QuadZone("012"))
+    print("OK")
+
+    print("QuadZone serialise: ", end="", flush=True)
+    if str(z) != str(sorted(expected_zl)):
+        raise FailedError(f"{z} != {expected_zl}")
+    print("OK")
+
+    print("QuadZone neighbours (depth 7): ", end="", flush=True)
+    nz_7 = z.neighbours(depth=7)
+    check_zone(nz_7, expected_nzl_7)
+    print("OK")
+
+    print("QuadZone neighbours (depth 6): ", end="", flush=True)
+    nz_6 = z.neighbours(depth=6)
+    check_zone(nz_6, expected_nzl_6)
+    print("OK")
+
+    print("QuadZone addition (neighbours 7): ", end="", flush=True)
+    big_z = its_quadkeys.QuadZone(z)
+    big_z += nz_7
+    big_z.optimise()
+    check_zone(big_z, expected_big_z_7)
+    print("OK")
+    print("QuadZone addition (neighbours 6): ", end="", flush=True)
+    big_z += nz_6
+    big_z.optimise()
+    check_zone(big_z, expected_big_z_6)
+    print("OK")
+
+    print("QuadZone intersection: ", end="", flush=True)
+    z_inter = big_z & nz_6
+    check_zone(big_z, expected_big_z_6)
+    check_zone(nz_6, expected_nzl_6)
+    check_zone(z_inter, expected_nzl_6)
+    z_inter &= nz_7
+    check_zone(nz_7, expected_nzl_7)
+    check_zone(z_inter, expected_nzl_7)
+    print("OK")
+
+    print("QuadZone substraction (neighbours 7): ", end="", flush=True)
+    big_z -= nz_7
+    big_z.optimise()
+    check_zone(big_z, expected_big_z_7_sub)
+    print("OK")
+    print("QuadZone substraction (neighbours 6): ", end="", flush=True)
+    big_z -= nz_6
+    big_z.optimise()
+    check_zone(big_z, expected_big_z_6_sub)
+    print("OK")
+    print("QuadZone substraction (quadkeys): ", end="", flush=True)
+    big_z -= "1200203"
+    big_z.remove("1200332")
+    big_z.optimise()
+    check_zone(big_z, expected_big_z_6_sub_qks)
+    print("OK")
+
+    print("QuadZone symmetric substraction (xor): ", end="", flush=True)
+    z2 = its_quadkeys.QuadZone("03113", "12000", "12002", "12003", "12020")
+    z2 ^= z + nz_7
+    z2.optimise()
+    check_zone(z2, expected_xor)
+    print("OK")
+
+
+def check_zone(some, expected):
+    some_l = list(some)
+    expected_l = list(expected)
+    z_miss = sorted([qk for qk in expected_l if qk not in some_l])
+    z_extra = sorted([str(qk) for qk in some_l if qk not in expected_l])
+    if z_miss or z_extra:
+        raise FailedError(
+            f"{len(z_miss)} missing: {z_miss}, {len(z_extra)} extra: {z_extra}"
+        )
+
+
+if __name__ == "__main__":
+    try:
+        test_quadkey()
+        test_quadzone()
+    except FailedError as e:
+        print(f"KO: {e.args[0]}")
+        sys.exit(1)
