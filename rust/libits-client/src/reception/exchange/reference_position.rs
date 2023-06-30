@@ -147,7 +147,7 @@ impl ReferencePosition {
         let y_distance = as_vec[1];
         let z_distance = as_vec[2];
 
-        (x_distance.round(), y_distance.round(), z_distance.round())
+        (x_distance, y_distance, z_distance)
     }
 
     /// Returns the corresponding [Earth Centered, Earth Fixed][1] coordinates for this position
@@ -213,7 +213,7 @@ mod tests {
 
     use crate::reception::exchange::ReferencePosition;
 
-    fn teqmo_lane_merge_reference_postion() -> ReferencePosition {
+    fn teqmo_lane_merge_reference_position() -> ReferencePosition {
         // center is at TEQMO lane merge position
         ReferencePosition {
             latitude: 486244870,
@@ -222,7 +222,7 @@ mod tests {
         }
     }
 
-    fn teqmo_city_reference_postion() -> ReferencePosition {
+    fn teqmo_city_reference_position() -> ReferencePosition {
         // center is at TEQMO city
         ReferencePosition {
             latitude: 486249990,
@@ -233,7 +233,7 @@ mod tests {
 
     #[test]
     fn compute_100_meters_distance() {
-        let position = teqmo_lane_merge_reference_postion();
+        let position = teqmo_lane_merge_reference_position();
         // I take a point at 100 meters
         let other_position = ReferencePosition {
             latitude: 486237420,
@@ -246,7 +246,7 @@ mod tests {
     #[test]
     fn compute_31_meters_distance() {
         // center is at TEQMO city
-        let position = teqmo_city_reference_postion();
+        let position = teqmo_city_reference_position();
         // I take a point at 31 meters
         let other_position = ReferencePosition {
             latitude: 486252239,
@@ -324,7 +324,7 @@ mod tests {
 
     #[test]
     fn it_can_get_south_destination() {
-        let position = teqmo_lane_merge_reference_postion();
+        let position = teqmo_lane_merge_reference_position();
         // I take a point at 100 meters on south
         let other_position = ReferencePosition {
             latitude: 486235877,
@@ -337,7 +337,7 @@ mod tests {
 
     #[test]
     fn it_can_get_north_destination() {
-        let position = teqmo_lane_merge_reference_postion();
+        let position = teqmo_lane_merge_reference_position();
         // I take a point at 100 meters on north
         let other_position = ReferencePosition {
             latitude: 486253862,
@@ -350,7 +350,7 @@ mod tests {
 
     #[test]
     fn it_can_get_east_destination() {
-        let position = teqmo_lane_merge_reference_postion();
+        let position = teqmo_lane_merge_reference_position();
         // I take a point at 100 meters on south
         let other_position = ReferencePosition {
             latitude: position.latitude,
@@ -363,7 +363,7 @@ mod tests {
 
     #[test]
     fn it_can_get_west_destination() {
-        let position = teqmo_lane_merge_reference_postion();
+        let position = teqmo_lane_merge_reference_position();
         // I take a point at 100 meters on south
         let other_position = ReferencePosition {
             latitude: position.latitude,
@@ -430,9 +430,9 @@ mod tests {
 
         let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
 
-        assert_eq!(x_distance, expected_x_distance);
-        assert_eq!(y_distance, expected_y_distance);
-        assert_eq!(z_distance, expected_z_distance);
+        assert_eq!(x_distance.round(), expected_x_distance);
+        assert_eq!(y_distance.round(), expected_y_distance);
+        assert_eq!(z_distance.round(), expected_z_distance);
     }
 
     #[test]
@@ -453,9 +453,9 @@ mod tests {
 
         let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
 
-        assert_eq!(x_distance, expected_x_distance);
-        assert_eq!(y_distance, expected_y_distance);
-        assert_eq!(z_distance, expected_z_distance);
+        assert_eq!(x_distance.round(), expected_x_distance);
+        assert_eq!(y_distance.round(), expected_y_distance);
+        assert_eq!(z_distance.round(), expected_z_distance);
     }
 
     #[test]
@@ -476,9 +476,9 @@ mod tests {
 
         let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
 
-        assert_eq!(x_distance, expected_x_distance);
-        assert_eq!(y_distance, expected_y_distance);
-        assert_eq!(z_distance, expected_z_distance);
+        assert_eq!(x_distance.round(), expected_x_distance);
+        assert_eq!(y_distance.round(), expected_y_distance);
+        assert_eq!(z_distance.round(), expected_z_distance);
     }
 
     #[test]
@@ -499,9 +499,9 @@ mod tests {
 
         let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
 
-        assert_eq!(x_distance, expected_x_distance);
-        assert_eq!(y_distance, expected_y_distance);
-        assert_eq!(z_distance, expected_z_distance);
+        assert_eq!(x_distance.round(), expected_x_distance);
+        assert_eq!(y_distance.round(), expected_y_distance);
+        assert_eq!(z_distance.round(), expected_z_distance);
     }
 
     #[test]
@@ -522,9 +522,9 @@ mod tests {
 
         let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
 
-        assert_eq!(x_distance, expected_x_distance);
-        assert_eq!(y_distance, expected_y_distance);
-        assert_eq!(z_distance, expected_z_distance);
+        assert_eq!(x_distance.round(), expected_x_distance);
+        assert_eq!(y_distance.round(), expected_y_distance);
+        assert_eq!(z_distance.round(), expected_z_distance);
     }
 
     #[test]
@@ -545,8 +545,8 @@ mod tests {
 
         let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
 
-        assert_eq!(x_distance, expected_x_distance);
-        assert_eq!(y_distance, expected_y_distance);
-        assert_eq!(z_distance, expected_z_distance);
+        assert_eq!(x_distance.round(), expected_x_distance);
+        assert_eq!(y_distance.round(), expected_y_distance);
+        assert_eq!(z_distance.round(), expected_z_distance);
     }
 }
