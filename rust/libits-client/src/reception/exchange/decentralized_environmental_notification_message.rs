@@ -42,7 +42,7 @@ pub struct ManagementContainer {
     pub confidence: Option<PositionConfidence>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct ActionId {
     pub originating_station_id: u32,
     pub sequence_number: u16,
@@ -136,7 +136,6 @@ impl DecentralizedEnvironmentalNotificationMessage {
         etsi_timestamp: u128,
         event_position_heading: Option<u16>,
     ) -> Self {
-        // stationaryVehicle
         Self::new(
             station_id,
             originating_station_id,
@@ -152,6 +151,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn new_traffic_condition(
         station_id: u32,
         originating_station_id: u32,
@@ -164,7 +164,6 @@ impl DecentralizedEnvironmentalNotificationMessage {
         event_speed: Option<u16>,
         event_position_heading: Option<u16>,
     ) -> Self {
-        // trafficCondition
         Self::new(
             station_id,
             originating_station_id,
@@ -180,6 +179,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         station_id: u32,
         originating_station_id: u32,
@@ -200,7 +200,6 @@ impl DecentralizedEnvironmentalNotificationMessage {
                 action_id: ActionId {
                     originating_station_id,
                     sequence_number,
-                    ..Default::default()
                 },
                 // FIXME find why the serde Serializer can't match the u128
                 detection_time: etsi_timestamp as u64,

@@ -8,7 +8,7 @@
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 use core::fmt;
 use std::cmp::Ordering;
-use std::{convert, str};
+use std::str;
 
 use crate::mqtt::topic::parse_error::ParseError;
 
@@ -26,7 +26,7 @@ pub(crate) enum Tile {
     All,
 }
 
-impl convert::From<u8> for Tile {
+impl From<u8> for Tile {
     fn from(tile: u8) -> Self {
         match tile {
             0 => Tile::Zero,
@@ -38,7 +38,7 @@ impl convert::From<u8> for Tile {
     }
 }
 
-impl convert::From<char> for Tile {
+impl From<char> for Tile {
     fn from(tile: char) -> Self {
         match tile {
             '#' => Tile::All,
@@ -162,8 +162,8 @@ impl Ord for GeoExtension {
         } else if other.len() == matching {
             Ordering::Less
         } else if self.len() == other.len() {
-            if let Some(self_significant) = self.tiles.last() {
-                if let Some(other_significant) = other.tiles.last() {
+            if let Some(self_significant) = self.tiles.get(matching) {
+                if let Some(other_significant) = other.tiles.get(matching) {
                     return match self_significant.partial_cmp(other_significant) {
                         Some(ordering) => ordering,
                         None => Ordering::Equal,
@@ -425,14 +425,6 @@ mod tests {
     }
 
     #[test]
-    fn test_linas_geo_extension_22_tiles_not_lesser_than_barcelona_geo_extension_22_tiles() {
-        let geo_extension = create_geo_extension("1/2/0/2/2/2/2/3/3/0/0/3/2/0/2/0/1/0/1/0/3/1");
-        let geo_extension2 = create_geo_extension("1/2/0/2/2/0/0/1/1/2/0/3/1/0/2/1/0/1/2/1/0/3");
-        assert!(!(geo_extension <= geo_extension2));
-        assert!(!(geo_extension < geo_extension2));
-    }
-
-    #[test]
     fn test_geo_extension_22_tiles_less() {
         let geo_extension = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1");
         let mut geo_extension2 = create_geo_extension("0");
@@ -462,7 +454,47 @@ mod tests {
         let twin_1 = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1");
         let twin_2 = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1");
 
+        assert_eq!(twin_1.partial_cmp(&twin_2), Some(Equal));
         assert_eq!(twin_1.cmp(&twin_2), Equal);
+    }
+
+    #[test]
+    fn test_same_length_but_not_siblings_are_not_partially_ordered() {
+        let linas = create_geo_extension("1/2/0/2/2/2/2/3/3/0/0/3/2/0/2/0/1/0/1/0/3/1");
+        let barcelona = create_geo_extension("1/2/0/2/2/0/0/1/1/2/0/3/1/0/2/1/0/1/2/1/0/3");
+        assert_eq!(linas.partial_cmp(&barcelona), None);
+    }
+
+    #[test]
+    fn test_same_length_but_not_siblings_are_ordered() {
+        let linas = create_geo_extension("1/2/0/2/2/2/2/3/3/0/0/3/2/0/2/0/1/0/1/0/3/1");
+        let barcelona = create_geo_extension("1/2/0/2/2/0/0/1/1/2/0/3/1/0/2/1/0/1/2/1/0/3");
+
+        assert_eq!(linas.cmp(&barcelona), Less);
+    }
+
+    #[test]
+    fn test_siblings_are_not_partially_ordered() {
+        let sibling_0 = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/0");
+        let sibling_1 = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1");
+        let sibling_2 = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/2");
+        let sibling_3 = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/3");
+
+        assert_eq!(sibling_0.partial_cmp(&sibling_1), None);
+        assert_eq!(sibling_0.partial_cmp(&sibling_2), None);
+        assert_eq!(sibling_0.partial_cmp(&sibling_3), None);
+
+        assert_eq!(sibling_1.partial_cmp(&sibling_0), None);
+        assert_eq!(sibling_1.partial_cmp(&sibling_2), None);
+        assert_eq!(sibling_1.partial_cmp(&sibling_3), None);
+
+        assert_eq!(sibling_2.partial_cmp(&sibling_0), None);
+        assert_eq!(sibling_2.partial_cmp(&sibling_1), None);
+        assert_eq!(sibling_2.partial_cmp(&sibling_3), None);
+
+        assert_eq!(sibling_3.partial_cmp(&sibling_0), None);
+        assert_eq!(sibling_3.partial_cmp(&sibling_1), None);
+        assert_eq!(sibling_3.partial_cmp(&sibling_2), None);
     }
 
     #[test]
@@ -494,6 +526,8 @@ mod tests {
         let less_deep = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0");
         let deeper = create_geo_extension("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1");
 
+        assert_eq!(less_deep.partial_cmp(&deeper), Some(Greater));
+        assert_eq!(deeper.partial_cmp(&less_deep), Some(Less));
         assert_eq!(less_deep.cmp(&deeper), Greater);
         assert_eq!(deeper.cmp(&less_deep), Less);
     }

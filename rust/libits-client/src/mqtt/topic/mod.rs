@@ -11,7 +11,7 @@ mod message_type;
 mod parse_error;
 mod queue;
 
-use std::{cmp, convert, fmt, hash, str, str::FromStr};
+use std::{fmt, hash, str, str::FromStr};
 
 use log::error;
 
@@ -40,12 +40,6 @@ pub struct Topic {
 }
 
 impl Topic {
-    fn empty() -> Topic {
-        Topic {
-            ..Default::default()
-        }
-    }
-
     pub(crate) fn new<Q, T>(
         queue: Option<Q>,
         message_type: Option<T>,
@@ -67,10 +61,8 @@ impl Topic {
                 Some(into_queue) => into_queue.into(),
                 None => MessageType::default(),
             },
-            uuid: uuid.unwrap_or("+".to_string()),
+            uuid: uuid.unwrap_or_else(|| "+".to_string()),
             geo_extension: geo_extension.unwrap_or_default(),
-
-            ..Default::default()
         }
     }
 
@@ -109,7 +101,7 @@ impl hash::Hash for Topic {
     }
 }
 
-impl cmp::PartialEq for Topic {
+impl PartialEq for Topic {
     fn eq(&self, other: &Self) -> bool {
         self.project == other.project
             && self.queue == other.queue
@@ -120,9 +112,9 @@ impl cmp::PartialEq for Topic {
     }
 }
 
-impl cmp::Eq for Topic {}
+impl Eq for Topic {}
 
-impl cmp::PartialEq<String> for Topic {
+impl PartialEq<String> for Topic {
     fn eq(&self, other: &String) -> bool {
         match Topic::from_str(other) {
             Ok(topic) => self == &topic,
@@ -134,13 +126,13 @@ impl cmp::PartialEq<String> for Topic {
     }
 }
 
-impl convert::From<String> for Topic {
+impl From<String> for Topic {
     fn from(topic: String) -> Self {
         Topic::from(topic.as_str())
     }
 }
 
-impl convert::From<&str> for Topic {
+impl From<&str> for Topic {
     fn from(topic: &str) -> Self {
         match Topic::from_str(topic) {
             Ok(topic) => topic,
@@ -152,12 +144,12 @@ impl convert::From<&str> for Topic {
     }
 }
 
-impl str::FromStr for Topic {
+impl FromStr for Topic {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         s.trim_matches('/').split('/').enumerate().try_fold(
-            Topic::empty(),
+            Topic::default(),
             |mut topic_struct, (i, element)| {
                 match i {
                     // project

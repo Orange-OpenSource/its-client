@@ -13,7 +13,7 @@ use crate::reception::exchange::{PathHistory, PositionConfidence, ReferencePosit
 use crate::reception::typed::Typed;
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CooperativeAwarenessMessage {
     pub protocol_version: u8,
     pub station_id: u32,
@@ -24,7 +24,7 @@ pub struct CooperativeAwarenessMessage {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BasicContainer {
     pub station_type: Option<u8>,
     pub reference_position: ReferencePosition,
@@ -32,7 +32,7 @@ pub struct BasicContainer {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HighFrequencyContainer {
     pub heading: Option<u16>,
     pub speed: Option<u16>,
@@ -51,7 +51,7 @@ pub struct HighFrequencyContainer {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LowFrequencyContainer {
     pub vehicle_role: Option<u8>,
     pub exterior_lights: String,
@@ -59,7 +59,7 @@ pub struct LowFrequencyContainer {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HighFrequencyConfidence {
     pub heading: Option<u8>,
     pub speed: Option<u8>,

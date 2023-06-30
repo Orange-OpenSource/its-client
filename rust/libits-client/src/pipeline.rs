@@ -15,7 +15,7 @@ use std::thread::JoinHandle;
 use std::time::Duration;
 
 use log::{debug, error, info, trace, warn};
-use rumqttc::{Event, EventLoop, Publish};
+use rumqttc::{Event, EventLoop, MqttOptions, Publish};
 use serde::de::DeserializeOwned;
 
 use crate::analyse::analyser::Analyser;
@@ -25,22 +25,57 @@ use crate::analyse::item::Item;
 use crate::monitor;
 use crate::mqtt::mqtt_client::{listen, Client};
 use crate::mqtt::mqtt_router;
-use crate::reception::exchange::collective_perception_message::CollectivePerceptionMessage;
-use crate::reception::exchange::cooperative_awareness_message::CooperativeAwarenessMessage;
-use crate::reception::exchange::decentralized_environmental_notification_message::DecentralizedEnvironmentalNotificationMessage;
-use crate::reception::exchange::map_extended_message::MAPExtendedMessage;
-use crate::reception::exchange::signal_phase_and_timing_extended_message::SignalPhaseAndTimingExtendedMessage;
+
 use crate::reception::exchange::Exchange;
 use crate::reception::information::Information;
 use crate::reception::typed::Typed;
 use crate::reception::Reception;
 
+/// Struct holding the results of the MQTT dispatcher thread initialization
+///
+/// Holding:
+/// - one [exchange][1] channel receiver
+/// - one [exchange][1]/cause channel receiver for monitoring reception
+/// - one [information][2] channel receiver
+/// - the [join handle][3] to manage the thread's termination
+///
+/// [1]: Exchange
+/// [2]: Information
+/// [3]: JoinHandle
+type DispatcherPipes = (
+    Receiver<Item<Exchange>>,
+    Receiver<(Item<Exchange>, Option<Cause>)>,
+    Receiver<Item<Information>>,
+    JoinHandle<()>,
+);
+
+/// Struct holding the result of the exchange analysis thread initialization
+///
+/// Holding:
+/// - the [exchange][1] channel receiver that will be fed with the exchanges to send
+/// - the [join handle][2] to manage the thread's termination
+///
+/// [1]: Exchange
+/// [2]: JoinHandle
+type AnalyzerPipes = (Receiver<(Item<Exchange>, Option<Cause>)>, JoinHandle<()>);
+
+/// Struct holding the result of the output exchanges filter thread initialization
+///
+/// Holding:
+/// - one [exchange][1] channel receiver for exchange sending monitoring
+/// - one [exchange][1]/cause channel receiver for exchange MQTT publishing
+/// - the [join handle][2] to manage the tread's termination
+///
+/// [1]: Exchange
+/// [2]: JoinHandle
+type FilterPipes = (
+    Receiver<Item<Exchange>>,
+    Receiver<(Item<Exchange>, Option<Cause>)>,
+    JoinHandle<()>,
+);
+
 pub async fn run<T: Analyser>(
-    mqtt_host: &str,
-    mqtt_port: u16,
-    mqtt_client_id: &str,
-    mqtt_username: Option<&str>,
-    mqtt_password: Option<&str>,
+    mqtt_options: MqttOptions,
     mqtt_root_topic: &str,
     region_of_responsibility: bool,
     custom_settings: HashMap<String, String>,
@@ -57,18 +92,10 @@ pub async fn run<T: Analyser>(
         ];
 
         //initialize the client
-        let (mut client, event_loop) = Client::new(
-            mqtt_host,
-            mqtt_port,
-            mqtt_client_id,
-            mqtt_username,
-            mqtt_password,
-            None,
-            None,
-        );
+        let (mut client, event_loop) = Client::new(&mqtt_options);
 
         let configuration = Arc::new(Configuration::new(
-            mqtt_client_id.to_string(),
+            mqtt_options.client_id(),
             region_of_responsibility,
             custom_settings.clone(),
         ));
@@ -97,7 +124,7 @@ pub async fn run<T: Analyser>(
 
         // filter exchanges on region of responsibility
         let (publish_item_receiver, publish_monitoring_receiver, filter_handle) =
-            filter_thread::<T>(configuration.clone(), analyser_item_receiver);
+            filter_thread(configuration.clone(), analyser_item_receiver);
 
         // in parallel, monitor exchanges publish
         let monitor_publish_handle = monitor_thread(
@@ -146,12 +173,7 @@ fn mqtt_router_dispatch_thread(
     topic_list: Vec<String>,
     event_receiver: Receiver<Event>,
     // FIXME manage a Box into the Exchange to use a unique object Trait instead
-) -> (
-    Receiver<Item<Exchange>>,
-    Receiver<(Item<Exchange>, Option<Cause>)>,
-    Receiver<Item<Information>>,
-    JoinHandle<()>,
-) {
+) -> DispatcherPipes {
     info!("starting mqtt router dispatching...");
     let (exchange_sender, exchange_receiver) = channel();
     let (monitoring_sender, monitoring_receiver) = channel();
@@ -178,10 +200,10 @@ fn mqtt_router_dispatch_thread(
                     Some((topic, reception)) => {
                         // TODO use the From Trait
                         if reception.is::<Exchange>() {
-                            if let Ok(exchange) = reception.downcast::<Exchange>() {
+                            if let Ok(boxed_exchange) = reception.downcast::<Exchange>() {
                                 let item = Item {
                                     topic,
-                                    reception: unbox(exchange),
+                                    reception: *boxed_exchange,
                                 };
                                 //assumed clone, we send to 2 channels
                                 match monitoring_sender.send((item.clone(), None)) {
@@ -199,10 +221,10 @@ fn mqtt_router_dispatch_thread(
                                     }
                                 }
                             }
-                        } else if let Ok(information) = reception.downcast::<Information>() {
+                        } else if let Ok(boxed_information) = reception.downcast::<Information>() {
                             match information_sender.send(Item {
                                 topic,
-                                reception: unbox(information),
+                                reception: *boxed_information,
                             }) {
                                 Ok(()) => trace!("mqtt information sent"),
                                 Err(error) => {
@@ -261,14 +283,10 @@ fn monitor_thread(
     handle
 }
 
-pub fn unbox<T>(value: Box<T>) -> T {
-    *value
-}
-
 fn analyser_generate_thread<T: Analyser>(
     configuration: Arc<Configuration>,
     exchange_receiver: Receiver<Item<Exchange>>,
-) -> (Receiver<(Item<Exchange>, Option<Cause>)>, JoinHandle<()>) {
+) -> AnalyzerPipes {
     info!("starting analyser generation...");
     let (analyser_sender, analyser_receiver) = channel();
     let handle = thread::Builder::new()
@@ -296,14 +314,10 @@ fn analyser_generate_thread<T: Analyser>(
     (analyser_receiver, handle)
 }
 
-fn filter_thread<T: Analyser>(
+fn filter_thread(
     configuration: Arc<Configuration>,
     exchange_receiver: Receiver<(Item<Exchange>, Option<Cause>)>,
-) -> (
-    Receiver<Item<Exchange>>,
-    Receiver<(Item<Exchange>, Option<Cause>)>,
-    JoinHandle<()>,
-) {
+) -> FilterPipes {
     info!("starting filtering...");
     let (publish_sender, publish_receiver) = channel();
     let (monitoring_sender, monitoring_receiver) = channel();
@@ -385,7 +399,7 @@ where
     Option::None
 }
 
-async fn mqtt_client_subscribe(topic_list: &Vec<String>, client: &mut Client) {
+async fn mqtt_client_subscribe(topic_list: &[String], client: &mut Client) {
     info!("mqtt client subscribing starting...");
     let mut topic_subscription_list = Vec::new();
 

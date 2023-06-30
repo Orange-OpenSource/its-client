@@ -199,9 +199,7 @@ fn prime_vertical_radius(phi: f64) -> f64 {
     let e_square: f64 = 1. - (POLAR_RADIUS.powf(2.) / EQUATORIAL_RADIUS.powf(2.));
     let sin_phi = phi.sin();
 
-    let n_phi = EQUATORIAL_RADIUS / (1. - e_square * sin_phi.powf(2.)).sqrt();
-
-    n_phi
+    EQUATORIAL_RADIUS / (1. - e_square * sin_phi.powf(2.)).sqrt()
 }
 
 fn ellipsoid_flattening() -> f64 {
@@ -210,7 +208,7 @@ fn ellipsoid_flattening() -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::reception::exchange::reference_position::{get_coordinate, get_etsi_coordinate};
+    use crate::reception::exchange::reference_position::get_etsi_coordinate;
     use navigation::Location;
 
     use crate::reception::exchange::ReferencePosition;

@@ -1,17 +1,13 @@
 name: Rust
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+on: [ push, pull_request ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  rustfmt:
-    name: Rustfmt
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -19,6 +15,10 @@ jobs:
         run: |
           cd rust
           cargo fmt -- --check
+      - name: Clippy
+        run: |
+          cd rust
+          cargo clippy -- -D clippy::all
 
   build:
     name: Build

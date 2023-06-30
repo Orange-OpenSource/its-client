@@ -42,21 +42,21 @@ pub struct Exchange {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PathElement {
     pub position: ReferencePosition,
     pub message_type: String,
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PositionConfidence {
     pub position_confidence_ellipse: Option<PositionConfidenceEllipse>,
     pub altitude: Option<u8>,
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PositionConfidenceEllipse {
     pub semi_major_confidence: Option<u16>,
     pub semi_minor_confidence: Option<u16>,
@@ -64,14 +64,14 @@ pub struct PositionConfidenceEllipse {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PathHistory {
     pub path_position: PathPosition,
     pub path_delta_time: Option<u16>,
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PathPosition {
     pub delta_latitude: Option<i32>,
     pub delta_longitude: Option<i32>,
@@ -119,7 +119,7 @@ impl Mortal for Exchange {
     }
 
     fn remaining_time(&self) -> u128 {
-        return (self.timeout() - now()) / 1000;
+        (self.timeout() - now()) / 1000
     }
 }
 
@@ -145,7 +145,7 @@ mod tests {
     use crate::reception::exchange::Exchange;
 
     fn basic_cam() -> &'static str {
-        return r#"
+        r#"
 {
   "type": "cam",
   "origin": "self",
@@ -166,11 +166,11 @@ mod tests {
     "high_frequency_container": {}
   }
 }
-"#;
+"#
     }
 
     fn standard_cam() -> &'static str {
-        return r#"
+        r#"
 {
   "type": "cam",
   "origin": "self",
@@ -211,11 +211,11 @@ mod tests {
     }
   }
 }
-"#;
+"#
     }
 
     fn full_cam() -> &'static str {
-        return r#"
+        r#"
 {
   "type": "cam",
   "origin": "self",
@@ -291,11 +291,11 @@ mod tests {
     }
   }
 }
-"#;
+"#
     }
 
     fn basic_denm() -> &'static str {
-        return r#"
+        r#"
 {
   "type": "denm",
   "origin": "self",
@@ -320,11 +320,11 @@ mod tests {
     }
   }
 }
-    "#;
+    "#
     }
 
     fn standard_denm() -> &'static str {
-        return r#"
+        r#"
 {
   "type": "denm",
   "origin": "self",
@@ -377,11 +377,11 @@ mod tests {
     }
   }
 }
-    "#;
+    "#
     }
 
     fn full_denm() -> &'static str {
-        return r#"
+        r#"
 {
   "type": "denm",
   "origin": "self",
@@ -494,11 +494,11 @@ mod tests {
     }
   }
 }
-    "#;
+    "#
     }
 
     fn basic_cpm() -> &'static str {
-        return r#"{
+        r#"{
           "type": "cpm",
           "origin": "self",
           "version": "1.1.3",
@@ -525,11 +525,11 @@ mod tests {
               }
             }
           }
-        }"#;
+        }"#
     }
 
     fn standard_cpm() -> &'static str {
-        return r#"{
+        r#"{
             "type": "cpm",
             "origin": "self",
             "version": "1.1.3",
@@ -598,11 +598,11 @@ mod tests {
                     "object_age": 1500
                 }]
             }
-        }"#;
+        }"#
     }
 
     fn full_cpm() -> &'static str {
-        return r#"{
+        r#"{
             "type": "cpm",
             "origin": "self",
             "version": "1.1.3",
@@ -747,11 +747,11 @@ mod tests {
                     }
                 }]
             }
-        }"#;
+        }"#
     }
 
     fn bad_cam_without_timestamp() -> &'static str {
-        return r#"
+        r#"
 {
   "type": "cam",
   "origin": "self",
@@ -771,11 +771,11 @@ mod tests {
     "high_frequency_container": {}
   }
 }
-"#;
+"#
     }
 
     fn bad_denm_with_string_timestamp() -> &'static str {
-        return r#"
+        r#"
 {
   "type": "denm",
   "origin": "self",
@@ -800,11 +800,11 @@ mod tests {
     }
   }
 }
-    "#;
+    "#
     }
 
     fn bad_denm_with_protocol_version_u32() -> &'static str {
-        return r#"
+        r#"
 {
   "type": "denm",
   "origin": "self",
@@ -829,11 +829,11 @@ mod tests {
     }
   }
 }
-    "#;
+    "#
     }
 
     fn bad_cpm_with_negative_timestamp() -> &'static str {
-        return r#"
+        r#"
 {
   "type": "cpm",
   "origin": "self",
@@ -863,7 +863,7 @@ mod tests {
     },
     "numberOfPerceivedObjects": 1
   }
-}"#;
+}"#
     }
 
     fn remove_whitespace(s: &str) -> String {

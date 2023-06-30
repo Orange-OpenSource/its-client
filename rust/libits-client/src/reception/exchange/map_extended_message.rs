@@ -20,8 +20,10 @@ use std::hash::{Hash, Hasher};
 /// **MAP** (topology) **E**xtended **M**essage
 ///
 /// **See also:**
-/// - [SignalPhaseAndTimingExtendedMessage](crate::spat::SignalPhaseAndTimingExtendedMessage)
-#[derive(Serialize, Deserialize, Debug, Hash, Clone)]
+/// - [SignalPhaseAndTimingExtendedMessage][1]
+///
+/// [1]: crate::reception::exchange::signal_phase_and_timing_extended_message::SignalPhaseAndTimingExtendedMessage
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MAPExtendedMessage {
     pub protocol_version: u16,
@@ -47,13 +49,20 @@ impl PartialEq<Self> for MAPExtendedMessage {
     }
 }
 
+impl Hash for MAPExtendedMessage {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+        self.timestamp.hash(state);
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Lane {
     pub id: u64,
     /// ID of the signal, corresponding to the [SPAT][1] signal ID
     ///
-    /// [1]: crate::spat::SignalPhaseAndTimingExtendedMessage
+    /// [1]: crate::reception::exchange::signal_phase_and_timing_extended_message::SignalPhaseAndTimingExtendedMessage
     pub signal_id: u64,
     /// ID of the approach (group of lanes)
     pub approach_id: Option<u32>,
@@ -100,7 +109,7 @@ impl Hash for Lane {
     }
 }
 
-#[derive(Serialize, Deserialize_repr, PartialEq, Debug, Clone)]
+#[derive(Serialize, Deserialize_repr, PartialEq, Eq, Debug, Clone)]
 #[repr(u8)]
 pub enum Action {
     Left = 0,
@@ -230,12 +239,12 @@ mod test {
                 assert_eq!(lane.id, 14);
                 assert_eq!(lane.signal_id, 15);
                 assert_eq!(lane.approach_id.unwrap(), 16);
-                assert_eq!(lane.left, true);
-                assert_eq!(lane.straight, true);
-                assert_eq!(lane.right, false);
+                assert!(lane.left);
+                assert!(lane.straight);
+                assert!(!lane.right);
                 assert_eq!(lane.speed_limit, 50);
-                assert_eq!(lane.ingress, false);
-                assert_eq!(lane.egress, false);
+                assert!(!lane.ingress);
+                assert!(!lane.egress);
                 assert_eq!(lane.geom.len(), 3);
                 assert_eq!(lane.geom[0][0], 11.1);
                 assert_eq!(lane.geom[0][1], 2.2);
@@ -243,22 +252,22 @@ mod test {
                 assert_eq!(lane.geom[1][1], 4.4);
                 assert_eq!(lane.geom[2][0], 55.5);
                 assert_eq!(lane.geom[2][1], 6.6);
-                assert_eq!(lane.is_vehicle_lane.unwrap(), true);
-                assert_eq!(lane.is_bus_lane.unwrap(), false);
-                assert_eq!(lane.is_bike_lane.unwrap(), false);
+                assert!(lane.is_vehicle_lane.unwrap());
+                assert!(!lane.is_bus_lane.unwrap());
+                assert!(!lane.is_bike_lane.unwrap());
                 assert_eq!(lane.connections.len(), 2);
                 let connection_one = lane.connections.first().unwrap();
                 assert_eq!(connection_one.intersection_id, 17);
                 assert_eq!(connection_one.lane_id, 18);
                 assert_eq!(connection_one.action, Action::Left);
                 assert_eq!(connection_one.id.unwrap(), 19);
-                assert_eq!(connection_one.caution.unwrap(), true);
+                assert!(connection_one.caution.unwrap());
                 let connection_two = lane.connections.last().unwrap();
                 assert_eq!(connection_two.intersection_id, 20);
                 assert_eq!(connection_two.lane_id, 21);
                 assert_eq!(connection_two.action, Action::Straight);
                 assert_eq!(connection_two.id.unwrap(), 22);
-                assert_eq!(connection_two.caution.unwrap(), false);
+                assert!(!connection_two.caution.unwrap());
             }
             Err(e) => {
                 panic!("Failed to deserialize MAPEM from JSON: '{}'", e);
@@ -336,12 +345,12 @@ mod test {
                 assert_eq!(lane.id, 14);
                 assert_eq!(lane.signal_id, 15);
                 assert!(lane.approach_id.is_none());
-                assert_eq!(lane.left, true);
-                assert_eq!(lane.straight, true);
-                assert_eq!(lane.right, false);
+                assert!(lane.left);
+                assert!(lane.straight);
+                assert!(!lane.right);
                 assert_eq!(lane.speed_limit, 50);
-                assert_eq!(lane.ingress, false);
-                assert_eq!(lane.egress, false);
+                assert!(!lane.ingress);
+                assert!(!lane.egress);
                 assert_eq!(lane.geom.len(), 3);
                 assert_eq!(lane.geom[0][0], 11.1);
                 assert_eq!(lane.geom[0][1], 2.2);
@@ -369,12 +378,12 @@ mod test {
                 assert_eq!(lane2.id, 22);
                 assert_eq!(lane2.signal_id, 23);
                 assert!(lane2.approach_id.is_none());
-                assert_eq!(lane2.left, true);
-                assert_eq!(lane2.straight, true);
-                assert_eq!(lane2.right, false);
+                assert!(lane2.left);
+                assert!(lane2.straight);
+                assert!(!lane2.right);
                 assert_eq!(lane2.speed_limit, 50);
-                assert_eq!(lane2.ingress, false);
-                assert_eq!(lane2.egress, false);
+                assert!(!lane2.ingress);
+                assert!(!lane2.egress);
                 assert_eq!(lane2.geom.len(), 3);
                 assert_eq!(lane2.geom[0][0], 11.1);
                 assert_eq!(lane2.geom[0][1], 2.2);

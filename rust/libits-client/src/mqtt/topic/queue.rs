@@ -9,9 +9,10 @@
 use crate::mqtt::topic::parse_error::ParseError;
 use std::{cmp, convert, fmt, hash, str};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub(crate) enum Queue {
     // To V2X server
+    #[default]
     In,
     // From V2X server
     Out,
@@ -27,12 +28,6 @@ impl fmt::Display for Queue {
                 Queue::Out => "outQueue".to_string(),
             }
         )
-    }
-}
-
-impl Default for Queue {
-    fn default() -> Self {
-        Queue::In
     }
 }
 

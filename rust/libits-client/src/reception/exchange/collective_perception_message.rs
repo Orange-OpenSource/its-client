@@ -15,7 +15,7 @@ use crate::reception::exchange::{PositionConfidence, ReferencePosition};
 use crate::reception::typed::Typed;
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CollectivePerceptionMessage {
     pub protocol_version: u8,
     pub station_id: u32,
@@ -34,15 +34,10 @@ pub struct CollectivePerceptionMessage {
 impl CollectivePerceptionMessage {
     pub fn mobile_perceived_object_list(&self) -> Vec<MobilePerceivedObject> {
         let cpm_heading = match &self.station_data_container {
-            Some(station_data_container) => {
-                if let Some(originating_vehicle_container) =
-                    &station_data_container.originating_vehicle_container
-                {
-                    Some(originating_vehicle_container.heading)
-                } else {
-                    None
-                }
-            }
+            Some(station_data_container) => station_data_container
+                .originating_vehicle_container
+                .as_ref()
+                .map(|originating_vehicle_container| originating_vehicle_container.heading),
             None => None,
         };
 
@@ -68,7 +63,7 @@ impl CollectivePerceptionMessage {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ManagementContainer {
     pub station_type: u8,
     pub reference_position: ReferencePosition,
@@ -76,14 +71,14 @@ pub struct ManagementContainer {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StationDataContainer {
     pub originating_vehicle_container: Option<OriginatingVehicleContainer>,
     pub originating_rsu_container: Option<OriginatingRSUContainer>,
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OriginatingVehicleContainer {
     pub heading: u16,
     pub speed: u16,
@@ -98,21 +93,21 @@ pub struct OriginatingVehicleContainer {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OriginatingRSUContainer {
     pub intersection_reference_id: Option<IntersectionReferenceId>,
     pub road_segment_reference_id: Option<u32>,
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IntersectionReferenceId {
     pub road_regulator_id: Option<u32>,
     pub intersection_id: u32,
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OriginatingVehicleContainerConfidence {
     pub heading: u8,
     pub speed: u8,
@@ -124,7 +119,7 @@ pub struct OriginatingVehicleContainerConfidence {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SensorInformation {
     pub sensor_id: u8,
     #[serde(rename = "type")]
@@ -133,7 +128,7 @@ pub struct SensorInformation {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DetectionArea {
     pub vehicle_sensor: Option<VehicleSensor>,
     pub stationary_sensor_polygon: Option<Vec<Offset>>,
@@ -144,7 +139,7 @@ pub struct DetectionArea {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct VehicleSensor {
     pub ref_point_id: u8,
     pub x_sensor_offset: i16,
@@ -155,7 +150,7 @@ pub struct VehicleSensor {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct VehicleSensorProperty {
     pub range: u16,
     pub horizontal_opening_angle_start: u16,
