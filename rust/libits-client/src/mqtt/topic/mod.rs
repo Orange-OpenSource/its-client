@@ -9,6 +9,7 @@
 pub mod geo_extension;
 mod message_type;
 pub mod parse_error;
+pub mod quadtree;
 mod queue;
 
 use crate::analyse::configuration::Configuration;
