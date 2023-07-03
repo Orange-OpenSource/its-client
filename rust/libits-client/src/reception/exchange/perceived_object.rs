@@ -118,6 +118,12 @@ impl PerceivedObject {
             )
         })
     }
+
+    pub fn is_vehicle(&self) -> bool {
+        self.classification.iter().any(|object_classification| {
+            matches!(object_classification.object_class, ObjectClass::Vehicle(_))
+        })
+    }
 }
 
 #[cfg(test)]
