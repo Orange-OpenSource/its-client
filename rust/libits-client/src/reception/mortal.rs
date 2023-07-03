@@ -1,3 +1,5 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 // Software Name: its-client
 // SPDX-FileCopyrightText: Copyright (c) 2016-2022 Orange
 // SPDX-License-Identifier: MIT License
@@ -6,7 +8,6 @@
 //
 // Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
-use std::time::{SystemTime, UNIX_EPOCH};
 
 pub trait Mortal {
     fn timeout(&self) -> u128;
@@ -21,7 +22,11 @@ pub trait Mortal {
     fn terminated(&self) -> bool;
 
     fn remaining_time(&self) -> u128 {
-        (self.timeout() - now()) / 1000
+        if self.timeout() > now() {
+            (self.timeout() - now()) / 1000
+        } else {
+            0
+        }
     }
 }
 
