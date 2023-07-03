@@ -41,6 +41,7 @@ pub struct Topic {
 
 impl Topic {
     pub(crate) fn new<Q, T>(
+        project: String,
         queue: Option<Q>,
         message_type: Option<T>,
         uuid: Option<String>,
@@ -51,7 +52,7 @@ impl Topic {
         T: Into<MessageType> + Default,
     {
         Topic {
-            project: "5GCroCo".to_string(),
+            project,
             queue: match queue {
                 Some(into_queue) => into_queue.into(),
                 None => Queue::default(),
@@ -66,8 +67,13 @@ impl Topic {
         }
     }
 
-    pub fn new_denm(component_name: String, geo_extension: &GeoExtension) -> Topic {
+    pub fn new_denm(
+        project: String,
+        component_name: String,
+        geo_extension: &GeoExtension,
+    ) -> Topic {
         Topic::new(
+            project,
             Some("inQueue".to_string()),
             Some("denm".to_string()),
             Some(component_name),
@@ -189,11 +195,12 @@ impl fmt::Display for Topic {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use crate::mqtt::topic::geo_extension::Tile;
     use crate::mqtt::topic::message_type::MessageType;
     use crate::mqtt::topic::queue::Queue;
     use crate::mqtt::topic::Topic;
-    use std::str::FromStr;
 
     #[test]
     fn test_cam_topic_from_str() {
