@@ -6,7 +6,7 @@
 //
 // Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
-use std::{cmp, hash};
+use std::hash;
 
 use serde::{Deserialize, Serialize};
 
@@ -143,11 +143,13 @@ impl DecentralizedEnvironmentalNotificationMessage {
             sequence_number,
             etsi_timestamp,
             94,
-            Option::Some(0), // FIXME remove it when the gateway will accept it
+            Some(0),
             None,
             None,
             Some(0),
             event_position_heading,
+            Some(10),
+            Some(200),
         )
     }
 
@@ -176,6 +178,8 @@ impl DecentralizedEnvironmentalNotificationMessage {
             relevance_traffic_direction,
             event_speed,
             event_position_heading,
+            Some(10),
+            Some(200),
         )
     }
 
@@ -205,6 +209,8 @@ impl DecentralizedEnvironmentalNotificationMessage {
             relevance_traffic_direction,
             event_speed,
             event_position_heading,
+            Some(1),
+            Some(200),
         )
     }
 
@@ -245,6 +251,8 @@ impl DecentralizedEnvironmentalNotificationMessage {
         relevance_traffic_direction: Option<u8>,
         event_speed: Option<u16>,
         event_position_heading: Option<u16>,
+        validity_duration: Option<u32>,
+        transmission_interval: Option<u16>,
     ) -> Self {
         Self {
             protocol_version: 2,
@@ -258,9 +266,9 @@ impl DecentralizedEnvironmentalNotificationMessage {
                 detection_time: etsi_timestamp as u64,
                 reference_time: etsi_timestamp as u64,
                 event_position,
-                // 10 seconds to reduce the TTL
-                validity_duration: Option::Some(10),
-                station_type: Option::Some(5),
+                validity_duration,
+                transmission_interval,
+                station_type: Some(5),
                 relevance_distance,
                 relevance_traffic_direction,
                 ..Default::default()
@@ -300,9 +308,9 @@ impl hash::Hash for DecentralizedEnvironmentalNotificationMessage {
     }
 }
 
-impl cmp::Eq for DecentralizedEnvironmentalNotificationMessage {}
+impl Eq for DecentralizedEnvironmentalNotificationMessage {}
 
-impl cmp::PartialEq for DecentralizedEnvironmentalNotificationMessage {
+impl PartialEq for DecentralizedEnvironmentalNotificationMessage {
     fn eq(&self, other: &Self) -> bool {
         self.management_container == other.management_container
     }
@@ -377,7 +385,7 @@ impl Default for ManagementContainer {
     }
 }
 
-impl cmp::PartialEq for ManagementContainer {
+impl PartialEq for ManagementContainer {
     fn eq(&self, other: &Self) -> bool {
         self.action_id == other.action_id
     }
