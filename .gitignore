@@ -16,10 +16,11 @@ rust/lib*/**/Cargo.lock
 # Python
 python/.eggs
 python/.tox
-python/build
-python/its_client.egg-info
 python/dist
 python/venv
+python/**/build
+python/**/*.egg-info
+python/**/*.whl
 python/**/*.pyc
 python/**/__pycache__
 python/**/monitoring.csv

@@ -29,6 +29,9 @@
 - [Source code](https://github.com/rust-lang/log)
 - Copyright (c) 2014-present The Rust Project Developers
 
+#### map_3d
+- [Source code](https://github.com/gberrante/map_3d)
+
 #### navigation
 - [Source code](https://github.com/andygrove/rust-navigation)
 - Copyright (c) Andy Grove

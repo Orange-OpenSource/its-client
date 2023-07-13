@@ -6,6 +6,7 @@
 //
 // Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+
 use serde::{Deserialize, Serialize};
 
 #[serde_with::skip_serializing_none]
@@ -75,7 +76,7 @@ pub enum ObjectClass {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SingleVruClass {
     Pedestrian(u8),
@@ -106,6 +107,23 @@ pub struct VruGroupType {
 pub struct MatchedPosition {
     pub lane_id: u8,
     pub longitudinal_lane_position: u16,
+}
+
+impl PerceivedObject {
+    pub fn is_pedestrian(&self) -> bool {
+        self.classification.iter().any(|object_classification| {
+            matches!(
+                object_classification.object_class,
+                ObjectClass::SingleVru(SingleVruClass::Pedestrian(_))
+            )
+        })
+    }
+
+    pub fn is_vehicle(&self) -> bool {
+        self.classification.iter().any(|object_classification| {
+            matches!(object_classification.object_class, ObjectClass::Vehicle(_))
+        })
+    }
 }
 
 #[cfg(test)]

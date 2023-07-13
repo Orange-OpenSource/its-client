@@ -11,6 +11,7 @@ use std::f64::consts;
 
 use cheap_ruler::{CheapRuler, DistanceUnit};
 use geo::Point;
+
 use navigation::Location;
 use ndarray::{arr1, arr2};
 use serde::{Deserialize, Serialize};
@@ -93,14 +94,26 @@ impl ReferencePosition {
         )
     }
 
-    pub fn get_offset_destination(&self, easting_offset: f64, northing_offset: f64) -> Self {
-        let origin = self.as_geo_point();
-        let ruler: CheapRuler<f64> = CheapRuler::new(origin.y(), DistanceUnit::Meters);
-        let destination = ruler.offset(&origin, easting_offset, northing_offset);
+    pub fn get_offset_destination(
+        &self,
+        easting_offset: f64,
+        northing_offset: f64,
+        up_offset: f64,
+    ) -> Self {
+        let (latitude, longitude, altitude) = map_3d::enu2geodetic(
+            easting_offset,
+            northing_offset,
+            up_offset,
+            get_coordinate(self.latitude).to_radians(),
+            get_coordinate(self.longitude).to_radians(),
+            self.altitude.into(),
+            map_3d::Ellipsoid::WGS84,
+        );
+
         ReferencePosition {
-            longitude: get_etsi_coordinate(destination.x()),
-            latitude: get_etsi_coordinate(destination.y()),
-            altitude: self.altitude,
+            latitude: get_etsi_coordinate(map_3d::rad2deg(latitude)),
+            longitude: get_etsi_coordinate(map_3d::rad2deg(longitude)),
+            altitude: altitude as i32,
         }
     }
 
@@ -118,8 +131,11 @@ impl ReferencePosition {
         let reference_ecef = anchor.to_ecef();
         let relative_ecef = self.to_ecef();
 
-        let latitude = get_coordinate(anchor.latitude).to_radians();
-        let longitude = get_coordinate(anchor.longitude).to_radians();
+        let mut latitude = get_coordinate(anchor.latitude);
+        let mut longitude = get_coordinate(anchor.longitude);
+
+        latitude = latitude.to_radians();
+        longitude = longitude.to_radians();
 
         let reference_matrix = arr2(&[
             [-longitude.sin(), longitude.cos(), 0.],
@@ -147,7 +163,7 @@ impl ReferencePosition {
         let y_distance = as_vec[1];
         let z_distance = as_vec[2];
 
-        (x_distance.round(), y_distance.round(), z_distance.round())
+        (x_distance, y_distance, z_distance)
     }
 
     /// Returns the corresponding [Earth Centered, Earth Fixed][1] coordinates for this position
@@ -181,18 +197,18 @@ impl fmt::Display for ReferencePosition {
 }
 
 fn get_coordinate(etsi_coordinate: i32) -> f64 {
-    let base: i32 = 10;
-    etsi_coordinate as f64 / base.pow(COORDINATE_SIGNIFICANT_DIGIT as u32) as f64
+    let base: f64 = 10.;
+    f64::from(etsi_coordinate) / base.powf(f64::from(COORDINATE_SIGNIFICANT_DIGIT))
 }
 
 fn get_etsi_coordinate(coordinate: f64) -> i32 {
     let base: i32 = 10;
-    (coordinate * base.pow(COORDINATE_SIGNIFICANT_DIGIT as u32) as f64) as i32
+    (coordinate * f64::from(base.pow(u32::from(COORDINATE_SIGNIFICANT_DIGIT)))) as i32
 }
 
 fn get_altitude(etsi_altitude: i32) -> f64 {
-    let base: i32 = 10;
-    etsi_altitude as f64 / base.pow(ALTITUDE_SIGNIFICANT_DIGIT as u32) as f64
+    let base: f64 = 10.;
+    f64::from(etsi_altitude) / base.powf(f64::from(ALTITUDE_SIGNIFICANT_DIGIT))
 }
 
 fn prime_vertical_radius(phi: f64) -> f64 {
@@ -208,12 +224,13 @@ fn ellipsoid_flattening() -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::reception::exchange::reference_position::get_etsi_coordinate;
+    use crate::reception::exchange::reference_position::{get_coordinate, get_etsi_coordinate};
+
     use navigation::Location;
 
     use crate::reception::exchange::ReferencePosition;
 
-    fn teqmo_lane_merge_reference_postion() -> ReferencePosition {
+    fn teqmo_lane_merge_reference_position() -> ReferencePosition {
         // center is at TEQMO lane merge position
         ReferencePosition {
             latitude: 486244870,
@@ -222,7 +239,7 @@ mod tests {
         }
     }
 
-    fn teqmo_city_reference_postion() -> ReferencePosition {
+    fn teqmo_city_reference_position() -> ReferencePosition {
         // center is at TEQMO city
         ReferencePosition {
             latitude: 486249990,
@@ -233,7 +250,7 @@ mod tests {
 
     #[test]
     fn compute_100_meters_distance() {
-        let position = teqmo_lane_merge_reference_postion();
+        let position = teqmo_lane_merge_reference_position();
         // I take a point at 100 meters
         let other_position = ReferencePosition {
             latitude: 486237420,
@@ -246,7 +263,7 @@ mod tests {
     #[test]
     fn compute_31_meters_distance() {
         // center is at TEQMO city
-        let position = teqmo_city_reference_postion();
+        let position = teqmo_city_reference_position();
         // I take a point at 31 meters
         let other_position = ReferencePosition {
             latitude: 486252239,
@@ -324,7 +341,7 @@ mod tests {
 
     #[test]
     fn it_can_get_south_destination() {
-        let position = teqmo_lane_merge_reference_postion();
+        let position = teqmo_lane_merge_reference_position();
         // I take a point at 100 meters on south
         let other_position = ReferencePosition {
             latitude: 486235877,
@@ -337,7 +354,7 @@ mod tests {
 
     #[test]
     fn it_can_get_north_destination() {
-        let position = teqmo_lane_merge_reference_postion();
+        let position = teqmo_lane_merge_reference_position();
         // I take a point at 100 meters on north
         let other_position = ReferencePosition {
             latitude: 486253862,
@@ -350,7 +367,7 @@ mod tests {
 
     #[test]
     fn it_can_get_east_destination() {
-        let position = teqmo_lane_merge_reference_postion();
+        let position = teqmo_lane_merge_reference_position();
         // I take a point at 100 meters on south
         let other_position = ReferencePosition {
             latitude: position.latitude,
@@ -363,7 +380,7 @@ mod tests {
 
     #[test]
     fn it_can_get_west_destination() {
-        let position = teqmo_lane_merge_reference_postion();
+        let position = teqmo_lane_merge_reference_position();
         // I take a point at 100 meters on south
         let other_position = ReferencePosition {
             latitude: position.latitude,
@@ -387,7 +404,7 @@ mod tests {
             altitude: 0,
         };
 
-        let offset_destination = reference_point.get_offset_destination(0., 100.);
+        let offset_destination = reference_point.get_offset_destination(0., 100., 0.);
 
         assert_eq!(offset_destination.latitude, expected_destination.latitude);
         assert_eq!(offset_destination.longitude, expected_destination.longitude);
@@ -406,9 +423,13 @@ mod tests {
             altitude: 0,
         };
 
-        let offset_destination = reference_point.get_offset_destination(100., 0.);
+        let offset_destination = reference_point.get_offset_destination(100., 0., 0.);
 
-        assert_eq!(offset_destination.latitude, expected_destination.latitude);
+        let lat_abs_diff = (get_coordinate(offset_destination.latitude).abs()
+            - get_coordinate(expected_destination.latitude).abs())
+        .abs();
+
+        assert!(lat_abs_diff < 1e-6);
         assert_eq!(offset_destination.longitude, expected_destination.longitude);
     }
 
@@ -430,9 +451,9 @@ mod tests {
 
         let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
 
-        assert_eq!(x_distance, expected_x_distance);
-        assert_eq!(y_distance, expected_y_distance);
-        assert_eq!(z_distance, expected_z_distance);
+        assert_eq!(x_distance.round(), expected_x_distance);
+        assert_eq!(y_distance.round(), expected_y_distance);
+        assert_eq!(z_distance.round(), expected_z_distance);
     }
 
     #[test]
@@ -453,9 +474,9 @@ mod tests {
 
         let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
 
-        assert_eq!(x_distance, expected_x_distance);
-        assert_eq!(y_distance, expected_y_distance);
-        assert_eq!(z_distance, expected_z_distance);
+        assert_eq!(x_distance.round(), expected_x_distance);
+        assert_eq!(y_distance.round(), expected_y_distance);
+        assert_eq!(z_distance.round(), expected_z_distance);
     }
 
     #[test]
@@ -476,9 +497,9 @@ mod tests {
 
         let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
 
-        assert_eq!(x_distance, expected_x_distance);
-        assert_eq!(y_distance, expected_y_distance);
-        assert_eq!(z_distance, expected_z_distance);
+        assert_eq!(x_distance.round(), expected_x_distance);
+        assert_eq!(y_distance.round(), expected_y_distance);
+        assert_eq!(z_distance.round(), expected_z_distance);
     }
 
     #[test]
@@ -499,9 +520,9 @@ mod tests {
 
         let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
 
-        assert_eq!(x_distance, expected_x_distance);
-        assert_eq!(y_distance, expected_y_distance);
-        assert_eq!(z_distance, expected_z_distance);
+        assert_eq!(x_distance.round(), expected_x_distance);
+        assert_eq!(y_distance.round(), expected_y_distance);
+        assert_eq!(z_distance.round(), expected_z_distance);
     }
 
     #[test]
@@ -522,9 +543,9 @@ mod tests {
 
         let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
 
-        assert_eq!(x_distance, expected_x_distance);
-        assert_eq!(y_distance, expected_y_distance);
-        assert_eq!(z_distance, expected_z_distance);
+        assert_eq!(x_distance.round(), expected_x_distance);
+        assert_eq!(y_distance.round(), expected_y_distance);
+        assert_eq!(z_distance.round(), expected_z_distance);
     }
 
     #[test]
@@ -545,8 +566,52 @@ mod tests {
 
         let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
 
-        assert_eq!(x_distance, expected_x_distance);
-        assert_eq!(y_distance, expected_y_distance);
-        assert_eq!(z_distance, expected_z_distance);
+        assert_eq!(x_distance.round(), expected_x_distance);
+        assert_eq!(y_distance.round(), expected_y_distance);
+        assert_eq!(z_distance.round(), expected_z_distance);
+    }
+
+    #[test]
+    fn geodetic_to_enu_same_point_gives_zero_relative_distance() {
+        let reference_point = ReferencePosition {
+            latitude: 488417860,
+            longitude: 23678940,
+            altitude: 0,
+        };
+        let relative_point = ReferencePosition {
+            latitude: 488417860,
+            longitude: 23678940,
+            altitude: 0,
+        };
+        let expected_x_distance = 0.;
+        let expected_y_distance = 0.;
+        let expected_z_distance = 0.;
+
+        let (x_distance, y_distance, z_distance) = relative_point.to_enu(&reference_point);
+
+        assert_eq!(x_distance.round(), expected_x_distance);
+        assert_eq!(y_distance.round(), expected_y_distance);
+        assert_eq!(z_distance.round(), expected_z_distance);
+    }
+
+    #[test]
+    fn geodetic_to_enu_to_geodetic_goes_back_to_initial_position() {
+        let reference_point = ReferencePosition {
+            latitude: 488417860,
+            longitude: 23678940,
+            altitude: 0,
+        };
+        let relative_point = ReferencePosition {
+            latitude: 488417059,
+            longitude: 23678940,
+            altitude: 0,
+        };
+
+        let (e, n, u) = relative_point.to_enu(&reference_point);
+        let destination = reference_point.get_offset_destination(e, n, u);
+
+        assert_eq!(destination.latitude, relative_point.latitude);
+        assert_eq!(destination.longitude, relative_point.longitude);
+        assert_eq!(destination.altitude, relative_point.altitude);
     }
 }

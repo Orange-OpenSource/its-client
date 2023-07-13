@@ -15,7 +15,7 @@ use crate::reception::exchange::mobile::{speed_from_yaw_angle, Mobile};
 use crate::reception::exchange::perceived_object::PerceivedObject;
 use crate::reception::exchange::reference_position::ReferencePosition;
 use crate::reception::typed::Typed;
-use log::warn;
+use log::trace;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -28,7 +28,9 @@ pub struct MobilePerceivedObject {
 }
 
 impl MobilePerceivedObject {
-    pub(crate) fn new(
+    // TODO FGA: check how to keep it private and manage end to end CPMs with natively
+    //           perceived object mobility
+    pub fn new(
         perceived_object: PerceivedObject,
         cpm_station_type: u8,
         cpm_station_id: u32,
@@ -38,8 +40,9 @@ impl MobilePerceivedObject {
         let compute_mobile_id = compute_id(perceived_object.object_id, cpm_station_id);
         let computed_reference_position = match cpm_station_type {
             15 => cpm_position.get_offset_destination(
-                (perceived_object.x_distance / 100).into(),
-                (perceived_object.y_distance / 100).into(),
+                perceived_object.x_distance as f64 / 100.,
+                perceived_object.y_distance as f64 / 100.,
+                perceived_object.z_distance.unwrap_or_default() as f64 / 100.,
             ),
             _ => compute_position_from_mobile(
                 perceived_object.x_distance,
@@ -114,7 +117,7 @@ fn compute_id(object_id: u8, cpm_station_id: u32) -> u32 {
     match string_id.parse() {
         Ok(id) => id,
         Err(_err) => {
-            warn!(
+            trace!(
                 "unable to generate a mobile id with {}, we create a short one",
                 string_id
             );

@@ -8,18 +8,18 @@
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 pub mod geo_extension;
 mod message_type;
-mod parse_error;
+pub mod parse_error;
+pub mod quadtree;
 mod queue;
-
-use std::{fmt, hash, str, str::FromStr};
-
-use log::error;
 
 use crate::analyse::configuration::Configuration;
 use crate::mqtt::topic::geo_extension::{GeoExtension, Tile};
 use crate::mqtt::topic::message_type::MessageType;
 use crate::mqtt::topic::parse_error::ParseError;
 use crate::mqtt::topic::queue::Queue;
+use log::error;
+use std::str::FromStr;
+use std::{fmt, hash};
 
 #[derive(Default, Debug, Clone)]
 // TODO implement a generic to manage a subscription with wild cards differently of a publish
@@ -41,6 +41,7 @@ pub struct Topic {
 
 impl Topic {
     pub(crate) fn new<Q, T>(
+        project: String,
         queue: Option<Q>,
         message_type: Option<T>,
         uuid: Option<String>,
@@ -51,7 +52,7 @@ impl Topic {
         T: Into<MessageType> + Default,
     {
         Topic {
-            project: "5GCroCo".to_string(),
+            project,
             queue: match queue {
                 Some(into_queue) => into_queue.into(),
                 None => Queue::default(),
@@ -66,8 +67,13 @@ impl Topic {
         }
     }
 
-    pub fn new_denm(component_name: String, geo_extension: &GeoExtension) -> Topic {
+    pub fn new_denm(
+        project: String,
+        component_name: String,
+        geo_extension: &GeoExtension,
+    ) -> Topic {
         Topic::new(
+            project,
             Some("inQueue".to_string()),
             Some("denm".to_string()),
             Some(component_name),
@@ -189,11 +195,12 @@ impl fmt::Display for Topic {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use crate::mqtt::topic::geo_extension::Tile;
     use crate::mqtt::topic::message_type::MessageType;
     use crate::mqtt::topic::queue::Queue;
     use crate::mqtt::topic::Topic;
-    use std::str::FromStr;
 
     #[test]
     fn test_cam_topic_from_str() {

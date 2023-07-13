@@ -6,7 +6,7 @@
 //
 // Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
-use std::{cmp, hash};
+use std::hash;
 
 use serde::{Deserialize, Serialize};
 
@@ -25,6 +25,7 @@ pub mod mobile;
 pub mod mobile_perceived_object;
 pub mod perceived_object;
 pub mod reference_position;
+pub mod sequence_number;
 pub mod signal_phase_and_timing_extended_message;
 
 #[serde_with::skip_serializing_none]
@@ -131,13 +132,13 @@ impl hash::Hash for Exchange {
     }
 }
 
-impl cmp::PartialEq for Exchange {
+impl PartialEq for Exchange {
     fn eq(&self, other: &Self) -> bool {
         self.message == other.message
     }
 }
 
-impl cmp::Eq for Exchange {}
+impl Eq for Exchange {}
 
 #[cfg(test)]
 mod tests {
