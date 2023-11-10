@@ -31,3 +31,10 @@ crate-type = ["lib"]
 
 [dependencies]
 map_3d = "0.1"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "position"
+harness = false
