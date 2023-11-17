@@ -6,9 +6,11 @@
 //
 // Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+pub mod message;
 
-
+use crate::exchange::message::Message;
 use crate::mobility::position::Position;
+
 use serde::{Deserialize, Serialize};
 
 #[serde_with::skip_serializing_none]
@@ -22,8 +24,7 @@ pub struct Exchange {
     pub timestamp: u64,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub path: Vec<PathElement>,
-    // FIXME commented because message will be added later
-    // pub message: Message,
+    pub message: Message,
 }
 
 #[serde_with::skip_serializing_none]
@@ -64,21 +65,22 @@ pub struct PathPosition {
 }
 
 impl Exchange {
-    // FIXME `message` commented because message will be added later
     pub fn new(
         component: String,
         timestamp: u64,
         path: Vec<PathElement>,
-        // message: Message,
+        message: Message,
     ) -> Box<Exchange> {
         Box::from(Exchange {
+            // FIXME `Message` no longer provides get_type() method
+            //        will be brought through Content trait
             type_field: "".to_string(), //message.get_type(),
             origin: "mec_application".to_string(),
             version: "1.1.1".to_string(),
             source_uuid: component,
             path,
             timestamp,
-            // message,
+            message,
         })
     }
 
