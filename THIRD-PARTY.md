@@ -70,6 +70,10 @@
 - [Source code](https://github.com/clap-rs/clap)
 - Copyright (c) Kevin B. Knapp et al.
 
+#### enum_dispatch
+- [Source code](https://gitlab.com/antonok/enum_dispatch)
+- Copyright (c) 2019 Anton Lazarev
+
 #### flexi_logger
 - [Source code](https://github.com/emabee/flexi_logger)
 
