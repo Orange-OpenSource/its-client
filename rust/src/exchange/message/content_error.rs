@@ -7,10 +7,12 @@
 // Author: Nicolas BUFFON <nicolas.buffon@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 
-pub mod content;
-pub mod content_error;
+use thiserror::Error;
 
-use serde::{Deserialize, Serialize};
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub enum Message {}
+#[derive(Debug, Error)]
+pub enum ContentError {
+    #[error("Struct {0} does not implement Mobile trait")]
+    NotAMobile(&'static str),
+    #[error("Struct {0} does not implement Mortal trait")]
+    NotAMortal(&'static str),
+}
