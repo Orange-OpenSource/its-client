@@ -29,3 +29,5 @@ doc = true
 edition = "2021"
 crate-type = ["lib"]
 
+[dependencies]
+map_3d = "0.1"
