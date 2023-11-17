@@ -30,6 +30,7 @@ edition = "2021"
 crate-type = ["lib"]
 
 [dependencies]
+enum_dispatch = "0.3"
 geo = "0.27"
 log = "0.4"
 map_3d = "0.1"
