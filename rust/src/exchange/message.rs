@@ -10,7 +10,15 @@
 pub mod content;
 pub mod content_error;
 
+use crate::exchange::etsi::cooperative_awareness_message::CooperativeAwarenessMessage;
+use crate::exchange::message::content::Content;
+use crate::mobility::mobile::Mobile;
+use enum_dispatch::enum_dispatch;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub enum Message {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[enum_dispatch]
+#[allow(clippy::upper_case_acronyms)]
+enum Message {
+    CAM(CooperativeAwarenessMessage),
+}

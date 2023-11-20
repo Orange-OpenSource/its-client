@@ -10,7 +10,9 @@
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::mortal::Mortal;
 use crate::mobility::mobile::Mobile;
+use enum_dispatch::enum_dispatch;
 
+#[enum_dispatch(Message)]
 pub trait Content {
     fn get_type(&self) -> &str;
 
