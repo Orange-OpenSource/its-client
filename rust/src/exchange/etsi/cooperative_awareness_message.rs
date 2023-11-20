@@ -109,6 +109,7 @@ impl Content for CooperativeAwarenessMessage {
         "cam"
     }
 
+    /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
     fn appropriate(&mut self) {
         todo!()
     }
