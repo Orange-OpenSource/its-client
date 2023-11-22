@@ -12,6 +12,7 @@ pub mod content_error;
 
 use crate::exchange::etsi::cooperative_awareness_message::CooperativeAwarenessMessage;
 use crate::exchange::etsi::decentralized_environmental_notification_message::DecentralizedEnvironmentalNotificationMessage;
+use crate::exchange::etsi::signal_phase_and_timing_extended_message::SignalPhaseAndTimingExtendedMessage;
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::mortal::Mortal;
@@ -25,4 +26,5 @@ use serde::{Deserialize, Serialize};
 pub enum Message {
     CAM(CooperativeAwarenessMessage),
     DENM(DecentralizedEnvironmentalNotificationMessage),
+    SPATEM(SignalPhaseAndTimingExtendedMessage),
 }
