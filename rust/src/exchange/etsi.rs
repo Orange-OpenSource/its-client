@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod cooperative_awareness_message;
 pub mod decentralized_environmental_notification_message;
+pub mod map_extended_message;
 pub mod reference_position;
 pub mod signal_phase_and_timing_extended_message;
 
