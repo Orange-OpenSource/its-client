@@ -7,6 +7,8 @@
 // Author: Nicolas BUFFON <nicolas.buffon@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 
+use geo::EuclideanDistance;
+
 use std::fmt::{Display, Formatter, Result};
 use std::hash::{Hash, Hasher};
 
@@ -184,6 +186,30 @@ pub fn enu_destination(
         longitude,
         altitude,
     }
+}
+
+/// Returns the minimal distance from a Position to a list of Positions
+///
+/// FIXME this function requires testing and consolidation (follow up in issue [97][1])
+///
+/// [1] https://github.com/Orange-OpenSource/its-client/issues/97
+pub fn distance_to_line(position: &Position, line: &[Position]) -> f64 {
+    let mut coordinates: Vec<geo::Coord<f64>> = Vec::new();
+
+    for position in line {
+        coordinates.push(
+            geo::coord! { x: position.latitude.to_degrees(), y: position.longitude.to_degrees() },
+        );
+    }
+    let lane_line = geo::LineString::new(coordinates);
+
+    let reference_point: geo::Point<f64> = (
+        position.latitude.to_degrees(),
+        position.latitude.to_degrees(),
+    )
+        .into();
+
+    reference_point.euclidean_distance(&lane_line)
 }
 
 #[cfg(test)]
