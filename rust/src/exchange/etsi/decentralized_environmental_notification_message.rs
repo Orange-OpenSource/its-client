@@ -1,20 +1,24 @@
 // Software Name: its-client
-// SPDX-FileCopyrightText: Copyright (c) 2016-2022 Orange
+// SPDX-FileCopyrightText: Copyright (c) 2016-2023 Orange
 // SPDX-License-Identifier: MIT License
 //
 // This software is distributed under the MIT license, see LICENSE.txt file for more details.
 //
-// Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
+// Author: Nicolas Buffon <frederic.gardes@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 use std::hash;
 
+use crate::exchange::etsi::reference_position::ReferencePosition;
+use crate::exchange::etsi::{
+    etsi_now, heading_from_etsi, speed_from_etsi, timestamp_from_etsi, PathHistory,
+    PositionConfidence,
+};
+use crate::exchange::message::content::Content;
+use crate::exchange::message::content_error::ContentError;
+use crate::exchange::mortal::Mortal;
+use crate::mobility::mobile::Mobile;
+use crate::mobility::position::Position;
 use serde::{Deserialize, Serialize};
-
-use crate::reception::exchange::mobile::Mobile;
-use crate::reception::exchange::{PathHistory, PositionConfidence, ReferencePosition};
-
-use crate::reception::mortal::{etsi_now, timestamp, Mortal};
-use crate::reception::typed::Typed;
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
@@ -95,46 +99,12 @@ pub struct LocationContainerConfidence {
 }
 
 impl DecentralizedEnvironmentalNotificationMessage {
-    /// Create a new DecentralizedEnvironmentalNotificationMessage of cause 94 (Stationary Vehicle).
-    ///
-    /// # Arguments
-    ///
-    /// * `station_id`: the station id
-    /// * `originating_station_id`: the originating station id
-    /// * `event_position`: the reference position of the event
-    /// * `sequence_number`: the sequence number
-    /// * `etsi_timestamp`: the timestamp on ETSI format
-    /// * `event_position_heading`: the heading of the reference position of he event
-    ///
-    /// returns: DecentralizedEnvironmentalNotificationMessage
-    ///  The Stationary Vehicle DENM built using the provided elements.
-    /// # Examples
-    ///
-    /// use crate::reception::exchange::reference_position::ReferencePosition;
-    //  use crate::reception::mortal::{etsi_timestamp, now};
-
-    //  let station_id = 4567;
-    //  let originating_station_id = 1230;
-    //  let event_position = ReferencePosition::default();
-    //  let previous_sequence_number = 10;
-    /// let reference_timestamp = now() as u64;
-    //  let event_position_heading = Some(3000);
-
-    /// let denm = DecentralizedEnvironmentalNotificationMessage::new_stationary_vehicle(
-    //         station_id,
-    //         originating_station_id,
-    //         event_position,
-    //         previous_sequence_number,
-    //         reference_timestamp,
-    //         event_position_heading,
-    //     );
-    ///
     pub fn new_stationary_vehicle(
         station_id: u32,
         originating_station_id: u32,
         event_position: ReferencePosition,
         sequence_number: u16,
-        etsi_timestamp: u128,
+        etsi_timestamp: u64,
         event_position_heading: Option<u16>,
     ) -> Self {
         Self::new(
@@ -160,7 +130,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
         originating_station_id: u32,
         event_position: ReferencePosition,
         sequence_number: u16,
-        etsi_timestamp: u128,
+        etsi_timestamp: u64,
         subcause: Option<u8>,
         relevance_distance: Option<u8>,
         relevance_traffic_direction: Option<u8>,
@@ -190,7 +160,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
         originating_station_id: u32,
         event_position: ReferencePosition,
         sequence_number: u16,
-        etsi_timestamp: u128,
+        etsi_timestamp: u64,
         subcause: Option<u8>,
         relevance_distance: Option<u8>,
         relevance_traffic_direction: Option<u8>,
@@ -218,7 +188,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
     pub fn update_collision_risk(
         mut denm: Self,
         event_position: ReferencePosition,
-        etsi_timestamp: u128,
+        etsi_timestamp: u64,
         relevance_distance: Option<u8>,
         relevance_traffic_direction: Option<u8>,
         event_speed: Option<u16>,
@@ -226,7 +196,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
     ) -> Self {
         // collisionRisk
         denm.management_container.event_position = event_position;
-        denm.management_container.reference_time = etsi_timestamp as u64;
+        denm.management_container.reference_time = etsi_timestamp;
         denm.management_container.relevance_distance = relevance_distance;
         denm.management_container.relevance_traffic_direction = relevance_traffic_direction;
         if event_speed.is_some() || event_position_heading.is_some() {
@@ -240,12 +210,12 @@ impl DecentralizedEnvironmentalNotificationMessage {
     }
 
     #[allow(clippy::too_many_arguments)]
-    pub fn new(
+    pub(crate) fn new(
         station_id: u32,
         originating_station_id: u32,
         event_position: ReferencePosition,
         sequence_number: u16,
-        etsi_timestamp: u128,
+        etsi_timestamp: u64,
         cause: u8,
         subcause: Option<u8>,
         relevance_distance: Option<u8>,
@@ -263,9 +233,8 @@ impl DecentralizedEnvironmentalNotificationMessage {
                     originating_station_id,
                     sequence_number,
                 },
-                // FIXME find why the serde Serializer can't match the u128
-                detection_time: etsi_timestamp as u64,
-                reference_time: etsi_timestamp as u64,
+                detection_time: etsi_timestamp,
+                reference_time: etsi_timestamp,
                 event_position,
                 validity_duration,
                 transmission_interval,
@@ -334,53 +303,75 @@ impl PartialEq for DecentralizedEnvironmentalNotificationMessage {
 }
 
 impl Mobile for DecentralizedEnvironmentalNotificationMessage {
-    fn mobile_id(&self) -> u32 {
+    fn id(&self) -> u32 {
         self.station_id
     }
 
-    fn position(&self) -> &ReferencePosition {
-        &self.management_container.event_position
+    fn position(&self) -> Position {
+        self.management_container.event_position.as_position()
     }
 
-    fn speed(&self) -> Option<u16> {
+    fn speed(&self) -> Option<f64> {
         if let Some(location_container) = &self.location_container {
-            return location_container.event_speed;
+            location_container.event_speed.map(speed_from_etsi)
+        } else {
+            None
         }
-        None
     }
 
-    fn heading(&self) -> Option<u16> {
+    fn heading(&self) -> Option<f64> {
         if let Some(location_container) = &self.location_container {
-            return location_container.event_position_heading;
+            location_container
+                .event_position_heading
+                .map(heading_from_etsi)
+        } else {
+            None
         }
+    }
+
+    fn acceleration(&self) -> Option<f64> {
         None
     }
 }
 
+impl Content for DecentralizedEnvironmentalNotificationMessage {
+    fn get_type(&self) -> &str {
+        "denm"
+    }
+
+    /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
+    fn appropriate(&mut self) {
+        todo!()
+    }
+
+    fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
+        Ok(self)
+    }
+
+    fn as_mortal(&self) -> Result<&dyn Mortal, ContentError> {
+        Ok(self)
+    }
+}
+
 impl Mortal for DecentralizedEnvironmentalNotificationMessage {
-    fn timeout(&self) -> u128 {
-        timestamp(self.management_container.detection_time as u128)
-            + (self
-                .management_container
-                .validity_duration
-                .unwrap_or_default()
-                * 1000) as u128
+    fn timeout(&self) -> u64 {
+        timestamp_from_etsi(self.management_container.detection_time)
+            + u64::from(
+                self.management_container
+                    .validity_duration
+                    .unwrap_or_default()
+                    * 1000,
+            )
     }
 
     fn terminate(&mut self) {
         self.management_container.termination = Some(0);
-        self.management_container.detection_time = etsi_now() as u64;
+        self.management_container.detection_time = etsi_now();
         self.management_container.validity_duration = Some(10);
     }
 
     fn terminated(&self) -> bool {
         self.management_container.termination.is_some()
-    }
-}
-
-impl Typed for DecentralizedEnvironmentalNotificationMessage {
-    fn get_type() -> String {
-        "denm".to_string()
     }
 }
 
@@ -416,9 +407,10 @@ impl hash::Hash for ManagementContainer {
 
 #[cfg(test)]
 mod tests {
-    use crate::reception::exchange::decentralized_environmental_notification_message::DecentralizedEnvironmentalNotificationMessage;
-    use crate::reception::exchange::reference_position::ReferencePosition;
-    use crate::reception::mortal::{etsi_timestamp, now};
+    use crate::exchange::etsi::decentralized_environmental_notification_message::DecentralizedEnvironmentalNotificationMessage;
+    use crate::exchange::etsi::reference_position::ReferencePosition;
+    use crate::exchange::etsi::timestamp_to_etsi;
+    use crate::now;
 
     #[test]
     fn create_new_stationary_vehicle() {
@@ -449,12 +441,11 @@ mod tests {
             denm.management_container.action_id.sequence_number,
             sequence_number
         );
-        assert_eq!(
-            denm.management_container.reference_time,
-            reference_timestamp as u64
-        );
+        assert_eq!(denm.management_container.reference_time, {
+            reference_timestamp
+        });
 
-        let etsi_ref_time = etsi_timestamp(reference_timestamp) as u64;
+        let etsi_ref_time = timestamp_to_etsi(reference_timestamp);
         assert!(denm.management_container.detection_time >= etsi_ref_time + 1000);
     }
 
