@@ -7,10 +7,16 @@
 // Author: Nicolas Buffon <nicolas.buffon@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 
-use crate::reception::exchange::reference_position::ReferencePosition;
-use crate::reception::typed::Typed;
-use geo::{coord, EuclideanDistance, LineString, Point};
 use log::warn;
+use std::any::type_name;
+
+use crate::exchange::etsi::reference_position::ReferencePosition;
+use crate::exchange::message::content::Content;
+use crate::exchange::message::content_error::ContentError;
+use crate::exchange::message::content_error::ContentError::{NotAMobile, NotAMortal};
+use crate::exchange::mortal::Mortal;
+use crate::mobility::mobile::Mobile;
+use crate::mobility::position::{distance_to_line, position_from_degrees, Position};
 use serde::{Deserialize, Serialize};
 use serde_repr::Deserialize_repr;
 use std::hash::{Hash, Hasher};
@@ -37,9 +43,22 @@ pub struct MAPExtendedMessage {
     pub lanes: Vec<Lane>,
 }
 
-impl Typed for MAPExtendedMessage {
-    fn get_type() -> String {
-        "map".to_string()
+impl Content for MAPExtendedMessage {
+    fn get_type(&self) -> &str {
+        "mapem"
+    }
+
+    /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
+    fn appropriate(&mut self) {
+        todo!()
+    }
+
+    fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
+        Err(NotAMobile(type_name::<MAPExtendedMessage>()))
+    }
+
+    fn as_mortal(&self) -> Result<&dyn Mortal, ContentError> {
+        Err(NotAMortal(type_name::<MAPExtendedMessage>()))
     }
 }
 
@@ -139,22 +158,20 @@ impl MAPExtendedMessage {
     /// Lookup the existing lanes to find the one the position is in or close to
     ///
     /// FIXME this requires unit tests and consolidation
-    pub fn get_lane_from_position(&self, position: &ReferencePosition) -> Option<&Lane> {
-        let mut best_lane: Option<(&Lane, f32)> = None;
+    pub fn get_lane_from_position(&self, reference_position: &ReferencePosition) -> Option<&Lane> {
+        let mut best_lane: Option<(&Lane, f64)> = None;
 
-        let point = position.as_geo_point();
-        let reference_point: Point<f32> = Point::new(point.x() as f32, point.y() as f32);
+        let reference_position = reference_position.as_position();
 
         for lane in &self.lanes {
             match &lane.geom {
                 geometry if geometry.len() > 1 => {
-                    let mut coordinates: Vec<geo::Coord<f32>> = Vec::new();
+                    let mut positions: Vec<Position> = Vec::new();
                     for point in geometry {
-                        coordinates.push(coord! { x: point[0], y: point[1] });
+                        positions.push(position_from_degrees(point[0].into(), point[1].into(), 0.));
                     }
-                    let lane_line = LineString::new(coordinates);
 
-                    let distance_to_lane = reference_point.euclidean_distance(&lane_line);
+                    let distance_to_lane = distance_to_line(&reference_position, &positions);
                     if best_lane.is_none() || best_lane.unwrap().1 > distance_to_lane {
                         best_lane = Some((lane, distance_to_lane));
                     }
@@ -171,7 +188,7 @@ impl MAPExtendedMessage {
 
 #[cfg(test)]
 mod test {
-    use crate::reception::exchange::map_extended_message::{Action, MAPExtendedMessage};
+    use crate::exchange::etsi::map_extended_message::{Action, MAPExtendedMessage};
 
     #[test]
     fn test_complete_deserialization() {
