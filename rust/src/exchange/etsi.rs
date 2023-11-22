@@ -7,10 +7,13 @@
 // Author: Nicolas BUFFON <nicolas.buffon@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 
+use crate::now;
 use serde::{Deserialize, Serialize};
 
 pub mod cooperative_awareness_message;
 pub mod reference_position;
+
+const ETSI_TIMESTAMP_OFFSET: u64 = 1072915195000;
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
@@ -43,33 +46,45 @@ pub struct PathPosition {
 }
 
 /// Converts heading from decidegrees to radians
-fn heading_from_etsi(decidegrees: u16) -> f64 {
+pub(crate) fn heading_from_etsi(decidegrees: u16) -> f64 {
     (f64::from(decidegrees) / 10.).to_radians()
 }
 
 /// Converts heading from radians to decidegrees
-fn heading_to_etsi(radians: f64) -> u16 {
+pub(crate) fn heading_to_etsi(radians: f64) -> u16 {
     ((radians.to_degrees() * 10_f64) % 3600.) as u16
 }
 
 /// Converts speed from cm/s to m/s
-fn speed_from_etsi(cm_per_sec: u16) -> f64 {
+pub(crate) fn speed_from_etsi(cm_per_sec: u16) -> f64 {
     f64::from(cm_per_sec) / 100.
 }
 
 /// Converts speed from m/s to cm/s
-fn speed_to_etsi(meters_per_sec: f64) -> u16 {
+pub(crate) fn speed_to_etsi(meters_per_sec: f64) -> u16 {
     (meters_per_sec * 100.) as u16
 }
 
 /// Converts acceleration from dm/s² to m/s²
-fn acceleration_from_etsi(dm_per_sec_2: i16) -> f64 {
+pub(crate) fn acceleration_from_etsi(dm_per_sec_2: i16) -> f64 {
     f64::from(dm_per_sec_2) / 10.
 }
 
 /// Converts acceleration from m/s² to dm/s²
-fn acceleration_to_etsi(m_per_s_2: f64) -> i16 {
+pub(crate) fn acceleration_to_etsi(m_per_s_2: f64) -> i16 {
     (m_per_s_2 * 10.) as i16
+}
+
+pub(crate) fn timestamp_from_etsi(etsi_timestamp: u64) -> u64 {
+    etsi_timestamp + ETSI_TIMESTAMP_OFFSET
+}
+
+pub(crate) fn timestamp_to_etsi(unix_timestamp: u64) -> u64 {
+    unix_timestamp - ETSI_TIMESTAMP_OFFSET
+}
+
+pub(crate) fn etsi_now() -> u64 {
+    timestamp_from_etsi(now())
 }
 
 #[cfg(test)]
