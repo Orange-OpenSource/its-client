@@ -8,6 +8,7 @@
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 
 use std::fmt::{Display, Formatter, Result};
+use std::hash::{Hash, Hasher};
 
 const EARTH_RADIUS: f64 = 6_371_000.;
 const EARTH_FLATTENING: f64 = 1. / 298.257223563;
@@ -15,7 +16,7 @@ const EQUATORIAL_RADIUS: f64 = 6_378_137.0;
 const POLAR_RADIUS: f64 = 6_356_752.3;
 
 /// Describes a geodesic position using SI units
-#[derive(Clone, Copy, Default, Debug)]
+#[derive(Clone, Copy, Default, Debug, PartialEq)]
 pub struct Position {
     /// Latitude in radians
     pub latitude: f64,
@@ -36,6 +37,14 @@ impl Display for Position {
             self.longitude.to_degrees(),
             self.altitude,
         )
+    }
+}
+
+impl Hash for Position {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        ((self.latitude * 1e8).round() as i64).hash(state);
+        ((self.latitude * 1e8).round() as i64).hash(state);
+        ((self.latitude * 1e3).round() as i64).hash(state);
     }
 }
 
@@ -72,6 +81,26 @@ pub fn haversine_distance(first: &Position, second: &Position) -> f64 {
     let c = 2.0 * a.sqrt().atan2((1.0 - a).sqrt());
 
     EARTH_RADIUS * c
+}
+
+/// φ is latitude, λ is longitude, θ is the bearing (clockwise from north), δ is the angular distance d/R; d being the distance travelled, R the earth’s radius
+pub fn haversine_destination(position: &Position, bearing: f64, distance: f64) -> Position {
+    let φ1 = position.latitude;
+    let λ1 = position.longitude;
+    let δ = distance / EARTH_RADIUS;
+
+    let φ2 = f64::asin(φ1.sin() * δ.cos() + φ1.cos() * δ.sin() * bearing.cos());
+    let λ2 = λ1
+        + f64::atan2(
+            bearing.sin() * δ.sin() * φ1.cos(),
+            δ.cos() - φ1.sin() * φ2.sin(),
+        );
+
+    Position {
+        latitude: φ2,
+        longitude: λ2,
+        altitude: position.altitude,
+    }
 }
 
 /// Destination computation from origin, bearing and distance using Vincenty formulae
@@ -160,7 +189,8 @@ pub fn enu_destination(
 #[cfg(test)]
 mod tests {
     use crate::mobility::position::{
-        bearing, enu_destination, haversine_distance, position_from_degrees, vincenty_destination,
+        bearing, enu_destination, haversine_destination, haversine_distance, position_from_degrees,
+        vincenty_destination,
     };
 
     macro_rules! test_haversine_distance {
@@ -281,7 +311,7 @@ mod tests {
         330.
     );
 
-    macro_rules! test_bearing_destination {
+    macro_rules! test_vincenty_destination {
         ($test_name:ident, $bearing:expr, $distance:expr, $exp_dst:expr) => {
             #[test]
             fn $test_name() {
@@ -318,52 +348,115 @@ mod tests {
             }
         };
     }
-    test_bearing_destination!(
-        north_bearing_360_deg_100m_destination,
+    test_vincenty_destination!(
+        vincenty_north_bearing_360_deg_100m_destination,
         360f64,
         100.,
         position_from_degrees(48.62609508779, 2.24150940001, 0.)
     );
-    test_bearing_destination!(
-        north_bearing_0_deg_100m_destination,
+    test_vincenty_destination!(
+        vincenty_north_bearing_0_deg_100m_destination,
         0f64,
         100.,
         position_from_degrees(48.62609508779, 2.24150940001, 0.)
     );
-    test_bearing_destination!(
-        south_bearing_180_deg_100m_destination,
+    test_vincenty_destination!(
+        vincenty_south_bearing_180_deg_100m_destination,
         180f64,
         100.,
         position_from_degrees(48.62429656659, 2.24150940001, 0.)
     );
-    test_bearing_destination!(
-        south_bearing_minus_180_deg_100m_destination,
+    test_vincenty_destination!(
+        vincenty_south_bearing_minus_180_deg_100m_destination,
         -180f64,
         100.,
         position_from_degrees(48.62429656659, 2.24150940001, 0.)
     );
-    test_bearing_destination!(
-        east_bearing_90_deg_100m_destination,
+    test_vincenty_destination!(
+        vincenty_east_bearing_90_deg_100m_destination,
         90f64,
         100.,
         position_from_degrees(48.62519580005, 2.24286588773, 0.)
     );
-    test_bearing_destination!(
-        east_bearing_minus_270_deg_100m_destination,
+    test_vincenty_destination!(
+        vincenty_east_bearing_minus_270_deg_100m_destination,
         -270f64,
         100.,
         position_from_degrees(48.62519580005, 2.24286588773, 0.)
     );
-    test_bearing_destination!(
-        west_bearing_270_deg_100m_destination,
+    test_vincenty_destination!(
+        vincenty_west_bearing_270_deg_100m_destination,
         270f64,
         100.,
         position_from_degrees(48.62519580005, 2.24015289217, 0.)
     );
-    test_bearing_destination!(
-        west_bearing_minus_90_deg_100m_destination,
+    test_vincenty_destination!(
+        vincenty_west_bearing_minus_90_deg_100m_destination,
         -90f64,
         100.,
         position_from_degrees(48.62519580005, 2.24015289217, 0.)
+    );
+
+    macro_rules! test_haversine_destination {
+        ($test_name:ident, $bearing:expr, $distance:expr, $exp_dst:expr) => {
+            #[test]
+            fn $test_name() {
+                let position = position_from_degrees(48.62519582726, 2.24150938995, 0.);
+                let epsilon = 1e-7;
+                let _position_deg_precision = 10e7;
+
+                let destination =
+                    haversine_destination(&position, $bearing.to_radians(), $distance);
+                let lat_delta =
+                    (destination.latitude.to_degrees() - $exp_dst.latitude.to_degrees()).abs();
+                let lon_delta =
+                    (destination.longitude.to_degrees() - $exp_dst.longitude.to_degrees()).abs();
+
+                println!("Expected: {}", $exp_dst);
+                println!("Actual: {}", destination);
+
+                assert!(
+                    lat_delta < epsilon,
+                    "{} !< {} (expected: {}, actual: {})",
+                    lat_delta,
+                    epsilon,
+                    $exp_dst.latitude.to_degrees(),
+                    destination.latitude.to_degrees()
+                );
+
+                assert!(
+                    lon_delta < epsilon,
+                    "{} !< {} (expected: {}, actual: {})",
+                    lon_delta,
+                    epsilon,
+                    $exp_dst.longitude.to_degrees(),
+                    destination.longitude.to_degrees()
+                );
+            }
+        };
+    }
+    test_haversine_destination!(
+        haversine_north_bearing_360_deg_100m_destination,
+        360f64,
+        100.,
+        position_from_degrees(48.62609508779, 2.24150940001, 0.)
+    );
+    test_haversine_destination!(
+        haversine_north_bearing_0_deg_100m_destination,
+        0f64,
+        100.,
+        position_from_degrees(48.62609508779, 2.24150940001, 0.)
+    );
+    test_haversine_destination!(
+        haversine_south_bearing_180_deg_100m_destination,
+        180f64,
+        100.,
+        position_from_degrees(48.62429656659, 2.24150940001, 0.)
+    );
+    test_haversine_destination!(
+        haversine_south_bearing_minus_180_deg_100m_destination,
+        -180f64,
+        100.,
+        position_from_degrees(48.62429656659, 2.24150940001, 0.)
     );
 }
