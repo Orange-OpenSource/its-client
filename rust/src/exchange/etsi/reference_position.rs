@@ -55,7 +55,7 @@ impl fmt::Display for ReferencePosition {
 }
 
 /// Converts a coordinate from tenths of microdegree to radians
-fn coordinate_from_etsi(microdegree_tenths: i32) -> f64 {
+pub(crate) fn coordinate_from_etsi(microdegree_tenths: i32) -> f64 {
     let degrees =
         f64::from(microdegree_tenths) / 10f64.powf(f64::from(COORDINATE_SIGNIFICANT_DIGIT));
     degrees.to_radians()
@@ -68,7 +68,7 @@ fn coordinate_to_etsi(radians: f64) -> i32 {
 }
 
 /// Converts altitude from centimeters to meters
-fn altitude_from_etsi(centimeters: i32) -> f64 {
+pub(crate) fn altitude_from_etsi(centimeters: i32) -> f64 {
     f64::from(centimeters) / 10f64.powf(f64::from(ALTITUDE_SIGNIFICANT_DIGIT))
 }
 
