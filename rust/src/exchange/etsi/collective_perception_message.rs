@@ -1,3 +1,4 @@
+use std::any::type_name;
 // Software Name: its-client
 // SPDX-FileCopyrightText: Copyright (c) 2016-2022 Orange
 // SPDX-License-Identifier: MIT License
@@ -6,13 +7,21 @@
 //
 // Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+use crate::exchange::etsi::mobile_perceived_object::MobilePerceivedObject;
+use crate::exchange::etsi::perceived_object::PerceivedObject;
+use crate::exchange::etsi::reference_position::ReferencePosition;
+use crate::exchange::etsi::{
+    acceleration_from_etsi, heading_from_etsi, speed_from_etsi, PositionConfidence,
+};
+use crate::exchange::message::content::Content;
+use crate::exchange::message::content_error::ContentError;
+use crate::exchange::message::content_error::ContentError::{
+    MissingStationDataContainer, NotAMortal, RsuOriginatingMessage,
+};
+use crate::exchange::mortal::Mortal;
+use crate::mobility::mobile::Mobile;
+use crate::mobility::position::Position;
 use serde::{Deserialize, Serialize};
-
-use crate::reception::exchange::mobile::Mobile;
-use crate::reception::exchange::mobile_perceived_object::MobilePerceivedObject;
-use crate::reception::exchange::perceived_object::PerceivedObject;
-use crate::reception::exchange::{PositionConfidence, ReferencePosition};
-use crate::reception::typed::Typed;
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
@@ -225,308 +234,176 @@ pub struct FreeSpaceArea {
 }
 
 impl Mobile for CollectivePerceptionMessage {
-    fn mobile_id(&self) -> u32 {
+    fn id(&self) -> u32 {
         self.station_id
     }
 
-    fn position(&self) -> &ReferencePosition {
-        &self.management_container.reference_position
+    fn position(&self) -> Position {
+        self.management_container.reference_position.as_position()
     }
 
-    fn speed(&self) -> Option<u16> {
+    fn speed(&self) -> Option<f64> {
         if let Some(station_data_container) = &self.station_data_container {
             if let Some(originating_vehicle_container) =
                 &station_data_container.originating_vehicle_container
             {
-                return Some(originating_vehicle_container.speed);
+                return Some(speed_from_etsi(originating_vehicle_container.speed));
             }
         }
         None
     }
 
-    fn heading(&self) -> Option<u16> {
+    fn heading(&self) -> Option<f64> {
         if let Some(station_data_container) = &self.station_data_container {
             if let Some(originating_vehicle_container) =
                 &station_data_container.originating_vehicle_container
             {
-                return Some(originating_vehicle_container.heading);
+                return Some(heading_from_etsi(originating_vehicle_container.heading));
+            }
+        }
+        None
+    }
+
+    fn acceleration(&self) -> Option<f64> {
+        if let Some(station_data_container) = &self.station_data_container {
+            if let Some(originating_vehicle_container) =
+                &station_data_container.originating_vehicle_container
+            {
+                return originating_vehicle_container
+                    .longitudinal_acceleration
+                    .map(acceleration_from_etsi);
             }
         }
         None
     }
 }
 
-impl Typed for CollectivePerceptionMessage {
-    fn get_type() -> String {
-        "cpm".to_string()
+impl Content for CollectivePerceptionMessage {
+    fn get_type(&self) -> &str {
+        "cpm"
+    }
+
+    /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
+    fn appropriate(&mut self) {
+        todo!()
+    }
+
+    fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
+        match &self.station_data_container {
+            Some(container) => match container.originating_vehicle_container {
+                Some(_) => Ok(self),
+                None => Err(RsuOriginatingMessage(type_name::<
+                    CollectivePerceptionMessage,
+                >())),
+            },
+            None => Err(MissingStationDataContainer(type_name::<
+                CollectivePerceptionMessage,
+            >())),
+        }
+    }
+
+    fn as_mortal(&self) -> Result<&dyn Mortal, ContentError> {
+        Err(NotAMortal(type_name::<CollectivePerceptionMessage>()))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::reception::exchange::collective_perception_message::{
-        CircularArea, CollectivePerceptionMessage, DetectionArea, EllipticArea, FreeSpaceAddendum,
-        FreeSpaceArea, ManagementContainer, Offset, OriginatingVehicleContainer, RectangleArea,
-        SensorInformation, StationDataContainer, StationarySensorRadial, VehicleSensor,
-        VehicleSensorProperty,
+    use crate::exchange::etsi::collective_perception_message::{
+        CircularArea, CollectivePerceptionMessage, EllipticArea, FreeSpaceAddendum,
+        ManagementContainer, Offset, RectangleArea, StationarySensorRadial,
     };
-    use crate::reception::exchange::mobile_perceived_object::MobilePerceivedObject;
-    use crate::reception::exchange::perceived_object::{ObjectConfidence, PerceivedObject};
-    use crate::reception::exchange::reference_position::ReferencePosition;
 
-    fn create_perceived_object_in_front() -> PerceivedObject {
-        PerceivedObject {
-            object_id: 45,
-            time_of_measurement: 50,
-            confidence: ObjectConfidence {
-                x_distance: 102,
-                y_distance: 102,
-                x_speed: 127,
-                y_speed: 127,
-                object: Some(10),
-            },
-            x_distance: 40,
-            y_distance: 100,
-            x_speed: 1400,
-            y_speed: 500,
-            object_age: Default::default(),
-            object_ref_point: Some(0),
-            z_distance: None,
-            z_speed: None,
-            x_acceleration: None,
-            y_acceleration: None,
-            z_acceleration: None,
-            roll_angle: None,
-            pitch_angle: None,
-            yaw_angle: None,
-            roll_rate: None,
-            pitch_rate: None,
-            yaw_rate: None,
-            roll_acceleration: None,
-            pitch_acceleration: None,
-            yaw_acceleration: None,
-            lower_triangular_correlation_matrix_columns: vec![],
-            planar_object_dimension_1: None,
-            planar_object_dimension_2: None,
-            vertical_object_dimension: None,
-            sensor_id_list: vec![],
-            dynamic_status: None,
-            classification: vec![],
-            matched_position: None,
-        }
-    }
+    use crate::exchange::etsi::perceived_object::PerceivedObject;
+    use crate::exchange::etsi::reference_position::{
+        altitude_from_etsi, coordinate_from_etsi, ReferencePosition,
+    };
+    use crate::exchange::etsi::speed_from_etsi;
 
-    fn create_perceived_object_behind() -> PerceivedObject {
-        PerceivedObject {
-            object_id: 48,
-            time_of_measurement: 51,
-            confidence: ObjectConfidence {
-                x_distance: 102,
-                y_distance: 102,
-                x_speed: 127,
-                y_speed: 127,
-                object: Some(10),
-            },
-            x_distance: -40,
-            y_distance: 100,
-            x_speed: 1200,
-            y_speed: 400,
-            object_age: Default::default(),
-            object_ref_point: Some(0),
-            z_distance: None,
-            z_speed: None,
-            x_acceleration: None,
-            y_acceleration: None,
-            z_acceleration: None,
-            roll_angle: None,
-            pitch_angle: None,
-            yaw_angle: None,
-            roll_rate: None,
-            pitch_rate: None,
-            yaw_rate: None,
-            roll_acceleration: None,
-            pitch_acceleration: None,
-            yaw_acceleration: None,
-            lower_triangular_correlation_matrix_columns: vec![],
-            planar_object_dimension_1: None,
-            planar_object_dimension_2: None,
-            vertical_object_dimension: None,
-            sensor_id_list: vec![],
-            dynamic_status: None,
-            classification: vec![],
-            matched_position: None,
-        }
-    }
-
-    fn create_cpm_with_two_perceived_object() -> CollectivePerceptionMessage {
-        CollectivePerceptionMessage {
-            protocol_version: 1,
-            station_id: 31470,
-            // message_id: 12,
-            generation_delta_time: 65535,
-            management_container: ManagementContainer {
-                station_type: 5,
-                reference_position: ReferencePosition {
-                    latitude: 426263556,
-                    longitude: -82492123,
-                    altitude: 800001,
-                },
-                confidence: Default::default(),
-            },
-            station_data_container: Some(StationDataContainer {
-                originating_vehicle_container: Some(OriginatingVehicleContainer {
-                    heading: 900,
-                    speed: 1600,
-                    ..Default::default()
-                }),
-                ..Default::default()
-            }),
-            sensor_information_container: vec![SensorInformation {
-                sensor_id: 3,
-                sensor_type: 3,
-                detection_area: DetectionArea {
-                    vehicle_sensor: Some(VehicleSensor {
-                        ref_point_id: 0,
-                        x_sensor_offset: -20,
-                        y_sensor_offset: 20,
-                        z_sensor_offset: Some(0),
-                        vehicle_sensor_property_list: vec![VehicleSensorProperty {
-                            range: 5000,
-                            horizontal_opening_angle_start: 600,
-                            horizontal_opening_angle_end: 600,
-                            vertical_opening_angle_start: None,
-                            vertical_opening_angle_end: None,
-                        }],
-                    }),
-                    stationary_sensor_polygon: Some(vec![
-                        Offset {
-                            x: 1,
-                            y: 2,
-                            z: Some(0),
-                        },
-                        Offset {
-                            x: 11,
-                            y: 22,
-                            z: Some(1),
-                        },
-                        Offset {
-                            x: 111,
-                            y: 222,
-                            z: Some(2),
-                        },
-                    ]),
-                    stationary_sensor_radial: Some(StationarySensorRadial {
-                        range: 10000,
-                        horizontal_opening_angle_start: 900,
-                        horizontal_opening_angle_end: 2700,
-                        vertical_opening_angle_start: None,
-                        vertical_opening_angle_end: None,
-                        sensor_position_offset: Some(Offset {
-                            x: 1,
-                            y: 2,
-                            z: None,
-                        }),
-                    }),
-                    stationary_sensor_circular: Some(CircularArea {
-                        radius: 10000,
-                        node_center_point: Some(Offset {
-                            x: 1,
-                            y: 2,
-                            z: None,
-                        }),
-                    }),
-                    stationary_sensor_ellipse: Some(EllipticArea {
-                        semi_major_range_length: 1,
-                        semi_minor_range_length: 2,
-                        semi_major_range_orientation: 3,
-                        semi_height: Some(4),
-                        node_center_point: Some(Offset {
-                            x: 5,
-                            y: 6,
-                            z: None,
-                        }),
-                    }),
-                    stationary_sensor_rectangle: Some(RectangleArea {
-                        semi_major_range_length: 1,
-                        semi_minor_range_length: 2,
-                        semi_major_range_orientation: 3,
-                        semi_height: Some(4),
-                        node_center_point: Some(Offset {
-                            x: 5,
-                            y: 6,
-                            z: None,
-                        }),
-                    }),
-                },
-            }],
-            perceived_object_container: vec![
-                create_perceived_object_in_front(),
-                create_perceived_object_behind(),
-            ],
-            free_space_addendum_container: vec![FreeSpaceAddendum {
-                free_space_area: FreeSpaceArea {
-                    free_space_polygon: Some(vec![
-                        Offset {
-                            x: 1,
-                            y: 2,
-                            z: None,
-                        },
-                        Offset {
-                            x: 11,
-                            y: 22,
-                            z: None,
-                        },
-                        Offset {
-                            x: 111,
-                            y: 222,
-                            z: None,
-                        },
-                        Offset {
-                            x: 1111,
-                            y: 2222,
-                            z: None,
-                        },
-                    ]),
-                    free_space_circular: None,
-                    free_space_ellipse: None,
-                    free_space_rectangle: None,
-                },
-                free_space_confidence: 50,
-                sensor_id_list: vec![1, 2, 3, 4, 5],
-                shadowing_applies: Some(false),
-            }],
-        }
+    macro_rules! assert_float_eq {
+        ($a:expr, $b:expr, $e:expr) => {
+            let delta = ($a - $b).abs();
+            assert!(delta <= $e, "Actual:   {}\nExpected: {}", $a, $b)
+        };
     }
 
     #[test]
     fn it_can_provide_the_mobile_perceived_object_list() {
-        assert_eq!(
-            create_cpm_with_two_perceived_object().mobile_perceived_object_list(),
-            vec![
-                MobilePerceivedObject {
-                    perceived_object: create_perceived_object_in_front(),
-                    mobile_id: 3147045,
-                    reference_position: ReferencePosition {
-                        latitude: 426263645,
-                        longitude: -82492074,
-                        altitude: 800001,
-                    },
-                    speed: 1486,
-                    heading: 900
+        let cpm = CollectivePerceptionMessage {
+            station_id: 12,
+            management_container: ManagementContainer {
+                station_type: 15,
+                reference_position: ReferencePosition {
+                    latitude: 488417860,
+                    longitude: 23678940,
+                    altitude: 900,
                 },
-                MobilePerceivedObject {
-                    perceived_object: create_perceived_object_behind(),
-                    mobile_id: 3147048,
-                    reference_position: ReferencePosition {
-                        latitude: 426263645,
-                        longitude: -82492170,
-                        altitude: 800001,
-                    },
-                    speed: 1264,
-                    heading: 900
+                confidence: Default::default(),
+            },
+            perceived_object_container: vec![
+                PerceivedObject {
+                    object_id: 1,
+                    x_distance: 1398,
+                    y_distance: -1138,
+                    z_distance: None,
+                    x_speed: 389,
+                    y_speed: 25,
+                    z_speed: None,
+                    object_age: 1500,
+                    ..Default::default()
                 },
-            ]
+                PerceivedObject {
+                    object_id: 4,
+                    x_distance: 102,
+                    y_distance: -942,
+                    z_distance: None,
+                    x_speed: 9,
+                    y_speed: 16,
+                    z_speed: None,
+                    object_age: 533,
+                    ..Default::default()
+                },
+            ],
+            ..Default::default()
+        };
+
+        let perceived_object = cpm.mobile_perceived_object_list();
+        let first = perceived_object
+            .first()
+            .expect("Perceived object list must contain two elements");
+        let second = perceived_object
+            .get(1)
+            .expect("Perceived object list must contain two elements");
+
+        assert_eq!(first.mobile_id, 121);
+        assert_float_eq!(
+            first.position.latitude,
+            coordinate_from_etsi(488416836),
+            1e-6
         );
+        assert_float_eq!(
+            first.position.longitude,
+            coordinate_from_etsi(23680844),
+            1e-6
+        );
+        assert_float_eq!(first.position.altitude, altitude_from_etsi(900), 1e-3);
+        assert_float_eq!(first.speed, speed_from_etsi(389), 1e-5);
+        assert_float_eq!(first.heading.to_degrees(), 86.3, 1e-1);
+
+        assert_eq!(second.mobile_id, 124);
+        assert_float_eq!(
+            second.position.latitude,
+            coordinate_from_etsi(488417013),
+            1e-6
+        );
+        assert_float_eq!(
+            second.position.longitude,
+            coordinate_from_etsi(23679078),
+            1e-6
+        );
+        assert_float_eq!(second.position.altitude, altitude_from_etsi(900), 1e-3);
+        assert_float_eq!(second.speed, speed_from_etsi(18), 1e-5);
+        assert_float_eq!(second.heading.to_degrees(), 29.3, 1e-1);
     }
 
     #[test]
@@ -1535,7 +1412,7 @@ mod tests {
     }
 
     #[test]
-    fn deserialize_minimal_frees_space_area() {
+    fn deserialize_minimal_free_space_area_polygon() {
         let data = r#"{
             "free_space_area": {
                 "free_space_polygon": [{
@@ -1585,7 +1462,7 @@ mod tests {
     }
 
     #[test]
-    fn d() {
+    fn deserialize_minimal_free_space_area_circular() {
         let data = r#"{
             "free_space_area": {
                 "free_space_circular": {

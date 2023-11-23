@@ -1,5 +1,5 @@
 // Software Name: its-client
-// SPDX-FileCopyrightText: Copyright (c) 2016-2022 Orange
+// SPDX-FileCopyrightText: Copyright (c) 2016-2023 Orange
 // SPDX-License-Identifier: MIT License
 //
 // This software is distributed under the MIT license, see LICENSE.txt file for more details.
@@ -128,7 +128,7 @@ impl PerceivedObject {
 
 #[cfg(test)]
 mod test {
-    use crate::reception::exchange::perceived_object::PerceivedObject;
+    use crate::exchange::etsi::perceived_object::PerceivedObject;
 
     #[test]
     fn test_deserialize() {
