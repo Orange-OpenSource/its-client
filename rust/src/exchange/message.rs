@@ -10,6 +10,7 @@
 pub mod content;
 pub mod content_error;
 
+use crate::exchange::etsi::collective_perception_message::CollectivePerceptionMessage;
 use crate::exchange::etsi::cooperative_awareness_message::CooperativeAwarenessMessage;
 use crate::exchange::etsi::decentralized_environmental_notification_message::DecentralizedEnvironmentalNotificationMessage;
 use crate::exchange::etsi::map_extended_message::MAPExtendedMessage;
@@ -26,6 +27,7 @@ use serde::{Deserialize, Serialize};
 #[allow(clippy::upper_case_acronyms)]
 pub enum Message {
     CAM(CooperativeAwarenessMessage),
+    CPM(CollectivePerceptionMessage),
     DENM(DecentralizedEnvironmentalNotificationMessage),
     MAPEM(MAPExtendedMessage),
     SPATEM(SignalPhaseAndTimingExtendedMessage),
