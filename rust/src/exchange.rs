@@ -9,6 +9,7 @@
 
 pub mod message;
 pub mod mortal;
+pub mod sequence_number;
 
 use crate::exchange::message::Message;
 use crate::mobility::position::Position;
@@ -1503,4 +1504,3 @@ impl Eq for Exchange {}
 //             }
 //         }
 //     }
-// }
