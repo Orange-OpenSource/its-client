@@ -7,6 +7,14 @@
 // Author: Nicolas BUFFON <nicolas.buffon@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 
-pub mod mobile;
-pub mod position;
-pub mod quadtree;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ParseError {
+    #[error("Cannot create key out of empty string")]
+    EmptyString,
+    #[error("Cannot convert empty string to quadkey element")]
+    EmptyTileStr,
+    #[error("'{0}' character is not a valid quadkey element")]
+    InvalidTileChar(char),
+}

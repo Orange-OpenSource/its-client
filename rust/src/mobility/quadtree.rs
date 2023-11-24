@@ -1,9 +1,24 @@
 use std::f64::consts::PI;
 
+pub mod parse_error;
+pub mod quadkey;
+pub mod tile;
+
 const MIN_LATITUDE: f64 = -85.05112878;
 const MAX_LATITUDE: f64 = 85.05112878;
 const MIN_LONGITUDE: f64 = -180.;
 const MAX_LONGITUDE: f64 = 180.;
+
+/// 26-char quadkey is the deepest quadkey that is needed
+/// to represent a region that is at most 1m×1m in size
+const DEFAULT_DEPTH: u16 = 26;
+
+fn coordinates_to_quadkey(latitude: f64, longitude: f64, depth: u16) -> String {
+    tile_xy_to_quadkey(
+        pixel_xy_to_tile_xy(coordinates_to_pixel_xy(latitude, longitude, depth)),
+        depth,
+    )
+}
 
 struct PixelXY {
     x: i64,
@@ -31,7 +46,7 @@ fn clip(n: f64, min_value: f64, max_value: f64) -> f64 {
     }
 }
 
-fn lat_long_to_pixel_xy(latitude: f64, longitude: f64, level_of_detail: u16) -> PixelXY {
+fn coordinates_to_pixel_xy(latitude: f64, longitude: f64, level_of_detail: u16) -> PixelXY {
     let latitude = clip(latitude, MIN_LATITUDE, MAX_LATITUDE);
     let longitude = clip(longitude, MIN_LONGITUDE, MAX_LONGITUDE);
 
@@ -76,16 +91,9 @@ fn tile_xy_to_quadkey(tile: TileXY, level_of_detail: u16) -> String {
     quad_key
 }
 
-pub fn lat_lng_to_quadkey(latitude: f64, longitude: f64, level_of_detail: u16) -> String {
-    tile_xy_to_quadkey(
-        pixel_xy_to_tile_xy(lat_long_to_pixel_xy(latitude, longitude, level_of_detail)),
-        level_of_detail,
-    )
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::mqtt::topic::quadtree;
+    use crate::mobility::quadtree;
 
     fn position() -> (f64, f64) {
         (48.6263556, 2.2492123)
@@ -95,7 +103,7 @@ mod tests {
     fn test_lat_lng_to_quad_key_zero() {
         assert_eq!(
             "033321211101",
-            quadtree::lat_lng_to_quadkey(8.3689428, -14.3165555, 12,),
+            quadtree::coordinates_to_quadkey(8.3689428, -14.3165555, 12,),
         )
     }
 
@@ -104,7 +112,7 @@ mod tests {
         let (latitude, longitude) = position();
         assert_eq!(
             "120220011203",
-            quadtree::lat_lng_to_quadkey(latitude, longitude, 12),
+            quadtree::coordinates_to_quadkey(latitude, longitude, 12),
         )
     }
 
@@ -113,7 +121,7 @@ mod tests {
         let (latitude, longitude) = position();
         assert_eq!(
             "120220011203100323",
-            quadtree::lat_lng_to_quadkey(latitude, longitude, 18),
+            quadtree::coordinates_to_quadkey(latitude, longitude, 18),
         )
     }
 
@@ -122,7 +130,7 @@ mod tests {
         let (latitude, longitude) = position();
         assert_eq!(
             "120220011203100323112320",
-            quadtree::lat_lng_to_quadkey(latitude, longitude, 24),
+            quadtree::coordinates_to_quadkey(latitude, longitude, 24),
         )
     }
 }
