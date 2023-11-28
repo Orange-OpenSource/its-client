@@ -6,20 +6,22 @@
 //
 // Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
-use crate::mqtt::topic::Topic;
-use crate::reception::Reception;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Item<T>
+use crate::exchange::Exchange;
+
+use crate::transport::mqtt::topic::Topic;
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Packet<T>
 where
-    T: Reception,
+    T: Topic,
 {
-    pub topic: Topic,
-    pub reception: T,
+    pub topic: T,
+    pub exchange: Exchange,
 }
 
-impl<T: Reception> Item<T> {
-    pub fn new(topic: Topic, reception: T) -> Self {
-        Item { topic, reception }
+impl<T: Topic> Packet<T> {
+    pub fn new(topic: T, exchange: Exchange) -> Self {
+        Packet { topic, exchange }
     }
 }
