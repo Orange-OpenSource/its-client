@@ -6,15 +6,26 @@
 //
 // Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
-use std::str::FromStr;
 
+use crate::exchange::message::content::Content;
+use crate::exchange::mortal::Mortal;
+use crate::mobility::mobile::Mobile;
+use std::any::type_name;
+use std::ops::{Deref, DerefMut};
+
+use crate::exchange::message::content_error::ContentError;
+use crate::exchange::message::content_error::ContentError::{NotAMobile, NotAMortal};
 use serde::{Deserialize, Serialize};
 
-use crate::mqtt::topic::geo_extension::GeoExtension;
-use crate::reception::mortal::Mortal;
-use crate::reception::typed::Typed;
-use crate::reception::Reception;
-
+/// Client or server information message
+///
+/// The message carries information about an instance involved in V2X message exchanges
+/// It can be either a server hosting a broker and/or application(s) that consume/produce messages
+/// or a client sending messages (OBU/RSU)
+///
+/// The corresponding JSON schema of this message struct can be found in this projects [schema directory][1]
+///
+/// [1]: https://github.com/Orange-OpenSource/its-client/tree/master/schema
 #[serde_with::skip_serializing_none]
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Information {
@@ -25,7 +36,7 @@ pub struct Information {
     pub instance_type: String,
     pub central_instance_id: Option<String>,
     pub running: bool,
-    pub timestamp: u128,
+    pub timestamp: u64,
     pub validity_duration: u32,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     public_ip_address: Vec<String>,
@@ -72,44 +83,30 @@ pub struct Vertex {
 }
 
 impl Information {
-    pub(crate) fn new() -> Self {
-        Information {
-            instance_id: "broker".to_string(),
-            ..Default::default()
-        }
-    }
-
-    pub(crate) fn instance_id_number(&self) -> u32 {
-        let instance_id_split: Vec<&str> = self.instance_id.split('_').collect();
-        // TODO generate a cache to not compute the same value each time again
-        match instance_id_split.get(2) {
-            Some(number) => u32::from_str(number).unwrap_or(31470),
-            None => 31470,
-        }
-    }
-
-    pub fn is_in_region_of_responsibility(&self, geo_extension: GeoExtension) -> bool {
-        if let Some(service_area) = &self.service_area {
-            return service_area.quadkeys.iter().any(|quadkey| {
-                if let Ok(service_area_geo_extension) = GeoExtension::from_str(quadkey) {
-                    return geo_extension <= service_area_geo_extension;
-                }
-                false
-            });
-        }
-        false
-    }
+    pub const TYPE: &'static str = "info";
 }
 
-impl Typed for Information {
-    fn get_type() -> String {
-        "info".to_string()
+impl Content for Information {
+    fn get_type(&self) -> &str {
+        Self::TYPE
+    }
+
+    fn appropriate(&mut self) {
+        todo!()
+    }
+
+    fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
+        Err(NotAMobile(type_name::<Information>()))
+    }
+
+    fn as_mortal(&self) -> Result<&dyn Mortal, ContentError> {
+        Err(NotAMortal(type_name::<Information>()))
     }
 }
 
 impl Mortal for Information {
-    fn timeout(&self) -> u128 {
-        self.timestamp + self.validity_duration as u128 * 1000
+    fn timeout(&self) -> u64 {
+        self.timestamp + u64::from(self.validity_duration) * 1000_u64
     }
 
     fn terminate(&mut self) {
@@ -121,13 +118,37 @@ impl Mortal for Information {
     }
 }
 
-impl Reception for Information {}
+/// Making Information as a [Message][1] enum variant triggers Clippy's [large enum variant][2] warning
+/// All other variant are going to be used more than this one so box it to avoid making the enum size
+/// grow unnecessarily
+///
+/// As enum variant are required to implement specific traits here is declared a dedicated type to
+/// impl these traits
+///
+/// [1]: crate::exchange::message::Message
+/// [2]: https://rust-lang.github.io/rust-clippy/master/index.html#/large_enum_variant
+pub type BoxedInformation = Box<Information>;
+impl Content for BoxedInformation {
+    fn get_type(&self) -> &str {
+        (*self).deref().get_type()
+    }
+
+    fn appropriate(&mut self) {
+        (*self).deref_mut().appropriate();
+    }
+
+    fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
+        (*self).deref().as_mobile()
+    }
+
+    fn as_mortal(&self) -> Result<&dyn Mortal, ContentError> {
+        (*self).deref().as_mortal()
+    }
+}
 
 #[cfg(test)]
 mod tests {
-    use crate::mqtt::topic::geo_extension::GeoExtension;
-    use crate::reception::information::{Information, ServiceArea};
-    use std::str::FromStr;
+    use crate::exchange::message::information::{Information, ServiceArea};
 
     fn generate_central_information() -> Information {
         Information {
@@ -182,116 +203,5 @@ mod tests {
             }),
             ..Default::default()
         }
-    }
-
-    #[test]
-    fn test_new() {
-        assert_eq!(
-            Information::new(),
-            Information {
-                type_field: "".to_string(),
-                version: "".to_string(),
-                instance_id: "broker".to_string(),
-                instance_type: "".to_string(),
-                central_instance_id: None,
-                running: false,
-                timestamp: 0,
-                validity_duration: 0,
-                public_ip_address: vec![],
-                mqtt_ip: vec![],
-                mqtt_tls_ip: vec![],
-                http_proxy: vec![],
-                ntp_servers: vec![],
-                domain_name_servers: vec![],
-                gelf_loggers: vec![],
-                udp_loggers: vec![],
-                fbeat_loggers: vec![],
-                service_area: None,
-                cells_id: vec![],
-            }
-        );
-    }
-
-    #[test]
-    fn test_good_instance_id_number() {
-        assert_eq!(
-            Information {
-                instance_id: "corp_role_32".to_string(),
-                ..Default::default()
-            }
-            .instance_id_number(),
-            32
-        );
-    }
-
-    #[test]
-    fn test_default_instance_id_number() {
-        assert_eq!(Information::new().instance_id_number(), 31470);
-    }
-
-    #[test]
-    fn test_bad_instance_id_number() {
-        assert_eq!(
-            Information {
-                instance_id: "corp_32".to_string(),
-                ..Default::default()
-            }
-            .instance_id_number(),
-            31470
-        );
-        assert_eq!(
-            Information {
-                instance_id: "32".to_string(),
-                ..Default::default()
-            }
-            .instance_id_number(),
-            31470
-        );
-        assert_eq!(
-            Information {
-                instance_id: "".to_string(),
-                ..Default::default()
-            }
-            .instance_id_number(),
-            31470
-        );
-    }
-
-    #[test]
-    fn test_is_in_central_region_of_responsibility() {
-        let information = generate_central_information();
-        assert!(
-            information.is_in_region_of_responsibility(GeoExtension::from_str("12020").unwrap()),
-        );
-        assert!(
-            information.is_in_region_of_responsibility(GeoExtension::from_str("120203").unwrap()),
-        );
-        assert!(
-            information.is_in_region_of_responsibility(GeoExtension::from_str("1202033").unwrap()),
-        );
-    }
-
-    #[test]
-    fn test_is_in_edge_region_of_responsibility() {
-        let information = generate_edge_information();
-        assert!(information
-            .is_in_region_of_responsibility(GeoExtension::from_str("12020322313301023").unwrap()),);
-        assert!(information
-            .is_in_region_of_responsibility(GeoExtension::from_str("120203223133010232").unwrap()),);
-        assert!(information.is_in_region_of_responsibility(
-            GeoExtension::from_str("1202032231330102321013").unwrap()
-        ),);
-    }
-
-    #[test]
-    fn test_is_not_in_edge_region_of_responsibility() {
-        let information = generate_edge_information();
-        assert!(!information
-            .is_in_region_of_responsibility(GeoExtension::from_str("1202032231330102").unwrap()));
-        assert!(!information.is_in_region_of_responsibility(
-            GeoExtension::from_str("1202032231330102103102").unwrap()
-        ),);
-        assert!(!information
-            .is_in_region_of_responsibility(GeoExtension::from_str("12020322313300132").unwrap()),);
     }
 }
