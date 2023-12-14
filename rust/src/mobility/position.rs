@@ -9,6 +9,7 @@
 
 use geo::EuclideanDistance;
 
+use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter, Result};
 use std::hash::{Hash, Hasher};
 
@@ -18,7 +19,7 @@ const EQUATORIAL_RADIUS: f64 = 6_378_137.0;
 const POLAR_RADIUS: f64 = 6_356_752.3;
 
 /// Describes a geodesic position using SI units
-#[derive(Clone, Copy, Default, Debug, PartialEq)]
+#[derive(Clone, Copy, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Position {
     /// Latitude in radians
     pub latitude: f64,
