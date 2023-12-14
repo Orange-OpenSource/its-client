@@ -9,6 +9,7 @@
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
+pub mod exchange;
 pub mod mobility;
 
 pub fn now() -> u64 {
