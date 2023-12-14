@@ -51,6 +51,8 @@ impl Hash for Position {
     }
 }
 
+impl Eq for Position {}
+
 pub fn position_from_degrees(lat: f64, lon: f64, alt: f64) -> Position {
     Position {
         latitude: lat.to_radians(),
