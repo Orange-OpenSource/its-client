@@ -12,6 +12,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub mod client;
 pub mod exchange;
 pub mod mobility;
+pub(crate) mod monitor;
 pub mod transport;
 
 pub fn now() -> u64 {
