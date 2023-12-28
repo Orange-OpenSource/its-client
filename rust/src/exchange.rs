@@ -16,6 +16,7 @@ pub mod sequence_number;
 use crate::exchange::message::Message;
 use crate::mobility::position::Position;
 
+use crate::transport::payload::Payload;
 use serde::{Deserialize, Serialize};
 
 #[serde_with::skip_serializing_none]
@@ -101,6 +102,8 @@ impl Exchange {
     // }
     // ----- ENDFIXME
 }
+
+impl Payload for Exchange {}
 
 impl PartialEq for Exchange {
     fn eq(&self, other: &Self) -> bool {

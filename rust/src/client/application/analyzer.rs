@@ -8,7 +8,7 @@
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 
 use crate::client::configuration::Configuration;
-
+use crate::exchange::Exchange;
 use crate::transport::mqtt::topic::Topic;
 use crate::transport::packet::Packet;
 
@@ -100,5 +100,5 @@ pub trait Analyzer<T: Topic, C> {
     where
         Self: Sized;
 
-    fn analyze(&mut self, packet: Packet<T>) -> Vec<Packet<T>>;
+    fn analyze(&mut self, packet: Packet<T, Exchange>) -> Vec<Packet<T, Exchange>>;
 }

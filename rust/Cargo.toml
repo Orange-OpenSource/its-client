@@ -30,6 +30,7 @@ edition = "2021"
 crate-type = ["lib"]
 
 [dependencies]
+crossbeam-channel = "0.5"
 enum_dispatch = "0.3"
 geo = "0.27"
 integer-sqrt = "0.1"
