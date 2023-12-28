@@ -15,6 +15,7 @@ use std::ops::{Deref, DerefMut};
 
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::message::content_error::ContentError::{NotAMobile, NotAMortal};
+use crate::transport::payload::Payload;
 use serde::{Deserialize, Serialize};
 
 /// Client or server information message
@@ -117,6 +118,8 @@ impl Mortal for Information {
         self.expired()
     }
 }
+
+impl Payload for Information {}
 
 /// Making Information as a [Message][1] enum variant triggers Clippy's [large enum variant][2] warning
 /// All other variant are going to be used more than this one so box it to avoid making the enum size

@@ -9,6 +9,8 @@
 
 use crate::transport::mqtt::topic::Topic;
 use crate::transport::packet::Packet;
+use crate::transport::payload::Payload;
+
 use log::{debug, error, info, trace, warn};
 use rumqttc::{AsyncClient, Event, EventLoop, MqttOptions, QoS, SubscribeFilter};
 
@@ -41,8 +43,8 @@ impl<'client> MqttClient {
         };
     }
 
-    pub async fn publish<T: Topic>(&self, item: Packet<T>) {
-        let payload = serde_json::to_string(&item.exchange).unwrap();
+    pub async fn publish<T: Topic, P: Payload>(&self, item: Packet<T, P>) {
+        let payload = serde_json::to_string(&item.payload).unwrap();
         match self
             .client
             .publish(item.topic.to_string(), QoS::ExactlyOnce, false, payload)
