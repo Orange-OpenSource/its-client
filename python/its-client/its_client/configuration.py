@@ -65,7 +65,6 @@ def build(args=None) -> ConfigParser:
     parser.add_argument(
         "--mqtt-mirror-port",
         type=int,
-        default=1883,
         help="port of the mirror MQTT broker",
     )
     parser.add_argument(
