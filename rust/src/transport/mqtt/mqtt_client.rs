@@ -11,6 +11,7 @@ use crate::transport::mqtt::topic::Topic;
 use crate::transport::packet::Packet;
 use crate::transport::payload::Payload;
 
+use crossbeam_channel::Sender;
 use log::{debug, error, info, trace, warn};
 use rumqttc::{AsyncClient, Event, EventLoop, MqttOptions, QoS, SubscribeFilter};
 
@@ -61,7 +62,7 @@ impl<'client> MqttClient {
     }
 }
 
-pub async fn listen(mut event_loop: EventLoop, sender: std::sync::mpsc::Sender<Event>) {
+pub async fn listen(mut event_loop: EventLoop, sender: Sender<Event>) {
     info!("listening started");
     let mut listening = true;
     while listening {
