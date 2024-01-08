@@ -209,6 +209,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
         denm
     }
 
+    // FIXME reference time should be different from detection time
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
         station_id: u32,
