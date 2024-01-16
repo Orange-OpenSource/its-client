@@ -29,6 +29,9 @@ doc = true
 edition = "2021"
 crate-type = ["lib"]
 
+[features]
+geo_routing = []
+
 [dependencies]
 crossbeam-channel = "0.5"
 enum_dispatch = "0.3"
