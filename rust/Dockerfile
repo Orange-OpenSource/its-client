@@ -21,6 +21,7 @@ RUN rustc --version && cargo --version
 WORKDIR /usr/src/app
 
 COPY src src
+COPY benches benches
 COPY Cargo.toml .
 
 RUN cargo build --verbose --all && \
