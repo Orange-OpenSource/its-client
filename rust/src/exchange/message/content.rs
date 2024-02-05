@@ -1,5 +1,5 @@
 // Software Name: its-client
-// SPDX-FileCopyrightText: Copyright (c) 2016-2023 Orange
+// SPDX-FileCopyrightText: Copyright (c) 2016-2022 Orange
 // SPDX-License-Identifier: MIT License
 //
 // This software is distributed under the MIT license, see LICENSE.txt file for more details.
@@ -7,14 +7,16 @@
 // Author: Nicolas BUFFON <nicolas.buffon@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 
-use std::time::{SystemTime, UNIX_EPOCH};
+use crate::exchange::message::content_error::ContentError;
+use crate::exchange::mortal::Mortal;
+use crate::mobility::mobile::Mobile;
 
-pub mod exchange;
-pub mod mobility;
+pub trait Content {
+    fn get_type(&self) -> &str;
 
-pub fn now() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_millis() as u64
+    fn appropriate(&mut self);
+
+    fn as_mobile(&self) -> Result<&dyn Mobile, ContentError>;
+
+    fn as_mortal(&self) -> Result<&dyn Mortal, ContentError>;
 }
