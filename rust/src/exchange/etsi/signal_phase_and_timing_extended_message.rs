@@ -1,5 +1,5 @@
 // Software Name: its-client
-// SPDX-FileCopyrightText: Copyright (c) 2016-2022 Orange
+// SPDX-FileCopyrightText: Copyright (c) 2016-2023 Orange
 // SPDX-License-Identifier: MIT License
 //
 // This software is distributed under the MIT license, see LICENSE.txt file for more details.
@@ -7,9 +7,14 @@
 // Author: Nicolas Buffon <nicolas.buffon@orange.com> et al.
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 
-use crate::reception::typed::Typed;
+use crate::exchange::message::content::Content;
+use crate::exchange::message::content_error::ContentError;
+use crate::exchange::message::content_error::ContentError::{NotAMobile, NotAMortal};
+use crate::exchange::mortal::Mortal;
+use crate::mobility::mobile::Mobile;
 use serde::{Deserialize, Serialize};
 use serde_repr::Deserialize_repr;
+use std::any::type_name;
 use std::fmt;
 use std::fmt::Formatter;
 use std::hash::{Hash, Hasher};
@@ -37,9 +42,26 @@ pub struct SignalPhaseAndTimingExtendedMessage {
     pub states: Vec<State>,
 }
 
-impl Typed for SignalPhaseAndTimingExtendedMessage {
-    fn get_type() -> String {
-        "spat".to_string()
+impl Content for SignalPhaseAndTimingExtendedMessage {
+    fn get_type(&self) -> &str {
+        "spatem"
+    }
+
+    /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
+    fn appropriate(&mut self) {
+        todo!()
+    }
+
+    fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
+        Err(NotAMobile(
+            type_name::<SignalPhaseAndTimingExtendedMessage>(),
+        ))
+    }
+
+    fn as_mortal(&self) -> Result<&dyn Mortal, ContentError> {
+        Err(NotAMortal(
+            type_name::<SignalPhaseAndTimingExtendedMessage>(),
+        ))
     }
 }
 
@@ -180,7 +202,7 @@ impl fmt::Display for NextChange {
 
 #[cfg(test)]
 mod test {
-    use crate::reception::exchange::signal_phase_and_timing_extended_message::{
+    use crate::exchange::etsi::signal_phase_and_timing_extended_message::{
         SignalPhaseAndTimingExtendedMessage, TrafficLightState,
     };
 
