@@ -26,7 +26,7 @@ use std::hash::{Hash, Hasher};
 /// **See also:**
 /// - [MAPExtendedMessage][1]
 ///
-/// [1]: crate::reception::exchange::map_extended_message::MAPExtendedMessage
+/// [1]: crate::exchange::etsi::map_extended_message
 #[derive(Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct SignalPhaseAndTimingExtendedMessage {

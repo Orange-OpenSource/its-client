@@ -110,9 +110,9 @@ pub fn haversine_destination(position: &Position, bearing: f64, distance: f64) -
 
 /// Destination computation from origin, bearing and distance using Vincenty formulae
 ///
-///  Vincenty formulae written FOLLOWING:
-/// - http://www.geomidpoint.com/destination/calculation.html
-/// - https://en.wikipedia.org/wiki/Vincenty%27s_formulae
+///  Vincenty formulae written following:
+/// - <http://www.geomidpoint.com/destination/calculation.html>
+/// - <https://en.wikipedia.org/wiki/Vincenty%27s_formulae>
 pub fn vincenty_destination(anchor: &Position, bearing: f64, distance: f64) -> Position {
     let sin_brg = bearing.sin();
     let cos_brg = bearing.cos();
@@ -195,7 +195,7 @@ pub fn enu_destination(
 ///
 /// FIXME this function requires testing and consolidation (follow up in issue [97][1])
 ///
-/// [1] https://github.com/Orange-OpenSource/its-client/issues/97
+/// [1]: https://github.com/Orange-OpenSource/its-client/issues/97
 pub fn distance_to_line(position: &Position, line: &[Position]) -> f64 {
     let mut coordinates: Vec<geo::Coord<f64>> = Vec::new();
 
