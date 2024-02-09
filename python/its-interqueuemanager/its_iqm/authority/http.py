@@ -14,6 +14,7 @@ import time
 class Authority:
     def __init__(
         self,
+        _instance_id: str,
         cfg: dict,
         update_cb: Callable[[Sequence[Any]], None],
     ):
@@ -28,14 +29,12 @@ class Authority:
 
     def start(self):
         logging.info(
-            f"starting authority http client to {self.cfg['authority']['uri']}@{self.cfg['authority']['reload']}"
+            f"starting authority http client to {self.cfg['uri']}@{self.cfg['reload']}"
         )
         self.thread.start()
 
     def stop(self):
-        logging.info(
-            f"stopping authority http client to {self.cfg['authority']['uri']}"
-        )
+        logging.info(f"stopping authority http client to {self.cfg['uri']}")
         # We're a daemon thread, we'll get killed automatically eventually...
 
     def join(self):
@@ -52,14 +51,14 @@ class Authority:
             # update the list of neighbours, which does not happen so
             # frequently anyway, and we just need to reload it in a
             # "timely manner"...
-            time.sleep(int(self.cfg["authority"]["reload"]))
+            time.sleep(int(self.cfg["reload"]))
             self.load()
 
     def load(self):
         logging.info("loading neighbours")
         loaded_nghbs = configparser.ConfigParser()
         try:
-            r = requests.get(self.cfg["authority"]["uri"])
+            r = requests.get(self.cfg["uri"])
             loaded_nghbs.read_string(r.text)
         except Exception:
             # Can't download -> don't change the current state;

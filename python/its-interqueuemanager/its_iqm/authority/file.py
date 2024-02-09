@@ -13,6 +13,7 @@ import time
 class Authority:
     def __init__(
         self,
+        _instance_id: str,
         cfg: dict,
         update_cb: Callable[[list[Any]], None],
     ):
@@ -27,12 +28,12 @@ class Authority:
 
     def start(self):
         logging.info(
-            f"starting authority file client to {self.cfg['authority']['path']}@{self.cfg['authority']['reload']}"
+            f"starting authority file client to {self.cfg['path']}@{self.cfg['reload']}"
         )
         self.thread.start()
 
     def stop(self):
-        logging.info(f"stopping file client to {self.cfg['authority']['path']}")
+        logging.info(f"stopping authority file client to {self.cfg['path']}")
         # We're a daemon thread, we'll get killed automatically eventually...
 
     def join(self):
@@ -49,14 +50,14 @@ class Authority:
         # frequently anyway, and we just need to reload it in a
         # "timely manner"...
         while True:
-            time.sleep(int(self.cfg["authority"]["reload"]))
+            time.sleep(int(self.cfg["reload"]))
             self.load()
 
     def load(self):
         logging.info("loading neighbours")
         loaded_nghbs = configparser.ConfigParser()
         try:
-            with open(self.cfg["authority"]["path"], "r") as fd:
+            with open(self.cfg["path"], "r") as fd:
                 loaded_nghbs.read_file(fd)
         except FileNotFoundError:
             # No file -> no neigbour defined, i.e. empty list

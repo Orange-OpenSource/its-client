@@ -13,6 +13,7 @@ import paho.mqtt.subscribe
 class Authority:
     def __init__(
         self,
+        instance_id: str,
         cfg: configparser.ConfigParser,
         update_cb: Callable[[Sequence[Any]], None],
     ):
@@ -20,9 +21,9 @@ class Authority:
         self.update_cb = update_cb
 
         try:
-            client_id = self.cfg["authority"]["client_id"]
+            client_id = self.cfg["client_id"]
         except KeyError:
-            client_id = self.cfg["general"]["instance_id"]
+            client_id = instance_id
 
         self.authority_client = paho.mqtt.client.Client(
             client_id=client_id,
@@ -30,8 +31,8 @@ class Authority:
         )
         self.authority_client.reconnect_delay_set()
         self.authority_client.username_pw_set(
-            self.cfg["authority"]["username"] or None,
-            self.cfg["authority"]["password"] or None,
+            self.cfg["username"] or None,
+            self.cfg["password"] or None,
         )
         self.authority_client.on_connect = self._on_connect
         self.authority_client.on_disconnect = self._on_disconnect
@@ -39,20 +40,20 @@ class Authority:
         self.authority_client.on_message = self._on_message
 
         self.authority_client.connect_async(
-            host=self.cfg["authority"]["host"],
-            port=int(self.cfg["authority"]["port"]),
+            host=self.cfg["host"],
+            port=int(self.cfg["port"]),
             clean_start=True,
         )
 
     def start(self):
         logging.info(
-            f"starting authority MQTT client to {self.cfg['authority']['host']}:{self.cfg['authority']['port']}"
+            f"starting authority MQTT client to {self.cfg['host']}:{self.cfg['port']}"
         )
         self.authority_client.loop_start()
 
     def stop(self):
         logging.info(
-            f"stopping authority MQTT client to {self.cfg['authority']['host']}:{self.cfg['authority']['port']}"
+            f"stopping authority MQTT client to {self.cfg['host']}:{self.cfg['port']}"
         )
         self.authority_client.disconnect()
         self.authority_client.loop_stop()
@@ -61,7 +62,7 @@ class Authority:
         pass
 
     def _on_connect(self, _client, _userdata, _flags, _rc, _properties=None):
-        self.authority_client.subscribe(self.cfg["authority"]["topic"])
+        self.authority_client.subscribe(self.cfg["topic"])
 
     def _on_disconnect(self, _client, _userdata, _rc, _properties=None):
         pass

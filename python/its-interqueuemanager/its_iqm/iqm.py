@@ -55,7 +55,11 @@ class IQM:
         # will need to have a valid local_qm to pass to the neighbours
         # queue managers, so we need to handle the central authority
         # after we create the local QM.
-        self.authority = its_iqm.authority.Authority(self.cfg, self.update_cb)
+        self.authority = its_iqm.authority.Authority(
+            self.instance_id,
+            self.cfg["authority"],
+            self.update_cb,
+        )
 
     def run_forever(self):
         self.neighbours = dict()
