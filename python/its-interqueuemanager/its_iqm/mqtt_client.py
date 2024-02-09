@@ -10,10 +10,10 @@ import re
 
 try:
     import paho_socket
-
-    paho_socket_available = True
 except ModuleNotFoundError:
     paho_socket_available = False
+else:
+    paho_socket_available = True
 
 
 class MQTTClient:
