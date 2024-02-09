@@ -54,7 +54,7 @@ class IQM:
         elif authority_type == "mqtt":
             self.authority = its_iqm.authority.mqtt.Authority(self.cfg, self.update_cb)
         else:
-            raise ValueError(f"unknown central authority type {central_type}")
+            raise ValueError(f"unknown central authority type {authority_type}")
 
     def run_forever(self):
         self.neighbours = dict()
