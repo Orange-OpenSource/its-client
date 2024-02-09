@@ -79,7 +79,7 @@ class Authority:
     def join(self):
         pass
 
-    def _on_connect(self, client, userdata, flags, rc, properties=None):
+    def _on_connect(self, _client, _userdata, _flags, _rc, _properties=None):
         self.authority_client.subscribe(self.topic)
 
     def _on_disconnect(self, _client, _userdata, _rc, _properties=None):
