@@ -119,6 +119,7 @@ class MQTTClient:
         )
         for cp_to in self.copy_to:
             topic = self.re.sub(rf"\1{cp_to}/", message.topic, count=1)
+            logging.debug(f"[{self.name}]:  -> forwarding to {topic}")
             (self.local_qm or self).publish(topic, message.payload)
 
     def __on_connect(self, _client, _userdata, _flags, _rc, _properties=None):
