@@ -27,6 +27,7 @@ DEFAULTS = {
     "authority": {
         "type": "file",
         "path": "/etc/its/neighbours.cfg",
+        "reload": 60,
         "username": None,
         "password": None,
         "client_id": None,

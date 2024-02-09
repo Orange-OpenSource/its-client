@@ -42,8 +42,6 @@ class Authority:
 
     def run(self):
         self.load()
-        if "reload" not in self.cfg["authority"]:
-            return
         # This does not give us a period that is perfectly "reload"
         # seconds, but we do not care much here, as it is solely to
         # update the list of neighbours, which does not happen so
