@@ -24,6 +24,7 @@ use crate::client::configuration::configuration_error::ConfigurationError::{
     FieldNotFound, MissingMandatoryField, MissingMandatorySection, NoCustomSettings, NoPassword,
     TypeError,
 };
+use crate::transport::mqtt::{configure_tls, configure_transport};
 
 pub mod configuration_error;
 pub mod node_configuration;
@@ -97,6 +98,7 @@ impl Configuration {
     }
 }
 
+// FIXME maybe move this into a dedicated .rs file
 struct MqttOptionWrapper(MqttOptions);
 impl TryFrom<&Properties> for MqttOptionWrapper {
     type Error = ConfigurationError;
@@ -118,6 +120,24 @@ impl TryFrom<&Properties> for MqttOptionWrapper {
         }
 
         // TODO manage other optional
+
+        let use_tls = get_optional_from_section::<bool>("use_tls", properties)
+            .unwrap_or_default()
+            .unwrap_or_default();
+        let use_websocket = get_optional_from_section::<bool>("use_websocket", properties)
+            .unwrap_or_default()
+            .unwrap_or_default();
+
+        // FIXME manage ALPN, and authentication
+        let tls_configuration = if use_tls {
+            let ca_path = get_mandatory_field::<String>("tls_certificate", ("mqtt", properties))
+                .expect("TLS enabled but no certificate path provided");
+            Some(configure_tls(&ca_path, None, None))
+        } else {
+            None
+        };
+
+        configure_transport(tls_configuration, use_websocket, &mut mqtt_options);
 
         Ok(MqttOptionWrapper(mqtt_options))
     }
