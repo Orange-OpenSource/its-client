@@ -23,6 +23,25 @@ class IQM:
         self.cfg = cfg
         self.instance_id = self.cfg["general"]["instance-id"]
 
+        prefix = self.cfg["general"]["prefix"]
+        suffix = self.cfg["general"]["suffix"]
+
+        inqueue = "inQueue"
+        outqueue = "outQueue"
+        interqueue = self.cfg["local"]["interqueue"]
+        if prefix is not None:  # can be an empty string for a /-rooted queue
+            inqueue = f"{prefix}/{inqueue}"
+            outqueue = f"{prefix}/{outqueue}"
+            interqueue = f"{prefix}/{interqueue}"
+        if suffix:  # can *not* be an empty string
+            inqueue += f"/{suffix}"
+            outqueue += f"/{suffix}"
+            interqueue += f"/{suffix}"
+
+        # Neighbours will publish there too, so keep it to avoid recomputing
+        # it every time
+        self.outqueue = outqueue
+
         logging.info("create local qm")
         conn = {
             "host": None,
@@ -41,13 +60,8 @@ class IQM:
             password=cfg["local"]["password"],
             client_id=cfg["local"]["client_id"],
             local_qm=None,
-            prefix=cfg["general"]["prefix"],
-            suffix=cfg["general"]["suffix"],
-            copy_from="inQueue",
-            copy_to=[
-                "outQueue",
-                cfg["local"]["interqueue"],
-            ],
+            copy_from=inqueue,
+            copy_to=[outqueue, interqueue],
             **conn,
         )
 
@@ -115,6 +129,19 @@ class IQM:
                     f"only mqtt neighbours supported, not {n_type} for {nghb_id}"
                 )
             self.neighbours[nghb_id] = loaded_nghbs[nghb_id]
+
+            prefix = self.cfg["general"]["prefix"]
+            suffix = self.cfg["general"]["suffix"]
+            if "prefix" in loaded_nghbs[nghb_id]:
+                prefix = loaded_nghbs[nghb_id]["prefix"]
+            if "suffix" in loaded_nghbs[nghb_id]:
+                suffix = loaded_nghbs[nghb_id]["suffix"]
+            interqueue = loaded_nghbs[nghb_id]["queue"]
+            if prefix is not None:  # can be an empty string for a /-rooted queue
+                interqueue = f"{prefix}/{interqueue}"
+            if suffix:  # can *not* be an empty string
+                interqueue += f"/{suffix}"
+
             creds = {
                 "username": None,
                 "password": None,
@@ -129,10 +156,8 @@ class IQM:
                 socket=None,
                 client_id=self.cfg["neighbours"]["client_id"],
                 local_qm=self.local_qm,
-                prefix=self.cfg["general"]["prefix"],
-                suffix=self.cfg["general"]["suffix"],
-                copy_from=loaded_nghbs[nghb_id]["queue"],
-                copy_to=["outQueue"],
+                copy_from=interqueue,
+                copy_to=[self.outqueue],
                 **creds,
             )
             self.neighbours_clients[nghb_id].start()
