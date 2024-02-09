@@ -60,5 +60,6 @@ class Authority:
         except FileNotFoundError:
             # No file -> no neigbour defined, i.e. empty list
             pass
-        logging.debug(f"loaded {len(loaded_nghbs)} neighbour(s)")
+        # .sections() does not contain the "DEFAULT" section
+        logging.debug(f"loaded {len(loaded_nghbs.sections())} neighbour(s)")
         self.update_cb({s: dict(loaded_nghbs[s]) for s in loaded_nghbs.sections()})

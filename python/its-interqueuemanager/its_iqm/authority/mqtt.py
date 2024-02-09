@@ -73,4 +73,8 @@ class Authority:
     def _on_message(self, _client, _userdata, message):
         logging.info("received neighbours")
         loaded_nghbs = json.loads(message.payload)
+        # Contrary to the 'file' or 'http' methods, which use a .cfg style
+        # content, the 'mqtt' method uses a json blob. So there is no
+        # "DEFAULT" section to ignore here.
+        logging.debug(f"loaded {len(loaded_nghbs)} neighbour(s)")
         self.update_cb(loaded_nghbs)
