@@ -21,6 +21,11 @@ class Authority:
         self.cfg = cfg
         self.update_cb = update_cb
 
+        try:
+            client_id = self.cfg["authority"]["client_id"]
+        except KeyError:
+            client_id = self.cfg["general"]["instance_id"]
+
         self.prefix = str()
         self.suffix = str()
         # Compare against "not None" instead of truthness, as an
@@ -39,9 +44,7 @@ class Authority:
         self.topic = f"{self.prefix}neighbours/{self.suffix}{self.username}"
 
         self.authority_client = paho.mqtt.client.Client(
-            client_id=(
-                self.cfg["authority"]["client_id"] or self.cfg["general"]["instance_id"]
-            ),
+            client_id=client_id,
             protocol=paho.mqtt.client.MQTTv5,
         )
         self.authority_client.reconnect_delay_set()
@@ -56,16 +59,20 @@ class Authority:
 
         self.authority_client.connect_async(
             host=self.cfg["authority"]["host"],
-            port=self.cfg["authority"]["port"],
+            port=int(self.cfg["authority"]["port"]),
             clean_start=True,
         )
 
     def start(self):
-        logging.info(f"starting authority MQTT client to {self.host}:{self.port}")
+        logging.info(
+            f"starting authority MQTT client to {self.cfg['authority']['host']}:{self.cfg['authority']['port']}"
+        )
         self.authority_client.loop_start()
 
     def stop(self):
-        logging.info(f"stopping authority MQTT client to {self.host}:{self.port}")
+        logging.info(
+            f"stopping authority MQTT client to {self.cfg['authority']['host']}:{self.cfg['authority']['port']}"
+        )
         self.authority_client.disconnect()
         self.authority_client.loop_stop()
 
@@ -73,7 +80,7 @@ class Authority:
         pass
 
     def _on_connect(self, client, userdata, flags, rc, properties=None):
-        self.authority_client.subsribe(self.topic)
+        self.authority_client.subscribe(self.topic)
 
     def _on_disconnect(self, _client, _userdata, _rc, _properties=None):
         pass
@@ -81,7 +88,7 @@ class Authority:
     def _on_socket_close(self, _client, _userdata, _sock):
         pass
 
-    def _on_message(self, _client, _userdata, _message):
+    def _on_message(self, _client, _userdata, message):
         logging.info("received neighbours")
         loaded_nghbs = json.loads(message.payload)
         self.update_cb(loaded_nghbs)
