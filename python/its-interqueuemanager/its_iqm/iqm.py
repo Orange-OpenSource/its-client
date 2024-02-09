@@ -55,15 +55,7 @@ class IQM:
         # will need to have a valid local_qm to pass to the neighbours
         # queue managers, so we need to handle the central authority
         # after we create the local QM.
-        authority_type = self.cfg["authority"]["type"]
-        if authority_type == "file":
-            self.authority = its_iqm.authority.file.Authority(self.cfg, self.update_cb)
-        elif authority_type == "http":
-            self.authority = its_iqm.authority.http.Authority(self.cfg, self.update_cb)
-        elif authority_type == "mqtt":
-            self.authority = its_iqm.authority.mqtt.Authority(self.cfg, self.update_cb)
-        else:
-            raise ValueError(f"unknown central authority type {authority_type}")
+        self.authority = its_iqm.authority.Authority(self.cfg, self.update_cb)
 
     def run_forever(self):
         self.neighbours = dict()
