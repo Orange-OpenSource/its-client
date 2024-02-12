@@ -16,7 +16,7 @@ class Authority:
         self,
         _instance_id: str,
         cfg: dict,
-        update_cb: Callable[[Sequence[Any]], None],
+        update_cb: Callable[[its_iqm.iqm.IQM, dict], None],
     ):
         self.cfg = cfg
         self.update_cb = update_cb
@@ -63,4 +63,4 @@ class Authority:
             # just keep using the neighbours we have, if any.
             logging.debug("failed to download the list of neighbours; changing nothing")
         logging.debug(f"loaded {len(loaded_nghbs)} neighbour(s)")
-        self.update_cb(loaded_nghbs)
+        self.update_cb({s: dict(loaded_nghbs[s]) for s in loaded_nghbs.sections()})

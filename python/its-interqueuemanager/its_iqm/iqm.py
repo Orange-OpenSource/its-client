@@ -94,7 +94,7 @@ class IQM:
         # or those which description changed.
         new_nghbs_ids = [
             nghb_id
-            for nghb_id in loaded_nghbs.sections()  # Avoids section "DEFAULT"
+            for nghb_id in loaded_nghbs
             if nghb_id not in self.neighbours
             or self.neighbours[nghb_id] != loaded_nghbs[nghb_id]
         ]

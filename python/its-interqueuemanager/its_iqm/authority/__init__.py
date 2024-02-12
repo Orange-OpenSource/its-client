@@ -2,6 +2,7 @@ from __future__ import annotations
 import its_iqm.authority.file as _file
 import its_iqm.authority.http as _http
 import its_iqm.authority.mqtt as _mqtt
+import its_iqm.iqm
 
 
 class Authority:
@@ -9,7 +10,7 @@ class Authority:
         cls,
         instance_id: str,
         cfg: dict,
-        update_cb: Callable[[list[Any]], None],
+        update_cb: Callable[[its_iqm.iqm.IQM, dict], None],
     ):
         authority_type = cfg["type"]
         if authority_type == "file":

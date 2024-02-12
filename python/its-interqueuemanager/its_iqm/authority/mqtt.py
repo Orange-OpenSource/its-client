@@ -14,8 +14,8 @@ class Authority:
     def __init__(
         self,
         instance_id: str,
-        cfg: configparser.ConfigParser,
-        update_cb: Callable[[Sequence[Any]], None],
+        cfg: dict,
+        update_cb: Callable[[its_iqm.iqm.IQM, dict], None],
     ):
         self.cfg = cfg
         self.update_cb = update_cb

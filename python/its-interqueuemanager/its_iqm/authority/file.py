@@ -15,7 +15,7 @@ class Authority:
         self,
         _instance_id: str,
         cfg: dict,
-        update_cb: Callable[[list[Any]], None],
+        update_cb: Callable[[its_iqm.iqm.IQM, dict], None],
     ):
         self.cfg = cfg
         self.update_cb = update_cb
@@ -61,4 +61,4 @@ class Authority:
             # No file -> no neigbour defined, i.e. empty list
             pass
         logging.debug(f"loaded {len(loaded_nghbs)} neighbour(s)")
-        self.update_cb(loaded_nghbs)
+        self.update_cb({s: dict(loaded_nghbs[s]) for s in loaded_nghbs.sections()})
