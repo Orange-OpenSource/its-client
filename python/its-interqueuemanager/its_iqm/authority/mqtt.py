@@ -24,23 +24,6 @@ class Authority:
         except KeyError:
             client_id = self.cfg["general"]["instance_id"]
 
-        self.prefix = str()
-        self.suffix = str()
-        # Compare against "not None" instead of truthness, as an
-        # empty prefix is valid and means starting the topic with a /
-        if self.cfg["general"]["prefix"] is not None:
-            self.prefix = f"{self.cfg['general']['prefix']}"
-            # prefix must end with a '/'
-            if self.prefix == "" or self.prefix[-1] != "/":
-                self.prefix += "/"
-        # Test for truthness, because an empty suffix is the same as no suffix
-        if self.cfg["general"]["suffix"]:
-            self.suffix = self.cfg["general"]["suffix"]
-            if self.suffix[-1] != "/":
-                self.suffix += "/"
-
-        self.topic = f"{self.prefix}neighbours/{self.suffix}{self.username}"
-
         self.authority_client = paho.mqtt.client.Client(
             client_id=client_id,
             protocol=paho.mqtt.client.MQTTv5,
@@ -78,7 +61,7 @@ class Authority:
         pass
 
     def _on_connect(self, _client, _userdata, _flags, _rc, _properties=None):
-        self.authority_client.subscribe(self.topic)
+        self.authority_client.subscribe(self.cfg["authority"]["topic"])
 
     def _on_disconnect(self, _client, _userdata, _rc, _properties=None):
         pass
