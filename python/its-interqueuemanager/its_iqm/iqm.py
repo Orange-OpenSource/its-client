@@ -119,18 +119,24 @@ class IQM:
                     f"only mqtt neighbours supported, not {n_type} for {nghb_id}"
                 )
             self.neighbours[nghb_id] = loaded_nghbs[nghb_id]
+            creds = {
+                "username": None,
+                "password": None,
+            }
+            for k in creds:
+                if k in loaded_nghbs[nghb_id]:
+                    creds[k] = loaded_nghbs[nghb_id][k]
             self.neighbours_clients[nghb_id] = its_iqm.mqtt_client.MQTTClient(
                 name=nghb_id,
                 host=loaded_nghbs[nghb_id]["host"],
                 port=int(loaded_nghbs[nghb_id]["port"]),
                 socket=None,
-                username=loaded_nghbs[nghb_id]["username"],
-                password=loaded_nghbs[nghb_id]["password"],
                 client_id=self.cfg["neighbours"]["client_id"],
                 local_qm=self.local_qm,
                 prefix=self.cfg["general"]["prefix"],
                 suffix=self.cfg["general"]["suffix"],
                 copy_from=loaded_nghbs[nghb_id]["queue"],
                 copy_to=["outQueue"],
+                **creds,
             )
             self.neighbours_clients[nghb_id].start()
