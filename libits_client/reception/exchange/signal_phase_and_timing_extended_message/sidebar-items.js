@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["TrafficLightState"],"struct":["NextChange","SignalPhaseAndTimingExtendedMessage","State"]};

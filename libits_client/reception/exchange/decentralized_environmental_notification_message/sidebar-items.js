@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["ActionId","AlacarteContainer","DecentralizedEnvironmentalNotificationMessage","EventType","LocationContainer","LocationContainerConfidence","ManagementContainer","SituationContainer","Trace"]};
