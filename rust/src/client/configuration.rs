@@ -10,19 +10,23 @@
 use crate::client::configuration::configuration_error::ConfigurationError;
 use crate::client::configuration::node_configuration::NodeConfiguration;
 use ini::{Ini, Properties};
+use rumqttc::MqttOptions;
 use std::any::type_name;
 
+use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::RwLock;
 
 use crate::client::configuration::configuration_error::ConfigurationError::{
-    FieldNotFound, MissingMandatoryField, MissingMandatorySection, NoCustomSettings, TypeError,
+    FieldNotFound, MissingMandatoryField, MissingMandatorySection, NoCustomSettings, NoPassword,
+    TypeError,
 };
 
 pub mod configuration_error;
 pub mod node_configuration;
 
 const STATION_SECTION: &str = "station";
+const MQTT_SECTION: &str = "mqtt";
 const NODE_SECTION: &str = "node";
 
 const STATION_ID_FIELD: &str = "id";
@@ -31,6 +35,7 @@ const STATION_TYPE_FIELD: &str = "type";
 pub struct Configuration {
     pub station_id: String,
     pub station_type: String,
+    pub mqtt_options: MqttOptions,
     pub node: Option<RwLock<NodeConfiguration>>,
     custom_settings: Option<Ini>,
 }
@@ -45,11 +50,15 @@ impl Configuration {
                 .to_string(),
             None => self.station_id.clone(),
         };
-        station_id.to_string()
+        format!("{}_{}", self.mqtt_options.client_id(), station_id)
     }
 
     pub fn set_node_configuration(&mut self, node_configuration: NodeConfiguration) {
         self.node = Some(RwLock::new(node_configuration));
+    }
+
+    pub fn set_mqtt_credentials(&mut self, username: &str, password: &str) {
+        self.mqtt_options.set_credentials(username, password);
     }
 
     pub fn get<T: FromStr>(
@@ -82,6 +91,38 @@ impl Configuration {
             .unwrap()
             .with_section(section)
             .set(key, value);
+    }
+}
+
+struct MqttOptionWrapper(MqttOptions);
+impl TryFrom<&Properties> for MqttOptionWrapper {
+    type Error = ConfigurationError;
+
+    fn try_from(properties: &Properties) -> Result<Self, Self::Error> {
+        let section = (MQTT_SECTION, properties);
+        let mut mqtt_options = MqttOptions::new(
+            get_mandatory_field::<String>("client_id", section)?,
+            get_mandatory_field::<String>("host", section)?,
+            get_mandatory_field::<u16>("port", section)?,
+        );
+
+        if let Ok(Some(username)) = get_optional_from_section::<String>("username", section.1) {
+            if let Ok(Some(password)) = get_optional_from_section::<String>("password", section.1) {
+                mqtt_options.set_credentials(username, password);
+            } else {
+                return Err(NoPassword);
+            }
+        }
+
+        // TODO manage other optional
+
+        Ok(MqttOptionWrapper(mqtt_options))
+    }
+}
+impl Deref for MqttOptionWrapper {
+    type Target = MqttOptions;
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -141,6 +182,7 @@ impl TryFrom<Ini> for Configuration {
     fn try_from(ini_config: Ini) -> Result<Self, Self::Error> {
         let mut ini_config = ini_config;
         let station_properties = pick_mandatory_section(STATION_SECTION, &mut ini_config)?;
+        let mqtt_properties = pick_mandatory_section(MQTT_SECTION, &mut ini_config)?;
 
         let node = match ini_config.section(Some(NODE_SECTION)) {
             Some(properties) => Some(RwLock::new(NodeConfiguration::try_from(properties)?)),
@@ -156,6 +198,9 @@ impl TryFrom<Ini> for Configuration {
                 STATION_TYPE_FIELD,
                 (STATION_SECTION, &station_properties),
             )?,
+            mqtt_options: MqttOptionWrapper::try_from(&mqtt_properties)?
+                .deref()
+                .clone(),
             node,
             custom_settings: Some(ini_config),
         })
