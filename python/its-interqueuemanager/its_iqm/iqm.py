@@ -23,38 +23,57 @@ class IQM:
         self.cfg = cfg
         self.instance_id = self.cfg["general"]["instance-id"]
 
+        prefix = self.cfg["general"]["prefix"]
+        suffix = self.cfg["general"]["suffix"]
+
+        inqueue = "inQueue"
+        outqueue = "outQueue"
+        interqueue = self.cfg["local"]["interqueue"]
+        if prefix is not None:  # can be an empty string for a /-rooted queue
+            inqueue = f"{prefix}/{inqueue}"
+            outqueue = f"{prefix}/{outqueue}"
+            interqueue = f"{prefix}/{interqueue}"
+        if suffix:  # can *not* be an empty string
+            inqueue += f"/{suffix}"
+            outqueue += f"/{suffix}"
+            interqueue += f"/{suffix}"
+
+        # Neighbours will publish there too, so keep it to avoid recomputing
+        # it every time
+        self.outqueue = outqueue
+
         logging.info("create local qm")
+        conn = {
+            "host": None,
+            "port": None,
+            "socket": None,
+        }
+        try:
+            conn["host"] = cfg["local"]["host"]
+            conn["port"] = int(cfg["local"]["port"])
+        except TypeError:
+            conn["socket"] = cfg["local"]["socket-path"]
+
         self.local_qm = its_iqm.mqtt_client.MQTTClient(
             name="local",
-            host=cfg["local"]["host"],
-            port=cfg["local"]["port"],
-            socket=cfg["local"]["socket-path"],
             username=cfg["local"]["username"],
             password=cfg["local"]["password"],
             client_id=cfg["local"]["client_id"],
             local_qm=None,
-            prefix=cfg["general"]["prefix"],
-            suffix=cfg["general"]["suffix"],
-            copy_from="inQueue",
-            copy_to=[
-                "outQueue",
-                cfg["local"]["interqueue"],
-            ],
+            copy_from=inqueue,
+            copy_to=[outqueue, interqueue],
+            **conn,
         )
 
         # The central authority will call our update_cb(), for which we
         # will need to have a valid local_qm to pass to the neighbours
         # queue managers, so we need to handle the central authority
         # after we create the local QM.
-        authority_type = self.cfg["authority"]["type"]
-        if authority_type == "file":
-            self.authority = its_iqm.authority.file.Authority(self.cfg, self.update_cb)
-        elif authority_type == "http":
-            self.authority = its_iqm.authority.http.Authority(self.cfg, self.update_cb)
-        elif authority_type == "mqtt":
-            self.authority = its_iqm.authority.mqtt.Authority(self.cfg, self.update_cb)
-        else:
-            raise ValueError(f"unknown central authority type {central_type}")
+        self.authority = its_iqm.authority.Authority(
+            self.instance_id,
+            self.cfg["authority"],
+            self.update_cb,
+        )
 
     def run_forever(self):
         self.neighbours = dict()
@@ -89,7 +108,7 @@ class IQM:
         # or those which description changed.
         new_nghbs_ids = [
             nghb_id
-            for nghb_id in loaded_nghbs.sections()  # Avoids section "DEFAULT"
+            for nghb_id in loaded_nghbs
             if nghb_id not in self.neighbours
             or self.neighbours[nghb_id] != loaded_nghbs[nghb_id]
         ]
@@ -110,18 +129,35 @@ class IQM:
                     f"only mqtt neighbours supported, not {n_type} for {nghb_id}"
                 )
             self.neighbours[nghb_id] = loaded_nghbs[nghb_id]
+
+            prefix = self.cfg["general"]["prefix"]
+            suffix = self.cfg["general"]["suffix"]
+            if "prefix" in loaded_nghbs[nghb_id]:
+                prefix = loaded_nghbs[nghb_id]["prefix"]
+            if "suffix" in loaded_nghbs[nghb_id]:
+                suffix = loaded_nghbs[nghb_id]["suffix"]
+            interqueue = loaded_nghbs[nghb_id]["queue"]
+            if prefix is not None:  # can be an empty string for a /-rooted queue
+                interqueue = f"{prefix}/{interqueue}"
+            if suffix:  # can *not* be an empty string
+                interqueue += f"/{suffix}"
+
+            creds = {
+                "username": None,
+                "password": None,
+            }
+            for k in creds:
+                if k in loaded_nghbs[nghb_id]:
+                    creds[k] = loaded_nghbs[nghb_id][k]
             self.neighbours_clients[nghb_id] = its_iqm.mqtt_client.MQTTClient(
                 name=nghb_id,
                 host=loaded_nghbs[nghb_id]["host"],
-                port=loaded_nghbs[nghb_id]["port"],
+                port=int(loaded_nghbs[nghb_id]["port"]),
                 socket=None,
-                username=loaded_nghbs[nghb_id]["username"],
-                password=loaded_nghbs[nghb_id]["password"],
                 client_id=self.cfg["neighbours"]["client_id"],
                 local_qm=self.local_qm,
-                prefix=self.cfg["general"]["prefix"],
-                suffix=self.cfg["general"]["suffix"],
-                copy_from=loaded_nghbs[nghb_id]["queue"],
-                copy_to=["outQueue"],
+                copy_from=interqueue,
+                copy_to=[self.outqueue],
+                **creds,
             )
             self.neighbours_clients[nghb_id].start()
