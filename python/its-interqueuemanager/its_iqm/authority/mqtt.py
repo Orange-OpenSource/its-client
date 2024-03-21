@@ -4,12 +4,10 @@
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
 from __future__ import annotations
-import configparser
 import json
 import logging
 import paho.mqtt.client
 import paho.mqtt.subscribe
-import time
 
 
 class Authority:
