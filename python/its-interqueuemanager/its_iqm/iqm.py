@@ -24,11 +24,19 @@ class IQM:
         self.instance_id = self.cfg["general"]["instance-id"]
 
         logging.info("create local qm")
+        conn = {
+            "host": None,
+            "port": None,
+            "socket": None,
+        }
+        try:
+            conn["host"] = cfg["local"]["host"]
+            conn["port"] = int(cfg["local"]["port"])
+        except TypeError:
+            conn["socket"] = cfg["local"]["socket-path"]
+
         self.local_qm = its_iqm.mqtt_client.MQTTClient(
             name="local",
-            host=cfg["local"]["host"],
-            port=cfg["local"]["port"],
-            socket=cfg["local"]["socket-path"],
             username=cfg["local"]["username"],
             password=cfg["local"]["password"],
             client_id=cfg["local"]["client_id"],
@@ -40,6 +48,7 @@ class IQM:
                 "outQueue",
                 cfg["local"]["interqueue"],
             ],
+            **conn,
         )
 
         # The central authority will call our update_cb(), for which we
@@ -113,7 +122,7 @@ class IQM:
             self.neighbours_clients[nghb_id] = its_iqm.mqtt_client.MQTTClient(
                 name=nghb_id,
                 host=loaded_nghbs[nghb_id]["host"],
-                port=loaded_nghbs[nghb_id]["port"],
+                port=int(loaded_nghbs[nghb_id]["port"]),
                 socket=None,
                 username=loaded_nghbs[nghb_id]["username"],
                 password=loaded_nghbs[nghb_id]["password"],

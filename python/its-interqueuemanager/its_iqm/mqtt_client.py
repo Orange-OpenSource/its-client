@@ -83,7 +83,7 @@ class MQTTClient:
         else:
             self.client.connect_async(
                 host=self.host,
-                port=int(self.port),
+                port=self.port,
                 clean_start=True,
             )
 
