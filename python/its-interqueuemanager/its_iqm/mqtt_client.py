@@ -20,9 +20,9 @@ class MQTTClient:
     def __init__(
         self,
         name: str,
-        host: str,
-        port: int,
-        socket: str,
+        host: typing.Union[str, None],
+        port: typing.Union[int, None],
+        socket: typing.Union[str, None],
         username: typing.Union[str, None],
         password: typing.Union[str, None],
         client_id: str,
