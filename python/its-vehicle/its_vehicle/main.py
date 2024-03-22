@@ -16,6 +16,7 @@ CFG = "/etc/its/vehicle.cfg"
 DEFAULTS = {
     "general": {
         "instance-id": None,
+        "report-freq": None,
     },
     "gpsd": {
         "host": "127.0.0.1",
@@ -63,6 +64,9 @@ def main():
     if cfg["general"]["instance-id"] is None:
         raise RuntimeError("configuration key general.instace-id is required")
 
+    # Type coercion
+    cfg["general"]["report-freq"] = float(cfg["general"]["report-freq"])
+
     logging.basicConfig(
         stream=sys.stderr,
         format="%(asctime)s %(module)s: %(message)s",
@@ -76,7 +80,7 @@ def main():
     # value==0.0 disables the timer, which means we can't configure it
     # to "expire now already!", so we instead just tell it to "expire
     # really, really soon!" (i.e. in the next microsecond).
-    timer.settime(value=0.000001, interval=0.2)
+    timer.settime(value=0.000001, interval=1.0 / cfg["general"]["report-freq"])
     try:
         while True:
             evt = timer.read()
