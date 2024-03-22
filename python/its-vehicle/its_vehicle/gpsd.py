@@ -69,6 +69,7 @@ class GNSSProvider:
 
         # Type coercion
         self.cfg["port"] = int(self.cfg["port"])
+        self.cfg["persistence"] = float(self.cfg["persistence"])
         logging.debug("starting gpsd provider with: %s", repr(self.cfg))
 
         self.data = None
@@ -100,6 +101,10 @@ class GNSSProvider:
         logging.debug("stopped gpsd GNSS client")
 
     def get(self) -> GNSSReport | None:
+        if self.data:
+            now = datetime.datetime.now().timestamp()
+            if now - self.data.timestamp > self.cfg["persistence"]:
+                self.data = None
         return self.data
 
     def _connect(self):
@@ -140,7 +145,6 @@ class GNSSProvider:
             logging.debug("closing sock")
             self.sock.close()
             self.sock = None
-        self.data = None
         logging.debug("disconnected")
 
     def _loop(self):

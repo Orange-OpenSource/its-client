@@ -20,6 +20,7 @@ DEFAULTS = {
     "gpsd": {
         "host": "127.0.0.1",
         "port": 2947,
+        "persistence": 2.0,
         "heuristic": "order",
     },
 }
