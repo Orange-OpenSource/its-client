@@ -5,10 +5,10 @@
 
 import argparse
 import configparser
+import linuxfd
 import logging
 import os
 import sys
-import time
 from . import gpsd
 
 
@@ -71,11 +71,19 @@ def main():
 
     gnss = gpsd.GNSSProvider(cfg=cfg["gpsd"])
     gnss.start()
+
+    timer = linuxfd.timerfd(closeOnExec=True)
+    # value==0.0 disables the timer, which means we can't configure it
+    # to "expire now already!", so we instead just tell it to "expire
+    # really, really soon!" (i.e. in the next microsecond).
+    timer.settime(value=0.000001, interval=0.2)
     try:
         while True:
+            evt = timer.read()
+            if evt > 1:
+                logging.warning("Resuming after %d missed events", evt - 1)
             g = gnss.get()
             logging.info("Got: %s", g)
-            time.sleep(5)
     except KeyboardInterrupt:
         # Proper termination, cleanup below
         pass

@@ -35,6 +35,8 @@ setup(
     "transcription. It permits to connect on ITS platform as a Passenger car (station type 5).",
     license="MIT",
     platforms="LINUX",
-    install_requires=[],
+    install_requires=[
+        "linuxfd==1.5",
+    ],
     entry_points={"console_scripts": ["its-vehicle = its_vehicle.main:main"]},
 )
