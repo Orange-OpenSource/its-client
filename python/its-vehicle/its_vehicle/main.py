@@ -10,6 +10,7 @@ import logging
 import os
 import sys
 from . import gpsd
+from . import mqtt
 
 
 CFG = "/etc/its/vehicle.cfg"
@@ -17,6 +18,11 @@ DEFAULTS = {
     "general": {
         "instance-id": None,
         "report-freq": None,
+    },
+    "broker.main": {
+        "port": 1883,
+        "username": None,
+        "password": None,
     },
     "gpsd": {
         "host": "127.0.0.1",
@@ -59,6 +65,7 @@ def main():
     for s in DEFAULTS:
         for k in DEFAULTS[s]:
             _set_default(s, k, DEFAULTS[s][k])
+    _set_default("broker.main", "client-id", cfg["general"]["instance-id"])
 
     # The instance-id is required
     if cfg["general"]["instance-id"] is None:
@@ -76,6 +83,9 @@ def main():
     gnss = gpsd.GNSSProvider(cfg=cfg["gpsd"])
     gnss.start()
 
+    mqtt_main = mqtt.MqttClient(cfg=cfg["broker.main"])
+    mqtt_main.start()
+
     timer = linuxfd.timerfd(closeOnExec=True)
     # value==0.0 disables the timer, which means we can't configure it
     # to "expire now already!", so we instead just tell it to "expire
@@ -87,7 +97,9 @@ def main():
             if evt > 1:
                 logging.warning("Resuming after %d missed events", evt - 1)
             g = gnss.get()
-            logging.info("Got: %s", g)
+            logging.debug("Got: %s", g)
+            if g is not None:
+                mqtt_main.publish("gnss", repr(g))
     except KeyboardInterrupt:
         # Proper termination, cleanup below
         pass
@@ -102,6 +114,7 @@ def main():
         os._exit(1)
 
     logging.debug("Will stop...")
+    mqtt_main.stop()
     gnss.stop()
 
 
