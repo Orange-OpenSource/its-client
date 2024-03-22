@@ -37,6 +37,7 @@ setup(
     platforms="LINUX",
     install_requires=[
         "linuxfd==1.5",
+        "paho-mqtt==1.6.1",
     ],
     entry_points={"console_scripts": ["its-vehicle = its_vehicle.main:main"]},
 )
