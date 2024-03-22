@@ -45,7 +45,7 @@ class MqttClient:
             client_id=self.cfg["client-id"],
             protocol=paho.mqtt.client.MQTTv5,
         )
-        self.client.reconnect_delay_set()
+        self.client.reconnect_delay_set(min_delay=1, max_delay=2)
         self.client.username_pw_set(username, password)
         self.client.on_connect = self.__on_connect
         self.client.on_disconnect = self.__on_disconnect
