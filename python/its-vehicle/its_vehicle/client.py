@@ -8,9 +8,14 @@ import logging
 import threading
 from .gpsd import GNSSProvider
 from .mqtt import MqttClient
+from .its.cam import CooperativeAwarenessMessage as CAM
 
 
 class ITSClient:
+    TYPES = {
+        "CAM": {"topic": "cam", "message": CAM},
+    }
+
     def __init__(
         self,
         *,
@@ -26,6 +31,11 @@ class ITSClient:
 
         # Type coercion
         self.cfg["report-freq"] = float(self.cfg["report-freq"])
+
+        if self.cfg["type"] not in ITSClient.TYPES:
+            raise ValueError(f"unknown ITS message type {self.cfg['type']}")
+
+        self.ITSMessage = ITSClient.TYPES[self.cfg["type"]]["message"]
 
         self.should_stop = False
         self.thread = threading.Thread(
