@@ -36,6 +36,7 @@ setup(
     license="MIT",
     platforms="LINUX",
     install_requires=[
+        "its-quadkeys",
         "linuxfd==1.5",
         "paho-mqtt==1.6.1",
     ],
