@@ -5,10 +5,10 @@
 
 import argparse
 import configparser
-import linuxfd
 import logging
 import os
 import sys
+from . import client
 from . import gpsd
 from . import mqtt
 
@@ -73,12 +73,10 @@ def main():
     _set_default("broker.main", "client-id", cfg["general"]["instance-id"])
     _set_default("broker.mirror", "client-id", cfg["general"]["instance-id"])
 
-    # The instance-id is required
+    # The instance-id is required. Even if specific to the 'client'
+    # part, we check it here because it is so central.
     if cfg["general"]["instance-id"] is None:
         raise RuntimeError("configuration key general.instace-id is required")
-
-    # Type coercion
-    cfg["general"]["report-freq"] = float(cfg["general"]["report-freq"])
 
     logging.basicConfig(
         stream=sys.stderr,
@@ -98,20 +96,16 @@ def main():
     else:
         mqtt_mirror = None
 
-    timer = linuxfd.timerfd(closeOnExec=True)
-    # value==0.0 disables the timer, which means we can't configure it
-    # to "expire now already!", so we instead just tell it to "expire
-    # really, really soon!" (i.e. in the next microsecond).
-    timer.settime(value=0.000001, interval=1.0 / cfg["general"]["report-freq"])
+    its_client = client.ITSClient(
+        cfg=cfg["general"],
+        gpsd=gnss,
+        mqtt_main=mqtt_main,
+        mqtt_mirror=mqtt_mirror,
+    )
+    its_client.start()
+
     try:
-        while True:
-            evt = timer.read()
-            if evt > 1:
-                logging.warning("Resuming after %d missed events", evt - 1)
-            g = gnss.get()
-            logging.debug("Got: %s", g)
-            if g is not None:
-                mqtt_main.publish("gnss", repr(g))
+        its_client.join()  # Should not terminate ever, but with an exception
     except KeyboardInterrupt:
         # Proper termination, cleanup below
         pass
@@ -126,6 +120,7 @@ def main():
         os._exit(1)
 
     logging.debug("Will stop...")
+    its_client.stop(wait=True)
     # Stop main MQTT client before the mirror one, so that we don't get
     # messages from the main one that we would then try to publish on
     # the mirror one that we just stopped.
