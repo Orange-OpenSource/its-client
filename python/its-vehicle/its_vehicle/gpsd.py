@@ -32,14 +32,26 @@ class GNSSReport:
     altitude: float | None = None
     # Speed over ground (i.e. without vertical component)
     speed: float | None = None
+    # Acceleration
+    acceleration: float | None = None
     # Orientation from true North (geographic North, not magnetic North!)
     track: float | None = None
+    # Semi-major/minor and orientation for error ellipse
+    major: float | None = None
+    minor: float | None = None
+    orient: float | None = None
+    # True and magnetic headings (true heading may or may not be equal to
+    # track, above)
+    true_heading: float | None = None
+    magnetic_heading: float | None = None
 
 
 class GNSSProvider:
-    ClassesOfInterest = ["TPV"]
+    ClassesOfInterest = ["TPV", "GST", "ATT"]
     DefaultData = {
         "TPV": None,
+        "GST": None,
+        "ATT": None,
     }
 
     def __init__(self, *, cfg):
@@ -312,12 +324,27 @@ class GNSSProvider:
                     self._data = dict(GNSSProvider.DefaultData)
 
     def _set_data(self):
+        # We are guaranteed to have a TPV message
         tpv = self._data["TPV"]
         tpv_time = tpv.get("time", None)
         if tpv_time is not None:
             if tpv_time[-1] == "Z":
                 tpv_time = tpv_time[:-1]
             tpv_time = datetime.datetime.fromisoformat(tpv_time).timestamp()
+
+        extras = dict()
+
+        # Not all GNSS receivers will yield ATT messages
+        if self._data["ATT"] is not None:
+            extras["acceleration"] = self._data["ATT"].get("acc_len", None)
+            extras["true_heading"] = self._data["ATT"].get("heading", None)
+            extras["magnetic_heading"] = self._data["ATT"].get("mheading", None)
+
+        # Not all GNSS receivers will yield GST messages
+        if self._data["GST"] is not None:
+            extras["major"] = self._data["GST"].get("major", None)
+            extras["minor"] = self._data["GST"].get("minor", None)
+            extras["orient"] = self._data["GST"].get("orient", None)
 
         self.data = GNSSReport(
             timestamp=time.time(),
@@ -326,6 +353,7 @@ class GNSSProvider:
             latitude=tpv.get("lat", None),
             altitude=tpv.get("altHAE", None),
             speed=tpv.get("speed", None),
-            track=tpv.get("track", None),
+            track=tpv.get("track", extras.get("true_heading", None)),
+            **extras,
         )
         logging.debug("gpsd GNSS client data available: %s", self.data)
