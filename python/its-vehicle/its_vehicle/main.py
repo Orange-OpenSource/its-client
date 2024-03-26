@@ -7,6 +7,7 @@ import argparse
 import configparser
 import logging
 import os
+import signal
 import sys
 from . import client
 from . import gpsd
@@ -36,6 +37,10 @@ DEFAULTS = {
         "heuristic": "order",
     },
 }
+
+
+class TermSignal(Exception):
+    pass
 
 
 def main():
@@ -104,9 +109,13 @@ def main():
     )
     its_client.start()
 
+    def term_handler(_signum: int, _frame):
+        raise TermSignal()
+
     try:
+        signal.signal(signal.SIGTERM, term_handler)
         its_client.join()  # Should not terminate ever, but with an exception
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, TermSignal):
         # Proper termination, cleanup below
         pass
     except Exception as e:
