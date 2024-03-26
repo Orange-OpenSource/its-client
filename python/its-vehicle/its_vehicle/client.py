@@ -33,6 +33,11 @@ class ITSClient:
         # Type coercion
         self.cfg["report-freq"] = float(self.cfg["report-freq"])
         self.cfg["depth"] = int(self.cfg["depth"])
+        self.cfg["mirror-self"] = bool(
+            self.cfg["mirror-self"].lower() in ["true", "yes"]
+            if type(self.cfg["mirror-self"]) is str
+            else self.cfg["mirror-self"]
+        )
 
         if self.cfg["type"] not in ITSClient.TYPES:
             raise ValueError(f"unknown ITS message type {self.cfg['type']}")
@@ -42,6 +47,10 @@ class ITSClient:
         if not self.cfg["topic-pub-prefix"] or self.cfg["topic-pub-prefix"][-1] != "/":
             raise ValueError(
                 f"configuration key general.topic-pub-prefix must end in a / ({self.cfg['topic-pub-prefix']})"
+            )
+        if not self.cfg["topic-sub-prefix"] or self.cfg["topic-sub-prefix"][-1] != "/":
+            raise ValueError(
+                f"configuration key general.topic-sub-prefix must end in a / ({self.cfg['topic-sub-prefix']})"
             )
 
         self.pub_topic_root = (
@@ -110,6 +119,15 @@ class ITSClient:
                 )
             )
             topic = self.pub_topic_root + quadkey.to_str("/")
-            self.mqtt_main.publish(topic, msg.to_json())
+            msg_json = msg.to_json()
+            self.mqtt_main.publish(topic, msg_json)
+            if self.mqtt_mirror and not self.cfg["mirror-self"]:
+                # Use the sub-prefix, to simulate the message as coming
+                # from the main broker as if we had subscribed to it.
+                mirror_topic = (
+                    self.cfg["topic-sub-prefix"]
+                    + topic[len(self.cfg["topic-pub-prefix"]) :]
+                )
+                self.mqtt_mirror.publish(mirror_topic, msg_json)
 
         timer.close()

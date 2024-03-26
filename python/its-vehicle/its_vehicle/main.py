@@ -19,6 +19,7 @@ DEFAULTS = {
     "general": {
         "instance-id": None,
         "report-freq": None,
+        "mirror-self": False,
     },
     "broker.main": {
         "port": 1883,
