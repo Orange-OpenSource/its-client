@@ -24,6 +24,11 @@ DEFAULTS = {
         "username": None,
         "password": None,
     },
+    "broker.mirror": {
+        "port": 1883,
+        "username": None,
+        "password": None,
+    },
     "gpsd": {
         "host": "127.0.0.1",
         "port": 2947,
@@ -66,6 +71,7 @@ def main():
         for k in DEFAULTS[s]:
             _set_default(s, k, DEFAULTS[s][k])
     _set_default("broker.main", "client-id", cfg["general"]["instance-id"])
+    _set_default("broker.mirror", "client-id", cfg["general"]["instance-id"])
 
     # The instance-id is required
     if cfg["general"]["instance-id"] is None:
@@ -85,6 +91,12 @@ def main():
 
     mqtt_main = mqtt.MqttClient(cfg=cfg["broker.main"])
     mqtt_main.start()
+
+    if "host" in cfg["broker.mirror"] or "socket-path" in cfg["broker.mirror"]:
+        mqtt_mirror = mqtt.MqttClient(cfg=cfg["broker.mirror"])
+        mqtt_mirror.start()
+    else:
+        mqtt_mirror = None
 
     timer = linuxfd.timerfd(closeOnExec=True)
     # value==0.0 disables the timer, which means we can't configure it
@@ -114,7 +126,12 @@ def main():
         os._exit(1)
 
     logging.debug("Will stop...")
+    # Stop main MQTT client before the mirror one, so that we don't get
+    # messages from the main one that we would then try to publish on
+    # the mirror one that we just stopped.
     mqtt_main.stop()
+    if mqtt_mirror is not None:
+        mqtt_mirror.stop()
     gnss.stop()
 
 
