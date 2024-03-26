@@ -29,5 +29,7 @@ setup(
     "the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription.",
     license="MIT",
     platforms="LINUX",
-    install_requires=[],
+    install_requires=[
+        "pygeotile==1.0.6",
+    ],
 )

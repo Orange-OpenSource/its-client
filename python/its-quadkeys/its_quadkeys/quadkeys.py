@@ -8,6 +8,7 @@ from __future__ import annotations
 import collections
 import itertools
 import json
+import pygeotile.tile
 
 
 class QuadKey(str):
@@ -18,16 +19,31 @@ class QuadKey(str):
     # A QuadKey is immutable, and its hash is actually used, so
     # we make sure any operation on a QuadKey does not mutate it.
 
-    def __init__(self, quadkey: QuadKey | str = "0", *, separator: str = ""):
+    def __init__(
+        self,
+        quadkey: QuadKey | tuple[float, float, int] | str = "0",
+        *,
+        separator: str = "",
+    ):
         """
         Create a new QuadKey
 
-        quadkey: the string representation of the quadkey
+        quadkey: can be one of:
+          - another QuadKey
+          - the string representation of the quadkey
+          - the latitude, longitude, and depth, represented as a tuple(float, float, int)
         separator: the string which is used to separate the quadkey levels
         """
         super().__init__()
         if type(quadkey) is QuadKey:
             quadkey = str(quadkey)
+        elif type(quadkey) is tuple:
+            lat, lon, depth = quadkey
+            quadkey = pygeotile.tile.Tile.for_latitude_longitude(
+                lat,
+                lon,
+                depth,
+            ).quad_tree
         if type(quadkey) is not str:
             raise TypeError(
                 f"cannot create a QuadKey from a {type(quadkey)}={quadkey!s}"

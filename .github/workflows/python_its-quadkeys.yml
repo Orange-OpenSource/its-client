@@ -16,6 +16,7 @@ jobs:
           cd python/its-quadkeys
           python -m pip install --upgrade pip
           pip install black wheel
+          pip install -r requirements.txt
       - name: Run black
         run: |
           cd python/its-quadkeys
