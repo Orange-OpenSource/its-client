@@ -4,6 +4,7 @@
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
 import its_quadkeys
+import json
 import linuxfd
 import logging
 import threading
@@ -142,3 +143,20 @@ class ITSClient:
             abbrev(message.topic),
             abbrev(message.payload),
         )
+        if self.mqtt_mirror is None:
+            return
+        try:
+            payload = json.loads(message.payload)
+        except json.decoder.JSONDecodeError:
+            # Not JSON, not sure what to do with that...
+            return
+        try:
+            if (
+                payload.get("source_uuid", None) != self.cfg["instance-id"]
+                or self.cfg["mirror-self"]
+            ):
+                self.mqtt_mirror.publish(message.topic, message.payload)
+        except:
+            # Payload does not have expected fields, or is not a dict;
+            # ignore this invalid message
+            pass
