@@ -11,6 +11,7 @@ import threading
 from paho.mqtt.client import MQTTMessage
 from .gpsd import GNSSProvider
 from .mqtt import MqttClient, abbrev
+from .roi import RegionOfInterest
 from .its.cam import CooperativeAwarenessMessage as CAM
 
 
@@ -63,6 +64,16 @@ class ITSClient:
             + "/"
         )
 
+        self.roi = RegionOfInterest(
+            depths=dict(
+                {
+                    t: int(self.cfg[f"depth-sub-{t}"])
+                    for t in self.cfg["messages"].split()
+                }
+            ),
+            speeds=[float(s) for s in self.cfg["speed-thresholds"].split()],
+        )
+
         self.should_stop = False
         self.thread = threading.Thread(
             target=self._loop,
@@ -110,16 +121,38 @@ class ITSClient:
             ):
                 continue
 
-            msg = self.ITSMessage(
-                uuid=self.cfg["instance-id"],
-                gnss_report=gnss_report,
-            )
             quadkey = its_quadkeys.QuadKey(
                 (
                     gnss_report.latitude,
                     gnss_report.longitude,
                     self.cfg["depth"],
                 )
+            )
+            # Update RoI before we send a message, so that
+            # we do not miss it...
+            roi_topics = set()
+            for msg_type in self.cfg["messages"].split():
+                roi_topics.update(
+                    map(
+                        lambda qk: (
+                            self.cfg["topic-sub-prefix"]
+                            + msg_type
+                            + "/+/"  # This is the instance-id (aka source_uuid) wildcard
+                            + its_quadkeys.QuadKey(qk).to_str("/")
+                            + "/#"
+                        ),
+                        self.roi.get(
+                            quadkey=quadkey,
+                            speed=gnss_report.speed,
+                            msg_type=msg_type,
+                        ),
+                    ),
+                )
+            self.mqtt_main.subscribe_replace(list(roi_topics))
+
+            msg = self.ITSMessage(
+                uuid=self.cfg["instance-id"],
+                gnss_report=gnss_report,
             )
             topic = self.pub_topic_root + quadkey.to_str("/")
             msg_json = msg.to_json()
@@ -134,6 +167,7 @@ class ITSClient:
                 self.mqtt_mirror.publish(mirror_topic, msg_json)
 
         # Out of the loop, cleanup and close
+        self.mqtt_main.unsubscribe_all()
         self.mqtt_main.set_msg_cb(None)
         timer.close()
 
