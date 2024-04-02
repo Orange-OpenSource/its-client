@@ -6,29 +6,26 @@
 from __future__ import annotations
 import logging
 import paho.mqtt.client
-import re
 
 try:
     import paho_socket
-
-    paho_socket_available = True
 except ModuleNotFoundError:
     paho_socket_available = False
+else:
+    paho_socket_available = True
 
 
 class MQTTClient:
     def __init__(
         self,
         name: str,
-        host: str,
-        port: int,
-        socket: str,
+        host: typing.Union[str, None],
+        port: typing.Union[int, None],
+        socket: typing.Union[str, None],
         username: typing.Union[str, None],
         password: typing.Union[str, None],
         client_id: str,
         local_qm: typing.Union[MQTTClient, None],
-        prefix: typing.Union[str, None],
-        suffix: typing.Union[str, None],
         copy_from: str,
         copy_to: list[str],
     ):
@@ -37,10 +34,7 @@ class MQTTClient:
         self.port = port
         self.socket = socket
         self.local_qm = local_qm
-        self.prefix = prefix
-        self.suffix = suffix
         self.copy_from = copy_from
-        self.re = re.compile(rf"(^|/){copy_from}/")
         self.copy_to = copy_to
 
         if self.socket:
@@ -55,14 +49,10 @@ class MQTTClient:
             raise LookupError(
                 "Either host and port, or socket-path, are required for local MQTT client"
             )
-        logging.info(f"[{self.name}]: create to {self.path}")
 
-        self.topic_root = str()
-        if self.prefix is not None:  # can be an empty string for a /-rooted queue
-            self.topic_root += f"{self.prefix}/"
-        self.topic_root += f"{self.copy_from}"
-        if self.suffix:  # can *not* be an empty string
-            self.topic_root += f"/{self.suffix}"
+        logging.info(
+            f"[{self.name}]: create to {self.path}, listening on {self.copy_from}"
+        )
 
         self.connected = False
         self.client = (paho_socket.Client if self.socket else paho.mqtt.client.Client)(
@@ -83,7 +73,7 @@ class MQTTClient:
         else:
             self.client.connect_async(
                 host=self.host,
-                port=int(self.port),
+                port=self.port,
                 clean_start=True,
             )
 
@@ -117,16 +107,18 @@ class MQTTClient:
         logging.debug(
             f"[{self.name}]: received message on {message.topic}: {abbrev(message.payload)}"
         )
+        interqueue_topic = message.topic
         for cp_to in self.copy_to:
-            topic = self.re.sub(rf"\1{cp_to}/", message.topic, count=1)
-            (self.local_qm or self).publish(topic, message.payload)
+            new_topic = cp_to + interqueue_topic[len(self.copy_from) :]
+            logging.debug(f"[{self.name}]:  -> forwarding to {new_topic}")
+            (self.local_qm or self).publish(new_topic, message.payload)
 
     def __on_connect(self, _client, _userdata, _flags, _rc, _properties=None):
         logging.info(f"[{self.name}]: connected to {self.path}")
         # For neighbours, we'll eventually restrict that to sub-quad-keys,
         # but for now, we subscribe to the whole of the sub-tree. For the
         # local broker, we will always want to listen to the full sub-tree.
-        topic = self.topic_root + "/#"
+        topic = self.copy_from + "/#"
         self.client.subscribe(topic)
         logging.debug(f"[{self.name}]: subscribed to {topic}")
         self.connected = True

@@ -14,8 +14,9 @@ import time
 class Authority:
     def __init__(
         self,
+        _instance_id: str,
         cfg: dict,
-        update_cb: Callable[[Sequence[Any]], None],
+        update_cb: Callable[[its_iqm.iqm.IQM, dict], None],
     ):
         self.cfg = cfg
         self.update_cb = update_cb
@@ -28,14 +29,12 @@ class Authority:
 
     def start(self):
         logging.info(
-            f"starting authority http client to {self.cfg['authority']['uri']}@{self.cfg['authority']['reload']}"
+            f"starting authority http client to {self.cfg['uri']}@{self.cfg['reload']}"
         )
         self.thread.start()
 
     def stop(self):
-        logging.info(
-            f"stopping authority http client to {self.cfg['authority']['uri']}"
-        )
+        logging.info(f"stopping authority http client to {self.cfg['uri']}")
         # We're a daemon thread, we'll get killed automatically eventually...
 
     def join(self):
@@ -44,26 +43,25 @@ class Authority:
 
     def run(self):
         self.load()
-        if "reload" not in self.cfg["authority"]:
-            return
         while True:
             # This does not give us a period that is perfectly "reload"
             # seconds, but we do not care much here, as it is solely to
             # update the list of neighbours, which does not happen so
             # frequently anyway, and we just need to reload it in a
             # "timely manner"...
-            time.sleep(int(self.cfg["authority"]["reload"]))
+            time.sleep(int(self.cfg["reload"]))
             self.load()
 
     def load(self):
         logging.info("loading neighbours")
         loaded_nghbs = configparser.ConfigParser()
         try:
-            r = requests.get(self.cfg["authority"]["uri"])
+            r = requests.get(self.cfg["uri"])
             loaded_nghbs.read_string(r.text)
         except Exception:
             # Can't download -> don't change the current state;
             # just keep using the neighbours we have, if any.
             logging.debug("failed to download the list of neighbours; changing nothing")
-        logging.debug(f"loaded {len(loaded_nghbs)} neighbour(s)")
-        self.update_cb(loaded_nghbs)
+        # .sections() does not contain the "DEFAULT" section
+        logging.debug(f"loaded {len(loaded_nghbs.sections())} neighbour(s)")
+        self.update_cb({s: dict(loaded_nghbs[s]) for s in loaded_nghbs.sections()})

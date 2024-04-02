@@ -1,0 +1,18 @@
+{
+  "france-42": {
+    "type": "mqtt",
+    "host": "france-42.geoserver.its.eu",
+    "port": 1883,
+    "username": "login",
+    "password": "secret",
+    "prefix": "RGCroCo",
+    "queue": "interQueue",
+    "suffix": "v2x"
+  },
+  "germany-27": {
+    "type": "mqtt",
+    "host": "1.2.3.4",
+    "port": 1883,
+    "queue": "backOutQueue"
+  }
+}
