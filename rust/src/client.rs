@@ -73,3 +73,20 @@ pub fn create_denm(
         todo!("Ego DENM creation not managed yet")
     }
 }
+
+/// Creates an updated copy of the provided DENM
+///
+/// FIXME check for appropriation
+pub fn update_denm(
+    detection_time: u64,
+    denm: &DecentralizedEnvironmentalNotificationMessage,
+    mobile: &dyn Mobile,
+) -> DecentralizedEnvironmentalNotificationMessage {
+    let mut copy = denm.clone();
+
+    copy.management_container.detection_time = timestamp_to_etsi(detection_time);
+    copy.management_container.reference_time = etsi_now();
+    copy.management_container.event_position = ReferencePosition::from(mobile.position());
+
+    copy
+}
