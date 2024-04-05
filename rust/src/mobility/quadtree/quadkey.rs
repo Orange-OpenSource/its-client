@@ -22,10 +22,6 @@ pub struct Quadkey {
 }
 
 impl Quadkey {
-    fn len(&self) -> usize {
-        self.tiles.len()
-    }
-
     pub fn push(&mut self, tile: Tile) {
         self.tiles.push(tile);
     }
@@ -434,7 +430,7 @@ mod tests {
 
                 quadkey.reduce($d);
 
-                assert_eq!(quadkey.len(), expected.len());
+                assert_eq!(quadkey.tiles.len(), expected.tiles.len());
                 assert_eq!(quadkey, expected);
             }
         };
@@ -452,12 +448,12 @@ mod tests {
             #[test]
             fn $test_name() {
                 let quadkey = Quadkey::from_str($k).expect("Failed to convert '{}' to quadkey");
-                let initial_length = quadkey.len();
+                let initial_length = quadkey.tiles.len();
                 let expected = Quadkey::from_str($e).expect("Failed to convert '{}' to quadkey");
 
                 let reduced = quadkey.as_reduced($d);
 
-                assert_eq!(quadkey.len(), initial_length);
+                assert_eq!(quadkey.tiles.len(), initial_length);
                 assert_eq!(reduced, expected);
             }
         };
