@@ -106,40 +106,6 @@ impl fmt::Display for Quadkey {
     }
 }
 
-impl Ord for Quadkey {
-    fn cmp(&self, other: &Self) -> Ordering {
-        let matching = self
-            .tiles
-            .iter()
-            .zip(other.tiles.iter())
-            .filter(|&(myself, other)| myself == other)
-            .count();
-
-        if self.len() == matching {
-            if self.len() == other.len() {
-                Ordering::Equal
-            } else {
-                Ordering::Greater
-            }
-        } else if other.len() == matching {
-            Ordering::Less
-        } else if self.len() == other.len() {
-            if let Some(self_significant) = self.tiles.get(matching) {
-                if let Some(other_significant) = other.tiles.get(matching) {
-                    return match self_significant.partial_cmp(other_significant) {
-                        Some(ordering) => ordering,
-                        None => Ordering::Equal,
-                    };
-                }
-            }
-            Ordering::Equal
-        } else {
-            self.len().cmp(&other.len())
-        }
-    }
-}
-
-#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for Quadkey {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         let matching = self
@@ -417,7 +383,6 @@ mod tests {
         let twin_2 = create_quadkey("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1");
 
         assert_eq!(twin_1.partial_cmp(&twin_2), Some(Equal));
-        assert_eq!(twin_1.cmp(&twin_2), Equal);
     }
 
     #[test]
@@ -425,14 +390,6 @@ mod tests {
         let linas = create_quadkey("1/2/0/2/2/2/2/3/3/0/0/3/2/0/2/0/1/0/1/0/3/1");
         let barcelona = create_quadkey("1/2/0/2/2/0/0/1/1/2/0/3/1/0/2/1/0/1/2/1/0/3");
         assert_eq!(linas.partial_cmp(&barcelona), None);
-    }
-
-    #[test]
-    fn test_same_length_but_not_siblings_are_ordered() {
-        let linas = create_quadkey("1/2/0/2/2/2/2/3/3/0/0/3/2/0/2/0/1/0/1/0/3/1");
-        let barcelona = create_quadkey("1/2/0/2/2/0/0/1/1/2/0/3/1/0/2/1/0/1/2/1/0/3");
-
-        assert_eq!(linas.cmp(&barcelona), Less);
     }
 
     #[test]
@@ -460,38 +417,12 @@ mod tests {
     }
 
     #[test]
-    fn test_siblings_are_ordered() {
-        let sibling_0 = create_quadkey("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/0");
-        let sibling_1 = create_quadkey("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1");
-        let sibling_2 = create_quadkey("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/2");
-        let sibling_3 = create_quadkey("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/3");
-
-        assert_eq!(sibling_0.cmp(&sibling_1), Less);
-        assert_eq!(sibling_0.cmp(&sibling_2), Less);
-        assert_eq!(sibling_0.cmp(&sibling_3), Less);
-
-        assert_eq!(sibling_1.cmp(&sibling_0), Greater);
-        assert_eq!(sibling_1.cmp(&sibling_2), Less);
-        assert_eq!(sibling_1.cmp(&sibling_3), Less);
-
-        assert_eq!(sibling_2.cmp(&sibling_0), Greater);
-        assert_eq!(sibling_2.cmp(&sibling_1), Greater);
-        assert_eq!(sibling_2.cmp(&sibling_3), Less);
-
-        assert_eq!(sibling_3.cmp(&sibling_0), Greater);
-        assert_eq!(sibling_3.cmp(&sibling_1), Greater);
-        assert_eq!(sibling_3.cmp(&sibling_2), Greater);
-    }
-
-    #[test]
     fn test_deeper_is_lesser() {
         let less_deep = create_quadkey("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0");
         let deeper = create_quadkey("0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1/2/3/0/1");
 
         assert_eq!(less_deep.partial_cmp(&deeper), Some(Greater));
         assert_eq!(deeper.partial_cmp(&less_deep), Some(Less));
-        assert_eq!(less_deep.cmp(&deeper), Greater);
-        assert_eq!(deeper.cmp(&less_deep), Less);
     }
 
     macro_rules! test_reduce {
