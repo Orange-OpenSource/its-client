@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
+import enum
 import logging
 import paho.mqtt.client
 import threading
@@ -14,6 +15,11 @@ except ModuleNotFoundError:
     paho_socket_available = False
 else:
     paho_socket_available = True
+
+
+class MqttDirection(enum.Enum):
+    RECEIVED = enum.auto()
+    SENT = enum.auto()
 
 
 class MqttClient:
