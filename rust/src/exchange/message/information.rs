@@ -153,6 +153,8 @@ impl Content for BoxedInformation {
 mod tests {
     use crate::exchange::message::information::{Information, ServiceArea};
 
+    // FIXME either use or remove this function in tests
+    #[allow(unused)]
     fn generate_central_information() -> Information {
         Information {
             instance_id: "corp_role_32".to_string(),
@@ -164,6 +166,8 @@ mod tests {
         }
     }
 
+    // FIXME either use or remove this function in tests
+    #[allow(unused)]
     fn generate_edge_information() -> Information {
         Information {
             instance_id: "corp_role_32".to_string(),
