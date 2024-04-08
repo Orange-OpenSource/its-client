@@ -10,8 +10,9 @@ import logging
 import threading
 from paho.mqtt.client import MQTTMessage
 from .gpsd import GNSSProvider
-from .mqtt import MqttClient, abbrev
+from .mqtt import MqttClient, MqttDirection, abbrev
 from .roi import RegionOfInterest
+from .tracking import Tracking
 from .its.cam import CooperativeAwarenessMessage as CAM
 
 
@@ -27,11 +28,13 @@ class ITSClient:
         gpsd: GNSSProvider,
         mqtt_main: MqttClient,
         mqtt_mirror: MqttClient = None,
+        tracker: Tracking,
     ):
         self.cfg = cfg
         self.gpsd = gpsd
         self.mqtt_main = mqtt_main
         self.mqtt_mirror = mqtt_mirror
+        self.tracker = tracker
 
         # Type coercion
         self.cfg["report-freq"] = float(self.cfg["report-freq"])
@@ -152,11 +155,16 @@ class ITSClient:
 
             msg = self.ITSMessage(
                 uuid=self.cfg["instance-id"],
+                message_id=self.tracker.id(),
                 gnss_report=gnss_report,
             )
             topic = self.pub_topic_root + quadkey.to_str("/")
             msg_json = msg.to_json()
             self.mqtt_main.publish(topic, msg_json)
+            self.tracker.track(
+                direction=MqttDirection.SENT,
+                payload=msg,
+            )
             if self.mqtt_mirror and not self.cfg["mirror-self"]:
                 # Use the sub-prefix, to simulate the message as coming
                 # from the main broker as if we had subscribed to it.
@@ -177,12 +185,16 @@ class ITSClient:
             abbrev(message.topic),
             abbrev(message.payload),
         )
-        if self.mqtt_mirror is None:
-            return
         try:
             payload = json.loads(message.payload)
         except json.decoder.JSONDecodeError:
             # Not JSON, not sure what to do with that...
+            return
+        self.tracker.track(
+            direction=MqttDirection.RECEIVED,
+            payload=payload,
+        )
+        if self.mqtt_mirror is None:
             return
         try:
             if (

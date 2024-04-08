@@ -111,6 +111,7 @@ def main():
         gpsd=gnss,
         mqtt_main=mqtt_main,
         mqtt_mirror=mqtt_mirror,
+        tracker=tracker,
     )
     its_client.start()
 

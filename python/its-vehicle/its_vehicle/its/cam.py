@@ -15,8 +15,13 @@ class CooperativeAwarenessMessage:
         self,
         *,
         uuid: str,
+        message_id: str | dict,
         gnss_report: GNSSReport,
     ):
+        # We currently do not use it, so let's just assign it
+        # to avoid linters whinning
+        _message_id = message_id
+
         self.cam = dict(
             {
                 "type": "cam",
