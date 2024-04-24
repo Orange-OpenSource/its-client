@@ -209,7 +209,6 @@ impl DecentralizedEnvironmentalNotificationMessage {
         denm
     }
 
-    // FIXME reference time should be different from detection time
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
         station_id: u32,
@@ -235,7 +234,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
                     sequence_number,
                 },
                 detection_time: etsi_timestamp,
-                reference_time: etsi_timestamp,
+                reference_time: etsi_now(),
                 event_position,
                 validity_duration,
                 transmission_interval,
@@ -356,7 +355,7 @@ impl Content for DecentralizedEnvironmentalNotificationMessage {
 
 impl Mortal for DecentralizedEnvironmentalNotificationMessage {
     fn timeout(&self) -> u64 {
-        timestamp_from_etsi(self.management_container.detection_time)
+        timestamp_from_etsi(self.management_container.reference_time)
             + u64::from(
                 self.management_container
                     .validity_duration
@@ -368,6 +367,7 @@ impl Mortal for DecentralizedEnvironmentalNotificationMessage {
     fn terminate(&mut self) {
         self.management_container.termination = Some(0);
         self.management_container.detection_time = etsi_now();
+        self.management_container.reference_time = etsi_now();
         self.management_container.validity_duration = Some(10);
     }
 
@@ -409,9 +409,8 @@ impl hash::Hash for ManagementContainer {
 #[cfg(test)]
 mod tests {
     use crate::exchange::etsi::decentralized_environmental_notification_message::DecentralizedEnvironmentalNotificationMessage;
+    use crate::exchange::etsi::etsi_now;
     use crate::exchange::etsi::reference_position::ReferencePosition;
-    use crate::exchange::etsi::timestamp_to_etsi;
-    use crate::now;
 
     #[test]
     fn create_new_stationary_vehicle() {
@@ -419,7 +418,7 @@ mod tests {
         let originating_station_id = 1230;
         let event_position = ReferencePosition::default();
         let sequence_number = 10;
-        let reference_timestamp = now();
+        let detection_time = etsi_now();
         let event_position_heading = Some(3000);
         std::thread::sleep(std::time::Duration::from_secs(1));
 
@@ -429,7 +428,7 @@ mod tests {
             //assumed clone, to compare with further
             event_position.clone(),
             sequence_number,
-            reference_timestamp,
+            detection_time,
             event_position_heading,
         );
         assert_eq!(denm.station_id, station_id);
@@ -442,12 +441,11 @@ mod tests {
             denm.management_container.action_id.sequence_number,
             sequence_number
         );
-        assert_eq!(denm.management_container.reference_time, {
-            reference_timestamp
-        });
 
-        let etsi_ref_time = timestamp_to_etsi(reference_timestamp);
-        assert!(denm.management_container.detection_time >= etsi_ref_time + 1000);
+        assert_eq!(denm.management_container.detection_time, detection_time);
+        assert!(
+            denm.management_container.detection_time <= denm.management_container.reference_time
+        );
     }
 
     #[test]
