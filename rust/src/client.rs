@@ -49,7 +49,7 @@ pub fn create_denm(
                 }
             };
 
-        let mut denm = DecentralizedEnvironmentalNotificationMessage::new(
+        DecentralizedEnvironmentalNotificationMessage::new(
             mobile.id(),
             station_id,
             ReferencePosition::from(mobile.position()),
@@ -63,12 +63,7 @@ pub fn create_denm(
             event_heading,
             Some(10),
             Some(200),
-        );
-
-        // FIXME this should be done directly inside ::new
-        denm.management_container.reference_time = etsi_now();
-
-        denm
+        )
     } else {
         todo!("Ego DENM creation not managed yet")
     }
