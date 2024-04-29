@@ -24,9 +24,10 @@ use crate::mobility::mobile::Mobile;
 use enum_dispatch::enum_dispatch;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[enum_dispatch]
 #[allow(clippy::upper_case_acronyms)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum Message {
     CAM(CooperativeAwarenessMessage),
     CPM(CollectivePerceptionMessage),
@@ -34,4 +35,17 @@ pub enum Message {
     INFO(BoxedInformation),
     MAPEM(MAPExtendedMessage),
     SPATEM(SignalPhaseAndTimingExtendedMessage),
+}
+
+impl Message {
+    pub fn as_content(&mut self) -> &mut dyn Content {
+        match self {
+            Self::CAM(v) => v,
+            Self::CPM(v) => v,
+            Self::DENM(v) => v,
+            Self::INFO(v) => v,
+            Self::MAPEM(v) => v,
+            Self::SPATEM(v) => v,
+        }
+    }
 }
