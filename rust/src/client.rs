@@ -8,7 +8,9 @@
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 
 use crate::client::configuration::Configuration;
-use crate::exchange::etsi::decentralized_environmental_notification_message::DecentralizedEnvironmentalNotificationMessage;
+use crate::exchange::etsi::decentralized_environmental_notification_message::{
+    DecentralizedEnvironmentalNotificationMessage, RelevanceDistance, RelevanceTrafficDirection,
+};
 use crate::exchange::etsi::reference_position::ReferencePosition;
 use crate::exchange::etsi::{etsi_now, heading_to_etsi, speed_to_etsi, timestamp_to_etsi};
 use crate::exchange::sequence_number::SequenceNumber;
@@ -41,7 +43,13 @@ pub fn create_denm(
                 len if len <= 1 => {
                     let event_speed = mobile.speed().map(speed_to_etsi);
                     let event_heading = mobile.heading().map(heading_to_etsi);
-                    (Some(0), Some(1), event_speed, event_heading)
+
+                    (
+                        Some(RelevanceDistance::LessThan50m.into()),
+                        Some(RelevanceTrafficDirection::UpstreamTraffic.into()),
+                        event_speed,
+                        event_heading,
+                    )
                 }
                 _ => {
                     // TODO "extrapolate" relevance distance and traffic direction from path

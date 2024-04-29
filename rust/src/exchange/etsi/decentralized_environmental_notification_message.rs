@@ -8,6 +8,10 @@
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 use std::hash;
 
+use crate::exchange::etsi::decentralized_environmental_notification_message::RelevanceDistance::{
+    LessThan1000m, LessThan100m, LessThan10Km, LessThan200m, LessThan500m, LessThan50m,
+    LessThan5Km, Over10Km,
+};
 use crate::exchange::etsi::reference_position::ReferencePosition;
 use crate::exchange::etsi::{
     etsi_now, heading_from_etsi, speed_from_etsi, timestamp_from_etsi, PathHistory,
@@ -96,6 +100,50 @@ pub struct Trace {
 pub struct LocationContainerConfidence {
     pub speed: Option<u8>,
     pub heading: Option<u8>,
+}
+
+#[repr(u8)]
+pub enum RelevanceTrafficDirection {
+    AllTrafficDirection = 0,
+    UpstreamTraffic,
+    DownstreamTraffic,
+    OppositeTraffic,
+}
+impl From<RelevanceTrafficDirection> for u8 {
+    fn from(val: RelevanceTrafficDirection) -> Self {
+        val as u8
+    }
+}
+
+#[repr(u8)]
+pub enum RelevanceDistance {
+    LessThan50m = 0,
+    LessThan100m,
+    LessThan200m,
+    LessThan500m,
+    LessThan1000m,
+    LessThan5Km,
+    LessThan10Km,
+    Over10Km,
+}
+impl From<RelevanceDistance> for u8 {
+    fn from(val: RelevanceDistance) -> Self {
+        val as u8
+    }
+}
+impl From<f64> for RelevanceDistance {
+    fn from(value: f64) -> Self {
+        match value {
+            _ if value < 50. => LessThan50m,
+            _ if value < 100. => LessThan100m,
+            _ if value < 200. => LessThan200m,
+            _ if value < 500. => LessThan500m,
+            _ if value < 1000. => LessThan1000m,
+            _ if value < 5_000. => LessThan5Km,
+            _ if value < 10_000. => LessThan10Km,
+            _ => Over10Km,
+        }
+    }
 }
 
 impl DecentralizedEnvironmentalNotificationMessage {
