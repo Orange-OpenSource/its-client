@@ -1,4 +1,4 @@
-name: Python its-quadkeys
+name: Python its-vehicle
 
 on: [push, pull_request]
 
@@ -13,24 +13,19 @@ jobs:
           python-version: "3.10"
       - name: Install dependencies
         run: |
-          cd python/its-quadkeys
+          cd python/its-vehicle
           python -m pip install --upgrade pip
           pip install black wheel
-          pip install -r requirements.txt
       - name: Run black
         run: |
-          cd python/its-quadkeys
+          cd python/its-vehicle
           black --diff --check .
-      - name: Run test-suite
-        run: |
-          cd python/its-quadkeys
-          ./quadkeys-test
       - name: Run package creation
         run: |
-          cd python/its-quadkeys
+          cd python/its-vehicle
           python setup.py bdist_wheel
       - name: Archive package
         uses: actions/upload-artifact@v2
         with:
-          name: its_quadkeys
-          path: python/its-quadkeys/dist
+          name: its_vehicle
+          path: python/its-vehicle/dist
