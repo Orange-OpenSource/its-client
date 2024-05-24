@@ -8,6 +8,7 @@
 // Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 use std::hash;
 
+use crate::client::configuration::Configuration;
 use crate::exchange::etsi::decentralized_environmental_notification_message::RelevanceDistance::{
     LessThan1000m, LessThan100m, LessThan10Km, LessThan200m, LessThan500m, LessThan50m,
     LessThan5Km, Over10Km,
@@ -388,7 +389,7 @@ impl Content for DecentralizedEnvironmentalNotificationMessage {
     }
 
     /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
-    fn appropriate(&mut self) {
+    fn appropriate(&mut self, _configuration: &Configuration, _timestamp: u64) {
         todo!()
     }
 

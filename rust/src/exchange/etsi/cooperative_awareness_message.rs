@@ -14,6 +14,7 @@ use crate::exchange::etsi::{
 use crate::mobility::mobile::Mobile;
 use std::any::type_name;
 
+use crate::client::configuration::Configuration;
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::message::content_error::ContentError::NotAMortal;
@@ -110,8 +111,16 @@ impl Content for CooperativeAwarenessMessage {
     }
 
     /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
-    fn appropriate(&mut self) {
-        todo!()
+    fn appropriate(&mut self, configuration: &Configuration, _timestamp: u64) {
+        let station_id = configuration
+            .node
+            .as_ref()
+            .unwrap()
+            .read()
+            .unwrap()
+            .station_id(Some(self.station_id));
+        self.station_id = station_id;
+        // TODO update the generation delta time
     }
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {

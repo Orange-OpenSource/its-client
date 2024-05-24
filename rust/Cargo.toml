@@ -29,6 +29,14 @@ doc = true
 edition = "2021"
 crate-type = ["lib"]
 
+[features]
+geo_routing = []
+
+[[example]]
+name = "copycat"
+src = "examples/copycat.rs"
+required-features = ["geo_routing"]
+
 [dependencies]
 crossbeam-channel = "0.5"
 enum_dispatch = "0.3"
@@ -59,8 +67,15 @@ features = ["full", "macros"]
 version = "1.5"
 
 [dev-dependencies]
+clap = "4.4"
+chrono = "0.4"
 criterion = "0.5"
 lazy_static = "1.4"
+timer = "0.2"
+
+[dev-dependencies.flexi_logger]
+version = "0.28"
+features = ["async", "compress"]
 
 [[bench]]
 name = "position"

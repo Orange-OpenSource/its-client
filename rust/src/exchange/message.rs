@@ -11,6 +11,7 @@ pub mod content;
 pub mod content_error;
 pub mod information;
 
+use crate::client::configuration::Configuration;
 use crate::exchange::etsi::collective_perception_message::CollectivePerceptionMessage;
 use crate::exchange::etsi::cooperative_awareness_message::CooperativeAwarenessMessage;
 use crate::exchange::etsi::decentralized_environmental_notification_message::DecentralizedEnvironmentalNotificationMessage;

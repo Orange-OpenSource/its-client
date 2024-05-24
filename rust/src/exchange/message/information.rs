@@ -11,8 +11,9 @@ use crate::exchange::message::content::Content;
 use crate::exchange::mortal::Mortal;
 use crate::mobility::mobile::Mobile;
 use std::any::type_name;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
+use crate::client::configuration::Configuration;
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::message::content_error::ContentError::{NotAMobile, NotAMortal};
 use crate::transport::payload::Payload;
@@ -92,7 +93,7 @@ impl Content for Information {
         Self::TYPE
     }
 
-    fn appropriate(&mut self) {
+    fn appropriate(&mut self, _configuration: &Configuration, _timestamp: u64) {
         todo!()
     }
 
@@ -136,8 +137,8 @@ impl Content for BoxedInformation {
         (*self).deref().get_type()
     }
 
-    fn appropriate(&mut self) {
-        (*self).deref_mut().appropriate();
+    fn appropriate(&mut self, _configuration: &Configuration, _timestamp: u64) {
+        todo!()
     }
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
