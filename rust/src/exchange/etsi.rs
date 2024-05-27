@@ -90,15 +90,17 @@ pub(crate) fn timestamp_to_etsi(unix_timestamp: u64) -> u64 {
 }
 
 pub(crate) fn etsi_now() -> u64 {
-    timestamp_from_etsi(now())
+    timestamp_to_etsi(now())
 }
 
 #[cfg(test)]
 mod tests {
     use crate::exchange::etsi::{
-        acceleration_from_etsi, acceleration_to_etsi, heading_from_etsi, heading_to_etsi,
-        speed_from_etsi, speed_to_etsi,
+        acceleration_from_etsi, acceleration_to_etsi, etsi_now, heading_from_etsi, heading_to_etsi,
+        speed_from_etsi, speed_to_etsi, timestamp_from_etsi, timestamp_to_etsi,
+        ETSI_TIMESTAMP_OFFSET,
     };
+    use crate::now;
     use std::f64::consts::PI;
 
     macro_rules! test_from_etsi {
@@ -207,4 +209,31 @@ mod tests {
         16.1_f64,
         161
     );
+
+    #[test]
+    fn test_timestamp_to_etsi() {
+        let now = now();
+
+        let etsi_timestamp = timestamp_to_etsi(now);
+
+        assert_eq!(now - etsi_timestamp, ETSI_TIMESTAMP_OFFSET);
+    }
+
+    #[test]
+    fn test_etsi_now() {
+        let now = now();
+
+        let etsi_now = etsi_now();
+
+        assert_eq!(now - etsi_now, ETSI_TIMESTAMP_OFFSET);
+    }
+
+    #[test]
+    fn test_timestamp_from_etsi() {
+        let etsi_now = etsi_now();
+
+        let now = timestamp_from_etsi(etsi_now);
+
+        assert_eq!(now - etsi_now, ETSI_TIMESTAMP_OFFSET);
+    }
 }
