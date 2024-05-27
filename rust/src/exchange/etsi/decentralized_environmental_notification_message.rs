@@ -15,14 +15,14 @@ use crate::exchange::etsi::decentralized_environmental_notification_message::Rel
 };
 use crate::exchange::etsi::reference_position::ReferencePosition;
 use crate::exchange::etsi::{
-    etsi_now, heading_from_etsi, speed_from_etsi, timestamp_from_etsi, PathHistory,
-    PositionConfidence,
+    etsi_now, heading_from_etsi, speed_from_etsi, PathHistory, PositionConfidence,
 };
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::mortal::Mortal;
 use crate::mobility::mobile::Mobile;
 use crate::mobility::position::Position;
+
 use serde::{Deserialize, Serialize};
 
 #[serde_with::skip_serializing_none]
@@ -404,7 +404,7 @@ impl Content for DecentralizedEnvironmentalNotificationMessage {
 
 impl Mortal for DecentralizedEnvironmentalNotificationMessage {
     fn timeout(&self) -> u64 {
-        timestamp_from_etsi(self.management_container.reference_time)
+        self.management_container.reference_time
             + u64::from(
                 self.management_container
                     .validity_duration
@@ -422,6 +422,15 @@ impl Mortal for DecentralizedEnvironmentalNotificationMessage {
 
     fn terminated(&self) -> bool {
         self.management_container.termination.is_some()
+    }
+
+    fn remaining_time(&self) -> u64 {
+        let now = etsi_now();
+        if self.timeout() > now {
+            (self.timeout() - now) / 1000
+        } else {
+            0
+        }
     }
 }
 
@@ -457,9 +466,13 @@ impl hash::Hash for ManagementContainer {
 
 #[cfg(test)]
 mod tests {
-    use crate::exchange::etsi::decentralized_environmental_notification_message::DecentralizedEnvironmentalNotificationMessage;
-    use crate::exchange::etsi::etsi_now;
+    use crate::exchange::etsi::decentralized_environmental_notification_message::{
+        DecentralizedEnvironmentalNotificationMessage, ManagementContainer,
+    };
     use crate::exchange::etsi::reference_position::ReferencePosition;
+    use crate::exchange::etsi::{etsi_now, timestamp_to_etsi};
+    use crate::exchange::mortal::Mortal;
+    use crate::now;
 
     #[test]
     fn create_new_stationary_vehicle() {
@@ -507,5 +520,25 @@ mod tests {
         assert!(denm.situation_container.is_some());
         let situation_container = denm.situation_container.unwrap();
         assert_eq!(situation_container.information_quality, Some(5));
+    }
+
+    #[test]
+    fn correct_timeout() {
+        let now = now();
+        let denm = DecentralizedEnvironmentalNotificationMessage {
+            management_container: ManagementContainer {
+                reference_time: timestamp_to_etsi(now) + 500,
+                detection_time: timestamp_to_etsi(now),
+                validity_duration: Some(10),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        assert!(denm.remaining_time() <= 10);
+        assert_eq!(
+            denm.timeout() - denm.management_container.reference_time,
+            10_000
+        );
     }
 }
