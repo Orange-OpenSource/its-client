@@ -16,7 +16,9 @@ use std::sync::mpsc::{channel, Receiver, TryRecvError};
 use std::sync::{Arc, RwLock};
 
 use clap::{Arg, Command};
-use flexi_logger::{with_thread, Cleanup, Criterion, FileSpec, Logger, Naming, WriteMode};
+use flexi_logger::{
+    with_thread, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming, WriteMode,
+};
 use ini::Ini;
 use libits::client::application::analyzer::Analyzer;
 use libits::client::application::pipeline;
@@ -191,6 +193,7 @@ async fn main() {
             match logger
                 .log_to_file(FileSpec::default().directory(log_path).suppress_timestamp())
                 .write_mode(WriteMode::Async)
+                .duplicate_to_stdout(Duplicate::All)
                 .format_for_files(with_thread)
                 .append()
                 .rotate(
