@@ -190,6 +190,7 @@ async fn main() {
         Ok(logger) => {
             match logger
                 .log_to_file(FileSpec::default().directory(log_path).suppress_timestamp())
+                .log_to_stdout()
                 .write_mode(WriteMode::Async)
                 .format_for_files(with_thread)
                 .append()
