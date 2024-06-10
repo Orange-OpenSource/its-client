@@ -19,7 +19,7 @@ pub mod perceived_object;
 pub mod reference_position;
 pub mod signal_phase_and_timing_extended_message;
 
-const ETSI_TIMESTAMP_OFFSET: u64 = 1072915195000;
+const ETSI_TIMESTAMP_OFFSET: u64 = 1072915200000;
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
