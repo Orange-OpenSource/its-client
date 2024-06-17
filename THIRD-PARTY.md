@@ -4,7 +4,7 @@
 
 ### License Apache 2.0
 
-##### async-channel
+#### async-channel
 - [Source code](https://github.com/smol-rs/async-channel)
 
 #### chrono
@@ -14,6 +14,14 @@
 #### clap
 - [Source code](https://github.com/clap-rs/clap)
 - Copyright (c) Kevin B. Knapp et al.
+
+#### criterion
+- [Source code](https://github.com/bheisler/criterion.rs)
+- Copyright (c) 2014 Jorge Aparicio
+
+#### crossbeam-channel
+- [Source code](https://github.com/crossbeam-rs/crossbeam)
+- Copyright (c) 2019 The Crossbeam Project Developers
 
 #### flexi_logger
 - [Source code](https://github.com/emabee/flexi_logger)
@@ -25,6 +33,10 @@
 - [Source code](https://github.com/derekdreery/integer-sqrt-rs)
 - Copyright (c) 2017 Richard Dodd
 
+#### lazy_static
+- [Source code](https://github.com/rust-lang-nursery/lazy-static.rs)
+- Copyright (c) 2010 The Rust Project Developers
+
 #### log
 - [Source code](https://github.com/rust-lang/log)
 - Copyright (c) 2014-present The Rust Project Developers
@@ -32,25 +44,8 @@
 #### map_3d
 - [Source code](https://github.com/gberrante/map_3d)
 
-#### navigation
-- [Source code](https://github.com/andygrove/rust-navigation)
-- Copyright (c) Andy Grove
-
-#### ndarray
-- [Source code](https://github.com/rust-ndarray/ndarray)
-- Copyright (c) 2015 - 2021 Ulrik Sverdrup "bluss", Jim Turner, and ndarray developers
-
-#### pin-utils
-- [Source code](https://github.com/rust-lang/pin-utils)
-- Copyright (c) 2018 The pin-utils authors
-
-#### pretty_env_logger
-- [Source code](https://github.com/seanmonstar/pretty-env-logger)
-- Copyright (c) 2017 Sean McArthur
-
-#### rustls
-- [Source code](https://github.com/rustls/rustls)
-- Copyright (c) 2016, Joseph Birr-Pixton
+#### rumqtt
+- [Source code](https://github.com/bytebeamio/rumqtt)
 
 #### serde
 - [Source code](https://github.com/serde-rs/serde)
@@ -64,11 +59,29 @@
 #### serde_with
 - [Source code](https://github.com/jonasbb/serde_with)
 
+#### thiserror
+- [Source code](https://github.com/dtolnay/thiserror)
+
+#### threadpool
+- [Source code](https://github.com/rust-threadpool/rust-threadpool)
+- Copyright (c) 2014 The Rust Project Developers
+
 ### License MIT
+
+#### async-channel
+- [Source code](https://github.com/smol-rs/async-channel)
 
 #### clap
 - [Source code](https://github.com/clap-rs/clap)
 - Copyright (c) Kevin B. Knapp et al.
+
+#### criterion
+- [Source code](https://github.com/bheisler/criterion.rs)
+- Copyright (c) 2014 Jorge Aparicio
+
+#### crossbeam-channel
+- [Source code](https://github.com/crossbeam-rs/crossbeam)
+- Copyright (c) 2019 The Crossbeam Project Developers
 
 #### enum_dispatch
 - [Source code](https://gitlab.com/antonok/enum_dispatch)
@@ -84,32 +97,17 @@
 - [Source code](https://github.com/derekdreery/integer-sqrt-rs)
 - Copyright (c) 2017 Richard Dodd
 
+#### lazy_static
+- [Source code](https://github.com/rust-lang-nursery/lazy-static.rs)
+- Copyright (c) 2010 The Rust Project Developers
+
 #### log
 - [Source code](https://github.com/rust-lang/log)
 - Copyright (c) 2014-present The Rust Project Developers
 
-#### async-channel
-- [Source code](https://github.com/smol-rs/async-channel)
-
-#### navigation
-- [Source code](https://github.com/andygrove/rust-navigation)
-- Copyright (c) Andy Grove
-
-#### ndarray
-- [Source code](https://github.com/rust-ndarray/ndarray)
-- Copyright (c) 2015 - 2021 Ulrik Sverdrup "bluss", Jim Turner, and ndarray developers
-
-#### pin-utils
-- [Source code](https://github.com/rust-lang/pin-utils)
-- Copyright (c) 2018 The pin-utils authors
-
-#### pretty_env_logger
-- [Source code](https://github.com/seanmonstar/pretty-env-logger)
-- Copyright (c) 2017 Sean McArthur
-
-#### rustls
-- [Source code](https://github.com/rustls/rustls)
-- Copyright (c) 2016, Joseph Birr-Pixton
+#### rust-ini
+- [Source code](https://github.com/zonyitoo/rust-ini)
+- Copyright (c) 2014 Y. T. CHUNG
 
 #### serde
 - [Source code](https://github.com/serde-rs/serde)
@@ -124,6 +122,13 @@
 #### serde_with
 - [Source code](https://github.com/jonasbb/serde_with)
 
+#### thiserror
+- [Source code](https://github.com/dtolnay/thiserror)
+
+#### threadpool
+- [Source code](https://github.com/rust-threadpool/rust-threadpool)
+- Copyright (c) 2014 The Rust Project Developers
+
 #### tokio
 - [Source code](https://github.com/tokio-rs/tokio)
 - Copyright (c) 2021 Tokio Contributors
@@ -132,16 +137,6 @@
 
 #### timer.rs
 - [Source code](https://github.com/Yoric/timer.rs)
-
-### License ISC
-
-#### cheap-ruler
-- [Source code](https://github.com/mapbox/cheap-ruler)
-- Copyright (c) 2020, Mapbox
-
-#### rustls
-- [Source code](https://github.com/rustls/rustls)
-- Copyright (c) 2016, Joseph Birr-Pixton
 
 ## Python
 
@@ -170,6 +165,4 @@
 
 #### paho
 - [Source code](https://github.com/eclipse/paho.mqtt.python)
-
-
 
