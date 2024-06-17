@@ -1,12 +1,15 @@
-use std::any::type_name;
-// Software Name: its-client
-// SPDX-FileCopyrightText: Copyright (c) 2016-2022 Orange
-// SPDX-License-Identifier: MIT License
-//
-// This software is distributed under the MIT license, see LICENSE.txt file for more details.
-//
-// Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
-// Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+/*
+ * Software Name : libits
+ * SPDX-FileCopyrightText: Copyright (c) Orange SA
+ * SPDX-License-Identifier: MIT
+ *
+ * This software is distributed under the MIT license,
+ * see the "LICENSE.txt" file for more details or https://opensource.org/license/MIT/
+ *
+ * Authors: see CONTRIBUTORS.md
+ * Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) library based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+ */
+
 use crate::client::configuration::Configuration;
 use crate::exchange::etsi::mobile_perceived_object::MobilePerceivedObject;
 use crate::exchange::etsi::perceived_object::PerceivedObject;
@@ -23,6 +26,7 @@ use crate::exchange::mortal::Mortal;
 use crate::mobility::mobile::Mobile;
 use crate::mobility::position::Position;
 use serde::{Deserialize, Serialize};
+use std::any::type_name;
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
