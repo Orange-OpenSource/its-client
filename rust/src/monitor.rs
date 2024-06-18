@@ -28,7 +28,6 @@ pub fn trace_exchange(
     partner: String,
 ) {
     let message_part = match &exchange.message {
-        // FIXME find how to call position() on any Message implementing Mobile
         Message::CAM(cam) => format_cam_trace(cam),
         Message::DENM(denm) => format_denm_trace(denm, cause),
         Message::CPM(cpm) => format_cpm_trace(cpm),
