@@ -14,31 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Publish the its library
+      - name: Publish the ITS library
         run: |
-          cd rust/libits-client
-          cargo publish --token ${{ secrets.CRATES_IO }}
-
-  publish_lib_copycat:
-    name: Publish the library example
-    runs-on: ubuntu-latest
-    needs: [publish_lib]
-    if: always()
-    steps:
-      - uses: actions/checkout@v2
-      - name: Publish the copycat example its library
-        run: |
-          cd rust/libits-copycat
-          cargo publish --token ${{ secrets.CRATES_IO }}
-
-  publish_bin_copycat:
-    name: Publish the binary example
-    runs-on: ubuntu-latest
-    needs: [publish_lib, publish_lib_copycat]
-    if: always()
-    steps:
-      - uses: actions/checkout@v2
-      - name: Publish the its binary using the copycat example
-        run: |
-          cd rust/its-client
+          cd rust/
           cargo publish --token ${{ secrets.CRATES_IO }}
