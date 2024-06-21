@@ -10,7 +10,7 @@
 # based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription
 # provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
 
-FROM rust:buster as builder
+FROM rust:1.79-slim-buster as builder
 
 LABEL description="Rust builder to compile"
 LABEL maintainer="nicolas.buffon@orange.com"
