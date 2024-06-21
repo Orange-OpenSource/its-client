@@ -22,6 +22,7 @@ RUN rustc --version && cargo --version
 WORKDIR /usr/src/app
 
 COPY src src
+COPY examples examples
 COPY benches benches
 COPY Cargo.toml .
 
