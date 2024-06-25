@@ -13,7 +13,7 @@
 use crate::client::configuration::configuration_error::ConfigurationError;
 use crate::client::configuration::node_configuration::NodeConfiguration;
 use ini::{Ini, Properties};
-use rumqttc::MqttOptions;
+use rumqttc::v5::MqttOptions;
 use std::any::type_name;
 
 use std::ops::Deref;
