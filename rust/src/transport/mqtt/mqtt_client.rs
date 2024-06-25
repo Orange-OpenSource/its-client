@@ -16,7 +16,9 @@ use crate::transport::payload::Payload;
 
 use crossbeam_channel::Sender;
 use log::{debug, error, info, trace, warn};
-use rumqttc::{AsyncClient, Event, EventLoop, MqttOptions, QoS, SubscribeFilter};
+use rumqttc::v5::mqttbytes::v5::Filter;
+use rumqttc::v5::mqttbytes::QoS;
+use rumqttc::v5::{AsyncClient, Event, EventLoop, MqttOptions};
 
 pub(crate) struct MqttClient {
     client: AsyncClient,
@@ -34,8 +36,8 @@ impl<'client> MqttClient {
             .subscribe_many(
                 topic_list
                     .iter()
-                    .map(|topic| SubscribeFilter::new(topic.clone(), QoS::AtMostOnce))
-                    .collect::<Vec<SubscribeFilter>>(),
+                    .map(|topic| Filter::new(topic.clone(), QoS::AtMostOnce))
+                    .collect::<Vec<Filter>>(),
             )
             .await
         {

@@ -13,10 +13,12 @@
 use std::collections::HashMap;
 
 use log::{error, info, trace, warn};
-use rumqttc::{Event, Incoming, Publish};
+use rumqttc::v5::mqttbytes::v5::Publish;
+use rumqttc::v5::{Event, Incoming};
 
 use crate::transport::mqtt::topic::Topic;
 use std::any::{type_name, Any};
+use std::str::from_utf8;
 
 type BoxedReception = Box<dyn Any + 'static + Send>;
 
@@ -46,26 +48,35 @@ impl MqttRouter {
         match event {
             Event::Incoming(incoming) => match incoming {
                 Incoming::Publish(publish) => {
-                    trace!(
-                        "Publish received for the packet {:?} on the topic {}",
-                        publish.pkid,
-                        publish.topic
-                    );
+                    match from_utf8(&publish.topic) {
+                        Ok(str_topic) => {
+                            trace!(
+                                "Publish received for the packet {:?} on the topic {}",
+                                publish.pkid,
+                                str_topic,
+                            );
 
-                    match T::from_str(publish.topic.as_str()) {
-                        Ok(topic) => match self.route_map.get(&topic.as_route()) {
-                            Some(callback) => {
-                                if let Some(reception) = callback(publish) {
-                                    return Some((topic, reception));
+                            match T::from_str(str_topic) {
+                                Ok(topic) => match self.route_map.get(&topic.as_route()) {
+                                    Some(callback) => {
+                                        if let Some(reception) = callback(publish) {
+                                            return Some((topic, reception));
+                                        }
+                                    }
+                                    None => {
+                                        warn!("No route found for topic '{}'", topic);
+                                    }
+                                },
+                                // FIXME how to print this error ?
+                                Err(_error) => {
+                                    error!("Failed to create {} from string", type_name::<T>(),)
                                 }
-                            }
-                            None => {
-                                warn!("No route found for topic '{}'", topic);
-                            }
-                        },
-                        // FIXME how to print this error ?
-                        Err(_error) => error!("Failed to create {} from string", type_name::<T>(),),
-                    };
+                            };
+                        }
+                        Err(e) => {
+                            warn!("Failed to parse topic as UTF-8: {:?}", e);
+                        }
+                    }
                 }
                 Incoming::PubAck(packet) => {
                     trace!("Publish Ack received for the packet {:?}", packet)
@@ -96,17 +107,18 @@ impl MqttRouter {
                 Incoming::Unsubscribe(packet) => {
                     trace!("Unsubscribe received for the packet {:?}", packet)
                 }
-                Incoming::PingReq => {
-                    trace!("Ping request received")
+                Incoming::PingReq(packet) => {
+                    trace!("Ping request received: {:?}", packet)
                 }
-                Incoming::PingResp => {
-                    trace!("Ping response received")
+                Incoming::PingResp(packet) => {
+                    trace!("Ping response received: {:?}", packet)
                 }
-                Incoming::Connect(packet) => {
+                // FIXME log about last will and login
+                Incoming::Connect(packet, _last_will, _login) => {
                     info!("Connect received for the packet {:?}", packet)
                 }
-                Incoming::Disconnect => {
-                    info!("Disconnect received")
+                Incoming::Disconnect(packet) => {
+                    info!("Disconnect received: {:?}", packet)
                 }
             },
             Event::Outgoing(outgoing) => trace!("outgoing: {:?}", outgoing),
