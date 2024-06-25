@@ -10,7 +10,8 @@
  * Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) library based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
  */
 
-use rumqttc::{Key, MqttOptions, TlsConfiguration, Transport};
+use rumqttc::{Key, TlsConfiguration, Transport};
+use rumqttc::v5::MqttOptions;
 
 pub(crate) mod mqtt_client;
 pub(crate) mod mqtt_router;
