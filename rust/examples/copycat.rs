@@ -148,15 +148,14 @@ async fn main() {
             Arg::new("config-file-path")
                 .short('c')
                 .long("config")
-                .required(true)
                 .value_name("CONFIG_FILE_PATH")
+                .default_value("examples/config.ini")
                 .help("Path to the configuration file"),
         )
         .arg(
             Arg::new("mqtt-username")
                 .short('u')
                 .long("username")
-                .required(false)
                 .value_name("MQTT_USERNAME")
                 .help("Username used to connect to the MQTT broker"),
         )
@@ -191,6 +190,7 @@ async fn main() {
         Ok(logger) => {
             match logger
                 .log_to_file(FileSpec::default().directory(log_path).suppress_timestamp())
+                .log_to_stdout()
                 .write_mode(WriteMode::Async)
                 .format_for_files(with_thread)
                 .append()
