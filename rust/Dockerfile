@@ -1,15 +1,16 @@
-# Software Name: its-client
-# SPDX-FileCopyrightText: Copyright (c) 2016-2022 Orange
-# SPDX-License-Identifier: MIT License
+# Software Name : libits
+# SPDX-FileCopyrightText: Copyright (c) Orange SA
+# SPDX-License-Identifier: MIT
 #
-# This software is distributed under the MIT license, see LICENSE.txt file for more details.
+# This software is distributed under the MIT license,
+# see the "LICENSE.txt" file for more details or https://opensource.org/license/MIT/
 #
-# Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
-# Software description: This Intelligent Transportation
-# Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](
-# https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the
-# mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
-FROM rust:buster as builder
+# Authors: see CONTRIBUTORS.md
+# Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) library
+# based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription
+# provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+
+FROM rust:1.79-slim-buster as builder
 
 LABEL description="Rust builder to compile"
 LABEL maintainer="nicolas.buffon@orange.com"
@@ -21,6 +22,7 @@ RUN rustc --version && cargo --version
 WORKDIR /usr/src/app
 
 COPY src src
+COPY examples examples
 COPY benches benches
 COPY Cargo.toml .
 

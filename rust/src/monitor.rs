@@ -1,11 +1,14 @@
-// Software Name: its-client
-// SPDX-FileCopyrightText: Copyright (c) 2016-2022 Orange
-// SPDX-License-Identifier: MIT License
-//
-// This software is distributed under the MIT license, see LICENSE.txt file for more details.
-//
-// Author: Frédéric GARDES <frederic.gardes@orange.com> et al.
-// Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) client based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+/*
+ * Software Name : libits
+ * SPDX-FileCopyrightText: Copyright (c) Orange SA
+ * SPDX-License-Identifier: MIT
+ *
+ * This software is distributed under the MIT license,
+ * see the "LICENSE.txt" file for more details or https://opensource.org/license/MIT/
+ *
+ * Authors: see CONTRIBUTORS.md
+ * Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) library based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
+ */
 
 use crate::exchange::cause::Cause;
 use crate::exchange::etsi::collective_perception_message::CollectivePerceptionMessage;
@@ -25,7 +28,6 @@ pub fn trace_exchange(
     partner: String,
 ) {
     let message_part = match &exchange.message {
-        // FIXME find how to call position() on any Message implementing Mobile
         Message::CAM(cam) => format_cam_trace(cam),
         Message::DENM(denm) => format_denm_trace(denm, cause),
         Message::CPM(cpm) => format_cpm_trace(cpm),
