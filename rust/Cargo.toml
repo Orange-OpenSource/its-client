@@ -30,7 +30,8 @@ edition = "2021"
 crate-type = ["lib"]
 
 [features]
-geo_routing = []
+mobility = []
+geo_routing = ["mobility"]
 
 [[example]]
 name = "copycat"
