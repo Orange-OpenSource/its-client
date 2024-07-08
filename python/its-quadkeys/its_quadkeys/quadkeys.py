@@ -49,6 +49,8 @@ class QuadKey(str):
                 f"cannot create a QuadKey from a {type(quadkey)}={quadkey!s}"
             )
         qk = quadkey.replace(separator, "")
+        if not qk:
+            raise ValueError("QuadKey can't be zero-length")
         err = "".join(set([q for q in qk if q not in "0123"]))
         if err:
             raise ValueError(f"QuadKey can oly contain '0123', not any of '{err}'")

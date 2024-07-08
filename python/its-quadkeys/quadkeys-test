@@ -53,6 +53,15 @@ def test_quadkey():
         # fmt: on
     ]
 
+    print("QuadKey empty: ", end="", flush=True)
+    try:
+        _ = its_quadkeys.QuadKey('')
+    except ValueError:
+        pass  # We expected that
+    else:
+        raise FailedError("QuadKey cannot be empty") from None
+    print("OK")
+
     print(f"QuadKey in: ", end="", flush=True)
     if qk_in not in qk:
         raise FailedError(
