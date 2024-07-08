@@ -91,6 +91,11 @@ class QuadKey(str):
             new_depth = min(len(self.quadkey), depth)
         return QuadKey(self.quadkey[:new_depth])
 
+    def root(self):
+        """Returns the QuadKey immediately shallower, or None if this QuadKey
+        is already the shallowest."""
+        return None if len(self.quadkey) == 1 else self.make_shallower(-1)
+
     def split(self, *, depth: int = None, extra_depth: int = None):
         """Split this QuadKey into an extra_depth-deeper QuadZone"""
         if (depth is None and extra_depth is None) or (depth and extra_depth):

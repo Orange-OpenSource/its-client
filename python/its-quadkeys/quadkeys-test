@@ -65,6 +65,13 @@ def test_quadkey():
         (100, "12030213"),
         # fmt: on
     ]
+    expected_roots = [
+        # fmt: off
+        ("123123", "12312"),
+        ("12", "1"),
+        ("1", None),
+        # fmt: on
+    ]
 
     print("QuadKey empty: ", end="", flush=True)
     try:
@@ -106,6 +113,15 @@ def test_quadkey():
                 f"with QuadKey '{qk}' for depth {depth}, expecting '{expected}', got '{qk_shallow}'"
             )
     print(f"OK")
+
+    print(f"QuadKey root: ", end="", flush=True)
+    for qk_s, expected in expected_roots:
+        qk_r = its_quadkeys.QuadKey(qk_s).root()
+        if qk_r != expected:
+            raise FailedError(
+                f"for QuadKey '{qk_s}', expecting root '{expected}', got '{qk_r}'"
+            )
+    print("OK")
 
     print(f"QuadKey neighbours: ", end="", flush=True)
     nghbs = qk.neighbours()
