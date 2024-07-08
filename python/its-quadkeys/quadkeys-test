@@ -404,6 +404,20 @@ def test_quadzone():
     check_zone(z2, expected_xor)
     print("OK")
 
+    earth = its_quadkeys.QuadZone("0", "1", "2", "3")
+    print("QuadZone Whole-Earth optimise: ", end="", flush=True)
+    earth2 = its_quadkeys.QuadZone("0", "1", "2", "3")
+    earth2.optimise()
+    check_zone(earth2, earth)
+    print("OK")
+
+    print("QuadZone Whole-Earth 2 optimise: ", end="", flush=True)
+    earth2_lst = ["0", "1", "2", "30", "31", "32", "330", "331", "332", "333"]
+    earth2 = its_quadkeys.QuadZone(earth2_lst)
+    earth2.optimise()
+    check_zone(earth2, earth)
+    print("OK")
+
 
 def check_zone(some, expected):
     some_l = list(some)

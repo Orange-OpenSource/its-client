@@ -390,11 +390,13 @@ class QuadZone:
                     continue
 
                 # Are this QuadKey and the following three making a super
-                # QuadKey? I.e. do we have root0, root1, root2, and root3?
+                # QuadKey? I.e. do we have 'root0', 'root1', 'root2', and
+                # 'root3', with a non-empty 'root' (issue #130)
                 qk_depth = quadkey.depth()
-                root = quadkey.make_shallower(-1)
+                root = quadkey.root()
                 if (
-                    to_merge[0] == root + "1"
+                    root
+                    and to_merge[0] == root + "1"
                     and to_merge[1] == root + "2"
                     and to_merge[2] == root + "3"
                 ):
