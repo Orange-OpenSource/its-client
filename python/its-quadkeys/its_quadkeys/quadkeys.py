@@ -89,7 +89,7 @@ class QuadKey(str):
             new_depth = max(1, len(self.quadkey) + depth)
         else:
             new_depth = min(len(self.quadkey), depth)
-        return QuadKey(self.quadkey[:depth])
+        return QuadKey(self.quadkey[:new_depth])
 
     def split(self, *, depth: int = None, extra_depth: int = None):
         """Split this QuadKey into an extra_depth-deeper QuadZone"""
