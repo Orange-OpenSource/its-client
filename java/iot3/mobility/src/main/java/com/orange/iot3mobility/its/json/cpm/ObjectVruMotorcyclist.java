@@ -1,0 +1,53 @@
+package com.orange.iot3mobility.its.json.cpm;
+
+import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+public class ObjectVruMotorcyclist {
+
+    private final JSONObject json = new JSONObject();
+
+    /**
+     * Describes the subclass of a detected object for single VRU class motorcyclist.
+     *
+     * unavailable(0), moped(1), motorcycle(2), motorcycle-and-sidecar-right(3),
+     * motorcycle-and-sidecar-left(4), max(15).
+     */
+    private final int subclass;
+
+    public ObjectVruMotorcyclist(final int subclass) throws IllegalArgumentException {
+        if(CPM.isStrictMode() && (subclass > 15 || subclass < 0)) {
+            throw new IllegalArgumentException("CPM Motorcyclist Object subclass should be in the range of [0 - 15]."
+                    + " Value: " + subclass);
+        }
+        this.subclass = subclass;
+
+        createJson();
+    }
+
+    private void createJson() {
+        try {
+            json.put(JsonCpmKey.ObjectClass.MOTORCYLCIST.key(), subclass);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public JSONObject getJson() {
+        return json;
+    }
+
+    public int getSubclass() {
+        return subclass;
+    }
+
+    public static ObjectVruMotorcyclist jsonParser(JSONObject json) {
+        if(json == null || json.length() == 0) return null;
+        int subclass = json.optInt(JsonCpmKey.ObjectClass.MOTORCYLCIST.key(), UNKNOWN);
+        if(subclass != UNKNOWN) return new ObjectVruMotorcyclist(subclass);
+        else return null;
+    }
+
+}
