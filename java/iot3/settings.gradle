@@ -8,6 +8,4 @@
  */
 
 rootProject.name = 'iot3'
-include ':iot3:core', ':iot3:mobility'
-project(':iot3:core').projectDir = new File('iot3/core')
-project(':iot3:mobility').projectDir = new File('iot3/mobility')
+include 'core', 'mobility'
