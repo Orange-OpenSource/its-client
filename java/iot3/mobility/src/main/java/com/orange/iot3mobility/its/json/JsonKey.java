@@ -1,3 +1,10 @@
+/*
+ Copyright 2016-2024 Orange
+
+ This software is distributed under the MIT license, see LICENSE.txt file for more details.
+
+ @author Mathieu LEFEBVRE <mathieu1.lefebvre@orange.com>
+ */
 package com.orange.iot3mobility.its.json;
 
 /**
@@ -23,38 +30,6 @@ public class JsonKey {
         private String key;
 
         Header(String key) {
-            this.key = key;
-        }
-
-        public String key() {
-            return key;
-        }
-    }
-
-    public enum RuDescription {
-
-        UUID("uuid"),
-        ITS_STATION_TYPE("its_station_type"),
-        CONNECTED("connected"),
-        POSITION("position"),
-        POSITION_TYPE("position_type"),
-        HEADING("heading"),
-        SPEED("speed"),
-        ACCELERATION("acceleration"),
-        YAW_RATE("yaw_rate"),
-        RAW_DATA("raw_data"),
-        SIZE("size"),
-        COLOR("color"),
-        ORIENTATION("orientation"),
-        LANE_POSITION("lane_position"),
-        VULNERABILITY("vulnerability"),
-        EXISTENCE_PROBABILITY("existence_probability"),
-        CONFIDENCE("confidence"),
-        ACCURACY("accuracy");
-
-        private String key;
-
-        RuDescription(String key) {
             this.key = key;
         }
 
