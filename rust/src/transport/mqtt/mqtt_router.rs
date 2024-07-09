@@ -24,7 +24,8 @@ type BoxedReception = Box<dyn Any + 'static + Send>;
 
 type BoxedCallback = Box<dyn Fn(Publish) -> Option<BoxedReception>>;
 
-pub(crate) struct MqttRouter {
+#[derive(Default)]
+pub struct MqttRouter {
     route_map: HashMap<String, BoxedCallback>,
 }
 
@@ -35,7 +36,7 @@ impl MqttRouter {
         }
     }
 
-    pub(crate) fn add_route<T, C>(&mut self, topic: T, callback: C)
+    pub fn add_route<T, C>(&mut self, topic: T, callback: C)
     where
         T: Topic,
         C: Fn(Publish) -> Option<BoxedReception> + 'static,
@@ -44,7 +45,7 @@ impl MqttRouter {
         info!("Registered route for topic: {}", topic.as_route());
     }
 
-    pub(crate) fn handle_event<T: Topic>(&mut self, event: Event) -> Option<(T, BoxedReception)> {
+    pub fn handle_event<T: Topic>(&mut self, event: Event) -> Option<(T, BoxedReception)> {
         match event {
             Event::Incoming(incoming) => match incoming {
                 Incoming::Publish(publish) => {
