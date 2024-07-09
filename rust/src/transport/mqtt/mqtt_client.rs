@@ -20,7 +20,7 @@ use rumqttc::v5::mqttbytes::v5::Filter;
 use rumqttc::v5::mqttbytes::QoS;
 use rumqttc::v5::{AsyncClient, Event, EventLoop, MqttOptions};
 
-pub(crate) struct MqttClient {
+pub struct MqttClient {
     client: AsyncClient,
 }
 

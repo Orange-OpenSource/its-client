@@ -13,8 +13,8 @@
 use rumqttc::v5::MqttOptions;
 use rumqttc::{TlsConfiguration, Transport};
 
-pub(crate) mod mqtt_client;
-pub(crate) mod mqtt_router;
+pub mod mqtt_client;
+pub mod mqtt_router;
 pub mod topic;
 
 #[cfg(feature = "geo_routing")]
