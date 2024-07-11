@@ -11,10 +11,8 @@ import java.util.Calendar;
 
 public class EtsiUtils {
 
-    // previously 1072915200, but ETSI time is based on TAI instead of UTC,
-    // and there was a 5s shift in 2004 between the two
-    public static final int DELTA_1970_2004_SEC = 1072915195;
-    public static final long DELTA_1970_2004_MILLISEC = 1072915195000l;
+    public static final int DELTA_1970_2004_SEC = 1072915200;
+    public static final long DELTA_1970_2004_MILLISEC = 1072915200000L;
     public static final int ETSI_COORDINATES_FACTOR = 10000000;
     public static final int ETSI_ALTITUDE_FACTOR = 100;
     public static final int ETSI_SPEED_FACTOR = 100;
