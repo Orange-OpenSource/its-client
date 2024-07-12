@@ -216,11 +216,11 @@ async fn main() {
 
     let context = NoContext::default();
     let topics = vec![
-        GeoTopic::from("5GCroCo/outQueue/v2x/cam"),
-        GeoTopic::from("5GCroCo/outQueue/v2x/cpm"),
-        GeoTopic::from("5GCroCo/outQueue/v2x/denm"),
-        GeoTopic::from("5GCroCo/outQueue/v2x/cam"),
-        GeoTopic::from("5GCroCo/outQueue/info"),
+        GeoTopic::from("default/outQueue/v2x/cam"),
+        GeoTopic::from("default/outQueue/v2x/cpm"),
+        GeoTopic::from("default/outQueue/v2x/denm"),
+        GeoTopic::from("default/outQueue/v2x/cam"),
+        GeoTopic::from("default/outQueue/info"),
     ];
 
     if let Some(username) = matches.get_one::<String>("mqtt-username") {
