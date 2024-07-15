@@ -293,7 +293,7 @@ class QuadKey(str):
 
 
 class QuadZone:
-    def __init__(self, *args: list[QuadKey | str | list[QuadKey | str]]):
+    def __init__(self, *args: QuadKey | str | list[QuadKey | str]):
         """Create a new QuadZone from an iterable of QuadKeys"""
         self.quadkeys = set()
         for arg in args:
