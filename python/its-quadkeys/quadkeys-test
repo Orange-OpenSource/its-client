@@ -52,6 +52,35 @@ def test_quadkey():
         "1203021330", "1203021331", "1203021332", "1203021333",
         # fmt: on
     ]
+    expected_shallowers = [
+        # fmt: off
+        (0, "12030213"),
+        (-1, "1203021"),
+        (-2, "120302"),
+        (-5, "120"),
+        (-100, "1"),
+        (1, "1"),
+        (2, "12"),
+        (5, "12030"),
+        (100, "12030213"),
+        # fmt: on
+    ]
+    expected_roots = [
+        # fmt: off
+        ("123123", "12312"),
+        ("12", "1"),
+        ("1", None),
+        # fmt: on
+    ]
+
+    print("QuadKey empty: ", end="", flush=True)
+    try:
+        _ = its_quadkeys.QuadKey('')
+    except ValueError:
+        pass  # We expected that
+    else:
+        raise FailedError("QuadKey cannot be empty") from None
+    print("OK")
 
     print(f"QuadKey in: ", end="", flush=True)
     if qk_in not in qk:
@@ -75,6 +104,24 @@ def test_quadkey():
     qk_split_z = qk.split(extra_depth=2)
     check_zone(qk_split_z, expected_split_z_2)
     print(f"OK")
+
+    print(f"QuadKey shallower: ", end="", flush=True)
+    for depth, expected in expected_shallowers:
+        qk_shallow = qk.make_shallower(depth)
+        if qk_shallow != expected:
+            raise FailedError(
+                f"with QuadKey '{qk}' for depth {depth}, expecting '{expected}', got '{qk_shallow}'"
+            )
+    print(f"OK")
+
+    print(f"QuadKey root: ", end="", flush=True)
+    for qk_s, expected in expected_roots:
+        qk_r = its_quadkeys.QuadKey(qk_s).root()
+        if qk_r != expected:
+            raise FailedError(
+                f"for QuadKey '{qk_s}', expecting root '{expected}', got '{qk_r}'"
+            )
+    print("OK")
 
     print(f"QuadKey neighbours: ", end="", flush=True)
     nghbs = qk.neighbours()
@@ -355,6 +402,20 @@ def test_quadzone():
     z2 ^= z + nz_7
     z2.optimise()
     check_zone(z2, expected_xor)
+    print("OK")
+
+    earth = its_quadkeys.QuadZone("0", "1", "2", "3")
+    print("QuadZone Whole-Earth optimise: ", end="", flush=True)
+    earth2 = its_quadkeys.QuadZone("0", "1", "2", "3")
+    earth2.optimise()
+    check_zone(earth2, earth)
+    print("OK")
+
+    print("QuadZone Whole-Earth 2 optimise: ", end="", flush=True)
+    earth2_lst = ["0", "1", "2", "30", "31", "32", "330", "331", "332", "333"]
+    earth2 = its_quadkeys.QuadZone(earth2_lst)
+    earth2.optimise()
+    check_zone(earth2, earth)
     print("OK")
 
 

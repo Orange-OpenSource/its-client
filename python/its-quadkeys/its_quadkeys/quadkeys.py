@@ -49,6 +49,8 @@ class QuadKey(str):
                 f"cannot create a QuadKey from a {type(quadkey)}={quadkey!s}"
             )
         qk = quadkey.replace(separator, "")
+        if not qk:
+            raise ValueError("QuadKey can't be zero-length")
         err = "".join(set([q for q in qk if q not in "0123"]))
         if err:
             raise ValueError(f"QuadKey can oly contain '0123', not any of '{err}'")
@@ -87,7 +89,12 @@ class QuadKey(str):
             new_depth = max(1, len(self.quadkey) + depth)
         else:
             new_depth = min(len(self.quadkey), depth)
-        return QuadKey(self.quadkey[:depth])
+        return QuadKey(self.quadkey[:new_depth])
+
+    def root(self):
+        """Returns the QuadKey immediately shallower, or None if this QuadKey
+        is already the shallowest."""
+        return None if len(self.quadkey) == 1 else self.make_shallower(-1)
 
     def split(self, *, depth: int = None, extra_depth: int = None):
         """Split this QuadKey into an extra_depth-deeper QuadZone"""
@@ -293,7 +300,7 @@ class QuadKey(str):
 
 
 class QuadZone:
-    def __init__(self, *args: list[QuadKey | str | list[QuadKey | str]]):
+    def __init__(self, *args: QuadKey | str | list[QuadKey | str]):
         """Create a new QuadZone from an iterable of QuadKeys"""
         self.quadkeys = set()
         for arg in args:
@@ -383,11 +390,13 @@ class QuadZone:
                     continue
 
                 # Are this QuadKey and the following three making a super
-                # QuadKey? I.e. do we have root0, root1, root2, and root3?
+                # QuadKey? I.e. do we have 'root0', 'root1', 'root2', and
+                # 'root3', with a non-empty 'root' (issue #130)
                 qk_depth = quadkey.depth()
-                root = quadkey.make_shallower(-1)
+                root = quadkey.root()
                 if (
-                    to_merge[0] == root + "1"
+                    root
+                    and to_merge[0] == root + "1"
                     and to_merge[1] == root + "2"
                     and to_merge[2] == root + "3"
                 ):
