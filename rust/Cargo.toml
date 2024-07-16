@@ -34,7 +34,6 @@ geo_routing = []
 
 [[example]]
 name = "copycat"
-src = "examples/copycat.rs"
 required-features = ["geo_routing"]
 
 [dependencies]
