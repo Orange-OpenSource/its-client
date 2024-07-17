@@ -16,7 +16,9 @@ use std::sync::mpsc::{channel, Receiver, TryRecvError};
 use std::sync::{Arc, RwLock};
 
 use clap::{Arg, Command};
-use flexi_logger::{with_thread, Cleanup, Criterion, FileSpec, Logger, Naming, WriteMode};
+use flexi_logger::{
+    with_thread, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming, WriteMode,
+};
 use ini::Ini;
 use libits::client::application::analyzer::Analyzer;
 use libits::client::application::pipeline;
@@ -148,15 +150,14 @@ async fn main() {
             Arg::new("config-file-path")
                 .short('c')
                 .long("config")
-                .required(true)
                 .value_name("CONFIG_FILE_PATH")
+                .default_value("examples/config.ini")
                 .help("Path to the configuration file"),
         )
         .arg(
             Arg::new("mqtt-username")
                 .short('u')
                 .long("username")
-                .required(false)
                 .value_name("MQTT_USERNAME")
                 .help("Username used to connect to the MQTT broker"),
         )
@@ -192,6 +193,7 @@ async fn main() {
             match logger
                 .log_to_file(FileSpec::default().directory(log_path).suppress_timestamp())
                 .write_mode(WriteMode::Async)
+                .duplicate_to_stdout(Duplicate::All)
                 .format_for_files(with_thread)
                 .append()
                 .rotate(
@@ -214,11 +216,11 @@ async fn main() {
 
     let context = NoContext::default();
     let topics = vec![
-        GeoTopic::from("5GCroCo/outQueue/v2x/cam"),
-        GeoTopic::from("5GCroCo/outQueue/v2x/cpm"),
-        GeoTopic::from("5GCroCo/outQueue/v2x/denm"),
-        GeoTopic::from("5GCroCo/outQueue/v2x/cam"),
-        GeoTopic::from("5GCroCo/outQueue/info"),
+        GeoTopic::from("default/outQueue/v2x/cam"),
+        GeoTopic::from("default/outQueue/v2x/cpm"),
+        GeoTopic::from("default/outQueue/v2x/denm"),
+        GeoTopic::from("default/outQueue/v2x/cam"),
+        GeoTopic::from("default/outQueue/info"),
     ];
 
     if let Some(username) = matches.get_one::<String>("mqtt-username") {
