@@ -5,12 +5,16 @@
 
 import paho.mqtt.client
 import paho.mqtt.enums
+import paho.mqtt.packettypes
+import paho.mqtt.properties
 import threading
 import time
-from typing import Any, Callable, Optional, TypeAlias
+from typing import Any, Callable, Optional, TypeAlias, Unpack
+from . import otel
 
 
 MsgCallbackType: TypeAlias = Callable[[Any, str, bytes], None]
+SpanCallableType: TypeAlias = Callable[Unpack[otel.Otel.span], otel.Span]
 
 
 class MqttClient:
@@ -25,6 +29,7 @@ class MqttClient:
         password: Optional[str] = None,
         msg_cb: Optional[MsgCallbackType] = None,
         msg_cb_data: Any = None,
+        span_ctxmgr_cb: Optional[SpanCallableType] = otel.Otel.noexport_span,
     ):
         """
         Create an MQTT client
@@ -39,6 +44,8 @@ class MqttClient:
                        the MQTT broker.
         :param msg_cb_data: Arbitrary data that will be passed back to the
                             msg_cb function.
+        :param span_ctx_cb: The function to obtain a context manager for an
+                            OpenTelemetry span.
         """
 
         self.msg_cb = msg_cb
@@ -54,6 +61,8 @@ class MqttClient:
             self.host = host
             self.port = port
             self.name = f"{host}:{port}"
+
+        self.span_ctxmgr_cb = span_ctxmgr_cb
 
         self.client = paho.mqtt.client.Client(
             callback_api_version=paho.mqtt.enums.CallbackAPIVersion.VERSION2,
@@ -104,9 +113,28 @@ class MqttClient:
         :param topic: The MQTT topic to post on.
         :param payload: The payload to post.
         """
-        if not self.client.is_connected():
-            return
-        self.client.publish(topic=topic, payload=payload)
+        with self.span_ctxmgr_cb(
+            name="IoT3 Core MQTT message",
+            kind=otel.SpanKind.PRODUCER,
+        ) as span:
+            new_traceparent = span.to_traceparent()
+            span.set_attribute(key="test.iot3.core.mqtt.action", value="publish")
+            span.set_attribute(key="test.iot3.core.mqtt.topic", value=topic)
+            properties = paho.mqtt.properties.Properties(
+                paho.mqtt.packettypes.PacketTypes.PUBLISH,
+            )
+            if new_traceparent:
+                properties.UserProperty = ("traceparent", new_traceparent)
+            msg_info = self.client.publish(
+                topic=topic,
+                payload=payload,
+                properties=properties,
+            )
+            if msg_info.rc:
+                span.set_status(
+                    status_code=otel.SpanStatus.ERROR,
+                    status_message=paho.mqtt.client.error_string(msg_info.rc),
+                )
 
     def subscribe(self, *, topics: list[str]):
         """Subscribe to additional topics.
@@ -180,19 +208,33 @@ class MqttClient:
 
     # In theory, we would not need this method, as we could very well
     # have set   self.client.on_message = msg_cb   and be done with
-    # that. Having this intermediate __on_message() will help with
-    # telemetry when we add it.
+    # that. Having this intermediate __on_message() allows us to do
+    # telemetry.
     def __on_message(
         self,
         _client,
         _userdata,
         message: paho.mqtt.client.MQTTMessage,
     ):
-        self.msg_cb(
-            self.msg_cb_data,
-            message.topic,
-            message.payload,
-        )
+        span_kwargs = {
+            "name": "IoT3 Core MQTT message",
+            "kind": otel.SpanKind.CONSUMER,
+        }
+        try:
+            properties = dict(message.properties.UserProperty)
+            span_kwargs["span_links"] = [properties["traceparent"]]
+        except Exception:
+            # There was ultimately no traceparent in that message, ignore
+            pass
+        with self.span_ctxmgr_cb(**span_kwargs) as span:
+            new_traceparent = span.to_traceparent()
+            span.set_attribute(key="test.iot3.core.mqtt.action", value="receive")
+            span.set_attribute(key="test.iot3.core.mqtt.topic", value=message.topic)
+            self.msg_cb(
+                data=self.msg_cb_data,
+                topic=message.topic,
+                payload=message.payload,
+            )
 
     def __on_connect(
         self,
