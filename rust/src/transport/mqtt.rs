@@ -10,8 +10,8 @@
  * Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) library based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
  */
 
-use rumqttc::{Key, TlsConfiguration, Transport};
 use rumqttc::v5::MqttOptions;
+use rumqttc::{TlsConfiguration, Transport};
 
 pub(crate) mod mqtt_client;
 pub(crate) mod mqtt_router;
@@ -45,7 +45,7 @@ pub(crate) fn configure_transport(
 pub(crate) fn configure_tls(
     ca_path: &str,
     alpn: Option<Vec<Vec<u8>>>,
-    client_auth: Option<(Vec<u8>, Key)>,
+    client_auth: Option<(Vec<u8>, Vec<u8>)>,
 ) -> TlsConfiguration {
     let ca: Vec<u8> = std::fs::read(ca_path).expect("Failed to read TLS certificate");
 
