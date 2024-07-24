@@ -30,7 +30,6 @@ public class IoT3Mobility {
     private final IoT3Core ioT3Core;
     private final RoIManager roIManager;
 
-    private final String context;
     private final String uuid;
     private final int stationId;
 
@@ -56,7 +55,6 @@ public class IoT3Mobility {
                         String context,
                         IoT3MobilityCallback ioT3MobilityCallback) {
         this.uuid = uuid;
-        this.context = context;
         // random stationId at the moment, will be an option to set it later on
         this.stationId = Utils.randomBetween(999, 99999999);
         ioT3Core = new IoT3Core(
@@ -94,7 +92,8 @@ public class IoT3Mobility {
                     public void mqttUnsubscriptionComplete(Throwable unsubscribeFailure) {
 
                     }
-                });
+                },
+                host);
 
         roIManager = new RoIManager(ioT3Core, uuid, context);
 

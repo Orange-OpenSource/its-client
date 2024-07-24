@@ -36,7 +36,11 @@ public class IoT3Core {
                     String mqttUsername,
                     String mqttPassword,
                     String mqttClientId,
-                    IoT3CoreCallback ioT3CoreCallback) {
+                    IoT3CoreCallback ioT3CoreCallback,
+                    String telemetryHost) {
+        // instantiate OpenTelemetry client
+        this.openTelemetryClient = new OpenTelemetryClient(OpenTelemetryClient.Scheme.HTTP, telemetryHost);
+        // instantiate MQTT client
         this.mqttClient = new MqttClient(
                 mqttHost,
                 mqttUsername,
@@ -73,9 +77,9 @@ public class IoT3Core {
                     public void unsubscriptionComplete(Throwable unsubscriptionFailure) {
                         ioT3CoreCallback.mqttUnsubscriptionComplete(unsubscriptionFailure);
                     }
-                });
-
-        this.openTelemetryClient = new OpenTelemetryClient();
+                },
+                openTelemetryClient);
+        // instantiate LwM2M client
         this.lwm2mClient = new Lwm2mClient();
     }
 
@@ -119,21 +123,21 @@ public class IoT3Core {
     }
 
     /**
-     * Disconnect the MQTT client
+     * Reconnect the MQTT client
      */
     public void reconnectMqtt() {
         if(mqttClient != null) mqttClient.connect();
     }
 
     /**
-     * Disconnect the OpenTelemetry client
+     * Reconnect the OpenTelemetry client
      */
     public void reconnectOpenTelemetry() {
         if(openTelemetryClient != null) openTelemetryClient.connect();
     }
 
     /**
-     * Disconnect the LwM2M client
+     * Reconnect the LwM2M client
      */
     public void reconnectLwM2M() {
         if(lwm2mClient != null) lwm2mClient.connect();
