@@ -170,6 +170,6 @@ public class IoT3Core {
      * Publish a message on the specified MQTT topic with the indicated retained value
      */
     public void mqttPublish(String topic, String message, boolean retain) {
-        if(mqttClient != null) mqttClient.sendMessage(topic, message, retain);
+        if(mqttClient != null) mqttClient.publishMessage(topic, message, retain);
     }
 }
