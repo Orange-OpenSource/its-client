@@ -10,10 +10,19 @@ package com.orange.iot3core.clients;
 import com.hivemq.client.mqtt.MqttClientSslConfig;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
+import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
+import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperty;
+import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.propagation.TextMapGetter;
+import io.opentelemetry.context.propagation.TextMapSetter;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -123,7 +132,39 @@ public class MqttClient {
                     .callback(publish -> {
                         String message = new String(publish.getPayloadAsBytes());
 
-                        Span receivedSpan = openTelemetryClient.startSpan("MQTT Receive Message");
+                        // Extract user properties
+                        String traceparent = publish.getUserProperties().asList().stream()
+                                .filter(property -> property.getName().toString().equals("traceparent"))
+                                .findFirst()
+                                .map(property -> property.getValue().toString())
+                                .orElse(null);
+
+                        // Create a context map with the traceparent
+                        Map<String, String> contextMap = new HashMap<>();
+                        if (traceparent != null) {
+                            contextMap.put("traceparent", traceparent);
+                        }
+
+                        // Extract the trace context from the context map
+                        TextMapGetter<Map<String, String>> getter = new TextMapGetter<>() {
+                            @Override
+                            public Iterable<String> keys(Map<String, String> carrier) {
+                                return carrier.keySet();
+                            }
+
+                            @Override
+                            public String get(Map<String, String> carrier, String key) {
+                                return carrier.get(key);
+                            }
+                        };
+
+                        Context extractedContext = GlobalOpenTelemetry.getPropagators().getTextMapPropagator()
+                                .extract(Context.current(), contextMap, getter);
+                        SpanContext receivedSpanContext = Span.fromContext(extractedContext).getSpanContext();
+
+                        // Create a new span with a link to the received span context
+                        Span receivedSpan = openTelemetryClient.startSpanWithLink("MQTT Receive Message",
+                                receivedSpanContext.getTraceId(), receivedSpanContext.getSpanId());
                         receivedSpan.setAttribute(AttributeKey.stringKey("messaging.destination"), topic);
                         receivedSpan.setAttribute(AttributeKey.stringKey("messaging.message_payload_size_bytes"),
                                 String.valueOf(message.length()));
@@ -189,6 +230,21 @@ public class MqttClient {
             span.setAttribute(AttributeKey.stringKey("messaging.message_payload_size_bytes"),
                     String.valueOf(message.length()));
             openTelemetryClient.addEvent(span, "Sending MQTT message");
+
+            // Inject the trace context into a map
+            Map<String, String> contextMap = new HashMap<>();
+            GlobalOpenTelemetry.getPropagators().getTextMapPropagator().inject(Context.current().with(span),
+                    contextMap, (carrier, key, value) -> {
+                        assert carrier != null;
+                        carrier.put(key, value);
+                    });
+
+            // Create user properties with traceparent
+            Mqtt5UserProperties userProperties = Mqtt5UserProperties.builder()
+                    .add(Mqtt5UserProperty.of("traceparent", contextMap.get("traceparent")))
+                    .build();
+
+            // Send the message with user properties
             LOGGER.log(Level.INFO, "Sending message: " + topic + " | "+ message);
             final long pubTimestamp = System.currentTimeMillis();
             MqttQos mqttQos = MqttQos.AT_MOST_ONCE;
@@ -198,6 +254,7 @@ public class MqttClient {
                 mqttClient.publishWith()
                         .topic(topic)
                         .payload(message.getBytes())
+                        .userProperties(userProperties)
                         .qos(mqttQos)
                         .retain(retained)
                         .send()

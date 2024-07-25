@@ -39,7 +39,9 @@ public class IoT3Core {
                     IoT3CoreCallback ioT3CoreCallback,
                     String telemetryHost) {
         // instantiate OpenTelemetry client
-        this.openTelemetryClient = new OpenTelemetryClient(OpenTelemetryClient.Scheme.HTTP, telemetryHost);
+        this.openTelemetryClient = new OpenTelemetryClient(
+                OpenTelemetryClient.Scheme.HTTP,
+                telemetryHost);
         // instantiate MQTT client
         this.mqttClient = new MqttClient(
                 mqttHost,
