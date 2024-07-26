@@ -12,6 +12,15 @@ import com.orange.iot3core.clients.MqttCallback;
 import com.orange.iot3core.clients.MqttClient;
 import com.orange.iot3core.clients.OpenTelemetryClient;
 
+/**
+ * Core SDK allowing to establish a connection with the Orange IoT3.0 platform.
+ * <br>IoT3Core manages the following components:
+ * <ul>
+ * <li>MQTT client for high volumes and low latency communications,</li>
+ * <li>LwM2M client for autoconfiguration and basic telemetry,</li>
+ * <li>OpenTelemetry client for advanced telemetry</li>
+ * </ul>
+ */
 public class IoT3Core {
 
     private final MqttClient mqttClient;
@@ -19,13 +28,8 @@ public class IoT3Core {
     private final Lwm2mClient lwm2mClient;
 
     /**
-     * Base block allowing to establish a connection with the Orange IoT3.0 platform.
-     * <br>IoT3Core manages the following components:
-     * <ul>
-     * <li>MQTT client for high volumes and low latency communications,</li>
-     * <li>LwM2M client for autoconfiguration and basic telemetry,</li>
-     * <li>OpenTelemetry client for advanced telemetry</li>
-     * </ul>
+     * Instantiate the IoT3.0 Core SDK.
+     *
      * @param mqttHost MQTT broker address, provided by Orange
      * @param mqttUsername MQTT username, provided by Orange
      * @param mqttPassword MQTT password, provided by Orange
@@ -38,11 +42,11 @@ public class IoT3Core {
                     String mqttClientId,
                     IoT3CoreCallback ioT3CoreCallback,
                     String telemetryHost) {
-        // instantiate OpenTelemetry client
+        // instantiate the OpenTelemetry client
         this.openTelemetryClient = new OpenTelemetryClient(
                 OpenTelemetryClient.Scheme.HTTP,
                 telemetryHost);
-        // instantiate MQTT client
+        // instantiate the MQTT client
         this.mqttClient = new MqttClient(
                 mqttHost,
                 mqttUsername,
@@ -81,7 +85,7 @@ public class IoT3Core {
                     }
                 },
                 openTelemetryClient);
-        // instantiate LwM2M client
+        // instantiate the LwM2M client
         this.lwm2mClient = new Lwm2mClient();
     }
 

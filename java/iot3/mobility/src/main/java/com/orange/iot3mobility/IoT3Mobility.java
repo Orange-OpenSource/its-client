@@ -25,6 +25,15 @@ import com.orange.iot3mobility.managers.RoadUserManager;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.quadkey.QuadTileHelper;
 
+/**
+ * Mobility SDK based on the Orange IoT3.0 platform.
+ * <br>IoT3Mobility takes advantage of the IoT3Core to propose:
+ * <ul>
+ * <li>Transparent management of V2X messages (road users, road hazards, road sensors),</li>
+ * <li>Share your location and see other road users around you,</li>
+ * <li>Be alerted of road hazards in your vicinity.</li>
+ * </ul>
+ */
 public class IoT3Mobility {
 
     private final IoT3Core ioT3Core;
@@ -34,13 +43,8 @@ public class IoT3Mobility {
     private final int stationId;
 
     /**
-     * Mobility SDK based on the Orange IoT3.0 platform.
-     * <br>IoT3Mobility takes advantage of the IoT3Core to propose:
-     * <ul>
-     * <li>Transparent management of V2X messages (road users, road hazards, road sensors),</li>
-     * <li>Share your location and see other road users around you,</li>
-     * <li>Be alerted of road hazards in your vicinity.</li>
-     * </ul>
+     * Instantiate the IoT3.0 Mobility SDK.
+     *
      * @param host server address, provided by Orange
      * @param username username, provided by Orange
      * @param password password, provided by Orange

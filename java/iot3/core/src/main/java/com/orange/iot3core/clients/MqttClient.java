@@ -10,6 +10,7 @@ package com.orange.iot3core.clients;
 import com.hivemq.client.mqtt.MqttClientSslConfig;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
+import com.hivemq.client.mqtt.mqtt5.Mqtt5ClientBuilder;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperty;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
@@ -46,46 +47,34 @@ public class MqttClient {
         this.callback = callback;
         this.openTelemetryClient = openTelemetryClient;
 
-        if(sslConfig != null) {
-            mqttClient = com.hivemq.client.mqtt.MqttClient.builder()
-                    .useMqttVersion5()
-                    .identifier(clientId)
-                    .serverHost(serverHost)
-                    .serverPort(18883)
-                    .simpleAuth()
+        Mqtt5ClientBuilder mqttClientBuilder = com.hivemq.client.mqtt.MqttClient.builder()
+                .useMqttVersion5()
+                .identifier(clientId)
+                .serverHost(serverHost)
+                .addDisconnectedListener(context1 -> {
+                    LOGGER.log(Level.INFO, "Disconnected from MQTT broker " + serverHost);
+                    callback.connectionLost(context1.getCause());
+                })
+                .addConnectedListener(context12 -> {
+                    LOGGER.log(Level.INFO, "Connected to MQTT broker " + serverHost);
+                    callback.connectComplete(true, serverHost);
+                });
+
+        if(username != null && !username.isEmpty() && password != null && !password.isEmpty()) {
+            mqttClientBuilder.simpleAuth()
                     .username(username)
                     .password(password.getBytes())
-                    .applySimpleAuth()
+                    .applySimpleAuth();
+        }
+
+        if(sslConfig == null) {
+            mqttClient = mqttClientBuilder.serverPort(11883)
+                    .buildAsync();
+        } else {
+            mqttClient = mqttClientBuilder.serverPort(18883)
                     .sslConfig(sslConfig)
-                    .addDisconnectedListener(context1 -> {
-                        LOGGER.log(Level.INFO, "Disconnected from MQTT broker " + serverHost);
-                        callback.connectionLost(context1.getCause());
-                    })
-                    .addConnectedListener(context12 -> {
-                        LOGGER.log(Level.INFO, "Connected to MQTT broker " + serverHost);
-                        callback.connectComplete(true, serverHost);
-                    })
                     .buildAsync();
             tlsConnection = true;
-        } else {
-            mqttClient = com.hivemq.client.mqtt.MqttClient.builder()
-                    .useMqttVersion5()
-                    .identifier(clientId)
-                    .serverHost(serverHost)
-                    .serverPort(11883)
-                    .simpleAuth()
-                    .username(username)
-                    .password(password.getBytes())
-                    .applySimpleAuth()
-                    .addDisconnectedListener(context1 -> {
-                        LOGGER.log(Level.INFO, "Disconnected from MQTT broker " + serverHost);
-                        callback.connectionLost(null);
-                    })
-                    .addConnectedListener(context12 -> {
-                        LOGGER.log(Level.INFO, "Connected to MQTT broker " + serverHost);
-                        callback.connectComplete(true, serverHost);
-                    })
-                    .buildAsync();
         }
 
         connect();

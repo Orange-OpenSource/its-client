@@ -8,3 +8,5 @@
 
 rootProject.name = 'iot3'
 include 'core', 'mobility'
+include 'examples'
+
