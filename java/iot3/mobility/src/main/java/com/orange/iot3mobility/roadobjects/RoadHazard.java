@@ -7,6 +7,7 @@
  */
 package com.orange.iot3mobility.roadobjects;
 
+import com.orange.iot3mobility.TrueTime;
 import com.orange.iot3mobility.its.HazardType;
 import com.orange.iot3mobility.its.json.denm.DENM;
 import com.orange.iot3mobility.quadkey.LatLng;
@@ -22,14 +23,14 @@ public class RoadHazard {
     private HazardType hazardType;
     private DENM denm;
 
-    public RoadHazard(String uuid, int cause, int subcause, LatLng position, int lifetime, DENM denm) {
+    public RoadHazard(String uuid, int cause, int subcause, LatLng position, int lifetime, long timestamp, DENM denm) {
         this.uuid = uuid;
         this.cause = cause;
         this.subcause = subcause;
         this.position = position;
         this.lifetime = lifetime;
         this.denm = denm;
-        updateTimestamp();
+        this.timestamp = timestamp;
         findHazardType();
     }
 
@@ -49,8 +50,8 @@ public class RoadHazard {
         return timestamp;
     }
 
-    public void updateTimestamp() {
-        this.timestamp = System.currentTimeMillis();
+    public void updateTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 
     public void setLifetime(int lifetime) {
@@ -58,7 +59,7 @@ public class RoadHazard {
     }
 
     public boolean stillLiving() {
-        return System.currentTimeMillis() - timestamp < lifetime;
+        return TrueTime.getAccurateTime() - timestamp < lifetime;
     }
 
     public HazardType getHazardType() {
