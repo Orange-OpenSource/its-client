@@ -14,7 +14,7 @@
     "version": {
       "description": "The version of the schema for this object",
       "type": "string",
-      "const": "0.0.99"
+      "const": "1.0.0"
     },
     "kind": {
       "description": "The kind of region this object carries",
