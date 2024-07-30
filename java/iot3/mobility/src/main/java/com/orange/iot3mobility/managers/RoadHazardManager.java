@@ -7,6 +7,8 @@
  */
 package com.orange.iot3mobility.managers;
 
+import com.orange.iot3mobility.TrueTime;
+import com.orange.iot3mobility.its.json.JsonUtil;
 import com.orange.iot3mobility.its.json.denm.DENM;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.roadobjects.RoadHazard;
@@ -54,19 +56,22 @@ public class RoadHazardManager {
                         denm.getManagementContainer().getEventPosition().getLatitudeDegree(),
                         denm.getManagementContainer().getEventPosition().getLongitudeDegree());
                 int lifetime = denm.getManagementContainer().getValidityDuration() * 1000; // to ms
+                long timestamp = denm.getTimestamp();
+                boolean expired = TrueTime.getAccurateTime() - timestamp > lifetime;
+                boolean terminate = denm.getManagementContainer().getTermination() != JsonUtil.UNKNOWN;
                 if(ROAD_HAZARD_MAP.containsKey(uuid)) {
                     synchronized (ROAD_HAZARD_MAP) {
                         RoadHazard roadHazard = ROAD_HAZARD_MAP.get(uuid);
                         if(roadHazard != null) {
-                            roadHazard.updateTimestamp();
+                            roadHazard.updateTimestamp(timestamp);
                             roadHazard.setPosition(position);
                             roadHazard.setLifetime(lifetime);
                             roadHazard.setDenm(denm);
                             ioT3RoadHazardCallback.roadHazardUpdate(roadHazard);
                         }
                     }
-                } else {
-                    RoadHazard roadHazard = new RoadHazard(uuid, cause, subcause, position, lifetime, denm);
+                } else if(!terminate && !expired) {
+                    RoadHazard roadHazard = new RoadHazard(uuid, cause, subcause, position, lifetime, timestamp, denm);
                     addRoadHazard(uuid, roadHazard);
                     ioT3RoadHazardCallback.newRoadHazard(roadHazard);
                 }
