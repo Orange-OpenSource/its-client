@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/region",
+  "description": "JSon schema describing a geographic region",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [ "message_type", "version", "kind", "area" ],
+  "properties": {
+    "message_type": {
+      "description": "The type of schema for this object",
+      "type": "string",
+      "const": "region"
+    },
+    "version": {
+      "description": "The version of the schema for this object",
+      "type": "string",
+      "const": "0.0.99"
+    },
+    "kind": {
+      "description": "The kind of region this object carries",
+      "type": "string",
+      "enum": ["responsibility", "mobility"]
+    },
+    "area": {
+      "description": "The definition of the area",
+      "OneOf": [
+        { "$ref": "#/$defs/quadkey_area" }
+      ]
+    }
+  },
+  "$defs": {
+    "basic_area": {
+      "type": "object",
+      "required": [
+        "area_type"
+      ],
+      "properties": {
+        "type": {
+          "description": "The type of region representation",
+          "type": "string"
+        }
+      }
+    },
+    "quadkey_area": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/basic_area" },
+        {
+          "type": "object",
+          "required": [ "quadkeys" ],
+          "properties": {
+            "area_type": { "const": "quadkeys" },
+            "quadkeys": {
+              "description": "The list of the quadkeys covering the region",
+              "type": "array",
+              "items": {
+                "quadkey": {
+                  "description": "Quadkey",
+                  "type": "string",
+                  "examples": [
+                    "12020322313211",
+                    "12020322313213",
+                    "1203"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
