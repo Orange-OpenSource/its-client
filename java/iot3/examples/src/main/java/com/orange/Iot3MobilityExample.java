@@ -14,18 +14,24 @@ import com.orange.iot3mobility.roadobjects.RoadSensor;
 import com.orange.iot3mobility.roadobjects.RoadUser;
 import com.orange.iot3mobility.roadobjects.SensorObject;
 
+import java.util.UUID;
+
 public class Iot3MobilityExample {
 
-    private static final String EXAMPLE_HOST = "90.84.193.23";
+    private static final String EXAMPLE_HOST = "host";
+    private static final String EXAMPLE_USERNAME = "username";
+    private static final String EXAMPLE_PASSWORD = "password";
+    private static final String EXAMPLE_UUID = "uuid";
+    private static final String EXAMPLE_CONTEXT = "context";
 
     public static void main(String[] args) {
         // instantiate IoT3Mobility and its callback
         IoT3Mobility ioT3Mobility = new IoT3Mobility(
                 EXAMPLE_HOST,
-                null,
-                null,
-                "iot3mobility_test_123", // serves to identify the road user, app or infrastructure
-                "Test", // serves as the root of the MQTT mobility topics
+                EXAMPLE_USERNAME,
+                EXAMPLE_PASSWORD,
+                EXAMPLE_UUID, // serves to identify the road user, app or infrastructure
+                EXAMPLE_CONTEXT, // serves as the root of the MQTT mobility topics
                 new IoT3MobilityCallback() {
                     @Override
                     public void connectionLost(Throwable cause) {

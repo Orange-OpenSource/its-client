@@ -9,16 +9,19 @@ import java.util.concurrent.TimeUnit;
 
 public class Iot3CoreExample {
 
-    private static final String EXAMPLE_HOST_MQTT = "90.84.193.23";
-    private static final String EXAMPLE_HOST_OTL = "90.84.47.42";
+    private static final String EXAMPLE_MQTT_HOST = "mqtt_host";
+    private static final String EXAMPLE_MQTT_USERNAME = "mqtt_username";
+    private static final String EXAMPLE_MQTT_PASSWORD = "mqtt_password";
+    private static final String EXAMPLE_MQTT_CLIENT_ID = "mqtt_client_id";
+    private static final String EXAMPLE_OTL_HOST = "open_telemetry_host";
 
     public static void main(String[] args) {
         // instantiate IoT3Core and its callback
         IoT3Core ioT3Core = new IoT3Core(
-                EXAMPLE_HOST_MQTT,
-                null,
-                null,
-                "iot3core_test_123",
+                EXAMPLE_MQTT_HOST,
+                EXAMPLE_MQTT_USERNAME,
+                EXAMPLE_MQTT_PASSWORD,
+                EXAMPLE_MQTT_CLIENT_ID,
                 new IoT3CoreCallback() {
                     @Override
                     public void mqttConnectionLost(Throwable throwable) {
@@ -53,7 +56,7 @@ public class Iot3CoreExample {
                         else System.out.println("MQTT unsubscription failed");
                     }
                 },
-                EXAMPLE_HOST_OTL);
+                EXAMPLE_OTL_HOST);
 
         // subscribe to some topics
         ioT3Core.mqttSubscribe("test/world");
