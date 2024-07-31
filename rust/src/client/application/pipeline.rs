@@ -24,6 +24,7 @@ use crate::transport::packet::Packet;
 use crate::transport::payload::Payload;
 use crossbeam_channel::{unbounded, Receiver};
 use log::{debug, error, info, trace, warn};
+use rumqttc::v5::mqttbytes::v5::PublishProperties;
 use rumqttc::v5::{Event, EventLoop};
 use serde::de::DeserializeOwned;
 use std::any::Any;
@@ -377,6 +378,7 @@ where
                                 let item = Packet {
                                     topic,
                                     payload: *exchange,
+                                    properties: PublishProperties::default(),
                                 };
                                 //assumed clone, we send to 2 channels
                                 match monitoring_sender.send((item.clone(), None)) {
@@ -398,6 +400,7 @@ where
                             match information_sender.send(Packet {
                                 topic,
                                 payload: *information,
+                                properties: PublishProperties::default(),
                             }) {
                                 Ok(()) => trace!("mqtt information sent"),
                                 Err(error) => {
