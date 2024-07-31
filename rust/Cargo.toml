@@ -41,6 +41,7 @@ required-features = ["geo_routing"]
 crossbeam-channel = "0.5"
 enum_dispatch = "0.3"
 geo = "0.27"
+http = "1.1"
 integer-sqrt = "0.1"
 log = "0.4"
 map_3d = "0.1"
@@ -53,6 +54,24 @@ threadpool = "1.8"
 [dependencies.rumqttc]
 version = "0.24"
 features = ["websocket"]
+
+[dependencies.opentelemetry]
+version = "0.23"
+
+[dependencies.opentelemetry-http]
+version = "0.12"
+features = ["reqwest"]
+
+[dependencies.opentelemetry-otlp]
+version = "0.16"
+features = ["trace", "http-proto"]
+
+[dependencies.opentelemetry_sdk]
+version = "0.23"
+features = ["trace", "rt-tokio"]
+
+[dependencies.reqwest]
+version = "0.11"
 
 [dependencies.serde]
 version = "1.0"
