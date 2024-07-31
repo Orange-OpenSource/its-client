@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+
+import iot3.core.mqtt
+import iot3.core.otel
+import time
+
+def recv(data, topic, payload):
+    print(f"{topic[:16]}: {payload[:16]}")
+
+o = iot3.core.otel.Otel(
+    service_name="test-service",
+    endpoint="http://localhost:4318",
+    batch_period=1,
+)
+o.start()
+
+c = iot3.core.mqtt.MqttClient(
+    client_id="test",
+    host="127.0.0.1",
+    port=1883,
+    span_ctxmgr_cb=o.span,
+    msg_cb=recv,
+)
+c.start()
+
+c.subscribe(topics=["#"])
+
+c.publish(topic='foo/bar/dropped', payload="dropped")
+time.sleep(1)
+
+c.publish(topic='foo/bar/passed', payload="passed")
+time.sleep(1)
+
+c.stop()
+o.stop()
