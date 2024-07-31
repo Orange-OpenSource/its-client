@@ -49,11 +49,18 @@ impl<'client> MqttClient {
         };
     }
 
-    pub async fn publish<T: Topic, P: Payload>(&self, item: Packet<T, P>) {
-        let payload = serde_json::to_string(&item.payload).unwrap();
+    pub async fn publish<T: Topic, P: Payload>(&self, packet: Packet<T, P>) {
+        let payload = serde_json::to_string(&packet.payload).unwrap();
+
         match self
             .client
-            .publish(item.topic.to_string(), QoS::ExactlyOnce, false, payload)
+            .publish_with_properties(
+                packet.topic.to_string(),
+                QoS::ExactlyOnce,
+                false,
+                payload,
+                packet.properties,
+            )
             .await
         {
             Ok(()) => {
@@ -63,7 +70,7 @@ impl<'client> MqttClient {
                 "Failed to send publish, is the connection close? \nError: {:?}",
                 e
             ),
-        };
+        }
     }
 }
 
