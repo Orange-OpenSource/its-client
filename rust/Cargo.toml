@@ -38,6 +38,10 @@ telemetry = []
 name = "copycat"
 required-features = ["geo_routing"]
 
+[[example]]
+name = "telemetry"
+required-features = ["telemetry"]
+
 [dependencies]
 crossbeam-channel = "0.5"
 enum_dispatch = "0.3"
