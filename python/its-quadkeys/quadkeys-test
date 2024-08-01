@@ -420,13 +420,15 @@ def test_quadzone():
 
 
 def check_zone(some, expected):
-    some_l = list(some)
-    expected_l = list(expected)
+    some_l = list([str(qk) for qk in some])
+    expected_l = list([str(qk) for qk in expected])
     z_miss = sorted([qk for qk in expected_l if qk not in some_l])
-    z_extra = sorted([str(qk) for qk in some_l if qk not in expected_l])
+    z_extra = sorted([qk for qk in some_l if qk not in expected_l])
     if z_miss or z_extra:
-        raise FailedError(
-            f"{len(z_miss)} missing: {z_miss}, {len(z_extra)} extra: {z_extra}"
+        raise FailedError((
+            f"{len(z_miss)} missing: {z_miss}, {len(z_extra)} extra: {z_extra}",
+            f"Got {some_l}",
+            f"Expected {expected_l}")
         )
 
 
@@ -435,5 +437,7 @@ if __name__ == "__main__":
         test_quadkey()
         test_quadzone()
     except FailedError as e:
-        print(f"KO: {e.args[0]}")
+        print(f"KO:")
+        for arg in e.args[0]:
+            print(arg)
         sys.exit(1)
