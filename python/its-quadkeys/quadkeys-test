@@ -103,7 +103,7 @@ def test_quadkey():
     print(f"QuadKey split (extra_depth): ", end="", flush=True)
     qk_split_z = qk.split(extra_depth=2)
     check_zone(qk_split_z, expected_split_z_2)
-    print(f"OK")
+    print("OK")
 
     print(f"QuadKey shallower: ", end="", flush=True)
     for depth, expected in expected_shallowers:
@@ -112,7 +112,7 @@ def test_quadkey():
             raise FailedError(
                 f"with QuadKey '{qk}' for depth {depth}, expecting '{expected}', got '{qk_shallow}'"
             )
-    print(f"OK")
+    print("OK")
 
     print(f"QuadKey root: ", end="", flush=True)
     for qk_s, expected in expected_roots:
@@ -129,7 +129,7 @@ def test_quadkey():
         raise FailedError(
             f"{ {k:(str(getattr(nghbs,k)),expected_nghbs[k]) for k in nghbs._asdict() if getattr(nghbs,k) != expected_nghbs[k]} }"
         )
-    print(f"OK")
+    print("OK")
 
     print(f"QuadKey from lat/lon/depth: ", end="", flush=True)
     qk = its_quadkeys.QuadKey((43.63516355648167, 1.3744570239910097, 22))
@@ -137,7 +137,7 @@ def test_quadkey():
         raise FailedError(
             f"[43.63516355648167, 1.3744570239910097, 22] => '{qk.to_str('')}'"
         )
-    print(f"OK")
+    print("OK")
 
 
 def test_quadzone():
