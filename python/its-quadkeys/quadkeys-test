@@ -33,6 +33,17 @@ def test_quadkey():
         "S": "12030231",
         "SE": "12030320",
     }
+    expected_nghbs_0 = {
+        # Neighbours for QuadKey "0"
+        "NW": None,
+        "N": None,
+        "NE": None,
+        "W": "1",
+        "E": "1",
+        "SW": "3",
+        "S": "2",
+        "SE": "3",
+    }
     """
     this is the split QuadKey
     """
@@ -128,6 +139,14 @@ def test_quadkey():
     if nghbs._asdict() != expected_nghbs:
         raise FailedError(
             f"{ {k:(str(getattr(nghbs,k)),expected_nghbs[k]) for k in nghbs._asdict() if getattr(nghbs,k) != expected_nghbs[k]} }"
+        )
+    print("OK")
+
+    print("QuadKey partial neighbours: ", end="", flush=True)
+    nghbs = its_quadkeys.QuadKey('0').neighbours()
+    if nghbs._asdict() != expected_nghbs_0:
+        raise FailedError(
+            f"{ {k:(str(getattr(nghbs,k)),expected_nghbs_0[k]) for k in nghbs._asdict() if getattr(nghbs,k) != expected_nghbs_0[k]} }"
         )
     print("OK")
 

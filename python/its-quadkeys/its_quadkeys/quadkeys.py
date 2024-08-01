@@ -114,38 +114,58 @@ class QuadKey(str):
 
         Returns None if this QuadKey is the Northern-most QuadKey.
         """
-        return QuadKey(QuadKey.__north_of_s(self.quadkey))
+        qk = QuadKey.__north_of_s(self.quadkey)
+        return QuadKey(qk) if qk else None
 
     def south_of(self):
         """Returns the QuadKey South of, and at the same depth as this QuadKey.
 
         Returns None if this QuadKey is the Southern-most QuadKey.
         """
-        return QuadKey(QuadKey.__south_of_s(self.quadkey))
+        qk = QuadKey.__south_of_s(self.quadkey)
+        return QuadKey(qk) if qk else None
 
     def east_of(self):
         """Returns the QuadKey East of, and at the same depth as this QuadKey."""
+        # There is always a QuadKey to the east.
         return QuadKey(QuadKey.__east_of_s(self.quadkey))
 
     def west_of(self):
         """Returns the QuadKey West of, and at the same depth as this QuadKey."""
+        # There is always a QuadKey to the west.
         return QuadKey(QuadKey.__west_of_s(self.quadkey))
 
     def north_west_of(self):
-        """Returns the QuadKey North-West of, and at the same depth as this QuadKey."""
-        return QuadKey(QuadKey.__north_west_of_s(self.quadkey))
+        """Returns the QuadKey North-West of, and at the same depth as this QuadKey.
+
+        Returns None if this QuadKey is the Northern-most QuadKey.
+        """
+        qk = QuadKey.__north_west_of_s(self.quadkey)
+        return QuadKey(qk) if qk else None
 
     def north_east_of(self):
-        """Returns the QuadKey North-East of, and at the same depth as this QuadKey."""
-        return QuadKey(QuadKey.__north_east_of_s(self.quadkey))
+        """Returns the QuadKey North-East of, and at the same depth as this QuadKey.
+
+        Returns None if this QuadKey is the Northern-most QuadKey.
+        """
+        qk = QuadKey.__north_east_of_s(self.quadkey)
+        return QuadKey(qk) if qk else None
 
     def south_west_of(self):
-        """Returns the QuadKey South-West of, and at the same depth as this QuadKey."""
-        return QuadKey(QuadKey.__south_west_of_s(self.quadkey))
+        """Returns the QuadKey South-West of, and at the same depth as this QuadKey.
+
+        Returns None if this QuadKey is the Southern-most QuadKey.
+        """
+        qk = QuadKey.__south_west_of_s(self.quadkey)
+        return QuadKey(qk) if qk else None
 
     def south_east_of(self):
-        """Returns the QuadKey South-East of, and at the same depth as this QuadKey."""
-        return QuadKey(QuadKey.__south_east_of_s(self.quadkey))
+        """Returns the QuadKey South-East of, and at the same depth as this QuadKey.
+
+        Returns None if this QuadKey is the Southern-most QuadKey.
+        """
+        qk = QuadKey.__south_east_of_s(self.quadkey)
+        return QuadKey(qk) if qk else None
 
     def neighbours(self, *, as_zone: bool = False):
         """Return the QuadKeys neighbouring this QuadKey
