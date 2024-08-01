@@ -15,9 +15,11 @@ public class Iot3CoreExample {
     private static final String EXAMPLE_MQTT_CLIENT_ID = "mqtt_client_id";
     private static final String EXAMPLE_OTL_HOST = "open_telemetry_host";
 
+    private static IoT3Core ioT3Core;
+
     public static void main(String[] args) {
         // instantiate IoT3Core and its callback
-        IoT3Core ioT3Core = new IoT3Core(
+        ioT3Core = new IoT3Core(
                 EXAMPLE_MQTT_HOST,
                 EXAMPLE_MQTT_USERNAME,
                 EXAMPLE_MQTT_PASSWORD,
@@ -36,6 +38,7 @@ public class Iot3CoreExample {
                     @Override
                     public void mqttConnectComplete(boolean reconnect, String serverURI) {
                         System.out.println("MQTT connection complete: " + serverURI);
+                        onConnectionComplete();
                     }
 
                     @Override
@@ -57,7 +60,9 @@ public class Iot3CoreExample {
                     }
                 },
                 EXAMPLE_OTL_HOST);
+    }
 
+    private static void onConnectionComplete() {
         // subscribe to some topics
         ioT3Core.mqttSubscribe("test/world");
         ioT3Core.mqttSubscribe("test/world/#");
@@ -65,18 +70,15 @@ public class Iot3CoreExample {
         try {
             final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
             // publish a message on a topic that we have not subscribed to
-            executorService.schedule(() -> publishMessage(ioT3Core,
-                            "test",
+            executorService.schedule(() -> publishMessage("test",
                             "Message 1 should not come back"),
                     2, TimeUnit.SECONDS);
             // publish a message on a topic that we have subscribed to
-            executorService.schedule(() -> publishMessage(ioT3Core,
-                            "test/world",
+            executorService.schedule(() -> publishMessage("test/world",
                             "Message 2 should come back"),
                     4, TimeUnit.SECONDS);
             // publish a message on a topic that we have subscribed to with the wildcard #
-            executorService.schedule(() -> publishMessage(ioT3Core,
-                            "test/world/anything",
+            executorService.schedule(() -> publishMessage("test/world/anything",
                             "Message 3 should come back"),
                     6, TimeUnit.SECONDS);
             // disconnect the clients of IoT3Core
@@ -86,8 +88,8 @@ public class Iot3CoreExample {
         }
     }
 
-    private static void publishMessage(IoT3Core ioT3Core, String topic, String message) {
-        System.out.println("Publishing:\nTopic: " + topic + "\nMessage:" + message);
+    private static void publishMessage(String topic, String message) {
+        System.out.println("Publishing:\nTopic: " + topic + "\nMessage: " + message);
         ioT3Core.mqttPublish(topic, message);
     }
 

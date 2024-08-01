@@ -10,11 +10,16 @@ package com.orange.iot3core.clients;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.*;
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.context.propagation.ContextPropagators;
+import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
-import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
+
+import java.time.Duration;
 
 public class OpenTelemetryClient {
 
@@ -31,26 +36,39 @@ public class OpenTelemetryClient {
     }
 
     private void initialize() {
-        String endpoint = scheme.getScheme() + "://" + host + ":" + scheme.getDefaultPort(); // to adapt for HTTPS
+        String endpoint = scheme.getScheme() + "://" + host + ":" + scheme.getDefaultPort() + "/v1/traces";
         OpenTelemetry openTelemetry = initOpenTelemetry(endpoint);
         this.tracer = openTelemetry.getTracer(INSTRUMENTATION_NAME);
-        this.tracerProvider = (SdkTracerProvider) openTelemetry.getTracerProvider();
     }
 
     private OpenTelemetry initOpenTelemetry(String endpoint) {
-        OtlpGrpcSpanExporter spanExporter = OtlpGrpcSpanExporter.builder()
+        OtlpHttpSpanExporter spanExporter = OtlpHttpSpanExporter.builder()
                 .setEndpoint(endpoint)
                 .build();
 
+        BatchSpanProcessor spanProcessor = BatchSpanProcessor.builder(spanExporter)
+                .setMaxExportBatchSize(50)
+                .setScheduleDelay(Duration.ofMillis(5000))
+                .build();
+
+        Resource resource = Resource.builder()
+                .put("service.name", INSTRUMENTATION_NAME)
+                .build();
+
         SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
-                .addSpanProcessor(BatchSpanProcessor.builder(spanExporter).build())
+                .addSpanProcessor(spanProcessor)
+                .setResource(resource)
                 .build();
 
         OpenTelemetrySdk openTelemetry = OpenTelemetrySdk.builder()
                 .setTracerProvider(tracerProvider)
+                .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
                 .build();
 
         GlobalOpenTelemetry.set(openTelemetry);
+
+        this.tracerProvider = tracerProvider;
+
         return openTelemetry;
     }
 
