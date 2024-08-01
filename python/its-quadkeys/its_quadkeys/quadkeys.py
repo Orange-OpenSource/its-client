@@ -454,16 +454,19 @@ class QuadZone:
                 # its neighbours to the requested depth. If they are
                 # already the correct depth, expanding will do nothing.
                 for q in nghbs:
-                    all_nghbs.add(q.make_shallower(depth))
+                    if q is not None:
+                        all_nghbs.add(q.make_shallower(depth))
             else:
                 # If the QuadKey is shallower than the requested depth,
                 # we need to split it down to the correct depth, and
                 # keep only the border-most QuadKeys, for each type of
                 # borders.
                 for card in nghbs._asdict():
-                    root = getattr(nghbs, card).to_str()
-                    for tail in _mk_tail_s(card, depth=depth - quadkey.depth()):
-                        all_nghbs.add(QuadKey(root + tail))
+                    q = getattr(nghbs, card)
+                    if q is not None:
+                        root = q.to_str()
+                        for tail in _mk_tail_s(card, depth=depth - quadkey.depth()):
+                            all_nghbs.add(QuadKey(root + tail))
 
         final_nghbs = QuadZone()
         for quadkey in all_nghbs:

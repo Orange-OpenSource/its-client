@@ -437,6 +437,11 @@ def test_quadzone():
     check_zone(earth2, earth)
     print("OK")
 
+    print("Quadzone Whole-Earth neighbours: ", end="", flush=True)
+    earth_nghbs = earth.neighbours(depth=1)
+    check_zone(earth_nghbs, its_quadkeys.QuadZone())
+    print("OK")
+
 
 def check_zone(some, expected):
     some_l = list([str(qk) for qk in some])
