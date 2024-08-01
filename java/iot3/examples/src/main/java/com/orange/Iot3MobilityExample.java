@@ -2,6 +2,7 @@ package com.orange;
 
 import com.orange.iot3mobility.IoT3Mobility;
 import com.orange.iot3mobility.IoT3MobilityCallback;
+import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.its.json.cam.CAM;
 import com.orange.iot3mobility.its.json.cpm.CPM;
 import com.orange.iot3mobility.its.json.denm.DENM;
@@ -14,7 +15,9 @@ import com.orange.iot3mobility.roadobjects.RoadSensor;
 import com.orange.iot3mobility.roadobjects.RoadUser;
 import com.orange.iot3mobility.roadobjects.SensorObject;
 
-import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class Iot3MobilityExample {
 
@@ -23,10 +26,13 @@ public class Iot3MobilityExample {
     private static final String EXAMPLE_PASSWORD = "password";
     private static final String EXAMPLE_UUID = "uuid";
     private static final String EXAMPLE_CONTEXT = "context";
+    private static final String EXAMPLE_TELEMETRY_HOST = "telemetry_host";
+
+    private static IoT3Mobility ioT3Mobility;
 
     public static void main(String[] args) {
         // instantiate IoT3Mobility and its callback
-        IoT3Mobility ioT3Mobility = new IoT3Mobility(
+        ioT3Mobility = new IoT3Mobility(
                 EXAMPLE_HOST,
                 EXAMPLE_USERNAME,
                 EXAMPLE_PASSWORD,
@@ -42,7 +48,8 @@ public class Iot3MobilityExample {
                     public void connectComplete(boolean reconnect, String serverURI) {
                         System.out.println("MQTT connection complete: " + serverURI);
                     }
-                });
+                },
+                EXAMPLE_TELEMETRY_HOST);
 
         // set the RoadHazardCallback to be informed of road hazards in the corresponding Region of Interest (RoI)
         ioT3Mobility.setRoadHazardCallback(new IoT3RoadHazardCallback() {
@@ -85,7 +92,9 @@ public class Iot3MobilityExample {
 
             @Override
             public void roadUserUpdate(RoadUser roadUser) {
-                System.out.println("Road User update: " + roadUser.getUuid());
+                System.out.println("Road User update: " + roadUser.getUuid()
+                        + " | Position: " + roadUser.getPosition()
+                        + " | Speed: " + roadUser.getSpeedKmh() + " km/h");
             }
 
             @Override
@@ -139,15 +148,31 @@ public class Iot3MobilityExample {
             }
         });
 
-        // let's now set a Region of Interest for each object type (IoT3Mobility will handle the subscriptions)
+        // let's set a Region of Interest for each object type (IoT3Mobility will handle the subscriptions)
         LatLng roiPosition = new LatLng(48.625218, 2.243448); // UTAC TEQMO test track coordinates
+        setRegionOfInterest(roiPosition);
+
+        startSendingCAMs();
+    }
+
+    private static void setRegionOfInterest(LatLng roiPosition) {
         // the coordinates are translated into tiles of varying sizes, depending on the chosen zoom level:
         // zoom 22 ~ 5m x 5m at Paris latitude (max resolution)
         // zoom 1 is a quarter of the world per tile (min resolution)
         // tile area x4 with each level decrease
-        ioT3Mobility.setRoadHazardRoI(roiPosition, 16, true);
         ioT3Mobility.setRoadUserRoI(roiPosition, 17, true);
+        ioT3Mobility.setRoadHazardRoI(roiPosition, 16, true);
         ioT3Mobility.setRoadSensorRoI(roiPosition, 18, true);
+    }
+
+    private static synchronized void startSendingCAMs() {
+        ScheduledExecutorService camScheduler = Executors.newScheduledThreadPool(1);
+        camScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendCam, 1, 1, TimeUnit.SECONDS);
+    }
+
+    private static void sendCam() {
+        LatLng position = new LatLng(48.625218, 2.243448);
+        ioT3Mobility.sendPosition(StationType.PASSENGER_CAR, position, 0, 0, 0, 0, 0);
     }
 
 }

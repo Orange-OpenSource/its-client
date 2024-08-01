@@ -161,60 +161,6 @@ public class MqttClient {
         }
     }
 
-    private void processPublish(Mqtt5Publish publish) {
-        String message = new String(publish.getPayloadAsBytes());
-
-        // Extract user properties
-        String traceparent = publish.getUserProperties().asList().stream()
-                .filter(property -> property.getName().toString().equals("traceparent"))
-                .findFirst()
-                .map(property -> property.getValue().toString())
-                .orElse(null);
-
-        // Create a context map with the traceparent
-        Map<String, String> contextMap = new HashMap<>();
-        if (traceparent != null) {
-            contextMap.put("traceparent", traceparent);
-        }
-
-        // Extract the trace context from the context map
-        TextMapGetter<Map<String, String>> getter = new TextMapGetter<>() {
-            @Override
-            public Iterable<String> keys(Map<String, String> carrier) {
-                return carrier.keySet();
-            }
-
-            @Override
-            public String get(Map<String, String> carrier, String key) {
-                return carrier.get(key);
-            }
-        };
-
-        Context extractedContext = GlobalOpenTelemetry.getPropagators().getTextMapPropagator()
-                .extract(Context.current(), contextMap, getter);
-        SpanContext receivedSpanContext = Span.fromContext(extractedContext).getSpanContext();
-
-        // Create a new span with a link to the received span context
-        Span receivedSpan = openTelemetryClient.startSpanWithLink("MQTT Receive Message",
-                receivedSpanContext.getTraceId(), receivedSpanContext.getSpanId());
-        receivedSpan.setAttribute(AttributeKey.stringKey("messaging.destination"),
-                publish.getTopic().toString());
-        receivedSpan.setAttribute(AttributeKey.stringKey("messaging.message_payload_size_bytes"),
-                String.valueOf(message.length()));
-        openTelemetryClient.addEvent(receivedSpan, "Received MQTT message");
-
-        LOGGER.log(Level.INFO, "MQTT message arrived on: " + publish.getTopic() + " | " + message);
-        try {
-            callback.messageArrived(publish.getTopic().toString(), message);
-            openTelemetryClient.endSpan(receivedSpan, true,
-                    "Processed received MQTT message");
-        } catch (Exception e) {
-            openTelemetryClient.endSpan(receivedSpan, false,
-                    "Error processing MQTT message");
-            throw new RuntimeException(e);
-        }
-    }
-
     public void publishMessage(String topic, String message, boolean retained, int qos) {
         if(isValidMqttPubTopic(topic)) {
             Span span = openTelemetryClient.startSpan("MQTT Send Message");
@@ -273,6 +219,60 @@ public class MqttClient {
 
     public void publishMessage(String topic, String message) {
         publishMessage(topic, message, false, 0);
+    }
+
+    private void processPublish(Mqtt5Publish publish) {
+        String message = new String(publish.getPayloadAsBytes());
+
+        // Extract user properties
+        String traceparent = publish.getUserProperties().asList().stream()
+                .filter(property -> property.getName().toString().equals("traceparent"))
+                .findFirst()
+                .map(property -> property.getValue().toString())
+                .orElse(null);
+
+        // Create a context map with the traceparent
+        Map<String, String> contextMap = new HashMap<>();
+        if (traceparent != null) {
+            contextMap.put("traceparent", traceparent);
+        }
+
+        // Extract the trace context from the context map
+        TextMapGetter<Map<String, String>> getter = new TextMapGetter<>() {
+            @Override
+            public Iterable<String> keys(Map<String, String> carrier) {
+                return carrier.keySet();
+            }
+
+            @Override
+            public String get(Map<String, String> carrier, String key) {
+                return carrier.get(key);
+            }
+        };
+
+        Context extractedContext = GlobalOpenTelemetry.getPropagators().getTextMapPropagator()
+                .extract(Context.current(), contextMap, getter);
+        SpanContext receivedSpanContext = Span.fromContext(extractedContext).getSpanContext();
+
+        // Create a new span with a link to the received span context
+        Span receivedSpan = openTelemetryClient.startSpanWithLink("MQTT Receive Message",
+                receivedSpanContext.getTraceId(), receivedSpanContext.getSpanId());
+        receivedSpan.setAttribute(AttributeKey.stringKey("messaging.destination"),
+                publish.getTopic().toString());
+        receivedSpan.setAttribute(AttributeKey.stringKey("messaging.message_payload_size_bytes"),
+                String.valueOf(message.length()));
+        openTelemetryClient.addEvent(receivedSpan, "Received MQTT message");
+
+        LOGGER.log(Level.INFO, "MQTT message arrived on: " + publish.getTopic() + " | " + message);
+        try {
+            callback.messageArrived(publish.getTopic().toString(), message);
+            openTelemetryClient.endSpan(receivedSpan, true,
+                    "Processed received MQTT message");
+        } catch (Exception e) {
+            openTelemetryClient.endSpan(receivedSpan, false,
+                    "Error processing MQTT message");
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean isConnected() {

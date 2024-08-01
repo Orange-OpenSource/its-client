@@ -57,7 +57,8 @@ public class IoT3Mobility {
                         String password,
                         String uuid,
                         String context,
-                        IoT3MobilityCallback ioT3MobilityCallback) {
+                        IoT3MobilityCallback ioT3MobilityCallback,
+                        String telemetryHost) {
         this.uuid = uuid;
         // random stationId at the moment, will be an option to set it later on
         this.stationId = Utils.randomBetween(999, 99999999);
@@ -97,7 +98,7 @@ public class IoT3Mobility {
 
                     }
                 },
-                host);
+                telemetryHost);
 
         roIManager = new RoIManager(ioT3Core, uuid, context);
 
