@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["etsi_timestamp","now"],"trait":["Mortal"]};
