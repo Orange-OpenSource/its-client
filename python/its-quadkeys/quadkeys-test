@@ -33,6 +33,17 @@ def test_quadkey():
         "S": "12030231",
         "SE": "12030320",
     }
+    expected_nghbs_0 = {
+        # Neighbours for QuadKey "0"
+        "NW": None,
+        "N": None,
+        "NE": None,
+        "W": "1",
+        "E": "1",
+        "SW": "3",
+        "S": "2",
+        "SE": "3",
+    }
     """
     this is the split QuadKey
     """
@@ -103,7 +114,7 @@ def test_quadkey():
     print(f"QuadKey split (extra_depth): ", end="", flush=True)
     qk_split_z = qk.split(extra_depth=2)
     check_zone(qk_split_z, expected_split_z_2)
-    print(f"OK")
+    print("OK")
 
     print(f"QuadKey shallower: ", end="", flush=True)
     for depth, expected in expected_shallowers:
@@ -112,7 +123,7 @@ def test_quadkey():
             raise FailedError(
                 f"with QuadKey '{qk}' for depth {depth}, expecting '{expected}', got '{qk_shallow}'"
             )
-    print(f"OK")
+    print("OK")
 
     print(f"QuadKey root: ", end="", flush=True)
     for qk_s, expected in expected_roots:
@@ -129,7 +140,15 @@ def test_quadkey():
         raise FailedError(
             f"{ {k:(str(getattr(nghbs,k)),expected_nghbs[k]) for k in nghbs._asdict() if getattr(nghbs,k) != expected_nghbs[k]} }"
         )
-    print(f"OK")
+    print("OK")
+
+    print("QuadKey partial neighbours: ", end="", flush=True)
+    nghbs = its_quadkeys.QuadKey('0').neighbours()
+    if nghbs._asdict() != expected_nghbs_0:
+        raise FailedError(
+            f"{ {k:(str(getattr(nghbs,k)),expected_nghbs_0[k]) for k in nghbs._asdict() if getattr(nghbs,k) != expected_nghbs_0[k]} }"
+        )
+    print("OK")
 
     print(f"QuadKey from lat/lon/depth: ", end="", flush=True)
     qk = its_quadkeys.QuadKey((43.63516355648167, 1.3744570239910097, 22))
@@ -137,7 +156,7 @@ def test_quadkey():
         raise FailedError(
             f"[43.63516355648167, 1.3744570239910097, 22] => '{qk.to_str('')}'"
         )
-    print(f"OK")
+    print("OK")
 
 
 def test_quadzone():
@@ -418,15 +437,22 @@ def test_quadzone():
     check_zone(earth2, earth)
     print("OK")
 
+    print("Quadzone Whole-Earth neighbours: ", end="", flush=True)
+    earth_nghbs = earth.neighbours(depth=1)
+    check_zone(earth_nghbs, its_quadkeys.QuadZone())
+    print("OK")
+
 
 def check_zone(some, expected):
-    some_l = list(some)
-    expected_l = list(expected)
+    some_l = list([str(qk) for qk in some])
+    expected_l = list([str(qk) for qk in expected])
     z_miss = sorted([qk for qk in expected_l if qk not in some_l])
-    z_extra = sorted([str(qk) for qk in some_l if qk not in expected_l])
+    z_extra = sorted([qk for qk in some_l if qk not in expected_l])
     if z_miss or z_extra:
-        raise FailedError(
-            f"{len(z_miss)} missing: {z_miss}, {len(z_extra)} extra: {z_extra}"
+        raise FailedError((
+            f"{len(z_miss)} missing: {z_miss}, {len(z_extra)} extra: {z_extra}",
+            f"Got {some_l}",
+            f"Expected {expected_l}")
         )
 
 
@@ -435,5 +461,7 @@ if __name__ == "__main__":
         test_quadkey()
         test_quadzone()
     except FailedError as e:
-        print(f"KO: {e.args[0]}")
+        print(f"KO:")
+        for arg in e.args[0]:
+            print(arg)
         sys.exit(1)
