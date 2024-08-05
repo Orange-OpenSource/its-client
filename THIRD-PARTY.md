@@ -167,5 +167,12 @@
 #### paho
 - [Source code](https://github.com/eclipse/paho.mqtt.python)
 
+## Java
+
+### License Apache 2.0
+
+#### HiveMQ MQTT Client
+- [Source code](https://github.com/hivemq/hivemq-mqtt-client)
+
 
 
