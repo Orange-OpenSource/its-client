@@ -21,7 +21,7 @@ repositories {
 
 dependencies {
     // Internal dependencies, not exposed to consumers on their own compile classpath.
-    implementation 'org.json:json:20231013'
+    implementation 'org.json:json:20240303'
     implementation 'commons-net:commons-net:3.9.0'
     implementation project(':core')
 
