@@ -36,10 +36,6 @@ class Authority:
         logging.info(f"stopping authority file client to {self.cfg['path']}")
         # We're a daemon thread, we'll get killed automatically eventually...
 
-    def join(self):
-        # We're a daemon thread, we'll get joined automatically eventually...
-        pass
-
     def run(self):
         self.load()
         # This does not give us a period that is perfectly "reload"

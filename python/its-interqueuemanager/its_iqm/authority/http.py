@@ -37,10 +37,6 @@ class Authority:
         logging.info(f"stopping authority http client to {self.cfg['uri']}")
         # We're a daemon thread, we'll get killed automatically eventually...
 
-    def join(self):
-        # We're a daemon thread, we'll get killed automatically eventually...
-        pass
-
     def run(self):
         self.load()
         while True:

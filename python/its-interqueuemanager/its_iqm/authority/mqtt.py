@@ -58,9 +58,6 @@ class Authority:
         self.authority_client.disconnect()
         self.authority_client.loop_stop()
 
-    def join(self):
-        pass
-
     def _on_connect(self, _client, _userdata, _flags, _rc, _properties=None):
         self.authority_client.subscribe(self.cfg["topic"])
 
