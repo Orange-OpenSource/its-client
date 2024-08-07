@@ -38,7 +38,7 @@ setup(
     install_requires=[
         "its-quadkeys",
         "linuxfd==1.5",
-        "paho-mqtt==1.6.1",
+        "paho-mqtt >=1.6.1, !=2.0.*",
     ],
     entry_points={"console_scripts": ["its-vehicle = its_vehicle.main:main"]},
 )
