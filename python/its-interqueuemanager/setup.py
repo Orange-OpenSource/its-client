@@ -32,7 +32,6 @@ setup(
     platforms="LINUX",
     install_requires=[
         "iot3",
-        "paho-mqtt >=1.6.1, !=2.0.*",
         "requests",
     ],
     entry_points={"console_scripts": ["its-iqm = its_iqm.main:main"]},
