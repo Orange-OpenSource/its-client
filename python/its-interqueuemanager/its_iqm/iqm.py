@@ -48,7 +48,7 @@ class IQM:
             conn["host"] = cfg["local"]["host"]
             conn["port"] = int(cfg["local"]["port"])
         except TypeError:
-            conn["socket-path"] = cfg["local"]["socket-path"]
+            conn["socket_path"] = cfg["local"]["socket-path"]
 
         qm_data = {
             "copy_qm": None,
