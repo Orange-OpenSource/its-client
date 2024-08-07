@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 import configparser
-import its_iqm.mqtt_client
+import iot3.core.mqtt
 import its_iqm.authority
 import logging
 import time
@@ -43,27 +43,28 @@ class IQM:
         self.outqueue = outqueue
 
         logging.info("create local qm")
-        conn = {
-            "host": None,
-            "port": None,
-            "socket": None,
-        }
+        conn = dict()
         try:
             conn["host"] = cfg["local"]["host"]
             conn["port"] = int(cfg["local"]["port"])
         except TypeError:
-            conn["socket"] = cfg["local"]["socket-path"]
+            conn["socket-path"] = cfg["local"]["socket-path"]
 
-        self.local_qm = its_iqm.mqtt_client.MQTTClient(
-            name="local",
+        qm_data = {
+            "copy_qm": None,
+            "copy_from": inqueue,
+            "copy_to": [outqueue, interqueue],
+        }
+
+        self.local_qm = iot3.core.mqtt.MqttClient(
+            client_id=cfg["local"]["client_id"],
             username=cfg["local"]["username"],
             password=cfg["local"]["password"],
-            client_id=cfg["local"]["client_id"],
-            local_qm=None,
-            copy_from=inqueue,
-            copy_to=[outqueue, interqueue],
             **conn,
+            msg_cb=self.qm_copy_cb,
+            msg_cb_data=qm_data,
         )
+        self.local_qm.subscribe(topics=[inqueue + "/#"])
 
         # The central authority will call our update_cb(), for which we
         # will need to have a valid local_qm to pass to the neighbours
@@ -142,6 +143,11 @@ class IQM:
             if suffix:  # can *not* be an empty string
                 interqueue += f"/{suffix}"
 
+            qm_data = {
+                "copy_qm": self.local_qm,
+                "copy_from": interqueue,
+                "copy_to": [self.outqueue],
+            }
             creds = {
                 "username": None,
                 "password": None,
@@ -149,15 +155,29 @@ class IQM:
             for k in creds:
                 if k in loaded_nghbs[nghb_id]:
                     creds[k] = loaded_nghbs[nghb_id][k]
-            self.neighbours_clients[nghb_id] = its_iqm.mqtt_client.MQTTClient(
-                name=nghb_id,
+            self.neighbours_clients[nghb_id] = iot3.core.mqtt.MqttClient(
+                client_id=self.cfg["neighbours"]["client_id"],
                 host=loaded_nghbs[nghb_id]["host"],
                 port=int(loaded_nghbs[nghb_id]["port"]),
-                socket=None,
-                client_id=self.cfg["neighbours"]["client_id"],
-                local_qm=self.local_qm,
-                copy_from=interqueue,
-                copy_to=[self.outqueue],
                 **creds,
+                msg_cb=self.qm_copy_cb,
+                msg_cb_data=qm_data,
             )
+            self.local_qm.subscribe(topics=[interqueue + "/#"])
             self.neighbours_clients[nghb_id].start()
+
+    def qm_copy_cb(
+        self,
+        *_args,
+        data: dict,
+        topic: str,
+        payload: bytes,
+        **_kwargs,
+    ):
+        mqtt_cli = data["copy_qm"] or self.local_qm
+        for cp_to in data["copy_to"]:
+            new_topic = cp_to + topic[len(data["copy_from"]) :]
+            mqtt_cli.publish(
+                topic=new_topic,
+                payload=payload,
+            )
