@@ -91,14 +91,11 @@ def main():
     )
 
     gnss = gpsd.GNSSProvider(cfg=cfg["gpsd"])
-    gnss.start()
 
     mqtt_main = mqtt.MqttClient(cfg=cfg["broker.main"])
-    mqtt_main.start()
 
     if "host" in cfg["broker.mirror"] or "socket-path" in cfg["broker.mirror"]:
         mqtt_mirror = mqtt.MqttClient(cfg=cfg["broker.mirror"])
-        mqtt_mirror.start()
     else:
         mqtt_mirror = None
 
@@ -108,13 +105,17 @@ def main():
         mqtt_main=mqtt_main,
         mqtt_mirror=mqtt_mirror,
     )
-    its_client.start()
 
     def term_handler(_signum: int, _frame):
         raise TermSignal()
 
     try:
         signal.signal(signal.SIGTERM, term_handler)
+        gnss.start()
+        mqtt_main.start()
+        if mqtt_mirror is not None:
+            mqtt_mirror.start()
+        its_client.start()
         its_client.join()  # Should not terminate ever, but with an exception
     except (KeyboardInterrupt, TermSignal):
         # Proper termination, cleanup below
