@@ -12,7 +12,6 @@ import sys
 from . import client
 from . import gpsd
 from . import mqtt
-from . import tracking
 
 
 CFG = "/etc/its/vehicle.cfg"
@@ -103,15 +102,11 @@ def main():
     else:
         mqtt_mirror = None
 
-    tracker = tracking.Tracking(cfg=cfg["tracking"], gpsd=gpsd)
-    tracker.start()
-
     its_client = client.ITSClient(
         cfg=cfg["general"],
         gpsd=gnss,
         mqtt_main=mqtt_main,
         mqtt_mirror=mqtt_mirror,
-        tracker=tracker,
     )
     its_client.start()
 
@@ -136,7 +131,6 @@ def main():
 
     logging.debug("Will stop...")
     its_client.stop(wait=True)
-    tracker.stop()
     # Stop main MQTT client before the mirror one, so that we don't get
     # messages from the main one that we would then try to publish on
     # the mirror one that we just stopped.
