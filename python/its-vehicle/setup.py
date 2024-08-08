@@ -36,6 +36,7 @@ setup(
     license="MIT",
     platforms="LINUX",
     install_requires=[
+        "iot3",
         "its-quadkeys",
         "linuxfd==1.5",
         "paho-mqtt >=1.6.1, !=2.0.*",

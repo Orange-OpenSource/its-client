@@ -8,9 +8,8 @@ import json
 import linuxfd
 import logging
 import threading
-from paho.mqtt.client import MQTTMessage
 from .gpsd import GNSSProvider
-from .mqtt import MqttClient
+from iot3.core.mqtt import MqttClient
 from .roi import RegionOfInterest
 from .its.cam import CooperativeAwarenessMessage as CAM
 
@@ -147,7 +146,7 @@ class ITSClient:
                         ),
                     ),
                 )
-            self.mqtt_main.subscribe_replace(list(roi_topics))
+            self.mqtt_main.subscribe_replace(topics=list(roi_topics))
 
             msg = self.ITSMessage(
                 uuid=self.cfg["instance-id"],
@@ -155,7 +154,7 @@ class ITSClient:
             )
             topic = self.pub_topic_root + quadkey.to_str("/")
             msg_json = msg.to_json()
-            self.mqtt_main.publish(topic, msg_json)
+            self.mqtt_main.publish(topic=topic, payload=msg_json)
             if self.mqtt_mirror and not self.cfg["mirror-self"]:
                 # Use the sub-prefix, to simulate the message as coming
                 # from the main broker as if we had subscribed to it.
@@ -163,21 +162,27 @@ class ITSClient:
                     self.cfg["topic-sub-prefix"]
                     + topic[len(self.cfg["topic-pub-prefix"]) :]
                 )
-                self.mqtt_mirror.publish(mirror_topic, msg_json)
+                self.mqtt_mirror.publish(topic=mirror_topic, payload=msg_json)
 
         # Out of the loop, cleanup and close
         self.mqtt_main.unsubscribe_all()
-        self.mqtt_main.set_msg_cb(None)
         timer.close()
 
-    def msg_cb(self, message: MQTTMessage):
+    def msg_cb(
+        self,
+        *_args,
+        topic: str,
+        payload: bytes,
+        **_kwargs,
+    ):
         logging.debug(
             "received mesage on %s: %s",
-            message.topic[:16] + "..." if len(message.topic) > 16 else "",
-            message.payload[:16] + "..." if len(message.payload) > 16 else "",
+            topic[:16] + "..." if len(topic) > 16 else "",
+            payload[:16].decode(errors="backslashreplace")
+            + ("..." if len(payload) > 16 else ""),
         )
         try:
-            payload = json.loads(message.payload)
+            payload_d = json.loads(payload)
         except json.decoder.JSONDecodeError:
             # Not JSON, not sure what to do with that...
             return
@@ -185,10 +190,10 @@ class ITSClient:
             return
         try:
             if (
-                payload.get("source_uuid", None) != self.cfg["instance-id"]
+                payload_d.get("source_uuid", None) != self.cfg["instance-id"]
                 or self.cfg["mirror-self"]
             ):
-                self.mqtt_mirror.publish(message.topic, message.payload)
+                self.mqtt_mirror.publish(topic, payload)
         except:
             # Payload does not have expected fields, or is not a dict;
             # ignore this invalid message

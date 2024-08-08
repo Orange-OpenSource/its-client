@@ -5,13 +5,13 @@
 
 import argparse
 import configparser
+import iot3.core.mqtt
 import logging
 import os
 import signal
 import sys
 from . import client
 from . import gpsd
-from . import mqtt
 
 
 CFG = "/etc/its/vehicle.cfg"
@@ -95,11 +95,39 @@ def main():
     def _msg_cb(*args, **kwargs):
         its_client.msg_cb(*args, **kwargs)
 
-    mqtt_main = mqtt.MqttClient(cfg=cfg["broker.main"])
-    mqtt_main.set_msg_cb(_msg_cb)
+    if "host" in cfg["broker.main"]:
+        conn_opts = {
+            "host": cfg["broker.main"]["host"],
+            "port": int(cfg["broker.main"]["port"]),
+        }
+    else:
+        conn_opts = {
+            "socket_path": cfg["broker.main"]["socket-path"],
+        }
+    mqtt_main = iot3.core.mqtt.MqttClient(
+        client_id=cfg["broker.main"]["client-id"],
+        username=cfg["broker.main"]["username"],
+        password=cfg["broker.main"]["password"],
+        **conn_opts,
+        msg_cb=_msg_cb,
+    )
 
     if "host" in cfg["broker.mirror"] or "socket-path" in cfg["broker.mirror"]:
-        mqtt_mirror = mqtt.MqttClient(cfg=cfg["broker.mirror"])
+        if "host" in cfg["broker.mirror"]:
+            conn_opts = {
+                "host": cfg["broker.mirror"]["host"],
+                "port": int(cfg["broker.mirror"]["port"]),
+            }
+        else:
+            conn_opts = {
+                "socket_path": cfg["broker.mirror"]["socket-path"],
+            }
+        mqtt_mirror = iot3.core.mqtt.MqttClient(
+            client_id=cfg["broker.mirror"]["client-id"],
+            username=cfg["broker.mirror"]["username"],
+            password=cfg["broker.mirror"]["password"],
+            **conn_opts,
+        )
     else:
         mqtt_mirror = None
 
