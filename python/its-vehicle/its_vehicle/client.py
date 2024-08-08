@@ -10,7 +10,7 @@ import logging
 import threading
 from paho.mqtt.client import MQTTMessage
 from .gpsd import GNSSProvider
-from .mqtt import MqttClient, abbrev
+from .mqtt import MqttClient
 from .roi import RegionOfInterest
 from .its.cam import CooperativeAwarenessMessage as CAM
 
@@ -174,8 +174,8 @@ class ITSClient:
     def _msg_cb(self, message: MQTTMessage):
         logging.debug(
             "received mesage on %s: %s",
-            abbrev(message.topic),
-            abbrev(message.payload),
+            message.topic[:16] + "..." if len(message.topic) > 16 else "",
+            message.payload[:16] + "..." if len(message.payload) > 16 else "",
         )
         try:
             payload = json.loads(message.payload)
