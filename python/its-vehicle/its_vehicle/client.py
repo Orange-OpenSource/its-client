@@ -155,7 +155,6 @@ class ITSClient:
 
             msg = self.ITSMessage(
                 uuid=self.cfg["instance-id"],
-                message_id=self.tracker.id(),
                 gnss_report=gnss_report,
             )
             topic = self.pub_topic_root + quadkey.to_str("/")
