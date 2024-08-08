@@ -104,7 +104,6 @@ class ITSClient:
             value=0.000001,
             interval=1.0 / self.cfg["report-freq"],
         )
-        self.mqtt_main.set_msg_cb(self._msg_cb)
         while True:
             evt = timer.read()
             if evt > 1:
@@ -171,7 +170,7 @@ class ITSClient:
         self.mqtt_main.set_msg_cb(None)
         timer.close()
 
-    def _msg_cb(self, message: MQTTMessage):
+    def msg_cb(self, message: MQTTMessage):
         logging.debug(
             "received mesage on %s: %s",
             message.topic[:16] + "..." if len(message.topic) > 16 else "",

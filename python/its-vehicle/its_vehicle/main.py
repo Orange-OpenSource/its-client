@@ -92,7 +92,11 @@ def main():
 
     gnss = gpsd.GNSSProvider(cfg=cfg["gpsd"])
 
+    def _msg_cb(*args, **kwargs):
+        its_client.msg_cb(*args, **kwargs)
+
     mqtt_main = mqtt.MqttClient(cfg=cfg["broker.main"])
+    mqtt_main.set_msg_cb(_msg_cb)
 
     if "host" in cfg["broker.mirror"] or "socket-path" in cfg["broker.mirror"]:
         mqtt_mirror = mqtt.MqttClient(cfg=cfg["broker.mirror"])
