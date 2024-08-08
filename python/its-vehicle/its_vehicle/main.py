@@ -6,6 +6,7 @@
 import argparse
 import configparser
 import iot3.core.mqtt
+import iot3.core.otel
 import logging
 import os
 import signal
@@ -20,6 +21,11 @@ DEFAULTS = {
         "instance-id": None,
         "report-freq": None,
         "mirror-self": False,
+    },
+    "telemetry": {
+        "endpoint": None,
+        "username": None,
+        "password": None,
     },
     "broker.main": {
         "port": 1883,
@@ -90,6 +96,20 @@ def main():
         level="DEBUG" if args.debug else "INFO",
     )
 
+    otel = None
+    otel_opts = {}
+    if cfg["telemetry"]["endpoint"]:
+        otel = iot3.core.otel.Otel(
+            service_name="its-vehicle",
+            endpoint=cfg["telemetry"]["endpoint"],
+            username=cfg["telemetry"]["username"],
+            password=cfg["telemetry"]["password"],
+            batch_period=5.0,
+            max_backlog=50,
+            compression=iot3.core.otel.Compression.GZIP,
+        )
+        otel_opts["span_ctxmgr_cb"] = otel.span
+
     gnss = gpsd.GNSSProvider(cfg=cfg["gpsd"])
 
     def _msg_cb(*args, **kwargs):
@@ -109,6 +129,7 @@ def main():
         username=cfg["broker.main"]["username"],
         password=cfg["broker.main"]["password"],
         **conn_opts,
+        **otel_opts,
         msg_cb=_msg_cb,
     )
 
@@ -143,6 +164,8 @@ def main():
 
     try:
         signal.signal(signal.SIGTERM, term_handler)
+        if otel:
+            otel.start()
         gnss.start()
         mqtt_main.start()
         if mqtt_mirror is not None:
@@ -171,6 +194,8 @@ def main():
     if mqtt_mirror is not None:
         mqtt_mirror.stop()
     gnss.stop()
+    if otel:
+        otel.stop()
 
 
 if __name__ == "__main__":
