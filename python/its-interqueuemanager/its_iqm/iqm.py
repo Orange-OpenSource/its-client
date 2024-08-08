@@ -6,6 +6,7 @@
 from __future__ import annotations
 import configparser
 import iot3.core.mqtt
+import iot3.core.otel
 import its_iqm.authority
 import logging
 import time
@@ -42,6 +43,21 @@ class IQM:
         # it every time
         self.outqueue = outqueue
 
+        if cfg["telemetry"]["endpoint"]:
+            self.otel = iot3.core.otel.Otel(
+                service_name="its-interqueuemanager",
+                endpoint=cfg["telemetry"]["endpoint"],
+                username=cfg["telemetry"]["username"],
+                password=cfg["telemetry"]["password"],
+                batch_period=5.0,
+                max_backlog=500,
+                compression=iot3.core.otel.Compression.GZIP,
+            )
+            self.span_cb = self.otel.span
+        else:
+            self.otel = None
+            self.span_cb = iot3.core.otel.Otel.noexport_span
+
         logging.info("create local qm")
         conn = dict()
         try:
@@ -63,6 +79,7 @@ class IQM:
             **conn,
             msg_cb=self.qm_copy_cb,
             msg_cb_data=qm_data,
+            span_ctxmgr_cb=self.span_cb,
         )
         self.local_qm.subscribe(topics=[inqueue + "/#"])
 
@@ -79,6 +96,8 @@ class IQM:
     def run_forever(self):
         self.neighbours = dict()
         self.neighbours_clients = dict()
+        if self.otel:
+            self.otel.start()
         self.local_qm.start()
         self.authority.start()
         try:
@@ -95,6 +114,8 @@ class IQM:
             self.neighbours_clients[nghb_id].stop()
         self.authority.stop()
         self.local_qm.stop()
+        if self.otel:
+            self.otel.stop()
 
     def update_cb(self, loaded_nghbs):
         # Old neighbours are either those that are no longer
@@ -162,6 +183,7 @@ class IQM:
                 **creds,
                 msg_cb=self.qm_copy_cb,
                 msg_cb_data=qm_data,
+                span_ctxmgr_cb=self.span_cb,
             )
             self.local_qm.subscribe(topics=[interqueue + "/#"])
             self.neighbours_clients[nghb_id].start()

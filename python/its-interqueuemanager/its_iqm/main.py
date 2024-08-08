@@ -15,6 +15,11 @@ DEFAULTS = {
         "prefix": None,
         "suffix": "v2x",
     },
+    "telemetry": {
+        "endpoint": None,
+        "username": None,
+        "password": None,
+    },
     "local": {
         "host": None,
         "port": None,
