@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+
+import iot3.core.otel
+import os
+import sys
+import time
+
+
+o = iot3.core.otel.Otel(
+    service_name="test-service",
+    endpoint="http://localhost:4318",
+    batch_period=15,
+    max_backlog=15,
+)
+o.start()
+
+with o.span(name="Root span") as s0:
+    time.sleep(0.1)
+    with o.span(name="Explicit child span level 1", parent_span=s0) as s1:
+        time.sleep(0.1)
+        with o.span(name="Automatic child span level 2") as s2:
+            time.sleep(0.1)
+        with o.span(name="Explicit child span level 2 missed", parent_span=s0) as s3:
+            time.sleep(0.1)
+    with o.span(name="Automatic child span level 1") as s4:
+        time.sleep(0.1)
+    with o.span(name="Automatic child span level 1 - failed") as s5:
+        s5.set_status(
+            status_code=iot3.core.otel.SpanStatus.ERROR,
+            status_message="Some failure"
+        )
+        time.sleep(0.1)
+    time.sleep(0.1)
+
+with o.span(name="Root span with link", span_links=[s0]) as s10:
+    time.sleep(0.1)
+
+o.stop()

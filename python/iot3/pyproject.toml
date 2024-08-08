@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=65.5.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "iot3"
+version = "0.0.1"
+authors = [
+  { name="Yann E. MORIN", email="yann.morin@orange.com" },
+]
+description = "IoT3 SDK"
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Development Status :: 4 - Beta",
+]
+dependencies = [
+    "paho-mqtt>=2.1.0",
+    "requests>=2.31.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/Orange-OpenSource/its-client"
+"Bug Tracker" = "https://github.com/Orange-OpenSource/its-client/issues"
