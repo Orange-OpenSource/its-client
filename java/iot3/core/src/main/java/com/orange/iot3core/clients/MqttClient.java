@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 public class MqttClient {
 
     private static final Logger LOGGER = Logger.getLogger(MqttClient.class.getName());
+    private static final String NULL_CLIENT = "Null MQTT client...";
 
     private final Mqtt5AsyncClient mqttClient;
     private final MqttCallback callback;
@@ -133,7 +134,7 @@ public class MqttClient {
                         callback.subscriptionComplete(throwable);
                     });
         } else {
-            LOGGER.log(Level.INFO, "Null MQTT client...");
+            LOGGER.log(Level.INFO, NULL_CLIENT);
         }
     }
 
@@ -157,11 +158,12 @@ public class MqttClient {
                         callback.unsubscriptionComplete(throwable);
                     });
         } else {
-            LOGGER.log(Level.INFO, "Null MQTT client...");
+            LOGGER.log(Level.INFO, NULL_CLIENT);
         }
     }
 
     public void publishMessage(String topic, String message, boolean retained, int qos) {
+        LOGGER.log(Level.INFO, "Sending message: " + topic + " | "+ message);
         if(isValidMqttPubTopic(topic)) {
             Span span = openTelemetryClient.startSpan("MQTT Send Message");
             span.setAttribute(AttributeKey.stringKey("messaging.destination"), topic);
@@ -183,7 +185,6 @@ public class MqttClient {
                     .build();
 
             // Send the message with user properties
-            LOGGER.log(Level.INFO, "Sending message: " + topic + " | "+ message);
             final long pubTimestamp = System.currentTimeMillis();
             MqttQos mqttQos = MqttQos.AT_MOST_ONCE;
             if(qos == 1) mqttQos = MqttQos.AT_LEAST_ONCE;
@@ -208,7 +209,7 @@ public class MqttClient {
                             callback.messagePublished(throwable);
                         });
             } else {
-                LOGGER.log(Level.INFO, "Null MQTT client...");
+                LOGGER.log(Level.INFO, NULL_CLIENT);
             }
         }
     }
