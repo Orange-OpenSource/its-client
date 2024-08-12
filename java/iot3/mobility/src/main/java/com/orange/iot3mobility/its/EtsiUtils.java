@@ -23,6 +23,10 @@ public class EtsiUtils {
 
     public static int localSequenceNumber = initLocalSequenceNumber();
 
+    private EtsiUtils() {
+        throw new UnsupportedOperationException("EtsiUtils class cannot be instantiated");
+    }
+
     private static int initLocalSequenceNumber() {
         Calendar calendar = Calendar.getInstance();
         int minutes = calendar.get(Calendar.MINUTE);
@@ -48,7 +52,7 @@ public class EtsiUtils {
     }
 
     public static long etsiTimestampSecToUnix(long etsiTimestamp) {
-        return (etsiTimestamp + DELTA_1970_2004_SEC)*1000;
+        return (etsiTimestamp + DELTA_1970_2004_SEC) * 1000;
     }
 
     public static long unixTimestampToEtsiMs(long unixTimestamp) {
@@ -56,7 +60,7 @@ public class EtsiUtils {
     }
 
     public static long unixTimestampToEtsiSec(long unixTimestamp) {
-        return (unixTimestamp - DELTA_1970_2004_MILLISEC)/1000;
+        return (unixTimestamp - DELTA_1970_2004_MILLISEC) / 1000;
     }
 
     public static long getLatitudeETSI(double latitude) {
