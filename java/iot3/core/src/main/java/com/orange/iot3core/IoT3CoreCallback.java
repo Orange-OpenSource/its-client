@@ -11,7 +11,7 @@ public interface IoT3CoreCallback {
 
     void mqttConnectionLost(Throwable cause);
 
-    void mqttMessageArrived(String topic, String message) throws Exception;
+    void mqttMessageArrived(String topic, String message);
 
     void mqttConnectComplete(boolean reconnect, String serverURI);
 

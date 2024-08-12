@@ -60,7 +60,7 @@ public class IoT3Core {
                     }
 
                     @Override
-                    public void messageArrived(String topic, String message) throws Exception {
+                    public void messageArrived(String topic, String message) {
                         ioT3CoreCallback.mqttMessageArrived(topic, message);
                     }
 

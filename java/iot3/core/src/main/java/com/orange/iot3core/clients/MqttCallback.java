@@ -11,7 +11,7 @@ public interface MqttCallback {
 
     void connectionLost(Throwable cause);
 
-    void messageArrived(String topic, String message) throws Exception;
+    void messageArrived(String topic, String message);
 
     void connectComplete(boolean reconnect, String serverURI);
 

@@ -264,15 +264,9 @@ public class MqttClient {
         openTelemetryClient.addEvent(receivedSpan, "Received MQTT message");
 
         LOGGER.log(Level.INFO, "MQTT message arrived on: " + publish.getTopic() + " | " + message);
-        try {
-            callback.messageArrived(publish.getTopic().toString(), message);
-            openTelemetryClient.endSpan(receivedSpan, true,
-                    "Processed received MQTT message");
-        } catch (Exception e) {
-            openTelemetryClient.endSpan(receivedSpan, false,
-                    "Error processing MQTT message");
-            throw new RuntimeException(e);
-        }
+        callback.messageArrived(publish.getTopic().toString(), message);
+        openTelemetryClient.endSpan(receivedSpan, true,
+                "Processed received MQTT message");
     }
 
     public boolean isConnected() {
