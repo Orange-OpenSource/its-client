@@ -7,11 +7,6 @@
  */
 package com.orange.iot3mobility.its.json;
 
-/**
- * Created by Mathieu Lefebvre on 18/01/18.
- * Feel free to improve it
- */
-
 public class JsonKey {
 
     public enum Header {
@@ -27,7 +22,7 @@ public class JsonKey {
         MESSAGE("message"),
         SIGNATURE("signature");
 
-        private String key;
+        private final String key;
 
         Header(String key) {
             this.key = key;
@@ -47,7 +42,7 @@ public class JsonKey {
         HIGH_FREQ_CONTAINER("high_frequency_container"),
         LOW_FREQ_CONTAINER("low_frequency_container");
 
-        private String key;
+        private final String key;
 
         Cam(String key) {
             this.key = key;
@@ -63,7 +58,7 @@ public class JsonKey {
         STATION_TYPE("station_type"),
         POSITION("reference_position");
 
-        private String key;
+        private final String key;
 
         BasicContainer(String key) {
             this.key = key;
@@ -91,7 +86,7 @@ public class JsonKey {
         ACCELERATION_CONTROL("acceleration_control"),
         CONFIDENCE("confidence");
 
-        private String key;
+        private final String key;
 
         HighFrequencyContainer(String key) {
             this.key = key;
@@ -108,7 +103,7 @@ public class JsonKey {
         EXTERIOR_LIGHTS("exterior_lights"),
         PATH_HISTORY("path_history");
 
-        private String key;
+        private final String key;
 
         LowFrequencyContainer(String key) {
             this.key = key;
@@ -126,7 +121,7 @@ public class JsonKey {
         ALTITUDE("altitude"),
         CONFIDENCE("confidence");
 
-        private String key;
+        private final String key;
 
         Position(String key) {
             this.key = key;
@@ -143,7 +138,7 @@ public class JsonKey {
         DELTA_LONGITUDE("delta_longitude"),
         DELTA_ALTITUDE("delta_altitude");
 
-        private String key;
+        private final String key;
 
         PathPosition(String key) {
             this.key = key;
@@ -159,7 +154,7 @@ public class JsonKey {
         PATH_POSITION("path_position"),
         PATH_DELTA_TIME("path_delta_time");
 
-        private String key;
+        private final String key;
 
         PathPoint(String key) {
             this.key = key;
@@ -178,7 +173,7 @@ public class JsonKey {
         LOCATION_CONTAINER("location_container"),
         ALACARTE_CONTAINER("alacarte_container");
 
-        private String key;
+        private final String key;
 
         Denm(String key) {
             this.key = key;
@@ -201,7 +196,7 @@ public class JsonKey {
         TRANSMISSION_INTERVAL("transmission_interval"),
         STATION_TYPE("station_type");
 
-        private String key;
+        private final String key;
 
         ManagementContainer(String key) {
             this.key = key;
@@ -216,7 +211,7 @@ public class JsonKey {
         ORIGINATING_STATION_ID("originating_station_id"),
         SEQUENCE_NUMBER("sequence_number");
 
-        private String key;
+        private final String key;
 
         ActionId(String key) {
             this.key = key;
@@ -233,7 +228,7 @@ public class JsonKey {
         LINKED_CAUSE("linked_cause"),
         EVENT_HISTORY("event_history");
 
-        private String key;
+        private final String key;
 
         SituationContainer(String key) {
             this.key = key;
@@ -248,7 +243,7 @@ public class JsonKey {
         CAUSE("cause"),
         SUBCAUSE("subcause");
 
-        private String key;
+        private final String key;
 
         EventType(String key) {
             this.key = key;
@@ -263,7 +258,7 @@ public class JsonKey {
         CAUSE("cause"),
         SUBCAUSE("subcause");
 
-        private String key;
+        private final String key;
 
         LinkedCause(String key) {
             this.key = key;
@@ -281,7 +276,7 @@ public class JsonKey {
         ROAD_TYPE("road_type"),
         CONFIDENCE("confidence");
 
-        private String key;
+        private final String key;
 
         LocationContainer(String key) {
             this.key = key;
@@ -299,26 +294,9 @@ public class JsonKey {
         ROAD_WORKS("road_works"),
         POSITION_SOLUTION_TYPE("position_solution_type");
 
-        private String key;
+        private final String key;
 
         AlacarteContainer(String key) {
-            this.key = key;
-        }
-
-        public String key() {
-            return key;
-        }
-    }
-
-    public enum Size {
-
-        LENGTH("length"),
-        WIDTH("width"),
-        HEIGHT("height");
-
-        private String key;
-
-        Size(String key) {
             this.key = key;
         }
 
@@ -347,168 +325,9 @@ public class JsonKey {
         EVENT_POSITION_HEADING("event_position_heading"),
         POSITION_CONFIDENCE_ELLIPSE("position_confidence_ellipse");
 
-        private String key;
+        private final String key;
 
         Confidence(String key) {
-            this.key = key;
-        }
-
-        public String key() {
-            return key;
-        }
-    }
-
-    public enum Accuracy {
-
-        POSITION_SEMI_MAJOR_CONFIDENCE("position_semi_major_confidence"),
-        POSITION_SEMI_MINOR_CONFIDENCE("position_semi_minor_confidence"),
-        POSITION_SEMI_MAJOR_ORIENTATION("position_semi_major_orientation"),
-        HEADING("heading"),
-        SPEED("speed"),
-        ACCELERATION("acceleration"),
-        YAW_RATE("yaw_rate"),
-        SIZE("size"),
-        ALTITUDE("altitude");
-
-        private String key;
-
-        Accuracy(String key) {
-            this.key = key;
-        }
-
-        public String key() {
-            return key;
-        }
-    }
-
-    public enum Maneuver {
-
-        UUID_MANEUVER("uuid_maneuver"),
-        WAYPOINTS("waypoints"),
-        ACTION("action");
-
-        private String key;
-
-        Maneuver(String key) {
-            this.key = key;
-        }
-
-        public String key() {
-            return key;
-        }
-    }
-
-    public enum Waypoint {
-
-        TIMESTAMP("timestamp"),
-        POSITION("position"),
-        SPEED("speed"),
-        LANE_POSITION("lane_position");
-
-        private String key;
-
-        Waypoint(String key) {
-            this.key = key;
-        }
-
-        public String key() {
-            return key;
-        }
-    }
-
-    public enum Action {
-
-        TIMESTAMP("timestamp"),
-        POSITION("position"),
-        SPEED("speed"),
-        LANE_POSITION("lane_position");
-
-        private String key;
-
-        Action(String key) {
-            this.key = key;
-        }
-
-        public String key() {
-            return key;
-        }
-    }
-
-    public enum ManeuverFeedback {
-
-        UUID_MANEUVER("uuid_maneuver"),
-        TIMESTAMP("timestamp"),
-        FEEDBACK("feedback"),
-        REASON("reason");
-
-        private String key;
-
-        ManeuverFeedback(String key) {
-            this.key = key;
-        }
-
-        public String key() {
-            return key;
-        }
-    }
-
-    public enum CollisionAlert {
-
-        ALERT_LEVEL("alert_level"),
-        RU("ru"),
-        COLLISION("collision");
-
-        private String key;
-
-        CollisionAlert(String key) {
-            this.key = key;
-        }
-
-        public String key() {
-            return key;
-        }
-    }
-
-    public enum CollisionPoint {
-
-        POSITION("position");
-
-        private String key;
-
-        CollisionPoint(String key) {
-            this.key = key;
-        }
-
-        public String key() {
-            return key;
-        }
-    }
-
-    public enum CollisionRu {
-
-        ITS_STATION_TYPE("its_station_type"),
-        POSITION("position"),
-        SPEED("speed");
-
-        private String key;
-
-        CollisionRu(String key) {
-            this.key = key;
-        }
-
-        public String key() {
-            return key;
-        }
-    }
-
-    public enum MqttPing {
-
-        PING_UUID("ping_uuid"),
-        TIMESTAMP("timestamp");
-
-        private String key;
-
-        MqttPing(String key) {
             this.key = key;
         }
 
