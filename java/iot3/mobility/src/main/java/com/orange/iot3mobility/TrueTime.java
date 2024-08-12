@@ -21,26 +21,23 @@ import java.util.ArrayList;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by rjgd9993 on 26/01/17.
- */
-
 public class TrueTime {
-    
-    private final static String LOG_TAG = "TrueTime";
 
-    private static final ScheduledThreadPoolExecutor EXECUTOR = new ScheduledThreadPoolExecutor(20);
-    
-    private static final ArrayList<String> ntpServerList = new ArrayList<String>();
+    private static final ScheduledThreadPoolExecutor EXECUTOR = new ScheduledThreadPoolExecutor(2);
 
     //NTP
-    public static String defaultTimeServerAddress = "0.pool.ntp.org";
+    private static String defaultTimeServerAddress = "0.pool.ntp.org";
+    private static final ArrayList<String> ntpServerList = new ArrayList<>();
     private static String timeServerAddress = defaultTimeServerAddress;
     private static long deltaNtpTime = 0;
     private static long lastTimeCheck = System.currentTimeMillis();
-    private static ArrayList<Long> deltaNtpTimesList = new ArrayList<Long>();
+    private static final ArrayList<Long> deltaNtpTimesList = new ArrayList<>();
 
     private static boolean trueTimeAvailable = false;
+
+    private TrueTime() {
+        throw new UnsupportedOperationException("TrueTime class cannot be instantiated");
+    }
     
     public static void initTrueTime() {
         EXECUTOR.remove(TrueTime::getTime);
