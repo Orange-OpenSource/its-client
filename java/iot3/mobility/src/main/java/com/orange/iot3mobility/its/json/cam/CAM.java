@@ -21,7 +21,7 @@ public class CAM extends MessageBase {
 
     private static final Logger LOGGER = Logger.getLogger(CAM.class.getName());
 
-    private JSONObject jsonCAM = new JSONObject();
+    private final JSONObject jsonCAM = new JSONObject();
     private final int protocolVersion;
     private final long stationId;
     private final int generationDeltaTime;
@@ -67,9 +67,6 @@ public class CAM extends MessageBase {
             throw new IllegalArgumentException("CAM HighFrequencyContainer missing.");
         }
         this.highFrequencyContainer = highFrequencyContainer;
-        /*if(lowFrequencyContainer == null) {
-            throw new IllegalArgumentException("CAM LowFrequencyContainer missing.");
-        }*/
         this.lowFrequencyContainer = lowFrequencyContainer;
 
         createJson();
@@ -90,12 +87,12 @@ public class CAM extends MessageBase {
             jsonCAM.put(JsonKey.Header.ORIGIN.key(), getOrigin());
             jsonCAM.put(JsonKey.Header.VERSION.key(), getVersion());
             jsonCAM.put(JsonKey.Header.SOURCE_UUID.key(), getSourceUuid());
-            if(!getDestinationUuid().equals(""))
+            if(!getDestinationUuid().isEmpty())
                 jsonCAM.put(JsonKey.Header.DESTINATION_UUID.key(), getDestinationUuid());
             jsonCAM.put(JsonKey.Header.TIMESTAMP.key(), getTimestamp());
             jsonCAM.put(JsonKey.Header.MESSAGE.key(), message);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CAM", "Error building CAM: " + e);
         }
     }
 
@@ -128,7 +125,7 @@ public class CAM extends MessageBase {
     }
 
     public static class CAMBuilder {
-        private String type;
+        private final String type;
         private String origin;
         private String version;
         private String sourceUuid;

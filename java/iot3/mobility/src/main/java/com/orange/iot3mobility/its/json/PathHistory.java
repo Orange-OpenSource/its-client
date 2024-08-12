@@ -11,17 +11,17 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class PathHistory {
 
     private final JSONArray jsonPathHistory = new JSONArray();
-    private final ArrayList<PathPoint> pathPoints;
+    private final List<PathPoint> pathPoints;
 
-    public PathHistory(
-            ArrayList<PathPoint> pathPoints)
+    public PathHistory(List<PathPoint> pathPoints)
     {
         if(pathPoints == null) this.pathPoints = new ArrayList<>();
-        else this.pathPoints = pathPoints;
+        else this.pathPoints = new ArrayList<>(pathPoints);
 
         createJson();
     }
@@ -36,12 +36,12 @@ public class PathHistory {
         return jsonPathHistory;
     }
 
-    public ArrayList<PathPoint> getPathPoints() {
+    public List<PathPoint> getPathPoints() {
         return pathPoints;
     }
 
     public static PathHistory jsonParser(JSONArray jsonPathHistory) {
-        if(jsonPathHistory == null || jsonPathHistory.length() == 0) return new PathHistory(null);
+        if(jsonPathHistory == null || jsonPathHistory.isEmpty()) return new PathHistory(null);
         ArrayList<PathPoint> pathPoints = new ArrayList<>();
         try {
             for(int i = 0; i < jsonPathHistory.length(); i++) {

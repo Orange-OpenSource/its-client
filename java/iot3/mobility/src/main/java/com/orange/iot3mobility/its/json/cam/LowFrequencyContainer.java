@@ -56,7 +56,7 @@ public class LowFrequencyContainer {
     private void createJson() {
         try {
             jsonLowFrequencyContainer.put(JsonKey.LowFrequencyContainer.VEHICLE_ROLE.key(), vehicleRole);
-            if(!exteriorLights.equals(""))
+            if(!exteriorLights.isEmpty())
                 jsonLowFrequencyContainer.put(JsonKey.LowFrequencyContainer.EXTERIOR_LIGHTS.key(), exteriorLights);
             jsonLowFrequencyContainer.put(JsonKey.LowFrequencyContainer.PATH_HISTORY.key(), pathHistory.getJsonPathHistory());
         } catch (JSONException e) {
@@ -81,7 +81,7 @@ public class LowFrequencyContainer {
     }
 
     public static LowFrequencyContainer jsonParser(JSONObject jsonLowFreqContainer) {
-        if(jsonLowFreqContainer == null || jsonLowFreqContainer.length() == 0) return null;
+        if(jsonLowFreqContainer == null || jsonLowFreqContainer.isEmpty()) return null;
         try {
             int vehicleRole = jsonLowFreqContainer.getInt(JsonKey.LowFrequencyContainer.VEHICLE_ROLE.key());
             String exteriorLights = jsonLowFreqContainer.optString(JsonKey.LowFrequencyContainer.EXTERIOR_LIGHTS.key());

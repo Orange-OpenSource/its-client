@@ -261,9 +261,9 @@ public class HighFrequencyContainer {
                 jsonHighFrequencyContainer.put(JsonKey.HighFrequencyContainer.CURVATURE.key(), curvature);
             if(curvatureCalculationMode != UNKNOWN)
                 jsonHighFrequencyContainer.put(JsonKey.HighFrequencyContainer.CURVATURE_CALCULATION_MODE.key(), curvatureCalculationMode);
-            if(!accelerationControl.equals(""))
+            if(!accelerationControl.isEmpty())
                 jsonHighFrequencyContainer.put(JsonKey.HighFrequencyContainer.ACCELERATION_CONTROL.key(), accelerationControl);
-            if(confidence.length() > 0)
+            if(!confidence.isEmpty())
                 jsonHighFrequencyContainer.put(JsonKey.HighFrequencyContainer.CONFIDENCE.key(), confidence);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -399,7 +399,7 @@ public class HighFrequencyContainer {
     }
 
     public static HighFrequencyContainer jsonParser(JSONObject jsonHighFrequencyContainer) {
-        if(jsonHighFrequencyContainer == null || jsonHighFrequencyContainer.length() == 0) return null;
+        if(jsonHighFrequencyContainer == null || jsonHighFrequencyContainer.isEmpty()) return null;
         int heading = jsonHighFrequencyContainer.optInt(JsonKey.HighFrequencyContainer.HEADING.key(), UNKNOWN);
         int speed = jsonHighFrequencyContainer.optInt(JsonKey.HighFrequencyContainer.SPEED.key(), UNKNOWN);
         int driveDirection = jsonHighFrequencyContainer.optInt(JsonKey.HighFrequencyContainer.DRIVE_DIRECTION.key(), UNKNOWN);

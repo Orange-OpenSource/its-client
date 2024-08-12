@@ -75,7 +75,7 @@ public class BasicContainer {
     }
 
     public static BasicContainer jsonParser(JSONObject jsonBasicContainer) {
-        if(jsonBasicContainer == null || jsonBasicContainer.length() == 0) return null;
+        if(jsonBasicContainer == null || jsonBasicContainer.isEmpty()) return null;
         try {
             int stationType = jsonBasicContainer.getInt(JsonKey.BasicContainer.STATION_TYPE.key());
             JSONObject jsonPosition = jsonBasicContainer.getJSONObject(JsonKey.BasicContainer.POSITION.key());
