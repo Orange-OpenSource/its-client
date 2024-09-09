@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+
+import iot3.core.mqtt
+import time
+
+
+def recv(data, topic, payload):
+    print(f"{topic[:16]}: {payload[:16]}")
+
+
+c = iot3.core.mqtt.MqttClient(
+    client_id="test",
+    host="127.0.0.1",
+    port=1883,
+    msg_cb=recv,
+)
+c.start()
+
+c.subscribe(topics=["#"])
+c.wait_for_ready()
+c.publish(topic='foo/bar', payload="pouet")
+
+time.sleep(1)
+
+c.stop()
