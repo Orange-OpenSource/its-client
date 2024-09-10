@@ -54,7 +54,8 @@ class MqttClient:
         if socket_path is not None:
             transport = "unix"
             self.host = socket_path
-            self.port = -1
+            # Fake a valid TCP port to make paho.mqtt happy
+            self.port = 1
             self.name = socket_path
         else:
             transport = "tcp"
