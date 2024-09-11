@@ -205,7 +205,7 @@ class MqttClient:
         # self.subscriptions between here and the locking in
         # unsubscribe().
         with self.subscriptions_lock:
-            self.unsubscribe(self.subscriptions)
+            self.unsubscribe(topics=self.subscriptions)
 
     # In theory, we would not need this method, as we could very well
     # have set   self.client.on_message = msg_cb   and be done with
