@@ -219,17 +219,20 @@ mod tests {
     #[test]
     fn test_cam_topic_from_str() {
         let topic_string = "5GCroCo/outQueue/v2x/cam/car_1/0/1/2/3";
-        let topic_result = GeoTopic::from_str(topic_string);
-        assert!(topic_result.is_ok());
-        let topic = topic_result.unwrap();
-        assert_eq!(topic.project, "5GCroCo".to_string());
-        assert_eq!(topic.queue, Queue::Out);
-        assert_eq!(topic.server, "v2x".to_string());
-        assert_eq!(topic.message_type, MessageType::CAM);
-        assert_eq!(topic.uuid, "car_1".to_string());
-        assert_eq!(topic.geo_extension.tiles.len(), 4);
-        for i in 0..4 {
-            assert_eq!(topic.geo_extension.tiles[i], Tile::from(i as u8));
+
+        match GeoTopic::from_str(topic_string) {
+            Ok(topic) => {
+                assert_eq!(topic.project, "5GCroCo".to_string());
+                assert_eq!(topic.queue, Queue::Out);
+                assert_eq!(topic.server, "v2x".to_string());
+                assert_eq!(topic.message_type, MessageType::CAM);
+                assert_eq!(topic.uuid, "car_1".to_string());
+                assert_eq!(topic.geo_extension.tiles.len(), 4);
+                for i in 0..4 {
+                    assert_eq!(topic.geo_extension.tiles[i], Tile::from(i as u8));
+                }
+            }
+            Err(e) => panic!("Failed to create GeoTopic from string: {}", e),
         }
     }
 
@@ -237,45 +240,54 @@ mod tests {
     fn test_denm_topic_from_str() {
         let topic_string =
             "5GCroCo/outQueue/v2x/denm/wse_app_bcn1/1/2/0/2/2/2/2/3/3/0/0/3/2/0/2/0/1/0/1/0/3/1/";
-        let topic_result = GeoTopic::from_str(topic_string);
-        assert!(topic_result.is_ok());
-        let topic = topic_result.unwrap();
-        assert_eq!(topic.project, "5GCroCo".to_string());
-        assert_eq!(topic.queue, Queue::Out);
-        assert_eq!(topic.server, "v2x".to_string());
-        assert_eq!(topic.message_type, MessageType::DENM);
-        assert_eq!(topic.uuid, "wse_app_bcn1".to_string());
-        assert_eq!(topic.geo_extension.tiles.len(), 22);
+
+        match GeoTopic::from_str(topic_string) {
+            Ok(topic) => {
+                assert_eq!(topic.project, "5GCroCo".to_string());
+                assert_eq!(topic.queue, Queue::Out);
+                assert_eq!(topic.server, "v2x".to_string());
+                assert_eq!(topic.message_type, MessageType::DENM);
+                assert_eq!(topic.uuid, "wse_app_bcn1".to_string());
+                assert_eq!(topic.geo_extension.tiles.len(), 22);
+            }
+            Err(e) => panic!("Failed to create GeoTopic from string: {}", e),
+        }
     }
 
     #[test]
     fn test_info_topic_from_str() {
-        let topic_string = "5GCroCo/outQueue/v2x/info/broker";
-        let topic_result = GeoTopic::from_str(topic_string);
-        assert!(topic_result.is_ok());
-        let topic = topic_result.unwrap();
-        assert_eq!(topic.project, "5GCroCo".to_string());
-        assert_eq!(topic.queue, Queue::Out);
-        assert_eq!(topic.server, "v2x".to_string());
-        assert_eq!(topic.message_type, MessageType::INFO);
-        assert_eq!(topic.uuid, "broker".to_string());
-        assert_eq!(topic.geo_extension.tiles.len(), 0);
+        let topic_string = "5GCroCo/outQueue/info/broker";
+
+        match GeoTopic::from_str(topic_string) {
+            Ok(topic) => {
+                assert_eq!(topic.project, "5GCroCo".to_string());
+                assert_eq!(topic.queue, Queue::Out);
+                assert!(topic.server.is_empty());
+                assert_eq!(topic.message_type, MessageType::INFO);
+                assert_eq!(topic.uuid, "broker".to_string());
+                assert_eq!(topic.geo_extension.tiles.len(), 0);
+            }
+            Err(e) => panic!("Failed to create GeoTopic from string: {}", e),
+        }
     }
 
     #[test]
     fn test_in_queue_cam_topic_from_str() {
         let topic_string = "5GCroCo/inQueue/v2x/cam/car_1/0/1/2/3";
-        let topic_result = GeoTopic::from_str(topic_string);
-        assert!(topic_result.is_ok());
-        let topic = topic_result.unwrap();
-        assert_eq!(topic.project, "5GCroCo".to_string());
-        assert_eq!(topic.queue, Queue::In);
-        assert_eq!(topic.server, "v2x".to_string());
-        assert_eq!(topic.message_type, MessageType::CAM);
-        assert_eq!(topic.uuid, "car_1".to_string());
-        assert_eq!(topic.geo_extension.tiles.len(), 4);
-        for i in 0..4 {
-            assert_eq!(topic.geo_extension.tiles[i], Tile::from(i as u8));
+
+        match GeoTopic::from_str(topic_string) {
+            Ok(topic) => {
+                assert_eq!(topic.project, "5GCroCo".to_string());
+                assert_eq!(topic.queue, Queue::In);
+                assert_eq!(topic.server, "v2x".to_string());
+                assert_eq!(topic.message_type, MessageType::CAM);
+                assert_eq!(topic.uuid, "car_1".to_string());
+                assert_eq!(topic.geo_extension.tiles.len(), 4);
+                for i in 0..4 {
+                    assert_eq!(topic.geo_extension.tiles[i], Tile::from(i as u8));
+                }
+            }
+            Err(e) => panic!("Failed to create GeoTopic from string: {}", e),
         }
     }
 }
