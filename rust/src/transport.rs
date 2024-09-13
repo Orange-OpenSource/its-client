@@ -13,4 +13,5 @@
 pub mod mqtt;
 pub mod packet;
 pub mod payload;
+#[cfg(feature = "telemetry")]
 pub mod telemetry;
