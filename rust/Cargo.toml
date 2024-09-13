@@ -32,6 +32,7 @@ crate-type = ["lib"]
 [features]
 mobility = []
 geo_routing = ["mobility"]
+telemetry = []
 
 [[example]]
 name = "copycat"
