@@ -10,6 +10,8 @@
  * Software description: This Intelligent Transportation Systems (ITS) [MQTT](https://mqtt.org/) library based on the [JSon](https://www.json.org) [ETSI](https://www.etsi.org/committee/its) specification transcription provides a ready to connect project for the mobility (connected and autonomous vehicles, road side units, vulnerable road users,...).
  */
 
+use std::time::Duration;
+
 use opentelemetry::global::BoxedSpan;
 use opentelemetry::propagation::{Extractor, TextMapPropagator};
 use opentelemetry::trace::{Link, TraceContextExt, Tracer};
@@ -18,15 +20,25 @@ use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::trace::{RandomIdGenerator, Sampler, TracerProvider};
 use opentelemetry_sdk::Resource;
-use std::time::Duration;
+
+use crate::client::configuration::telemetry_configuration::TelemetryConfiguration;
 
 /// Registers a global TracerProvider with HTTP exporter
 pub fn init_tracer(
+    configuration: &TelemetryConfiguration,
     service_name: &'static str,
-    host: &'static str,
-    port: u16,
 ) -> Result<(), opentelemetry::trace::TraceError> {
-    let endpoint = format!("http://{}:{}/v1/traces", host, port);
+    let path = if configuration.path.starts_with('/') {
+        configuration.path.clone().as_str()[1..].to_string()
+    } else {
+        configuration.path.clone()
+    };
+
+    // FIXME manage HTTPS
+    let endpoint = format!(
+        "http://{}:{}/{}",
+        configuration.host, configuration.port, path
+    );
 
     let http_exporter = opentelemetry_otlp::new_exporter()
         .http()
