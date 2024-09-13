@@ -26,12 +26,14 @@ use crate::client::configuration::configuration_error::ConfigurationError::{
 };
 use crate::transport::mqtt::{configure_tls, configure_transport};
 
-#[cfg(feature = "mobility")]
-use crate::client::configuration::node_configuration::NodeConfiguration;
+#[cfg(feature = "telemetry")]
+use crate::client::configuration::telemetry_configuration::{
+    TelemetryConfiguration, TELEMETRY_SECTION,
+};
 #[cfg(feature = "mobility")]
 use crate::client::configuration::{
     mobility_configuration::{MobilityConfiguration, STATION_SECTION},
-    node_configuration::NODE_SECTION,
+    node_configuration::{NodeConfiguration, NODE_SECTION},
 };
 
 pub mod configuration_error;
@@ -39,11 +41,15 @@ pub mod configuration_error;
 pub mod mobility_configuration;
 #[cfg(feature = "mobility")]
 pub mod node_configuration;
+#[cfg(feature = "telemetry")]
+pub mod telemetry_configuration;
 
 const MQTT_SECTION: &str = "mqtt";
 
 pub struct Configuration {
     pub mqtt_options: MqttOptions,
+    #[cfg(feature = "telemetry")]
+    pub telemetry: TelemetryConfiguration,
     #[cfg(feature = "mobility")]
     pub mobility: MobilityConfiguration,
     #[cfg(feature = "mobility")]
@@ -219,6 +225,11 @@ impl TryFrom<Ini> for Configuration {
             mqtt_options: MqttOptionWrapper::try_from(&mqtt_properties)?
                 .deref()
                 .clone(),
+            #[cfg(feature = "telemetry")]
+            telemetry: TelemetryConfiguration::try_from(&pick_mandatory_section(
+                TELEMETRY_SECTION,
+                &mut ini_config,
+            )?)?,
             #[cfg(feature = "mobility")]
             mobility: MobilityConfiguration::try_from(&pick_mandatory_section(
                 STATION_SECTION,
@@ -238,6 +249,9 @@ impl TryFrom<Ini> for Configuration {
 mod tests {
     use crate::client::configuration::{get_optional_field, pick_mandatory_section, Configuration};
     use ini::Ini;
+
+    #[cfg(feature = "telemetry")]
+    use crate::client::configuration::telemetry_configuration;
 
     const EXHAUSTIVE_CUSTOM_INI_CONFIG: &str = r#"
 no_section="noitceson"
@@ -280,6 +294,18 @@ type="mec_application"
 host="localhost"
 port=1883
 client_id="com_myapplication"
+"#;
+
+    #[cfg(feature = "telemetry")]
+    const MINIMAL_TELEMETRY_CONFIGURATION: &str = r#"
+[mqtt]
+host="localhost"
+port=1883
+client_id="com_myapplication"
+
+[telemetry]
+host="otlp.domain.com"
+port=5418
 "#;
 
     #[test]
@@ -376,13 +402,31 @@ client_id="com_myapplication"
     }
 
     #[test]
-    #[cfg_attr(feature = "mobility", should_panic)]
+    #[cfg_attr(any(feature = "telemetry", feature = "mobility"), should_panic)]
     fn minimal_featureless_configuration() {
         let ini = Ini::load_from_str(MINIMAL_FEATURELESS_CONFIGURATION)
             .expect("Ini creation should not fail");
 
         let _ = Configuration::try_from(ini)
             .expect("Failed to create Configuration with minimal mandatory sections and fields");
+    }
+
+    #[test]
+    #[cfg(feature = "telemetry")]
+    #[cfg_attr(feature = "mobility", should_panic)]
+    fn minimal_telemetry_configuration() {
+        let ini = Ini::load_from_str(MINIMAL_TELEMETRY_CONFIGURATION)
+            .expect("Ini creation should not fail");
+
+        let configuration = Configuration::try_from(ini)
+            .expect("Failed to create Configuration with minimal mandatory sections and fields");
+
+        assert_eq!(
+            telemetry_configuration::DEFAULT_PATH.to_string(),
+            configuration.telemetry.path,
+            "Telemetry path must default to {}",
+            telemetry_configuration::DEFAULT_PATH
+        );
     }
 
     #[test]
