@@ -13,8 +13,11 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub mod client;
+#[cfg(feature = "mobility")]
 pub mod exchange;
+#[cfg(feature = "mobility")]
 pub mod mobility;
+#[cfg(feature = "mobility")]
 pub(crate) mod monitor;
 pub mod transport;
 
