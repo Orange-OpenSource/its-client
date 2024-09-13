@@ -11,13 +11,13 @@
  */
 
 use crate::client::configuration::configuration_error::ConfigurationError;
-use crate::client::configuration::node_configuration::NodeConfiguration;
 use ini::{Ini, Properties};
 use rumqttc::v5::MqttOptions;
 use std::any::type_name;
 
 use std::ops::Deref;
 use std::str::FromStr;
+#[cfg(feature = "mobility")]
 use std::sync::RwLock;
 
 use crate::client::configuration::configuration_error::ConfigurationError::{
@@ -26,25 +26,33 @@ use crate::client::configuration::configuration_error::ConfigurationError::{
 };
 use crate::transport::mqtt::{configure_tls, configure_transport};
 
+#[cfg(feature = "mobility")]
+use crate::client::configuration::node_configuration::NodeConfiguration;
+#[cfg(feature = "mobility")]
+use crate::client::configuration::{
+    mobility_configuration::{MobilityConfiguration, STATION_SECTION},
+    node_configuration::NODE_SECTION,
+};
+
 pub mod configuration_error;
+#[cfg(feature = "mobility")]
+pub mod mobility_configuration;
+#[cfg(feature = "mobility")]
 pub mod node_configuration;
 
-const STATION_SECTION: &str = "station";
 const MQTT_SECTION: &str = "mqtt";
-const NODE_SECTION: &str = "node";
-
-const STATION_ID_FIELD: &str = "id";
-const STATION_TYPE_FIELD: &str = "type";
 
 pub struct Configuration {
-    pub station_id: String,
-    pub station_type: String,
     pub mqtt_options: MqttOptions,
+    #[cfg(feature = "mobility")]
+    pub mobility: MobilityConfiguration,
+    #[cfg(feature = "mobility")]
     pub node: Option<RwLock<NodeConfiguration>>,
     custom_settings: Option<Ini>,
 }
 
 impl Configuration {
+    #[cfg(feature = "mobility")]
     pub fn component_name(&self, modifier: Option<u32>) -> String {
         let station_id: String = match &self.node {
             Some(node_configuration) => node_configuration
@@ -52,11 +60,12 @@ impl Configuration {
                 .unwrap()
                 .station_id(modifier)
                 .to_string(),
-            None => self.station_id.clone(),
+            None => self.mobility.station_id.clone(),
         };
         format!("{}_{}", self.mqtt_options.client_id(), station_id)
     }
 
+    #[cfg(feature = "mobility")]
     pub fn set_node_configuration(&mut self, node_configuration: NodeConfiguration) {
         self.node = Some(RwLock::new(node_configuration));
     }
@@ -204,27 +213,22 @@ impl TryFrom<Ini> for Configuration {
 
     fn try_from(ini_config: Ini) -> Result<Self, Self::Error> {
         let mut ini_config = ini_config;
-        let station_properties = pick_mandatory_section(STATION_SECTION, &mut ini_config)?;
         let mqtt_properties = pick_mandatory_section(MQTT_SECTION, &mut ini_config)?;
 
-        let node = match ini_config.section(Some(NODE_SECTION)) {
-            Some(properties) => Some(RwLock::new(NodeConfiguration::try_from(properties)?)),
-            None => None,
-        };
-
         Ok(Configuration {
-            station_id: get_mandatory_field(
-                STATION_ID_FIELD,
-                (STATION_SECTION, &station_properties),
-            )?,
-            station_type: get_mandatory_field(
-                STATION_TYPE_FIELD,
-                (STATION_SECTION, &station_properties),
-            )?,
             mqtt_options: MqttOptionWrapper::try_from(&mqtt_properties)?
                 .deref()
                 .clone(),
-            node,
+            #[cfg(feature = "mobility")]
+            mobility: MobilityConfiguration::try_from(&pick_mandatory_section(
+                STATION_SECTION,
+                &mut ini_config,
+            )?)?,
+            #[cfg(feature = "mobility")]
+            node: match ini_config.section(Some(NODE_SECTION)) {
+                Some(properties) => Some(RwLock::new(NodeConfiguration::try_from(properties)?)),
+                None => None,
+            },
             custom_settings: Some(ini_config),
         })
     }
@@ -235,7 +239,7 @@ mod tests {
     use crate::client::configuration::{get_optional_field, pick_mandatory_section, Configuration};
     use ini::Ini;
 
-    const CUSTOM_INI_CONFIG: &str = r#"
+    const EXHAUSTIVE_CUSTOM_INI_CONFIG: &str = r#"
 no_section="noitceson"
 
 [station]
@@ -250,13 +254,38 @@ client_id="com_myapplication"
 [node]
 responsibility_enabled=true
 
+[telemetry]
+host="otlp.domain.com"
+port=5418
+path="/custom/v1/traces"
+
 [custom]
 test="success"
 "#;
 
+    const MINIMAL_FEATURELESS_CONFIGURATION: &str = r#"
+[mqtt]
+host="localhost"
+port=1883
+client_id="com_myapplication"
+"#;
+
+    #[cfg(feature = "mobility")]
+    const MINIMAL_MOBILITY_CONFIGURATION: &str = r#"
+[station]
+id="com_myapplication"
+type="mec_application"
+
+[mqtt]
+host="localhost"
+port=1883
+client_id="com_myapplication"
+"#;
+
     #[test]
     fn custom_settings() {
-        let ini = Ini::load_from_str(CUSTOM_INI_CONFIG).expect("Ini creation should not fail");
+        let ini =
+            Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).expect("Ini creation should not fail");
 
         let configuration = Configuration::try_from(ini).expect("Minimal config should not fail");
         let no_section = configuration
@@ -272,7 +301,8 @@ test="success"
 
     #[test]
     fn set_custom_setting() {
-        let ini = Ini::load_from_str(CUSTOM_INI_CONFIG).expect("Ini creation should not fail");
+        let ini =
+            Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).expect("Ini creation should not fail");
         let mut configuration =
             Configuration::try_from(ini).expect("Minimal config should not fail");
 
@@ -291,7 +321,8 @@ test="success"
 
     #[test]
     fn pick_section() {
-        let mut ini = Ini::load_from_str(CUSTOM_INI_CONFIG).expect("Ini creation should not fail");
+        let mut ini =
+            Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).expect("Ini creation should not fail");
 
         let s = pick_mandatory_section("mqtt", &mut ini);
 
@@ -301,7 +332,8 @@ test="success"
 
     #[test]
     fn not_set_optional_returns_none() {
-        let ini = Ini::load_from_str(CUSTOM_INI_CONFIG).expect("Ini creation should not fail");
+        let ini =
+            Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).expect("Ini creation should not fail");
 
         let ok_none = get_optional_field::<String>(None, "pmloikjuyh", &ini);
 
@@ -311,7 +343,8 @@ test="success"
 
     #[test]
     fn optional_no_section_is_ok_some() {
-        let ini = Ini::load_from_str(CUSTOM_INI_CONFIG).expect("Ini creation should not fail");
+        let ini =
+            Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).expect("Ini creation should not fail");
 
         let ok_some = get_optional_field::<String>(None, "no_section", &ini);
 
@@ -322,7 +355,8 @@ test="success"
 
     #[test]
     fn optional_from_section_is_ok_some() {
-        let ini = Ini::load_from_str(CUSTOM_INI_CONFIG).expect("Ini creation should not fail");
+        let ini =
+            Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).expect("Ini creation should not fail");
 
         let ok_some = get_optional_field::<String>(Some("custom"), "test", &ini);
 
@@ -333,10 +367,32 @@ test="success"
 
     #[test]
     fn optional_wrong_type_is_err() {
-        let ini = Ini::load_from_str(CUSTOM_INI_CONFIG).expect("Ini creation should not fail");
+        let ini =
+            Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).expect("Ini creation should not fail");
 
         let err = get_optional_field::<u16>(Some("custom"), "test", &ini);
 
         assert!(err.is_err());
+    }
+
+    #[test]
+    #[cfg_attr(feature = "mobility", should_panic)]
+    fn minimal_featureless_configuration() {
+        let ini = Ini::load_from_str(MINIMAL_FEATURELESS_CONFIGURATION)
+            .expect("Ini creation should not fail");
+
+        let _ = Configuration::try_from(ini)
+            .expect("Failed to create Configuration with minimal mandatory sections and fields");
+    }
+
+    #[test]
+    #[cfg(feature = "mobility")]
+    #[cfg_attr(feature = "telemetry", should_panic)]
+    fn minimal_mobility_configuration() {
+        let ini = Ini::load_from_str(MINIMAL_MOBILITY_CONFIGURATION)
+            .expect("Ini creation should not fail");
+
+        let _ = Configuration::try_from(ini)
+            .expect("Failed to create Configuration with minimal mandatory sections and fields");
     }
 }

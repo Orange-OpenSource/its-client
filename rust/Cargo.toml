@@ -83,3 +83,4 @@ features = ["async", "compress"]
 [[bench]]
 name = "position"
 harness = false
+required-features = ["mobility"]

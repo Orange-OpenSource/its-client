@@ -11,7 +11,7 @@
  */
 
 use crate::client::configuration::configuration_error::ConfigurationError;
-use crate::client::configuration::{get_mandatory_field, get_optional_from_section, NODE_SECTION};
+use crate::client::configuration::{get_mandatory_field, get_optional_from_section};
 use crate::exchange::message::information::Information;
 use crate::mobility::quadtree;
 use crate::mobility::quadtree::quadkey::Quadkey;
@@ -19,6 +19,8 @@ use crate::mobility::quadtree::Quadtree;
 use ini::Properties;
 use log::{error, info, warn};
 use std::str::FromStr;
+
+pub(crate) const NODE_SECTION: &str = "node";
 
 /// Configuration of the node the client is hosted on
 ///
