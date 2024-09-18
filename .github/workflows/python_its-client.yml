@@ -28,17 +28,7 @@ jobs:
           coverage run -m unittest
           coverage report
           coverage html
-      - name: Archive code coverage html report
-        uses: actions/upload-artifact@v2
-        with:
-          name: code-coverage-report
-          path: python/its-client/htmlcov
       - name: Run package creation
         run: |
           cd python/its-client
           python setup.py bdist_wheel
-      - name: Archive package
-        uses: actions/upload-artifact@v2
-        with:
-          name: its_client
-          path: python/its-client/dist

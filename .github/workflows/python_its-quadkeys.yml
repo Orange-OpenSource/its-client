@@ -29,8 +29,3 @@ jobs:
         run: |
           cd python/its-quadkeys
           python setup.py bdist_wheel
-      - name: Archive package
-        uses: actions/upload-artifact@v2
-        with:
-          name: its_quadkeys
-          path: python/its-quadkeys/dist

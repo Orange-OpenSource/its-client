@@ -24,8 +24,3 @@ jobs:
         run: |
           cd python/its-info
           python setup.py bdist_wheel
-      - name: Archive package
-        uses: actions/upload-artifact@v2
-        with:
-          name: its_info
-          path: python/its-info/dist
