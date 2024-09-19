@@ -26,7 +26,7 @@ pub enum ConfigurationError {
     NoCustomSettings,
     #[error("Could not found section '{0}'")]
     SectionNotFound(&'static str),
-    #[error("Could parse value of field '{0}' as a '{1}'")]
+    #[error("Could not parse value of field '{0}' as a '{1}'")]
     TypeError(&'static str, &'static str),
     #[error("Username provided with no password")]
     NoPassword,
