@@ -18,7 +18,10 @@ use opentelemetry::trace::{Link, TraceContextExt, Tracer};
 use opentelemetry::{global, Context, KeyValue};
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
-use opentelemetry_sdk::trace::{RandomIdGenerator, Sampler, TracerProvider};
+use opentelemetry_sdk::runtime;
+use opentelemetry_sdk::trace::{
+    BatchConfigBuilder, BatchSpanProcessor, RandomIdGenerator, Sampler, TracerProvider,
+};
 use opentelemetry_sdk::Resource;
 
 use crate::client::configuration::telemetry_configuration::TelemetryConfiguration;
@@ -47,8 +50,16 @@ pub fn init_tracer(
         .with_timeout(Duration::from_secs(3))
         .build_span_exporter()?;
 
+    let batch_processor = BatchSpanProcessor::builder(http_exporter, runtime::Tokio)
+        .with_batch_config(
+            BatchConfigBuilder::default()
+                .with_max_export_batch_size(configuration.batch_size)
+                .build(),
+        )
+        .build();
+
     let tracer_provider = TracerProvider::builder()
-        .with_simple_exporter(http_exporter)
+        .with_span_processor(batch_processor)
         .with_config(
             opentelemetry_sdk::trace::config()
                 .with_sampler(Sampler::AlwaysOn)

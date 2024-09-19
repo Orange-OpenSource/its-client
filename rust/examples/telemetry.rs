@@ -21,7 +21,7 @@ use ini::Ini;
 use log::{info, warn};
 use opentelemetry::propagation::{Extractor, Injector, TextMapPropagator};
 use opentelemetry::trace::{mark_span_as_active, TraceContextExt};
-use opentelemetry::Context;
+use opentelemetry::{global, Context};
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 
 use libits::client::configuration::Configuration;
@@ -214,4 +214,7 @@ async fn main() {
     if let Err(e) = recv_handle.join() {
         warn!("Listener thread failed to join: {:?}", e)
     }
+
+    // Trace export is batched, shutting down the tracer provider will force the export
+    global::shutdown_tracer_provider();
 }
