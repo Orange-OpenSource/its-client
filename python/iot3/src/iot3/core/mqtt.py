@@ -34,7 +34,7 @@ class MqttClient:
         """
         Create an MQTT client
 
-        :param client_id: The MQT client ID to identify as.
+        :param client_id: The MQTT client ID to identify as.
         :param host: The host name (or IP) of the MQTT broker.
         :param port: The port the MQTT broker listens on.
         :param socket_path: The path of the UNIX socket.
