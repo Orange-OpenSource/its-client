@@ -46,6 +46,32 @@ class MqttClient:
                             msg_cb function.
         :param span_ctx_cb: The function to obtain a context manager for an
                             OpenTelemetry span.
+
+        There are two ways to connect to the MQTT broker:
+         * via TCP: both host and port must be specified;
+         * via UNIX socket (only for local broker): socket_path must
+           be specified.
+
+        If socket_path is specified, then a connection through the UNIX
+        socket is used, otherwise a TCP connection is used.
+
+        Specifying a message callback as msg_cb allows subscribing to,
+        and thus receiving messages from specific topics. If no msg_cb
+        is provided, it is not possible to subscribe, and only emitting
+        is permitted. msg_cb must be a callable that accepts at least
+        those keyword arguments: data, topic, payload. Ideally, to be
+        future-proof, it should be declared with:
+            def my_cb(
+                *_args,
+                *,
+                data: Any,
+                topic: str,
+                payload: bytes,
+                **_kwargs,
+            ) -> None
+
+        If msg_cb_data is specified, it is passed as the data keyword
+        argument of msg_cb, otherwise None is passed.
         """
 
         self.msg_cb = msg_cb
