@@ -42,7 +42,7 @@ public class Traces {
     }
 
     public static Traces jsonParser(JSONArray jsonTraces) {
-        if(jsonTraces == null || jsonTraces.length() == 0) return new Traces(null);
+        if(jsonTraces == null || jsonTraces.isEmpty()) return new Traces(null);
         ArrayList<PathHistory> pathHistories = new ArrayList<>();
         for(int i = 0; i < jsonTraces.length(); i++) {
             PathHistory pathHistory = PathHistory.jsonParser(jsonTraces.optJSONArray(i));

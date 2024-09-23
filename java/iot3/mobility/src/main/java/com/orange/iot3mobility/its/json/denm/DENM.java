@@ -11,7 +11,6 @@ import com.orange.iot3mobility.its.json.JsonKey;
 import com.orange.iot3mobility.its.json.JsonValue;
 import com.orange.iot3mobility.its.json.MessageBase;
 
-import com.orange.iot3mobility.its.json.cam.CAM;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -187,12 +186,12 @@ public class DENM extends MessageBase {
             jsonDENM.put(JsonKey.Header.ORIGIN.key(), getOrigin());
             jsonDENM.put(JsonKey.Header.VERSION.key(), getVersion());
             jsonDENM.put(JsonKey.Header.SOURCE_UUID.key(), getSourceUuid());
-            if(!getDestinationUuid().equals(""))
+            if(!getDestinationUuid().isEmpty())
                 jsonDENM.put(JsonKey.Header.DESTINATION_UUID.key(), getDestinationUuid());
             jsonDENM.put(JsonKey.Header.TIMESTAMP.key(), getTimestamp());
             jsonDENM.put(JsonKey.Header.MESSAGE.key(), message);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "DENM JSON build error", "Error: " + e);
         }
     }
 
@@ -202,12 +201,8 @@ public class DENM extends MessageBase {
     }
 
     public void terminate(long stationId) {
-        if(stationId == this.getManagementContainer().getActionId().getOriginatingStationId())
-            managementContainer.terminate(true);
-        else
-            managementContainer.terminate(false);
+        managementContainer.terminate(stationId == this.getManagementContainer().getActionId().getOriginatingStationId());
         this.stationId = stationId;
-        updateSourceUuid();
         updateTimestamp();
         updateJson();
     }
@@ -327,7 +322,7 @@ public class DENM extends MessageBase {
     }
 
     public static DENM jsonParser(JSONObject jsonDENM) {
-        if(jsonDENM == null || jsonDENM.length() == 0) return null;
+        if(jsonDENM == null || jsonDENM.isEmpty()) return null;
         try {
             String type = jsonDENM.getString(JsonKey.Header.TYPE.key());
 
@@ -370,7 +365,7 @@ public class DENM extends MessageBase {
                         .build();
             }
         } catch (JSONException | IllegalArgumentException e) {
-            LOGGER.log(Level.WARNING, "DENM", "Error parsing DENM: " + e);
+            LOGGER.log(Level.WARNING, "DENM JSON parsing error", "Error: " + e);
         }
         return null;
     }

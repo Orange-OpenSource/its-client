@@ -15,7 +15,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class SituationContainer {
+
+    private static final Logger LOGGER = Logger.getLogger(DENM.class.getName());
 
     private final JSONObject jsonSituationContainer = new JSONObject();
     private final int infoQuality;
@@ -67,7 +72,7 @@ public class SituationContainer {
             if(eventHistory != null)
                 jsonSituationContainer.put(JsonKey.SituationContainer.EVENT_TYPE.key(), eventHistory);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "SituationContainer JSON build error", "Error: " + e);
         }
     }
 
@@ -96,7 +101,7 @@ public class SituationContainer {
     }
 
     public static SituationContainer jsonParser(JSONObject jsonSituationContainer) {
-        if(jsonSituationContainer == null || jsonSituationContainer.length() == 0) return null;
+        if(jsonSituationContainer == null || jsonSituationContainer.isEmpty()) return null;
         try {
             int infoQuality = jsonSituationContainer.optInt(JsonKey.SituationContainer.INFO_QUALITY.key(), UNKNOWN);
             JSONObject jsonEventType = jsonSituationContainer.getJSONObject(JsonKey.SituationContainer.EVENT_TYPE.key());
@@ -111,7 +116,7 @@ public class SituationContainer {
                     linkedCause,
                     eventHistory);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "SituationContainer JSON parsing error", "Error: " + e);
         }
         return null;
     }

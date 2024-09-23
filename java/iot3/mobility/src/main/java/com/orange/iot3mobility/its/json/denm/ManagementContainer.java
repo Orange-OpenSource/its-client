@@ -16,7 +16,12 @@ import com.orange.iot3mobility.its.json.PositionConfidence;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class ManagementContainer {
+
+    private static final Logger LOGGER = Logger.getLogger(DENM.class.getName());
 
     private JSONObject jsonManagementContainer = new JSONObject();
     private final ActionId actionId;
@@ -163,7 +168,7 @@ public class ManagementContainer {
             if(positionConfidence != null)
                 jsonManagementContainer.put(JsonKey.Position.CONFIDENCE.key(), positionConfidence.getJson());
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "ManagementContainer JSON build error", "Error: " + e);
         }
     }
 
@@ -228,7 +233,7 @@ public class ManagementContainer {
     }
 
     public static ManagementContainer jsonParser(JSONObject jsonManagementContainer) {
-        if(jsonManagementContainer == null || jsonManagementContainer.length() == 0) return null;
+        if(jsonManagementContainer == null || jsonManagementContainer.isEmpty()) return null;
         try {
             JSONObject jsonActionId = jsonManagementContainer.getJSONObject(JsonKey.ManagementContainer.ACTION_ID.key());
             ActionId actionId = ActionId.jsonParser(jsonActionId);
@@ -258,7 +263,7 @@ public class ManagementContainer {
                     stationType,
                     positionConfidence);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "ManagementContainer JSON parsing error", "Error: " + e);
         }
         return null;
     }

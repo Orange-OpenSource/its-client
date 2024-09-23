@@ -12,7 +12,12 @@ import com.orange.iot3mobility.its.json.JsonKey;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class EventType {
+
+    private static final Logger LOGGER = Logger.getLogger(DENM.class.getName());
 
     private final JSONObject jsonEventType = new JSONObject();
     private final int cause;
@@ -41,7 +46,7 @@ public class EventType {
             jsonEventType.put(JsonKey.EventType.CAUSE.key(), cause);
             jsonEventType.put(JsonKey.EventType.SUBCAUSE.key(), subcause);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "EventType JSON build error", "Error: " + e);
         }
     }
 
@@ -58,14 +63,14 @@ public class EventType {
     }
 
     public static EventType jsonParser(JSONObject jsonEventType) {
-        if(jsonEventType == null || jsonEventType.length() == 0) return null;
+        if(jsonEventType == null || jsonEventType.isEmpty()) return null;
         try {
             int cause = jsonEventType.getInt(JsonKey.EventType.CAUSE.key());
             int subcause = jsonEventType.getInt(JsonKey.EventType.SUBCAUSE.key());
 
             return new EventType(cause, subcause);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "EventType JSON parsing error", "Error: " + e);
         }
         return null;
     }

@@ -14,7 +14,12 @@ import com.orange.iot3mobility.its.json.JsonKey;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class AlacarteContainer {
+
+    private static final Logger LOGGER = Logger.getLogger(DENM.class.getName());
 
     private final JSONObject jsonAlacarteContainer = new JSONObject();
     private final int lanePosition;
@@ -73,7 +78,7 @@ public class AlacarteContainer {
             if(positionSolutionType != UNKNOWN)
                 jsonAlacarteContainer.put(JsonKey.AlacarteContainer.POSITION_SOLUTION_TYPE.key(), positionSolutionType);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "AlaCarteContainer JSON build error", "Error: " + e);
         }
     }
 
@@ -102,7 +107,7 @@ public class AlacarteContainer {
     }
 
     public static AlacarteContainer jsonParser(JSONObject jsonAlacarteContainer) {
-        if(jsonAlacarteContainer == null || jsonAlacarteContainer.length() == 0) return null;
+        if(jsonAlacarteContainer == null || jsonAlacarteContainer.isEmpty()) return null;
         int lanePosition = jsonAlacarteContainer.optInt(JsonKey.AlacarteContainer.LANE_POSITION.key(), UNKNOWN);
         int impactReduction = jsonAlacarteContainer.optInt(JsonKey.AlacarteContainer.IMPACT_REDUCTION.key(), UNKNOWN);
         final int externalTemperature = jsonAlacarteContainer.optInt(JsonKey.AlacarteContainer.EXTERNAL_TEMPERATURE.key(), UNKNOWN);

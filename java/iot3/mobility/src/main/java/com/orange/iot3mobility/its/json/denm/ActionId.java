@@ -14,11 +14,16 @@ import com.orange.iot3mobility.its.json.JsonKey;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class ActionId {
 
-    private JSONObject jsonActionId = new JSONObject();
+    private static final Logger LOGGER = Logger.getLogger(DENM.class.getName());
+
+    private final JSONObject jsonActionId = new JSONObject();
     private final long originatingStationId;
-    private int sequenceNumber;
+    private final int sequenceNumber;
 
     public ActionId(
             final long originatingStationId)
@@ -50,7 +55,7 @@ public class ActionId {
             if(sequenceNumber != UNKNOWN)
                 jsonActionId.put(JsonKey.ActionId.SEQUENCE_NUMBER.key(), sequenceNumber);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "ActionId JSON build error", "Error: " + e);
         }
     }
 
@@ -67,14 +72,14 @@ public class ActionId {
     }
 
     public static ActionId jsonParser(JSONObject jsonActionId) {
-        if(jsonActionId == null || jsonActionId.length() == 0) return null;
+        if(jsonActionId == null || jsonActionId.isEmpty()) return null;
         try {
             long originStationId = jsonActionId.getLong(JsonKey.ActionId.ORIGINATING_STATION_ID.key());
             int sequenceNumber = jsonActionId.optInt(JsonKey.ActionId.SEQUENCE_NUMBER.key(), UNKNOWN);
 
             return new ActionId(originStationId, sequenceNumber);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "ActionId JSON parsing error", "Error: " + e);
         }
         return null;
     }

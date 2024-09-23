@@ -15,7 +15,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class LocationContainer {
+
+    private static final Logger LOGGER = Logger.getLogger(DENM.class.getName());
 
     private final JSONObject jsonLocationContainer = new JSONObject();
     private final int eventSpeed;
@@ -95,7 +100,7 @@ public class LocationContainer {
             if(confidence.length() > 0)
                 jsonLocationContainer.put(JsonKey.LocationContainer.CONFIDENCE.key(), confidence);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "LocationContainer JSON build error", "Error: " + e);
         }
     }
 
@@ -128,7 +133,7 @@ public class LocationContainer {
     }
 
     public static LocationContainer jsonParser(JSONObject jsonLocationContainer) {
-        if(jsonLocationContainer == null || jsonLocationContainer.length() == 0) return null;
+        if(jsonLocationContainer == null || jsonLocationContainer.isEmpty()) return null;
         try {
             int eventSpeed = jsonLocationContainer.optInt(JsonKey.LocationContainer.EVENT_SPEED.key(), UNKNOWN);
             int eventPositionHeading = jsonLocationContainer.optInt(JsonKey.LocationContainer.EVENT_POSITION_HEADING.key(), UNKNOWN);
@@ -152,7 +157,7 @@ public class LocationContainer {
                     eventSpeedConfidence,
                     eventPositionHeadingConfidence);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "LocationContainer JSON parsing error", "Error: " + e);
         }
         return null;
     }

@@ -12,7 +12,12 @@ import com.orange.iot3mobility.its.json.JsonKey;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class LinkedCause {
+
+    private static final Logger LOGGER = Logger.getLogger(DENM.class.getName());
 
     private final JSONObject jsonLinkedCause = new JSONObject();
     private final int cause;
@@ -41,7 +46,7 @@ public class LinkedCause {
             jsonLinkedCause.put(JsonKey.LinkedCause.CAUSE.key(), cause);
             jsonLinkedCause.put(JsonKey.LinkedCause.SUBCAUSE.key(), subcause);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "LinkedCause JSON build error", "Error: " + e);
         }
     }
 
@@ -58,14 +63,14 @@ public class LinkedCause {
     }
 
     public static LinkedCause jsonParser(JSONObject jsonLinkedCause) {
-        if(jsonLinkedCause == null || jsonLinkedCause.length() == 0) return null;
+        if(jsonLinkedCause == null || jsonLinkedCause.isEmpty()) return null;
         try {
             int cause = jsonLinkedCause.getInt(JsonKey.EventType.CAUSE.key());
             int subcause = jsonLinkedCause.getInt(JsonKey.EventType.SUBCAUSE.key());
 
             return new LinkedCause(cause, subcause);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "LinkedCause JSON parsing error", "Error: " + e);
         }
         return null;
     }
