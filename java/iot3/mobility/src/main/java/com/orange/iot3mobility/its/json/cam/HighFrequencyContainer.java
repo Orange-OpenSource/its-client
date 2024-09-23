@@ -15,7 +15,12 @@ import com.orange.iot3mobility.its.json.JsonKey;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class HighFrequencyContainer {
+
+    private static final Logger LOGGER = Logger.getLogger(CAM.class.getName());
 
     private final JSONObject jsonHighFrequencyContainer = new JSONObject();
     private final int heading;
@@ -266,7 +271,7 @@ public class HighFrequencyContainer {
             if(!confidence.isEmpty())
                 jsonHighFrequencyContainer.put(JsonKey.HighFrequencyContainer.CONFIDENCE.key(), confidence);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "HighFrequencyContainer JSON build error", "Error: " + e);
         }
     }
 

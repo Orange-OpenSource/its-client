@@ -14,7 +14,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class LowFrequencyContainer {
+
+    private static final Logger LOGGER = Logger.getLogger(CAM.class.getName());
 
     private final JSONObject jsonLowFrequencyContainer = new JSONObject();
     private final int vehicleRole;
@@ -60,7 +65,7 @@ public class LowFrequencyContainer {
                 jsonLowFrequencyContainer.put(JsonKey.LowFrequencyContainer.EXTERIOR_LIGHTS.key(), exteriorLights);
             jsonLowFrequencyContainer.put(JsonKey.LowFrequencyContainer.PATH_HISTORY.key(), pathHistory.getJsonPathHistory());
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "LowFrequencyContainer JSON build error", "Error: " + e);
         }
     }
 
@@ -93,7 +98,7 @@ public class LowFrequencyContainer {
                     exteriorLights,
                     pathHistory);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "HighFrequencyContainer JSON parsing error", "Error: " + e);
         }
         return null;
     }

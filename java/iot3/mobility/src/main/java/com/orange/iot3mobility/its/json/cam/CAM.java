@@ -92,7 +92,7 @@ public class CAM extends MessageBase {
             jsonCAM.put(JsonKey.Header.TIMESTAMP.key(), getTimestamp());
             jsonCAM.put(JsonKey.Header.MESSAGE.key(), message);
         } catch (JSONException e) {
-            LOGGER.log(Level.WARNING, "CAM", "Error building CAM: " + e);
+            LOGGER.log(Level.WARNING, "CAM JSON build error", "Error: " + e);
         }
     }
 
@@ -249,7 +249,7 @@ public class CAM extends MessageBase {
                         .build();
             }
         } catch (JSONException | IllegalArgumentException e) {
-            LOGGER.log(Level.WARNING, "CAM", "Error parsing CAM: " + e);
+            LOGGER.log(Level.WARNING, "CAM JSON parsing error", "Error: " + e);
         }
         return null;
     }

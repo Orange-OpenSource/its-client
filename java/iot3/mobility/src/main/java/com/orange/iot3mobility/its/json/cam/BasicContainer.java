@@ -14,7 +14,12 @@ import com.orange.iot3mobility.its.json.PositionConfidence;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class BasicContainer {
+
+    private static final Logger LOGGER = Logger.getLogger(CAM.class.getName());
 
     private final JSONObject jsonBasicContainer = new JSONObject();
     private final int stationType;
@@ -54,7 +59,7 @@ public class BasicContainer {
             if(positionConfidence != null)
                 jsonBasicContainer.put(JsonKey.Position.CONFIDENCE.key(), positionConfidence.getJson());
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "BasicContainer JSON build error", "Error: " + e);
         }
     }
 
@@ -85,7 +90,7 @@ public class BasicContainer {
 
             return new BasicContainer(stationType, position, positionConfidence);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "BasicContainer JSON parsing error", "Error: " + e);
         }
         return null;
     }
