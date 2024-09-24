@@ -43,7 +43,7 @@ setup(
     install_requires=[
         "ConfigParser==5.2.0",
         "gpsd-py3==0.3.0",
-        "paho-mqtt==1.6.1",
+        "paho-mqtt >=1.6.1, !=2.0.*",
         "pyGeoTile==1.0.6",
     ],
     entry_points={"console_scripts": ["its-client = its_client.main:main"]},

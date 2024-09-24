@@ -5,14 +5,14 @@
 
 import argparse
 import configparser
+import iot3.core.mqtt
+import iot3.core.otel
 import logging
 import os
 import signal
 import sys
 from . import client
 from . import gpsd
-from . import mqtt
-from . import tracking
 
 
 CFG = "/etc/its/vehicle.cfg"
@@ -21,6 +21,11 @@ DEFAULTS = {
         "instance-id": None,
         "report-freq": None,
         "mirror-self": False,
+    },
+    "telemetry": {
+        "endpoint": None,
+        "username": None,
+        "password": None,
     },
     "broker.main": {
         "port": 1883,
@@ -91,35 +96,81 @@ def main():
         level="DEBUG" if args.debug else "INFO",
     )
 
-    gnss = gpsd.GNSSProvider(cfg=cfg["gpsd"])
-    gnss.start()
+    otel = None
+    otel_opts = {}
+    if cfg["telemetry"]["endpoint"]:
+        otel = iot3.core.otel.Otel(
+            service_name="its-vehicle",
+            endpoint=cfg["telemetry"]["endpoint"],
+            username=cfg["telemetry"]["username"],
+            password=cfg["telemetry"]["password"],
+            batch_period=5.0,
+            max_backlog=50,
+            compression=iot3.core.otel.Compression.GZIP,
+        )
+        otel_opts["span_ctxmgr_cb"] = otel.span
 
-    mqtt_main = mqtt.MqttClient(cfg=cfg["broker.main"])
-    mqtt_main.start()
+    gnss = gpsd.GNSSProvider(cfg=cfg["gpsd"])
+
+    def _msg_cb(*args, **kwargs):
+        its_client.msg_cb(*args, **kwargs)
+
+    if "host" in cfg["broker.main"]:
+        conn_opts = {
+            "host": cfg["broker.main"]["host"],
+            "port": int(cfg["broker.main"]["port"]),
+        }
+    else:
+        conn_opts = {
+            "socket_path": cfg["broker.main"]["socket-path"],
+        }
+    mqtt_main = iot3.core.mqtt.MqttClient(
+        client_id=cfg["broker.main"]["client-id"],
+        username=cfg["broker.main"]["username"],
+        password=cfg["broker.main"]["password"],
+        **conn_opts,
+        **otel_opts,
+        msg_cb=_msg_cb,
+    )
 
     if "host" in cfg["broker.mirror"] or "socket-path" in cfg["broker.mirror"]:
-        mqtt_mirror = mqtt.MqttClient(cfg=cfg["broker.mirror"])
-        mqtt_mirror.start()
+        if "host" in cfg["broker.mirror"]:
+            conn_opts = {
+                "host": cfg["broker.mirror"]["host"],
+                "port": int(cfg["broker.mirror"]["port"]),
+            }
+        else:
+            conn_opts = {
+                "socket_path": cfg["broker.mirror"]["socket-path"],
+            }
+        mqtt_mirror = iot3.core.mqtt.MqttClient(
+            client_id=cfg["broker.mirror"]["client-id"],
+            username=cfg["broker.mirror"]["username"],
+            password=cfg["broker.mirror"]["password"],
+            **conn_opts,
+        )
     else:
         mqtt_mirror = None
-
-    tracker = tracking.Tracking(cfg=cfg["tracking"], gpsd=gpsd)
-    tracker.start()
 
     its_client = client.ITSClient(
         cfg=cfg["general"],
         gpsd=gnss,
         mqtt_main=mqtt_main,
         mqtt_mirror=mqtt_mirror,
-        tracker=tracker,
     )
-    its_client.start()
 
     def term_handler(_signum: int, _frame):
         raise TermSignal()
 
     try:
         signal.signal(signal.SIGTERM, term_handler)
+        if otel:
+            otel.start()
+        gnss.start()
+        mqtt_main.start()
+        if mqtt_mirror is not None:
+            mqtt_mirror.start()
+        its_client.start()
         its_client.join()  # Should not terminate ever, but with an exception
     except (KeyboardInterrupt, TermSignal):
         # Proper termination, cleanup below
@@ -136,7 +187,6 @@ def main():
 
     logging.debug("Will stop...")
     its_client.stop(wait=True)
-    tracker.stop()
     # Stop main MQTT client before the mirror one, so that we don't get
     # messages from the main one that we would then try to publish on
     # the mirror one that we just stopped.
@@ -144,6 +194,8 @@ def main():
     if mqtt_mirror is not None:
         mqtt_mirror.stop()
     gnss.stop()
+    if otel:
+        otel.stop()
 
 
 if __name__ == "__main__":

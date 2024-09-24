@@ -33,7 +33,7 @@ setup(
     install_requires=[
         "linuxfd==1.5",
         "netifaces==0.11.0",
-        "paho-mqtt==1.6.1",
+        "paho-mqtt >=1.6.1, !=2.0.*",
         "its-quadkeys",  # For now, unpublished and unversioned; from-git only
     ],
     entry_points={"console_scripts": ["its-info = its_info.main:main"]},

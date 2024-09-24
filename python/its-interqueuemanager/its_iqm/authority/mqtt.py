@@ -6,8 +6,7 @@
 from __future__ import annotations
 import json
 import logging
-import paho.mqtt.client
-import paho.mqtt.subscribe
+import iot3.core.mqtt
 
 
 class Authority:
@@ -25,54 +24,36 @@ class Authority:
         except KeyError:
             client_id = instance_id
 
-        self.authority_client = paho.mqtt.client.Client(
+        self.authority_client = iot3.core.mqtt.MqttClient(
             client_id=client_id,
-            protocol=paho.mqtt.client.MQTTv5,
-        )
-        self.authority_client.reconnect_delay_set()
-        self.authority_client.username_pw_set(
-            self.cfg["username"] or None,
-            self.cfg["password"] or None,
-        )
-        self.authority_client.on_connect = self._on_connect
-        self.authority_client.on_disconnect = self._on_disconnect
-        self.authority_client.on_socket_close = self._on_socket_close
-        self.authority_client.on_message = self._on_message
-
-        self.authority_client.connect_async(
             host=self.cfg["host"],
             port=int(self.cfg["port"]),
-            clean_start=True,
+            username=self.cfg["username"] or None,
+            password=self.cfg["password"] or None,
+            msg_cb=self.msg_cb,
         )
+        self.authority_client.subscribe(topics=[self.cfg["topic"]])
 
     def start(self):
         logging.info(
             f"starting authority MQTT client to {self.cfg['host']}:{self.cfg['port']}"
         )
-        self.authority_client.loop_start()
+        self.authority_client.start()
 
     def stop(self):
         logging.info(
             f"stopping authority MQTT client to {self.cfg['host']}:{self.cfg['port']}"
         )
-        self.authority_client.disconnect()
-        self.authority_client.loop_stop()
+        self.authority_client.stop()
 
-    def join(self):
-        pass
-
-    def _on_connect(self, _client, _userdata, _flags, _rc, _properties=None):
-        self.authority_client.subscribe(self.cfg["topic"])
-
-    def _on_disconnect(self, _client, _userdata, _rc, _properties=None):
-        pass
-
-    def _on_socket_close(self, _client, _userdata, _sock):
-        pass
-
-    def _on_message(self, _client, _userdata, message):
+    def msg_cb(
+        self,
+        *_args,
+        payload: bytes,
+        **_kwargs,
+    ):
         logging.info("received neighbours")
-        loaded_nghbs = json.loads(message.payload)
+        loaded_nghbs = json.loads(payload)
         # Contrary to the 'file' or 'http' methods, which use a .cfg style
         # content, the 'mqtt' method uses a json blob. So there is no
         # "DEFAULT" section to ignore here.

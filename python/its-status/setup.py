@@ -31,8 +31,8 @@ setup(
     license="MIT",
     platforms="LINUX",
     install_requires=[
+        "iot3",
         "linuxfd==1.5",
-        "paho-mqtt==1.6.1",
         "psutil==5.8.0",
     ],
     entry_points={"console_scripts": ["its-status = its_status.main:main"]},
