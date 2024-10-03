@@ -18,6 +18,7 @@ use crate::exchange::Exchange;
 use crate::monitor::trace_exchange;
 use crate::transport::mqtt::mqtt_client::{listen, MqttClient};
 use crate::transport::mqtt::mqtt_router;
+use crate::transport::mqtt::mqtt_router::BoxedReception;
 use crate::transport::mqtt::topic::Topic;
 use crate::transport::packet::Packet;
 use crate::transport::payload::Payload;
@@ -26,7 +27,6 @@ use log::{debug, error, info, trace, warn};
 use rumqttc::v5::mqttbytes::v5::PublishProperties;
 use rumqttc::v5::{Event, EventLoop};
 use serde::de::DeserializeOwned;
-use std::any::Any;
 use std::sync::{Arc, RwLock};
 use std::thread;
 use std::thread::JoinHandle;
@@ -370,14 +370,14 @@ where
 
             for event in event_receiver {
                 match router.handle_event(event) {
-                    Some((topic, reception)) => {
+                    Some((topic, (reception, properties))) => {
                         // TODO use the From Trait
                         if reception.is::<Exchange>() {
                             if let Ok(exchange) = reception.downcast::<Exchange>() {
                                 let item = Packet {
                                     topic,
                                     payload: *exchange,
-                                    properties: PublishProperties::default(),
+                                    properties,
                                 };
                                 //assumed clone, we send to 2 channels
                                 match monitoring_sender.send((item.clone(), None)) {
@@ -424,9 +424,7 @@ where
     )
 }
 
-fn deserialize<T>(
-    publish: rumqttc::v5::mqttbytes::v5::Publish,
-) -> Option<Box<dyn Any + 'static + Send>>
+fn deserialize<T>(publish: rumqttc::v5::mqttbytes::v5::Publish) -> Option<BoxedReception>
 where
     T: DeserializeOwned + Payload + 'static + Send,
 {
@@ -437,7 +435,7 @@ where
             match serde_json::from_str::<T>(message_str) {
                 Ok(message) => {
                     trace!("message parsed");
-                    return Some(Box::new(message));
+                    return Some((Box::new(message), publish.properties.unwrap_or_default()));
                 }
                 Err(e) => warn!("parse error({}) on: {}", e, message_str),
             }
