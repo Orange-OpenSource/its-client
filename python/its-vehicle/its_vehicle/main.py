@@ -65,9 +65,25 @@ def main():
     )
     args = parser.parse_args()
 
-    cfg = configparser.ConfigParser()
+    cfg_parsed = configparser.ConfigParser()
     with open(args.config, "r") as f:
-        cfg.read_file(f)
+        cfg_parsed.read_file(f)
+
+    # Make the config a dict() rather than a ConfigParser(), so that
+    # we can store None in there.
+    cfg = {
+        s: {k: cfg_parsed[s][k] for k in cfg_parsed[s]}
+        for s in cfg_parsed
+        if s != "DEFAULT"
+    }
+    # Special case: handle 'tls' specially, as it needs to be a bool but
+    # ConfigParser() does not convert types automatically, and interpreting
+    # the "false" string as a boolean would evaluate to True.
+    cfg["broker.main"]["tls"] = cfg_parsed.getboolean(
+        "broker.main",
+        "tls",
+        fallback=None,
+    )
 
     def _set_default(section, key, default):
         if section not in cfg:
@@ -75,9 +91,6 @@ def main():
         if key not in cfg[section]:
             cfg[section][key] = default
 
-    # Make the config a dict() rather than a ConfigParser(), so that
-    # we can store None in there.
-    cfg = {s: {k: cfg[s][k] for k in cfg[s]} for s in cfg if s != "DEFAULT"}
     for s in DEFAULTS:
         for k in DEFAULTS[s]:
             _set_default(s, k, DEFAULTS[s][k])
@@ -118,6 +131,7 @@ def main():
         conn_opts = {
             "host": cfg["broker.main"]["host"],
             "port": int(cfg["broker.main"]["port"]),
+            "tls": cfg["broker.main"]["tls"],
         }
     else:
         conn_opts = {
