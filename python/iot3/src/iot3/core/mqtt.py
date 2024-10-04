@@ -7,6 +7,7 @@ import paho.mqtt.client
 import paho.mqtt.enums
 import paho.mqtt.packettypes
 import paho.mqtt.properties
+import ssl
 import threading
 import time
 from typing import Any, Callable, Optional, TypeAlias, Unpack
@@ -25,6 +26,7 @@ class MqttClient:
         host: Optional[str] = None,
         port: Optional[int] = None,
         socket_path: Optional[str] = None,
+        tls: Optional[bool] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
         msg_cb: Optional[MsgCallbackType] = None,
@@ -38,6 +40,7 @@ class MqttClient:
         :param host: The host name (or IP) of the MQTT broker.
         :param port: The port the MQTT broker listens on.
         :param socket_path: The path of the UNIX socket.
+        :param tls: Whether to use TLS or not. See below for details.
         :param username: The username to authenticate against the MQTT broker.
         :param password: The password to authenticate against the MQTT broker.
         :param msg_cb: The function to call when a message is received from
@@ -54,6 +57,18 @@ class MqttClient:
 
         If socket_path is specified, then a connection through the UNIX
         socket is used, otherwise a TCP connection is used.
+
+        If tls is not specified, then a heuristic will be made: if the
+        port is the default well-known clear port, 1883, then the
+        connection will be attempted without TLS, i.e. in clear; for
+        any other port, TLS is used and there is no fallback to
+        connecting in clear. If tls is specified and is None, then the
+        same heuristic is used as if it were not specified; if it is
+        False, then no TLS is used for the connection; if it is True,
+        TLS is used for the connection. Using TLS requires that the
+        certificate of the authority that signed the server certificate,
+        be present in the system certificate store (e.g. ca-certificates
+        from Mozilla). TLS is never attempted over UNIX socket.
 
         Specifying a message callback as msg_cb allows subscribing to,
         and thus receiving messages from specific topics. If no msg_cb
@@ -83,11 +98,14 @@ class MqttClient:
             # Fake a valid TCP port to make paho.mqtt happy
             self.port = 1
             self.name = socket_path
+            tls = False
         else:
             transport = "tcp"
             self.host = host
             self.port = port
             self.name = f"{host}:{port}"
+            if tls is None:
+                tls = port != 1883
 
         self.span_ctxmgr_cb = span_ctxmgr_cb
 
@@ -97,6 +115,9 @@ class MqttClient:
             protocol=paho.mqtt.client.MQTTv5,
             transport=transport,
         )
+        if tls:
+            self.client.tls_set()
+
         self.client.reconnect_delay_set(min_delay=1, max_delay=2)
         self.client.username_pw_set(username, password)
         self.client.on_connect = self.__on_connect
