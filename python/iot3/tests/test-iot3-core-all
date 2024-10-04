@@ -2,12 +2,16 @@
 
 import iot3.core.mqtt
 import iot3.core.otel
+import random
 import time
 
 
 def recv(data, topic, payload):
-    print(f"{topic[:16]}: {payload[:16]}")
+    print(f"{data}: {topic[:16]}: {payload[:16]}")
 
+
+client_id = random.randbytes(16).hex()
+topic = "test/" + random.randbytes(16).hex() + "/iot3"
 
 o = iot3.core.otel.Otel(
     service_name="test-service",
@@ -17,20 +21,20 @@ o = iot3.core.otel.Otel(
 o.start()
 
 c = iot3.core.mqtt.MqttClient(
-    client_id="test",
-    host="127.0.0.1",
+    client_id=client_id,
+    host="test.mosquitto.org",
     port=1883,
     span_ctxmgr_cb=o.span,
     msg_cb=recv,
 )
 c.start()
 
-c.subscribe(topics=["#"])
+c.subscribe(topics=[f"{topic}/+"])
 
-c.publish(topic='foo/bar/dropped', payload="dropped")
+c.publish(topic=f'{topic}/dropped', payload="dropped")
 time.sleep(1)
 
-c.publish(topic='foo/bar/passed', payload="passed")
+c.publish(topic=f'{topic}/passed', payload="passed")
 time.sleep(1)
 
 c.stop()
