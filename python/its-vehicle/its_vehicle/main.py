@@ -33,7 +33,6 @@ DEFAULTS = {
         "password": None,
     },
     "broker.mirror": {
-        "port": 1883,
         "username": None,
         "password": None,
     },
@@ -133,21 +132,12 @@ def main():
         msg_cb=_msg_cb,
     )
 
-    if "host" in cfg["broker.mirror"] or "socket-path" in cfg["broker.mirror"]:
-        if "host" in cfg["broker.mirror"]:
-            conn_opts = {
-                "host": cfg["broker.mirror"]["host"],
-                "port": int(cfg["broker.mirror"]["port"]),
-            }
-        else:
-            conn_opts = {
-                "socket_path": cfg["broker.mirror"]["socket-path"],
-            }
+    if "socket-path" in cfg["broker.mirror"]:
         mqtt_mirror = iot3.core.mqtt.MqttClient(
             client_id=cfg["broker.mirror"]["client-id"],
+            socket_path=cfg["broker.mirror"]["socket-path"],
             username=cfg["broker.mirror"]["username"],
             password=cfg["broker.mirror"]["password"],
-            **conn_opts,
         )
     else:
         mqtt_mirror = None
