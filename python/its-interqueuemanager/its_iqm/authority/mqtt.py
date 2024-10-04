@@ -28,6 +28,7 @@ class Authority:
             client_id=client_id,
             host=self.cfg["host"],
             port=int(self.cfg["port"]),
+            tls=self.cfg.get("tls"),
             username=self.cfg.get("username"),
             password=self.cfg.get("password"),
             msg_cb=self.msg_cb,
