@@ -28,3 +28,20 @@ c.publish(topic=topic, payload="clear message")
 time.sleep(1)
 
 c.stop()
+
+c = iot3.core.mqtt.MqttClient(
+    client_id=client_id,
+    host="test.mosquitto.org",
+    port=8886,
+    msg_cb=recv,
+    msg_cb_data="tls",
+)
+c.start()
+
+c.subscribe(topics=[topic])
+c.wait_for_ready()
+c.publish(topic=topic, payload="3ИСЯЧРТЕD ПЕЅЅД̈GЕ")
+
+time.sleep(1)
+
+c.stop()
