@@ -14,8 +14,11 @@ class Status:
             self.topic = cfg.get("mqtt", "topic", fallback="status/system")
             self.client = iot3.core.mqtt.MqttClient(
                 client_id=cfg.get("mqtt", "client_id", fallback="its-status"),
-                host=cfg.get("mqtt", "host", fallback="127.0.0.1"),
-                port=cfg.getint("mqtt", "port", fallback=1883),
+                socket_path=cfg.get(
+                    "mqtt",
+                    "socket_path",
+                    fallback="/run/mosquitto/mqtt.socket",
+                ),
                 username=cfg.get("mqtt", "username", fallback=None),
                 password=cfg.get("mqtt", "password", fallback=None),
             )
