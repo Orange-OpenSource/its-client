@@ -114,37 +114,37 @@ public class Iot3MobilityExample {
         ioT3Mobility.setRoadSensorCallback(new IoT3RoadSensorCallback() {
             @Override
             public void newRoadSensor(RoadSensor roadSensor) {
-
+                System.out.println("New Road Sensor: " + roadSensor.getUuid());
             }
 
             @Override
             public void roadSensorUpdate(RoadSensor roadSensor) {
-
+                System.out.println("Road Sensor update: " + roadSensor.getUuid());
             }
 
             @Override
             public void roadSensorExpired(RoadSensor roadSensor) {
-
+                System.out.println("Road Sensor has expired: " + roadSensor.getUuid());
             }
 
             @Override
             public void newSensorObject(SensorObject sensorObject) {
-
+                System.out.println("New Sensor object: " + sensorObject.getUuid());
             }
 
             @Override
             public void sensorObjectUpdate(SensorObject sensorObject) {
-
+                System.out.println("Sensor Object update: " + sensorObject.getUuid());
             }
 
             @Override
             public void sensorObjectExpired(SensorObject sensorObject) {
-
+                System.out.println("Sensor Object has expired: " + sensorObject.getUuid());
             }
 
             @Override
             public void cpmArrived(CPM cpm) {
-
+                System.out.println("CPM received: " + cpm.getJson());
             }
         });
 
