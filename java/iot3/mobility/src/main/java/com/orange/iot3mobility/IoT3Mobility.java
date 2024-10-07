@@ -17,6 +17,7 @@ import com.orange.iot3mobility.its.json.Position;
 import com.orange.iot3mobility.its.json.cam.BasicContainer;
 import com.orange.iot3mobility.its.json.cam.CAM;
 import com.orange.iot3mobility.its.json.cam.HighFrequencyContainer;
+import com.orange.iot3mobility.its.json.cpm.CPM;
 import com.orange.iot3mobility.its.json.denm.*;
 import com.orange.iot3mobility.managers.IoT3RoadHazardCallback;
 import com.orange.iot3mobility.managers.IoT3RoadSensorCallback;
@@ -207,7 +208,8 @@ public class IoT3Mobility {
     }
 
     /**
-     * Share your position and dynamic parameters with other road users
+     * Share your position and dynamic parameters with other road users.
+     * Builds a CAM and uses {@link #sendCam(CAM)}
      *
      * @param stationType your road user type
      * @param position your position (latitude, longitude in degrees)
@@ -252,8 +254,18 @@ public class IoT3Mobility {
                                 (int) (yawRate * 10)))
                 .build();
 
+        sendCam(cam);
+    }
+
+    /**
+     * Send a CAM - Cooperative Awareness Message
+     *
+     * @param cam the CAM representing your current state
+     */
+    public void sendCam(CAM cam) {
         // build the topic
-        String quadkey = QuadTileHelper.latLngToQuadKey(position.latitude, position.longitude, 22);
+        String quadkey = QuadTileHelper.latLngToQuadKey(cam.getBasicContainer().getPosition().getLatitudeDegree(),
+                cam.getBasicContainer().getPosition().getLongitudeDegree(), 22);
         String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
         String topic = "SWR/inQueue/v2x/cam/" + uuid + geoExtension;
 
@@ -262,7 +274,8 @@ public class IoT3Mobility {
     }
 
     /**
-     * Inform other road users of a road hazard
+     * Inform other road users of a road hazard.
+     * Builds a DENM and uses {@link #sendDenm(DENM)}
      *
      * @param hazardType the type of the reported hazard
      * @param position the hazard's position (latitude, longitude in degrees)
@@ -306,8 +319,20 @@ public class IoT3Mobility {
                                         hazardType.getSubcause())))
                 .build();
 
+        sendDenm(denm);
+    }
+
+    /**
+     * Send a DENM - Decentralized Environment Notification Message
+     *
+     * @param denm the DENM representing a road event
+     */
+    public void sendDenm(DENM denm) {
         // build the topic
-        String quadkey = QuadTileHelper.latLngToQuadKey(position.latitude, position.longitude, 22);
+        String quadkey = QuadTileHelper.latLngToQuadKey(
+                denm.getManagementContainer().getEventPosition().getLatitudeDegree(),
+                denm.getManagementContainer().getEventPosition().getLongitudeDegree(),
+                22);
         String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
         String topic = "SWR/inQueue/v2x/denm/" + uuid + geoExtension;
 
@@ -315,5 +340,22 @@ public class IoT3Mobility {
         if(ioT3Core != null) ioT3Core.mqttPublish(topic, denm.getJsonDENM().toString());
     }
 
+    /**
+     * Send a CPM - Cooperative Perception Message
+     *
+     * @param cpm the CPM representing your sensors and their perceived objects
+     */
+    public void sendCpm(CPM cpm) {
+        // build the topic
+        String quadkey = QuadTileHelper.latLngToQuadKey(
+                cpm.getManagementContainer().getReferencePosition().getLatitudeDegree(),
+                cpm.getManagementContainer().getReferencePosition().getLongitudeDegree(),
+                22);
+        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
+        String topic = "SWR/inQueue/v2x/cpm/" + uuid + geoExtension;
+
+        // send the message
+        if(ioT3Core != null) ioT3Core.mqttPublish(topic, cpm.getJson().toString());
+    }
 
 }
