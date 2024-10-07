@@ -2,6 +2,7 @@ package com.orange;
 
 import com.orange.iot3mobility.IoT3Mobility;
 import com.orange.iot3mobility.IoT3MobilityCallback;
+import com.orange.iot3mobility.its.HazardType;
 import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.its.json.cam.CAM;
 import com.orange.iot3mobility.its.json.cpm.CPM;
@@ -152,7 +153,7 @@ public class Iot3MobilityExample {
         LatLng roiPosition = new LatLng(48.625218, 2.243448); // UTAC TEQMO test track coordinates
         setRegionOfInterest(roiPosition);
 
-        startSendingCAMs();
+        startSendingMessages();
     }
 
     private static void setRegionOfInterest(LatLng roiPosition) {
@@ -165,14 +166,20 @@ public class Iot3MobilityExample {
         ioT3Mobility.setRoadSensorRoI(roiPosition, 18, true);
     }
 
-    private static synchronized void startSendingCAMs() {
-        ScheduledExecutorService camScheduler = Executors.newScheduledThreadPool(1);
-        camScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendCam, 1, 1, TimeUnit.SECONDS);
+    private static synchronized void startSendingMessages() {
+        ScheduledExecutorService messageScheduler = Executors.newScheduledThreadPool(1);
+        messageScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendTestCam, 1, 1, TimeUnit.SECONDS);
+        messageScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendTestDenm, 1, 10, TimeUnit.SECONDS);
     }
 
-    private static void sendCam() {
-        LatLng position = new LatLng(48.625218, 2.243448);
+    private static void sendTestCam() {
+        LatLng position = new LatLng(48.625218, 2.243448); // center point of UTAC TEQMO
         ioT3Mobility.sendPosition(StationType.PASSENGER_CAR, position, 0, 0, 0, 0, 0);
+    }
+
+    private static void sendTestDenm() {
+        LatLng position = new LatLng(48.625261, 2.243713); // Slightly east of UTAC TEQMO center point
+        ioT3Mobility.sendHazard(HazardType.ACCIDENT_NO_SUBCAUSE, position, 5, 7, StationType.PASSENGER_CAR);
     }
 
 }
