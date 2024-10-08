@@ -12,89 +12,178 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 import com.orange.iot3mobility.its.EtsiUtils;
 import com.orange.iot3mobility.its.json.JsonKey;
 
+import com.orange.iot3mobility.its.json.cpm.PerceivedObject;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * CAM HighFrequencyContainer.
+ * <p>
+ * Provides detailed information about a vehicle's status.
+ */
 public class HighFrequencyContainer {
 
-    private static final Logger LOGGER = Logger.getLogger(CAM.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(HighFrequencyContainer.class.getName());
 
     private final JSONObject jsonHighFrequencyContainer = new JSONObject();
+
+    /**
+     * Unit: 0.1 degree. Heading of the vehicle movement of the originating ITS-S
+     * with regards to the true north.
+     * <p> 
+     * wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), unavailable(3601)
+     */
     private final int heading;
+
+    /**
+     * Unit 0.01 m/s. Driving speed of the originating ITS-S.
+     * <p>
+     * standstill(0), oneCentimeterPerSec(1), unavailable(16383)
+     */
     private final int speed;
+
+    /**
+     * Vehicle drive direction (forward or backward) of the originating ITS-S.
+     * <p>
+     * forward (0), backward (1), unavailable (2)
+     */
     private final int driveDirection;
+
+    /**
+     * Unit 0.1 m. Length of the ITS-S.
+     * <p>
+     * tenCentimeters(1), outOfRange(1022), unavailable(1023)
+     */
     private final int vehicleLength;
+
+    /**
+     * Unit 0.1 m. Width of the ITS-S.
+     * <p>
+     * tenCentimeters(1), outOfRange(61), unavailable(62)
+     */
     private final int vehicleWidth;
+
+    /**
+     * unit: 0.1 m/s2. Vehicle longitudinal acceleration of the originating ITS-S in the centre of the mass
+     * of the empty vehicle.
+     * <p>
+     * pointOneMeterPerSecSquaredForward(1), pointOneMeterPerSecSquaredBackward(-1), unavailable(161)
+     */
     private final int longitudinalAcceleration;
+
+    /**
+     * Unit: 0.1 m/s2. Vehicle lateral acceleration of the originating ITS-S in the centre of the mass of
+     * the empty vehicle.
+     * <p>
+     * pointOneMeterPerSecSquaredToRight(-1), pointOneMeterPerSecSquaredToLeft(1), unavailable(161)
+     */
     private final int lateralAcceleration;
+
+    /**
+     * Unit: 0.1 m/s2. Vertical Acceleration of the originating ITS-S in the centre of the mass of the
+     * empty vehicle.
+     * <p>
+     * pointOneMeterPerSecSquaredUp(1), pointOneMeterPerSecSquaredDown(-1), unavailable(161)
+     */
     private final int verticalAcceleration;
+
+    /**
+     * Unit: 0.01 degree/s. Vehicle rotation around the centre of mass of
+     * the empty vehicle. The leading sign denotes the direction of rotation.
+     * The value is negative if the motion is clockwise when viewing from the
+     * top.
+     * <p>
+     * straight(0), degSec-000-01ToRight(-1), degSec-000-01ToLeft(1), unavailable(32767)
+     */
     private final int yawRate;
+
+    /**
+     * The lanePosition of the referencePosition of a vehicle, counted from the
+     * outside border of the road, in the direction of the traffic flow.
+     * <p>
+     * offTheRoad(-1), innerHardShoulder(0), innermostDrivingLane(1), secondLaneFromInside(2), outterHardShoulder(14)
+     */
     private final int lanePosition;
+
+    /**
+     * Inverse of the vehicle current curve radius and the turning direction of the curve with regards to the driving
+     * direction of the vehicle.
+     * <p>
+     * straight(0), unavailable(1023)
+     */
     private final int curvature;
+
+    /**
+     * It describes whether the yaw rate is used to calculate the curvature.
+     * <p>
+     * yawRateUsed(0), yawRateNotUsed(1), unavailable(2)
+     */
     private final int curvatureCalculationMode;
+
+    /**
+     * Current controlling mechanism for longitudinal movement of the vehicle. Represented as a bit string:
+     * <p>
+     * brakePedalEngaged (0), gasPedalEngaged (1), emergencyBrakeEngaged (2), collisionWarningEngaged(3),
+     * accEngaged(4), cruiseControlEngaged(5), speedLimiterEngaged(6)
+     */
     private final String accelerationControl;
+
+    /**
+     * equalOrWithinZeroPointOneDegree (1), equalOrWithinOneDegree (10), outOfRange(126), unavailable(127)
+     */
     private final int headingConfidence;
+
+    /**
+     * equalOrWithinOneCentimeterPerSec(1), equalOrWithinOneMeterPerSec(100), outOfRange(126), unavailable(127)
+     */
     private final int speedConfidence;
+
+    /**
+     * noTrailerPresent(0), trailerPresentWithKnownLength(1), trailerPresentWithUnknownLength(2),
+     * trailerPresenceIsUnknown(3), unavailable(4)
+     */
     private final int vehicleLengthConfidence;
+
+    /**
+     * pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102)
+     */
     private final int longitudinalAccelerationConfidence;
+
+    /**
+     * Unit: 0.1 m/s2. 
+     * <p>
+     * pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102)
+     */
     private final int lateralAccelerationConfidence;
+
+    /**
+     * Unit: 0.1 m/s2. 
+     * <p>
+     * pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102)
+     */
     private final int verticalAccelerationConfidence;
+
+    /**
+     * degSec-000-01 (0), degSec-000-05 (1), degSec-000-10 (2), degSec-001-00 (3), degSec-005-00 (4), degSec-010-00 (5), 
+     * degSec-100-00 (6), outOfRange (7), unavailable (8)
+     */
     private final int yawRateConfidence;
+
+    /**
+     * onePerMeter-0-00002 (0), onePerMeter-0-0001 (1), onePerMeter-0-0005 (2), onePerMeter-0-002 (3),
+     * onePerMeter-0-01 (4), onePerMeter-0-1 (5), outOfRange (6), unavailable (7)
+     */
     private final int curvatureConfidence;
 
-    public HighFrequencyContainer(
-            final int heading,
-            final int speed,
-            final int longitudinalAcceleration,
-            final int yawRate)
-    {
-        this(
-                heading,
-                speed,
-                UNKNOWN,
-                UNKNOWN,
-                longitudinalAcceleration,
-                yawRate,
-                UNKNOWN);
-    }
-
-    public HighFrequencyContainer(
-            final int heading,
-            final int speed,
-            final int vehicleLength,
-            final int vehicleWidth,
-            final int longitudinalAcceleration,
-            final int yawRate,
-            final int lanePosition)
-    {
-        this(
-                heading,
-                speed,
-                UNKNOWN,
-                vehicleLength,
-                vehicleWidth,
-                longitudinalAcceleration,
-                UNKNOWN,
-                UNKNOWN,
-                yawRate,
-                lanePosition,
-                UNKNOWN,
-                UNKNOWN,
-                "",
-                UNKNOWN,
-                UNKNOWN,
-                UNKNOWN,
-                UNKNOWN,
-                UNKNOWN,
-                UNKNOWN,
-                UNKNOWN,
-                UNKNOWN);
-    }
-
-    public HighFrequencyContainer(
+    /**
+     * Build a CAM HighFrequencyContainer.
+     * <p>
+     * Provides detailed information about vehicle's status.
+     */
+    private HighFrequencyContainer(
             final int heading,
             final int speed,
             final int driveDirection,
@@ -403,6 +492,293 @@ public class HighFrequencyContainer {
         return curvatureConfidence;
     }
 
+    public static class HighFrequencyContainerBuilder {
+        private int heading;
+        private int speed;
+        private int driveDirection;
+        private int vehicleLength;
+        private int vehicleWidth;
+        private int longitudinalAcceleration;
+        private int lateralAcceleration;
+        private int verticalAcceleration;
+        private int yawRate;
+        private int lanePosition;
+        private int curvature;
+        private int curvatureCalculationMode;
+        private String accelerationControl;
+        private int headingConfidence;
+        private int speedConfidence;
+        private int vehicleLengthConfidence;
+        private int longitudinalAccelerationConfidence;
+        private int lateralAccelerationConfidence;
+        private int verticalAccelerationConfidence;
+        private int yawRateConfidence;
+        private int curvatureConfidence;
+
+        /**
+         * Start building a HighFrequencyContainer.
+         */
+        public HighFrequencyContainerBuilder() {
+        }
+
+        /**
+         * Sets the speed of the ITS-S.
+         *
+         * @param speed {@link HighFrequencyContainer#speed}
+         */
+        public HighFrequencyContainerBuilder speed(int speed) {
+            this.speed = speed;
+            return this;
+        }
+
+        /**
+         * Sets the speed and speed confidence of the ITS-S.
+         *
+         * @param speed {@link HighFrequencyContainer#speed}
+         * @param speedConfidence {@link HighFrequencyContainer#speedConfidence}
+         */
+        public HighFrequencyContainerBuilder speed(int speed,
+                                                   int speedConfidence) {
+            this.speed = speed;
+            this.speedConfidence = speedConfidence;
+            return this;
+        }
+
+        /**
+         * Sets the headinge of the ITS-S.
+         *
+         * @param heading {@link HighFrequencyContainer#heading}
+         */
+        public HighFrequencyContainerBuilder heading(int heading) {
+            this.heading = heading;
+            return this;
+        }
+
+        /**
+         * Sets the heading and heading confidence of the ITS-S.
+         *
+         * @param heading {@link HighFrequencyContainer#heading}
+         * @param headingConfidence {@link HighFrequencyContainer#headingConfidence}
+         */
+        public HighFrequencyContainerBuilder heading(int heading,
+                                                     int headingConfidence) {
+            this.heading = heading;
+            this.headingConfidence = headingConfidence;
+            return this;
+        }
+
+        /**
+         * Sets the drive direction of the ITS-S.
+         *
+         * @param driveDirection {@link HighFrequencyContainer#driveDirection}
+         */
+        public HighFrequencyContainerBuilder driveDirection(int driveDirection) {
+            this.driveDirection = driveDirection;
+            return this;
+        }
+
+        /**
+         * Sets the size of the ITS-S.
+         *
+         * @param vehicleLength {@link HighFrequencyContainer#vehicleLength}
+         * @param vehicleWidth {@link HighFrequencyContainer#vehicleWidth}
+         */
+        public HighFrequencyContainerBuilder vehicleSize(int vehicleLength,
+                                                         int vehicleWidth) {
+            this.vehicleLength = vehicleLength;
+            this.vehicleWidth = vehicleWidth;
+            return this;
+        }
+
+        /**
+         * Sets the size and size confidence of the ITS-S.
+         *
+         * @param vehicleLength {@link HighFrequencyContainer#vehicleLength}
+         * @param vehicleWidth {@link HighFrequencyContainer#vehicleWidth}
+         * @param vehicleLengthConfidence {@link HighFrequencyContainer#vehicleLengthConfidence}
+         */
+        public HighFrequencyContainerBuilder vehicleSize(int vehicleLength,
+                                                         int vehicleWidth,
+                                                         int vehicleLengthConfidence) {
+            this.vehicleLength = vehicleLength;
+            this.vehicleWidth = vehicleWidth;
+            this.vehicleLengthConfidence = vehicleLengthConfidence;
+            return this;
+        }
+
+        /**
+         * Sets the yaw rate of the ITS-S.
+         *
+         * @param yawRate {@link HighFrequencyContainer#yawRate}
+         */
+        public HighFrequencyContainerBuilder yawRate(int yawRate) {
+            this.yawRate = yawRate;
+            return this;
+        }
+
+        /**
+         * Sets the yaw rate and yaw rate confidence of the ITS-S.
+         *
+         * @param yawRate {@link HighFrequencyContainer#yawRate}
+         * @param yawRateConfidence {@link HighFrequencyContainer#yawRateConfidence}
+         */
+        public HighFrequencyContainerBuilder yawRate(int yawRate,
+                                                     int yawRateConfidence) {
+            this.yawRate = yawRate;
+            this.yawRateConfidence = yawRateConfidence;
+            return this;
+        }
+
+        /**
+         * Sets the longitudinal acceleration and of the ITS-S.
+         *
+         * @param longitudinalAcceleration {@link HighFrequencyContainer#longitudinalAcceleration}
+         */
+        public HighFrequencyContainerBuilder longitudinalAcceleration(int longitudinalAcceleration) {
+            this.longitudinalAcceleration = longitudinalAcceleration;
+            return this;
+        }
+
+        /**
+         * Sets the longitudinal acceleration and of the ITS-S and its confidence.
+         *
+         * @param longitudinalAcceleration {@link HighFrequencyContainer#longitudinalAcceleration}
+         * @param longitudinalAccelerationConfidence {@link HighFrequencyContainer#longitudinalAccelerationConfidence}
+         */
+        public HighFrequencyContainerBuilder longitudinalAcceleration(int longitudinalAcceleration,
+                                                                      int longitudinalAccelerationConfidence) {
+            this.longitudinalAcceleration = longitudinalAcceleration;
+            this.longitudinalAccelerationConfidence = longitudinalAccelerationConfidence;
+            return this;
+        }
+
+        /**
+         * Sets the lateral acceleration and of the ITS-S.
+         *
+         * @param lateralAcceleration {@link HighFrequencyContainer#lateralAcceleration}
+         */
+        public HighFrequencyContainerBuilder lateralAcceleration(int lateralAcceleration) {
+            this.lateralAcceleration = lateralAcceleration;
+            return this;
+        }
+
+        /**
+         * Sets the lateral acceleration and of the ITS-S and its confidence.
+         *
+         * @param lateralAcceleration {@link HighFrequencyContainer#lateralAcceleration}
+         * @param lateralAccelerationConfidence {@link HighFrequencyContainer#lateralAccelerationConfidence}
+         */
+        public HighFrequencyContainerBuilder lateralAcceleration(int lateralAcceleration,
+                                                                 int lateralAccelerationConfidence) {
+            this.lateralAcceleration = lateralAcceleration;
+            this.lateralAccelerationConfidence = lateralAccelerationConfidence;
+            return this;
+        }
+
+        /**
+         * Sets the vertical acceleration and of the ITS-S.
+         *
+         * @param verticalAcceleration {@link HighFrequencyContainer#verticalAcceleration}
+         */
+        public HighFrequencyContainerBuilder verticalAcceleration(int verticalAcceleration) {
+            this.verticalAcceleration = verticalAcceleration;
+            return this;
+        }
+
+        /**
+         * Sets the vertical acceleration and of the ITS-S and its confidence.
+         *
+         * @param verticalAcceleration {@link HighFrequencyContainer#verticalAcceleration}
+         * @param verticalAccelerationConfidence {@link HighFrequencyContainer#verticalAccelerationConfidence}
+         */
+        public HighFrequencyContainerBuilder verticalAcceleration(int verticalAcceleration,
+                                                                  int verticalAccelerationConfidence) {
+            this.verticalAcceleration = verticalAcceleration;
+            this.verticalAccelerationConfidence = verticalAccelerationConfidence;
+            return this;
+        }
+
+        /**
+         * Sets the acceleration control mechanism of the ITS-S.
+         *
+         * @param accelerationControl {@link HighFrequencyContainer#accelerationControl}
+         */
+        public HighFrequencyContainerBuilder accelerationControl(String accelerationControl) {
+            this.accelerationControl = accelerationControl;
+            return this;
+        }
+
+        /**
+         * Sets the curvature of the ITS-S and its calculation mode.
+         *
+         * @param curvature {@link HighFrequencyContainer#curvature}
+         * @param curvatureCalculationMode {@link HighFrequencyContainer#curvatureCalculationMode}
+         */
+        public HighFrequencyContainerBuilder curvature(int curvature,
+                                                       int curvatureCalculationMode) {
+            this.curvature = curvature;
+            this.curvatureCalculationMode = curvatureCalculationMode;
+            return this;
+        }
+
+        /**
+         * Sets the curvature of the ITS-S, and its confidence and calculation mode.
+         *
+         * @param curvature {@link HighFrequencyContainer#curvature}
+         * @param curvatureConfidence {@link HighFrequencyContainer#curvatureConfidence}
+         * @param curvatureCalculationMode {@link HighFrequencyContainer#curvatureCalculationMode}
+         */
+        public HighFrequencyContainerBuilder curvature(int curvature,
+                                                       int curvatureConfidence,
+                                                       int curvatureCalculationMode) {
+            this.curvature = curvature;
+            this.curvatureConfidence = curvatureConfidence;
+            this.curvatureCalculationMode = curvatureCalculationMode;
+            return this;
+        }
+
+        /**
+         * Sets the lane position of the ITS-S.
+         *
+         * @param lanePosition {@link HighFrequencyContainer#lanePosition}
+         */
+        public HighFrequencyContainerBuilder lanePosition(int lanePosition) {
+            this.lanePosition = lanePosition;
+            return this;
+        }
+
+        /**
+         * Build the HighFrequencyContainer.
+         *
+         * @return {@link #HighFrequencyContainer}
+         */
+        public HighFrequencyContainer build() {
+            return new HighFrequencyContainer(
+                    heading,
+                    speed,
+                    driveDirection,
+                    vehicleLength,
+                    vehicleWidth,
+                    longitudinalAcceleration,
+                    lateralAcceleration,
+                    verticalAcceleration,
+                    yawRate,
+                    lanePosition,
+                    curvature,
+                    curvatureCalculationMode,
+                    accelerationControl,
+                    headingConfidence,
+                    speedConfidence,
+                    vehicleLengthConfidence,
+                    longitudinalAccelerationConfidence,
+                    lateralAccelerationConfidence,
+                    verticalAccelerationConfidence,
+                    yawRateConfidence,
+                    curvatureConfidence);
+        }
+
+    }
+
     public static HighFrequencyContainer jsonParser(JSONObject jsonHighFrequencyContainer) {
         if(jsonHighFrequencyContainer == null || jsonHighFrequencyContainer.isEmpty()) return null;
         int heading = jsonHighFrequencyContainer.optInt(JsonKey.HighFrequencyContainer.HEADING.key(), UNKNOWN);
@@ -439,28 +815,19 @@ public class HighFrequencyContainer {
             curvatureConfidence = confidence.optInt(JsonKey.Confidence.CURVATURE.key(), UNKNOWN);
         }
 
-        return new HighFrequencyContainer(
-                heading,
-                speed,
-                driveDirection,
-                vehicleLength,
-                vehicleWidth,
-                longitudinalAcceleration,
-                lateralAcceleration,
-                verticalAcceleration,
-                yawRate,
-                lanePosition,
-                curvature,
-                curvatureCalculationMode,
-                accelerationControl,
-                headingConfidence,
-                speedConfidence,
-                vehicleLengthConfidence,
-                longitudinalAccelerationConfidence,
-                lateralAccelerationConfidence,
-                verticalAccelerationConfidence,
-                yawRateConfidence,
-                curvatureConfidence);
+        return new HighFrequencyContainerBuilder()
+                .speed(speed, speedConfidence)
+                .heading(heading, headingConfidence)
+                .driveDirection(driveDirection)
+                .longitudinalAcceleration(longitudinalAcceleration, longitudinalAccelerationConfidence)
+                .lateralAcceleration(lateralAcceleration, lateralAccelerationConfidence)
+                .verticalAcceleration(verticalAcceleration, verticalAccelerationConfidence)
+                .accelerationControl(accelerationControl)
+                .yawRate(yawRate, yawRateConfidence)
+                .vehicleSize(vehicleLength, vehicleWidth, vehicleLengthConfidence)
+                .curvature(curvature, curvatureConfidence, curvatureCalculationMode)
+                .lanePosition(lanePosition)
+                .build();
     }
 
 }

@@ -247,11 +247,12 @@ public class IoT3Mobility {
                                         (long) (position.getLongitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
                                         (int) (altitude * 100))))
                 .highFreqContainer(
-                        new HighFrequencyContainer(
-                                (int) (heading * 10),
-                                (int) (speed * 100),
-                                (int) (acceleration * 10),
-                                (int) (yawRate * 10)))
+                        new HighFrequencyContainer.HighFrequencyContainerBuilder()
+                                .heading((int) (heading * 10))
+                                .speed((int) (speed * 100))
+                                .longitudinalAcceleration((int) (acceleration * 10))
+                                .yawRate((int) (yawRate * 10))
+                                .build())
                 .build();
 
         sendCam(cam);
