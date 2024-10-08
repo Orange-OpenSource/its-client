@@ -24,10 +24,15 @@ class RegionOfInterest:
         msg_type: str,
     ):
         depth = self.depths[msg_type]
-        for s in self.speeds:
-            if speed < s or depth == 1:
-                break
-            depth -= 1
+        if speed is not None:
+            for s in self.speeds:
+                if speed < s or depth == 1:
+                    break
+                depth -= 1
+        else:
+            # We don't know our speed, so let's be conservative
+            # and assume the highest speed, so the largest RoI.
+            depth -= len(self.speeds)
 
         # Note: this finds the quadkeys around the current one; at the
         # equator, that gives roughly a square. However, the further
