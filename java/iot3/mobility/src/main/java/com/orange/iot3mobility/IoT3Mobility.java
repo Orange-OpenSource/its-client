@@ -236,7 +236,7 @@ public class IoT3Mobility {
                         uuid,
                         TrueTime.getAccurateTime())
                 .pduHeader(
-                        1,
+                        2,
                         stationId,
                         (int) (TrueTime.getAccurateETSITime() % 65536))
                 .basicContainer(

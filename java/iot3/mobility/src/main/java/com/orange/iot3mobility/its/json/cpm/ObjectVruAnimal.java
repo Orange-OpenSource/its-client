@@ -12,7 +12,12 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class ObjectVruAnimal {
+
+    private static final Logger LOGGER = Logger.getLogger(ObjectVruAnimal.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -37,7 +42,7 @@ public class ObjectVruAnimal {
         try {
             json.put(JsonCpmKey.ObjectClass.ANIMAL.key(), subclass);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM ObjectVruAnimal JSON build error", "Error: " + e);
         }
     }
 
@@ -50,7 +55,7 @@ public class ObjectVruAnimal {
     }
 
     public static ObjectVruAnimal jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         int subclass = json.optInt(JsonCpmKey.ObjectClass.ANIMAL.key(), UNKNOWN);
         if(subclass != UNKNOWN) return new ObjectVruAnimal(subclass);
         else return null;

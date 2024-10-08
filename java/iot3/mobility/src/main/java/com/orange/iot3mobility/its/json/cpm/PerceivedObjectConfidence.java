@@ -12,16 +12,21 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class PerceivedObjectConfidence {
+
+    private static final Logger LOGGER = Logger.getLogger(PerceivedObjectConfidence.class.getName());
 
     private final JSONObject json = new JSONObject();
 
     /**
      * Unit: 0.01 meter. Distance confidence to detected object from the reference point in
      * x-direction at the time of measurement.
-     *
+     * <p>
      * Absolute accuracy of measurement to a confidence level of 95%.
-     *
+     * <p>
      * zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(4094), unavailable(4095).
      */
     private final int xDistance;
@@ -29,9 +34,9 @@ public class PerceivedObjectConfidence {
     /**
      * Unit: 0.01 meter. Distance confidence to detected object from the reference point in
      * y-direction at the time of measurement.
-     *
+     * <p>
      * Absolute accuracy of measurement to a confidence level of 95%.
-     *
+     * <p>
      * zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(4094), unavailable(4095).
      */
     private final int yDistance;
@@ -39,9 +44,9 @@ public class PerceivedObjectConfidence {
     /**
      * Unit: 0.01 meter. Distance confidence to detected object from the reference point in
      * z-direction at the time of measurement.
-     *
+     * <p>
      * Absolute accuracy of measurement to a confidence level of 95%.
-     *
+     * <p>
      * zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(4094), unavailable(4095).
      */
     private final int zDistance;
@@ -49,7 +54,7 @@ public class PerceivedObjectConfidence {
     /**
      * Speed confidence of detected object from the reference point in x-direction at the time
      * of measurement.
-     *
+     * <p>
      * unavailable(0) Not Equipped or unavailable,
      * prec100ms(1) 100  meters / sec,
      * prec10ms(2) 10 meters / sec,
@@ -64,7 +69,7 @@ public class PerceivedObjectConfidence {
     /**
      * Speed confidence of detected object from the reference point in y-direction at the time
      * of measurement.
-     *
+     * <p>
      * unavailable(0) Not Equipped or unavailable,
      * prec100ms(1) 100  meters / sec,
      * prec10ms(2) 10 meters / sec,
@@ -79,7 +84,7 @@ public class PerceivedObjectConfidence {
     /**
      * Speed confidence of detected object from the reference point in z-direction at the time
      * of measurement.
-     *
+     * <p>
      * unavailable(0) Not Equipped or unavailable,
      * prec100ms(1) 100  meters / sec,
      * prec10ms(2) 10 meters / sec,
@@ -94,7 +99,7 @@ public class PerceivedObjectConfidence {
     /**
      * Acceleration confidence of detected object from the reference point in x-direction at the
      * time of measurement.
-     *
+     * <p>
      * pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102).
      */
     private final int xAcceleration;
@@ -102,7 +107,7 @@ public class PerceivedObjectConfidence {
     /**
      * Acceleration confidence of detected object from the reference point in y-direction at the
      * time of measurement.
-     *
+     * <p>
      * pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102).
      */
     private final int yAcceleration;
@@ -110,7 +115,7 @@ public class PerceivedObjectConfidence {
     /**
      * Acceleration confidence of detected object from the reference point in z-direction at the
      * time of measurement.
-     *
+     * <p>
      * pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102).
      */
     private final int zAcceleration;
@@ -118,9 +123,9 @@ public class PerceivedObjectConfidence {
     /**
      * Roll angle confidence. The absolute accuracy of a reported angle value for a predefined
      * confidence level (e.g. 95 %).
-     *
+     * <p>
      * The required confidence level is defined by the corresponding standards.
-     *
+     * <p>
      * zeroPointOneDegree(1), oneDegree(10), outOfRange(126), unavailable(127).
      */
     private final int rollAngle;
@@ -128,9 +133,9 @@ public class PerceivedObjectConfidence {
     /**
      * Pitch angle confidence. The absolute accuracy of a reported angle value for a predefined
      * confidence level (e.g. 95 %).
-     *
+     * <p>
      * The required confidence level is defined by the corresponding standards.
-     *
+     * <p>
      * zeroPointOneDegree(1), oneDegree(10), outOfRange(126), unavailable(127).
      */
     private final int pitchAngle;
@@ -138,9 +143,9 @@ public class PerceivedObjectConfidence {
     /**
      * Yaw angle confidence. The absolute accuracy of a reported angle value for a predefined
      * confidence level (e.g. 95 %).
-     *
+     * <p>
      * The required confidence level is defined by the corresponding standards.
-     *
+     * <p>
      * zeroPointOneDegree(1), oneDegree(10), outOfRange(126), unavailable(127).
      */
     private final int yawAngle;
@@ -148,10 +153,10 @@ public class PerceivedObjectConfidence {
     /**
      * Roll rate confidence. The absolute accuracy of a reported angular speed value for a
      * predefined confidence level (e.g. 95 %).
-     *
+     * <p>
      * The required confidence level is defined by the corresponding standards.
      * For correlation computation, maximum interval levels shall be assumed.
-     *
+     * <p>
      * degSec-000-01(0) if the accuracy is equal to or less than 0.01 degree/second,
      * degSec-000-05(1) if the accuracy is equal to or less than 0.05 degrees/second,
      * degSec-000-10(2) if the accuracy is equal to or less than 0.1 degree/second,
@@ -167,10 +172,10 @@ public class PerceivedObjectConfidence {
     /**
      * Pitch rate confidence. The absolute accuracy of a reported angular speed value for a
      * predefined confidence level (e.g. 95 %).
-     *
+     * <p>
      * The required confidence level is defined by the corresponding standards.
      * For correlation computation, maximum interval levels shall be assumed.
-     *
+     * <p>
      * degSec-000-01(0) if the accuracy is equal to or less than 0.01 degree/second,
      * degSec-000-05(1) if the accuracy is equal to or less than 0.05 degrees/second,
      * degSec-000-10(2) if the accuracy is equal to or less than 0.1 degree/second,
@@ -186,10 +191,10 @@ public class PerceivedObjectConfidence {
     /**
      * Yaw rate confidence. The absolute accuracy of a reported angular speed value for a
      * predefined confidence level (e.g. 95 %).
-     *
+     * <p>
      * The required confidence level is defined by the corresponding standards.
      * For correlation computation, maximum interval levels shall be assumed.
-     *
+     * <p>
      * degSec-000-01(0) if the accuracy is equal to or less than 0.01 degree/second,
      * degSec-000-05(1) if the accuracy is equal to or less than 0.05 degrees/second,
      * degSec-000-10(2) if the accuracy is equal to or less than 0.1 degree/second,
@@ -205,10 +210,10 @@ public class PerceivedObjectConfidence {
     /**
      * Roll acceleration confidence.The absolute accuracy of a reported angular acceleration value
      * for a predefined confidence level (e.g. 95 %).
-     *
+     * <p>
      * The required confidence level is defined by the corresponding standards.
      * For correlation computation, maximum interval levels shall be assumed.
-     *
+     * <p>
      * degSecSquared-000-01(0) if the accuracy is equal to or less than 0.01 degree/second^2,
      * degSecSquared-000-05(1) if the accuracy is equal to or less than 0.05 degrees/second^2,
      * degSecSquared-000-10(2) if the accuracy is equal to or less than 0.1 degree/second^2,
@@ -224,10 +229,10 @@ public class PerceivedObjectConfidence {
     /**
      * Pitch acceleration confidence.The absolute accuracy of a reported angular acceleration value
      * for a predefined confidence level (e.g. 95 %).
-     *
+     * <p>
      * The required confidence level is defined by the corresponding standards.
      * For correlation computation, maximum interval levels shall be assumed.
-     *
+     * <p>
      * degSecSquared-000-01(0) if the accuracy is equal to or less than 0.01 degree/second^2,
      * degSecSquared-000-05(1) if the accuracy is equal to or less than 0.05 degrees/second^2,
      * degSecSquared-000-10(2) if the accuracy is equal to or less than 0.1 degree/second^2,
@@ -243,10 +248,10 @@ public class PerceivedObjectConfidence {
     /**
      * Yaw acceleration confidence.The absolute accuracy of a reported angular acceleration value
      * for a predefined confidence level (e.g. 95 %).
-     *
+     * <p>
      * The required confidence level is defined by the corresponding standards.
      * For correlation computation, maximum interval levels shall be assumed.
-     *
+     * <p>
      * degSecSquared-000-01(0) if the accuracy is equal to or less than 0.01 degree/second^2,
      * degSecSquared-000-05(1) if the accuracy is equal to or less than 0.05 degrees/second^2,
      * degSecSquared-000-10(2) if the accuracy is equal to or less than 0.1 degree/second^2,
@@ -262,7 +267,7 @@ public class PerceivedObjectConfidence {
     /**
      * Unit: 0.01 m. Accuracy of first provided dimension value with a predefined confidence
      * level (e.g. 95%).
-     *
+     * <p>
      * zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101), unavailable(102).
      */
     private final int planarObjectDimension1;
@@ -270,7 +275,7 @@ public class PerceivedObjectConfidence {
     /**
      * Unit: 0.01 m. Accuracy of second provided dimension value with a predefined confidence
      * level (e.g. 95%).
-     *
+     * <p>
      * zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101), unavailable(102).
      */
     private final int planarObjectDimension2;
@@ -278,7 +283,7 @@ public class PerceivedObjectConfidence {
     /**
      * Unit: 0.01 m. Accuracy of vertical provided dimension value with a predefined confidence
      * level (e.g. 95%).
-     *
+     * <p>
      * zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101), unavailable(102).
      */
     private final int verticalObjectDimension;
@@ -286,7 +291,7 @@ public class PerceivedObjectConfidence {
     /**
      * Unit: 0.01 m. Absolute accuracy of longitudinal lane position measurement to a confidence
      * level of 95%.
-     *
+     * <p>
      * zeroPointZeroOneMeter(1), oneMeter(100), outOfRange(101) shall be set if the accuracy
      * is out of range, unavailable(102) shall be set if the accuracy data is unavailable
      */
@@ -294,20 +299,20 @@ public class PerceivedObjectConfidence {
 
     /**
      * The confidence associated to the object.
-     *
+     * <p>
      * The computation of the object confidence is based on a sensor's or, fusion system's specific
      * detection confidence, the binary detection success that is, if an object has been
      * successfully detected by the last measurement and the object age.
-     *
+     * <p>
      * A single-value indication about the overall information quality of a perceived object.
      * Its computation is based on several scaling factors and moving averages.
-     *
+     * <p>
      * noConfidence(0) no confidence in detected object, e.g. for ghost-objects or if confidence
      * could not be computed, fullConfidence(15) full confidence in detected object
      */
     private final int object;
 
-    public PerceivedObjectConfidence(
+    private PerceivedObjectConfidence(
             final int xDistance,
             final int yDistance,
             final int zDistance,
@@ -532,7 +537,7 @@ public class PerceivedObjectConfidence {
                 json.put(JsonCpmKey.ObjectLanePosition.LONGITUDINAL_LANE_POSITION.key(), longitudinalLanePosition);
             json.put(JsonCpmKey.PerceivedObjectContainer.OBJECT.key(), object);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM PerceivedObjectConfidence JSON build error", "Error: " + e);
         }
     }
 
@@ -641,8 +646,246 @@ public class PerceivedObjectConfidence {
         return object;
     }
 
+    public static class PerceivedObjectConfidenceBuilder {
+        private int xDistance;
+        private int yDistance;
+        private int zDistance = UNKNOWN;
+        private int xSpeed;
+        private int ySpeed;
+        private int zSpeed = UNKNOWN;
+        private int xAcceleration = UNKNOWN;
+        private int yAcceleration = UNKNOWN;
+        private int zAcceleration = UNKNOWN;
+        private int rollAngle = UNKNOWN;
+        private int pitchAngle = UNKNOWN;
+        private int yawAngle = UNKNOWN;
+        private int rollRate = UNKNOWN;
+        private int pitchRate = UNKNOWN;
+        private int yawRate = UNKNOWN;
+        private int rollAcceleration = UNKNOWN;
+        private int pitchAcceleration = UNKNOWN;
+        private int yawAcceleration = UNKNOWN;
+        private int planarObjectDimension1 = UNKNOWN;
+        private int planarObjectDimension2 = UNKNOWN;
+        private int verticalObjectDimension = UNKNOWN;
+        private int longitudinalLanePosition = UNKNOWN;
+        private final int object;
+
+        /**
+         * Start building a PerceivedObjectConfidence.
+         *
+         * @param object {@link PerceivedObjectConfidence#object}
+         */
+        public PerceivedObjectConfidenceBuilder(int object) {
+            this.object = object;
+        }
+
+        /**
+         * Sets the confidence of the distance between the sensor and the perceived object.
+         * <p>
+         * These fields are mandatory.
+         *
+         * @param xDistance {@link PerceivedObjectConfidence#xDistance}
+         * @param yDistance {@link PerceivedObjectConfidence#yDistance}
+         */
+        public PerceivedObjectConfidenceBuilder distance(int xDistance,
+                                                               int yDistance) {
+            this.xDistance = xDistance;
+            this.yDistance = yDistance;
+            return this;
+        }
+
+        /**
+         * Sets the confidence of the distance between the sensor and the perceived object.
+         * <p>
+         * These fields are mandatory, except zDistance - use {@link #distance(int, int)} if not known.
+         *
+         * @param xDistance {@link PerceivedObjectConfidence#xDistance}
+         * @param yDistance {@link PerceivedObjectConfidence#yDistance}
+         * @param zDistance {@link PerceivedObjectConfidence#zDistance}
+         */
+        public PerceivedObjectConfidenceBuilder distance(int xDistance,
+                                                               int yDistance,
+                                                               int zDistance) {
+            this.xDistance = xDistance;
+            this.yDistance = yDistance;
+            this.zDistance = zDistance;
+            return this;
+        }
+
+        /**
+         * Sets the confidence of the speed of the perceived object.
+         * <p>
+         * These fields are mandatory.
+         *
+         * @param xSpeed {@link PerceivedObjectConfidence#xSpeed}
+         * @param ySpeed {@link PerceivedObjectConfidence#ySpeed}
+         */
+        public PerceivedObjectConfidenceBuilder speed(int xSpeed,
+                                                            int ySpeed) {
+            this.xSpeed = xSpeed;
+            this.ySpeed = ySpeed;
+            return this;
+        }
+
+        /**
+         * Sets the confidence of the speed of the perceived object.
+         * <p>
+         * These fields are mandatory, except zSpeed - use {@link #speed(int, int)} if not known.
+         *
+         * @param xSpeed {@link PerceivedObjectConfidence#xSpeed}
+         * @param ySpeed {@link PerceivedObjectConfidence#ySpeed}
+         * @param zSpeed {@link PerceivedObjectConfidence#zSpeed}
+         */
+        public PerceivedObjectConfidenceBuilder speed(int xSpeed,
+                                                            int ySpeed,
+                                                            int zSpeed) {
+            this.xSpeed = xSpeed;
+            this.ySpeed = ySpeed;
+            this.zSpeed = zSpeed;
+            return this;
+        }
+
+        /**
+         * Sets the confidence of the acceleration of the perceived object.
+         * <p>
+         * These fields are optional.
+         *
+         * @param xAcceleration {@link PerceivedObjectConfidence#xAcceleration}
+         * @param yAcceleration {@link PerceivedObjectConfidence#yAcceleration}
+         * @param zAcceleration {@link PerceivedObjectConfidence#zAcceleration}
+         */
+        public PerceivedObjectConfidenceBuilder acceleration(int xAcceleration,
+                                                                   int yAcceleration,
+                                                                   int zAcceleration) {
+            this.xAcceleration = xAcceleration;
+            this.yAcceleration = yAcceleration;
+            this.zAcceleration = zAcceleration;
+            return this;
+        }
+
+        /**
+         * Sets the confidence of the angle of the perceived object.
+         * <p>
+         * These fields are optional.
+         *
+         * @param rollAngle {@link PerceivedObjectConfidence#rollAngle}
+         * @param pitchAngle {@link PerceivedObjectConfidence#pitchAngle}
+         * @param yawAngle {@link PerceivedObjectConfidence#yawAngle}
+         */
+        public PerceivedObjectConfidenceBuilder angle(int rollAngle,
+                                                            int pitchAngle,
+                                                            int yawAngle) {
+            this.rollAngle = rollAngle;
+            this.pitchAngle = pitchAngle;
+            this.yawAngle = yawAngle;
+            return this;
+        }
+
+        /**
+         * Sets the confidence of the angular rate of the perceived object.
+         * <p>
+         * These fields are optional.
+         *
+         * @param rollRate {@link PerceivedObjectConfidence#rollRate}
+         * @param pitchRate {@link PerceivedObjectConfidence#pitchRate}
+         * @param yawRate {@link PerceivedObjectConfidence#yawRate}
+         */
+        public PerceivedObjectConfidenceBuilder angleRate(int rollRate,
+                                                                int pitchRate,
+                                                                int yawRate) {
+            this.rollRate = rollRate;
+            this.pitchRate = pitchRate;
+            this.yawRate = yawRate;
+            return this;
+        }
+
+        /**
+         * Sets the confidence of the angular acceleration of the perceived object.
+         * <p>
+         * These fields are optional.
+         *
+         * @param rollAcceleration {@link PerceivedObjectConfidence#rollAcceleration}
+         * @param pitchAcceleration {@link PerceivedObjectConfidence#pitchAcceleration}
+         * @param yawAcceleration {@link PerceivedObjectConfidence#yawAcceleration}
+         */
+        public PerceivedObjectConfidenceBuilder angleAcceleration(int rollAcceleration,
+                                                                        int pitchAcceleration,
+                                                                        int yawAcceleration) {
+            this.rollAcceleration = rollAcceleration;
+            this.pitchAcceleration = pitchAcceleration;
+            this.yawAcceleration = yawAcceleration;
+            return this;
+        }
+
+        /**
+         * Sets the confidence of the dimensions of the perceived object.
+         * <p>
+         * These fields are optional.
+         *
+         * @param planarObjectDimension1 {@link PerceivedObjectConfidence#planarObjectDimension1}
+         * @param planarObjectDimension2 {@link PerceivedObjectConfidence#planarObjectDimension2}
+         * @param verticalObjectDimension {@link PerceivedObjectConfidence#verticalObjectDimension}
+         */
+        public PerceivedObjectConfidenceBuilder objectDimension(int planarObjectDimension1,
+                                                                      int planarObjectDimension2,
+                                                                      int verticalObjectDimension) {
+            this.planarObjectDimension1 = planarObjectDimension1;
+            this.planarObjectDimension2 = planarObjectDimension2;
+            this.verticalObjectDimension = verticalObjectDimension;
+            return this;
+        }
+
+        /**
+         * Sets the confidence of the lane position of the perceived object.
+         * <p>
+         * This field is optional.
+         *
+         * @param longitudinalLanePosition {@link PerceivedObjectConfidence#longitudinalLanePosition}
+         */
+        public PerceivedObjectConfidenceBuilder longitudinalLanePosition(int longitudinalLanePosition) {
+            this.longitudinalLanePosition = longitudinalLanePosition;
+            return this;
+        }
+
+        /**
+         * Build the perceived object confidence.
+         * <p>
+         * Call after setting all the mandatory fields.
+         *
+         * @return {@link #PerceivedObjectConfidence}
+         */
+        public PerceivedObjectConfidence build() {
+            return new PerceivedObjectConfidence(
+                    xDistance,
+                    yDistance,
+                    zDistance,
+                    xSpeed,
+                    ySpeed,
+                    zSpeed,
+                    xAcceleration,
+                    yAcceleration,
+                    zAcceleration,
+                    rollAngle,
+                    pitchAngle,
+                    yawAngle,
+                    rollRate,
+                    pitchRate,
+                    yawRate,
+                    rollAcceleration,
+                    pitchAcceleration,
+                    yawAcceleration,
+                    planarObjectDimension1,
+                    planarObjectDimension2,
+                    verticalObjectDimension,
+                    longitudinalLanePosition,
+                    object);
+        }
+
+    }
+
     public static PerceivedObjectConfidence jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         try {
             int xDistance = json.getInt(JsonCpmKey.ObjectDistance.X_DISTANCE.key());
             int yDistance = json.getInt(JsonCpmKey.ObjectDistance.Y_DISTANCE.key());
@@ -668,32 +911,39 @@ public class PerceivedObjectConfidence {
             int longitudinalLanePosition = json.optInt(JsonCpmKey.ObjectLanePosition.LONGITUDINAL_LANE_POSITION.key(), UNKNOWN);
             int object = json.getInt(JsonCpmKey.PerceivedObjectContainer.OBJECT.key());
 
-            return new PerceivedObjectConfidence(
-                    xDistance,
-                    yDistance,
-                    zDistance,
-                    xSpeed,
-                    ySpeed,
-                    zSpeed,
-                    xAcceleration,
-                    yAcceleration,
-                    zAcceleration,
-                    rollAngle,
-                    pitchAngle,
-                    yawAngle,
-                    rollRate,
-                    pitchRate,
-                    yawRate,
-                    rollAcceleration,
-                    pitchAcceleration,
-                    yawAcceleration,
-                    planarObjectDimension1,
-                    planarObjectDimension2,
-                    verticalObjectDimension,
-                    longitudinalLanePosition,
-                    object);
+            return new PerceivedObjectConfidenceBuilder(object)
+                    .distance(
+                            xDistance,
+                            yDistance,
+                            zDistance)
+                    .speed(
+                            xSpeed,
+                            ySpeed,
+                            zSpeed)
+                    .acceleration(
+                            xAcceleration,
+                            yAcceleration,
+                            zAcceleration)
+                    .angle(
+                            rollAngle,
+                            pitchAngle,
+                            yawAngle)
+                    .angleRate(
+                            rollRate,
+                            pitchRate,
+                            yawRate)
+                    .angleAcceleration(
+                            rollAcceleration, 
+                            pitchAcceleration,
+                            yawAcceleration)
+                    .objectDimension(
+                            planarObjectDimension1,
+                            planarObjectDimension2,
+                            verticalObjectDimension)
+                    .longitudinalLanePosition(longitudinalLanePosition)
+                    .build();
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM PerceivedObjectConfidence JSON parsing error", "Error: " + e);
         }
         return null;
     }

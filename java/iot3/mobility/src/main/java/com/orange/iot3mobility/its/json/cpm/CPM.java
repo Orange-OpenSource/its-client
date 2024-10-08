@@ -20,6 +20,17 @@ import org.json.JSONObject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Cooperative Perception Message.
+ * <p>
+ * Collective Perception Messages (CPMs) are transmitted by ITS-Ss in order to share information about perceived
+ * objects (such as vehicles, pedestrians, animals and other collision relevant objects) and perception regions
+ * (road regions that allow receiving ITS-Ss to determine unoccupied regions) in the local environment.
+ * <p>
+ * A CPM contains a set of perceived objects and regions, along with their observed status and attributes.
+ * The content may vary depending on the type of the road user or object and the detection capabilities of the
+ * originating ITS-S.
+ */
 public class CPM extends MessageBase {
 
     private static final Logger LOGGER = Logger.getLogger(CPM.class.getName());
@@ -29,7 +40,7 @@ public class CPM extends MessageBase {
     private final JSONObject json = new JSONObject();
 
     /**
-     * Version of the ITS message and/or communication protocol
+     * Version of the ITS message and/or communication protocol.
      */
     private final int protocolVersion;
 
@@ -40,40 +51,39 @@ public class CPM extends MessageBase {
 
     /**
      * Time of the reference position in the CPM, considered as time of the CPM generation.
-     *
+     * <p>
      * TimestampIts mod 65 536. TimestampIts represents an integer value in milliseconds since
      * 2004-01-01T00:00:00:000Z.
-     *
+     * <p>
      * oneMilliSec(1).
      */
     private final int generationDeltaTime;
 
     /**
-     * Contains the type and reference position of the emitting ITS-station
+     * Contains the type and reference position of the emitting ITS-station.
      */
     private final ManagementContainer managementContainer;
 
     /**
-     * Contains a sub-container describing the emitting ITS-station
+     * Contains a sub-container describing the emitting ITS-station.
      */
     private final StationDataContainer stationDataContainer;
 
     /**
-     * Contains all the sensor information of the emitting ITS-S
+     * Contains all the sensor information of the emitting ITS-S.
      */
     private final SensorInformationContainer sensorInformationContainer;
 
     /**
-     * Contains all the objects that have been perceived by the sensors of the emitting ITS-S
+     * Contains all the objects that have been perceived by the sensors of the emitting ITS-S.
      */
     private final PerceivedObjectContainer perceivedObjectContainer;
 
-    public CPM(
+    private CPM(
             final String type,
             final String origin,
             final String version,
             final String sourceUuid,
-            final String destinationUuid,
             final long timestamp,
             final int protocolVersion,
             final long stationId,
@@ -83,7 +93,7 @@ public class CPM extends MessageBase {
             final SensorInformationContainer sensorInformationContainer,
             final PerceivedObjectContainer perceivedObjectContainer
             ) throws IllegalArgumentException {
-        super(type, origin, version, sourceUuid, destinationUuid, timestamp);
+        super(type, origin, version, sourceUuid, timestamp);
         if(protocolVersion == UNKNOWN && isStrictMode()) {
             throw new IllegalArgumentException("CPM ProtocolVersion is missing");
         } else if(isStrictMode() && (protocolVersion > 255 || protocolVersion < 0)) {
@@ -134,12 +144,10 @@ public class CPM extends MessageBase {
             json.put(JsonKey.Header.ORIGIN.key(), getOrigin());
             json.put(JsonKey.Header.VERSION.key(), getVersion());
             json.put(JsonKey.Header.SOURCE_UUID.key(), getSourceUuid());
-            if(!getDestinationUuid().equals(""))
-                json.put(JsonKey.Header.DESTINATION_UUID.key(), getDestinationUuid());
             json.put(JsonKey.Header.TIMESTAMP.key(), getTimestamp());
             json.put(JsonKey.Header.MESSAGE.key(), message);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM JSON build error", "Error: " + e);
         }
     }
 
@@ -176,11 +184,10 @@ public class CPM extends MessageBase {
     }
     
     public static class CPMBuilder {
-        private String type;
+        private final String type;
         private String origin;
         private String version;
         private String sourceUuid;
-        private String destinationUuid;
         private long timestamp;
         private int protocolVersion;
         private long stationId;
@@ -189,24 +196,24 @@ public class CPM extends MessageBase {
         private StationDataContainer stationDataContainer;
         private SensorInformationContainer sensorInformationContainer;
         private PerceivedObjectContainer perceivedObjectContainer;
-        
+
+        /**
+         * Start building a CPM.
+         */
         public CPMBuilder() {
             this.type = JsonValue.Type.CPM.value();
         }
-        
-        public CPMBuilder header(String origin,
-                                 String version,
-                                 String sourceUuid,
-                                 String destinationUuid,
-                                 long timestamp) {
-            this.origin = origin;
-            this.version = version;
-            this.sourceUuid = sourceUuid;
-            this.destinationUuid = destinationUuid;
-            this.timestamp = timestamp;
-            return this;
-        }
 
+        /**
+         * Sets the JSON header of the CPM.
+         * <p>
+         * These fields are mandatory.
+         *
+         * @param origin The entity responsible for emitting the message.
+         * @param version JSON message format version.
+         * @param sourceUuid The identifier of the entity responsible for emitting the message.
+         * @param timestamp The timestamp when the message was generated since Unix Epoch (1970/01/01), in milliseconds.
+         */
         public CPMBuilder header(String origin,
                                      String version,
                                      String sourceUuid,
@@ -214,11 +221,19 @@ public class CPM extends MessageBase {
             this.origin = origin;
             this.version = version;
             this.sourceUuid = sourceUuid;
-            this.destinationUuid = "";
             this.timestamp = timestamp;
             return this;
         }
 
+        /**
+         * Sets the PDU header of the CPM.
+         * <p>
+         * These fields are mandatory.
+         *
+         * @param protocolVersion {@link CPM#protocolVersion}
+         * @param stationId {@link CPM#stationId}
+         * @param generationDeltaTime {@link CPM#generationDeltaTime}
+         */
         public CPMBuilder pduHeader(int protocolVersion,
                                         long stationId,
                                         int generationDeltaTime) {
@@ -227,34 +242,68 @@ public class CPM extends MessageBase {
             this.generationDeltaTime = generationDeltaTime;
             return this;
         }
-        
+
+        /**
+         * Sets the management container of the CPM.
+         * <p>
+         * This field is mandatory.
+         *
+         * @param managementContainer {@link CPM#managementContainer}
+         */
         public CPMBuilder managementContainer(ManagementContainer managementContainer) {
             this.managementContainer = managementContainer;
             return this;
         }
 
+        /**
+         * Sets the station data container of the CPM.
+         * <p>
+         * This field is optional.
+         *
+         * @param stationDataContainer {@link CPM#stationDataContainer}
+         */
         public CPMBuilder stationDataContainer(StationDataContainer stationDataContainer) {
             this.stationDataContainer = stationDataContainer;
             return this;
         }
 
+        /**
+         * Sets the sensor information container of the CPM.
+         * <p>
+         * This field is optional.
+         *
+         * @param sensorInformationContainer {@link CPM#sensorInformationContainer}
+         */
         public CPMBuilder sensorInformationContainer(SensorInformationContainer sensorInformationContainer) {
             this.sensorInformationContainer = sensorInformationContainer;
             return this;
         }
-        
+
+        /**
+         * Sets the perceived object container of the CPM.
+         * <p>
+         * This field is optional.
+         *
+         * @param perceivedObjectContainer {@link CPM#perceivedObjectContainer}
+         */
         public CPMBuilder perceivedObjectContainer(PerceivedObjectContainer perceivedObjectContainer) {
             this.perceivedObjectContainer = perceivedObjectContainer;
             return this;
         }
-        
+
+        /**
+         * Build the CPM.
+         * <p>
+         * Call after setting all the mandatory fields.
+         *
+         * @return {@link #CPM}
+         */
         public CPM build() {
             return new CPM(
                     type, 
                     origin, 
                     version,
                     sourceUuid,
-                    destinationUuid,
                     timestamp,
                     protocolVersion,
                     stationId,
@@ -274,20 +323,25 @@ public class CPM extends MessageBase {
     public static void setStrictMode(boolean strictMode) {
         CPM.strictMode = strictMode;
     }
-    
-    public static CPM jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+
+    /**
+     * Parse a CPM in JSON format.
+     *
+     * @param jsonCPM The CPM in JSON format
+     * @return {@link CPM}
+     */
+    public static CPM jsonParser(JSONObject jsonCPM) {
+        if(jsonCPM == null || jsonCPM.isEmpty()) return null;
         try {
-            String type = json.getString(JsonKey.Header.TYPE.key());
+            String type = jsonCPM.getString(JsonKey.Header.TYPE.key());
 
             if(type.equals(JsonValue.Type.CPM.value())) {
-                JSONObject message = json.getJSONObject(JsonKey.Header.MESSAGE.key());
+                JSONObject message = jsonCPM.getJSONObject(JsonKey.Header.MESSAGE.key());
 
-                String origin = json.getString(JsonKey.Header.ORIGIN.key());
-                String version = json.getString(JsonKey.Header.VERSION.key());
-                String sourceUuid = json.getString(JsonKey.Header.SOURCE_UUID.key());
-                String destinationUuid = json.optString(JsonKey.Header.DESTINATION_UUID.key());
-                long timestamp = json.getLong(JsonKey.Header.TIMESTAMP.key());
+                String origin = jsonCPM.getString(JsonKey.Header.ORIGIN.key());
+                String version = jsonCPM.getString(JsonKey.Header.VERSION.key());
+                String sourceUuid = jsonCPM.getString(JsonKey.Header.SOURCE_UUID.key());
+                long timestamp = jsonCPM.getLong(JsonKey.Header.TIMESTAMP.key());
 
                 int protocolVersion = message.getInt(JsonCpmKey.Cpm.PROTOCOL_VERSION.key());
                 long stationId = message.getLong(JsonCpmKey.Cpm.STATION_ID.key());
@@ -309,7 +363,6 @@ public class CPM extends MessageBase {
                         .header(origin,
                                 version,
                                 sourceUuid,
-                                destinationUuid,
                                 timestamp)
                         .pduHeader(protocolVersion,
                                 stationId,
@@ -321,7 +374,7 @@ public class CPM extends MessageBase {
                         .build();
             }
         } catch (JSONException | IllegalArgumentException e) {
-            LOGGER.log(Level.WARNING, "CPM", "Error parsing CPM: " + e);
+            LOGGER.log(Level.WARNING, "CPM JSON parsing error", "Error: " + e);
         }
         return null;
     }

@@ -12,7 +12,12 @@ import com.orange.iot3mobility.its.StationType;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class ClassificationItem {
+
+    private static final Logger LOGGER = Logger.getLogger(ClassificationItem.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -96,7 +101,7 @@ public class ClassificationItem {
                 json.put(JsonCpmKey.Classification.OBJECT_CLASS.key(), objectClassOther.getJson());
             json.put(JsonCpmKey.Classification.CONFIDENCE.key(), confidence);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM ClassificationItem JSON build error", "Error: " + e);
         }
     }
 
@@ -124,21 +129,17 @@ public class ClassificationItem {
             return objectClassVehicle.getSubclass();
         } else if(objectClassSingleVru != null) {
             Object singleVru = objectClassSingleVru.getVruObject();
-            if(singleVru instanceof ObjectVruPedestrian) {
+            if(singleVru instanceof ObjectVruPedestrian vruPedestrian) {
                 // raw ID + 10
-                ObjectVruPedestrian vruPedestrian = (ObjectVruPedestrian) singleVru;
                 return vruPedestrian.getSubclass() + 10;
-            } else if(singleVru instanceof ObjectVruBicyclist) {
+            } else if(singleVru instanceof ObjectVruBicyclist vruBicyclist) {
                 // raw ID + 20
-                ObjectVruBicyclist vruBicyclist = (ObjectVruBicyclist) singleVru;
                 return vruBicyclist.getSubclass() + 20;
-            } else if(singleVru instanceof ObjectVruMotorcyclist) {
+            } else if(singleVru instanceof ObjectVruMotorcyclist vruMotorcyclist) {
                 // raw ID + 30
-                ObjectVruMotorcyclist vruMotorcyclist = (ObjectVruMotorcyclist) singleVru;
                 return vruMotorcyclist.getSubclass() + 30;
-            } else if(singleVru instanceof ObjectVruAnimal) {
+            } else if(singleVru instanceof ObjectVruAnimal vruAnimal) {
                 // raw ID + 40
-                ObjectVruAnimal vruAnimal = (ObjectVruAnimal) singleVru;
                 return vruAnimal.getSubclass() + 40;
             } else return -1;
         } else if (objectClassOther != null) {
@@ -152,90 +153,50 @@ public class ClassificationItem {
 
     public String getObjectClassStr() {
         if(objectClassVehicle != null) {
-            switch (objectClassVehicle.getSubclass()) {
-                default:
-                case 0:
-                    return "unknown";
-                case 1:
-                    return "passenger-car";
-                case 2:
-                    return "bus";
-                case 3:
-                    return "light-truck";
-                case 4:
-                    return "heavy-truck";
-                case 5:
-                    return "trailer-truck";
-                case 6:
-                    return "special-vehicle";
-                case 7:
-                    return "tram";
-                case 8:
-                    return "emergency-vehicle";
-            }
+            return switch (objectClassVehicle.getSubclass()) {
+                case 1 -> "passenger-car";
+                case 2 -> "bus";
+                case 3 -> "light-truck";
+                case 4 -> "heavy-truck";
+                case 5 -> "trailer-truck";
+                case 6 -> "special-vehicle";
+                case 7 -> "tram";
+                case 8 -> "emergency-vehicle";
+                default -> "unknown";
+            };
         } else if(objectClassSingleVru != null) {
             Object singleVru = objectClassSingleVru.getVruObject();
-            if(singleVru instanceof ObjectVruPedestrian) {
-                ObjectVruPedestrian vruPedestrian = (ObjectVruPedestrian) singleVru;
-                switch (vruPedestrian.getSubclass()) {
-                    default:
-                    case 0:
-                    case 1:
-                        return "pedestrian";
-                    case 2:
-                        return "pedestrian-road-worker";
-                    case 3:
-                        return "pedestrian-first-responder";
-                }
-            } else if(singleVru instanceof ObjectVruBicyclist) {
-                ObjectVruBicyclist vruBicyclist = (ObjectVruBicyclist) singleVru;
-                switch (vruBicyclist.getSubclass()) {
-                    default:
-                    case 0:
-                    case 1:
-                        return "bicycle";
-                    case 2:
-                        return "wheelchair-user_bicycle";
-                    case 3:
-                        return "horseRider_bicycle";
-                    case 4:
-                        return "rollerskater_bicycle";
-                    case 5:
-                        return "e-scooter_bicycle";
-                    case 6:
-                        return "personnal-transporter_bicycle";
-                    case 7:
-                        return "pedelec_bicycle";
-                    case 8:
-                        return "speed-pedelec_bicycle";
-                }
-            } else if(singleVru instanceof ObjectVruMotorcyclist) {
-                ObjectVruMotorcyclist vruMotorcyclist = (ObjectVruMotorcyclist) singleVru;
-                switch (vruMotorcyclist.getSubclass()) {
-                    default:
-                    case 0:
-                    case 2:
-                        return "motorcycle";
-                    case 1:
-                        return "moped";
-                    case 3:
-                        return "sidecar-right";
-                    case 4:
-                        return "sidecar-left";
-                }
-            } else if(singleVru instanceof ObjectVruAnimal) {
-                ObjectVruAnimal vruAnimal = (ObjectVruAnimal) singleVru;
-                switch (vruAnimal.getSubclass()) {
-                    default:
-                    case 0:
-                        return "animal";
-                    case 1:
-                        return "wild-animal";
-                    case 2:
-                        return "farm-animal";
-                    case 3:
-                        return "service-animal";
-                }
+            if(singleVru instanceof ObjectVruPedestrian vruPedestrian) {
+                return switch (vruPedestrian.getSubclass()) {
+                    case 2 -> "pedestrian-road-worker";
+                    case 3 -> "pedestrian-first-responder";
+                    default -> "pedestrian";
+                };
+            } else if(singleVru instanceof ObjectVruBicyclist vruBicyclist) {
+                return switch (vruBicyclist.getSubclass()) {
+                    case 2 -> "wheelchair-user_bicycle";
+                    case 3 -> "horseRider_bicycle";
+                    case 4 -> "rollerskater_bicycle";
+                    case 5 -> "e-scooter_bicycle";
+                    case 6 -> "personnal-transporter_bicycle";
+                    case 7 -> "pedelec_bicycle";
+                    case 8 -> "speed-pedelec_bicycle";
+                    default -> "bicycle";
+                };
+            } else if(singleVru instanceof ObjectVruMotorcyclist vruMotorcyclist) {
+                return switch (vruMotorcyclist.getSubclass()) {
+                    case 1 -> "moped";
+                    case 3 -> "sidecar-right";
+                    case 4 -> "sidecar-left";
+                    default -> "motorcycle";
+                };
+            } else if(singleVru instanceof ObjectVruAnimal vruAnimal) {
+                return switch (vruAnimal.getSubclass()) {
+                    case 1 -> "wild-animal";
+                    case 2 -> "farm-animal";
+                    case 3 -> "service-animal";
+                    default -> "animal";
+                };
             } else return "unknown";
         } else if (objectClassOther != null) {
             if(objectClassOther.getSubclass() == 1)
@@ -248,44 +209,25 @@ public class ClassificationItem {
 
     public int getObjectStationType() {
         if(objectClassVehicle != null) {
-            switch (objectClassVehicle.getSubclass()) {
-                default:
-                case 0:
-                    return StationType.UNKNOWN.getId();
-                case 1:
-                    return StationType.PASSENGER_CAR.getId();
-                case 2:
-                    return StationType.BUS.getId();
-                case 3:
-                    return StationType.LIGHT_TRUCK.getId();
-                case 4:
-                    return StationType.HEAVY_TRUCK.getId();
-                case 5:
-                    return StationType.TRAILER.getId();
-                case 6:
-                case 8:
-                    return StationType.SPECIAL_VEHICLES.getId();
-                case 7:
-                    return StationType.TRAM.getId();
-            }
+            return switch (objectClassVehicle.getSubclass()) {
+                case 1 -> StationType.PASSENGER_CAR.getId();
+                case 2 -> StationType.BUS.getId();
+                case 3 -> StationType.LIGHT_TRUCK.getId();
+                case 4 -> StationType.HEAVY_TRUCK.getId();
+                case 5 -> StationType.TRAILER.getId();
+                case 6, 8 -> StationType.SPECIAL_VEHICLES.getId();
+                case 7 -> StationType.TRAM.getId();
+                default -> StationType.UNKNOWN.getId();
+            };
         } else if(objectClassSingleVru != null) {
             Object singleVru = objectClassSingleVru.getVruObject();
             if(singleVru instanceof ObjectVruPedestrian) {
                 return StationType.PEDESTRIAN.getId();
             } else if(singleVru instanceof ObjectVruBicyclist) {
                 return StationType.CYCLIST.getId();
-            } else if(singleVru instanceof ObjectVruMotorcyclist) {
-                ObjectVruMotorcyclist vruMotorcyclist = (ObjectVruMotorcyclist) singleVru;
-                switch (vruMotorcyclist.getSubclass()) {
-                    default:
-                    case 0:
-                    case 2:
-                    case 3:
-                    case 4:
-                        return StationType.MOTORCYCLE.getId();
-                    case 1:
-                        return StationType.MOPED.getId();
-                }
+            } else if(singleVru instanceof ObjectVruMotorcyclist vruMotorcyclist) {
+                if(vruMotorcyclist.getSubclass() == 1) return StationType.MOPED.getId();
+                else return StationType.MOTORCYCLE.getId();
             } else return StationType.UNKNOWN.getId();
         }
         return StationType.UNKNOWN.getId();
@@ -296,7 +238,7 @@ public class ClassificationItem {
     }
 
     public static ClassificationItem jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         try {
             JSONObject jsonObjectClass = json.getJSONObject(JsonCpmKey.Classification.OBJECT_CLASS.key());
             ObjectClassVehicle objectClassVehicle = ObjectClassVehicle.jsonParser(jsonObjectClass);
@@ -308,7 +250,7 @@ public class ClassificationItem {
             if(objectClassSingleVru != null) return new ClassificationItem(objectClassSingleVru, confidence);
             if(objectClassOther != null) return new ClassificationItem(objectClassOther, confidence);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM ClassificationItem JSON parsing error", "Error: " + e);
         }
         return null;
     }
