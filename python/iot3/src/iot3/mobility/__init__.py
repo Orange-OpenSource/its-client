@@ -7,6 +7,7 @@ import json
 
 from . import etsi
 from .cam import CAM
+from .denm import DENM
 from .gnss import GNSSReport
 
 
@@ -17,6 +18,7 @@ def message_from_json(
     """Create a new ITS message from a json sentence"""
     _MSG_TYPE_CLASS = {
         "cam": CAM,
+        "denm": DENM,
     }
     # We should validate msg_json here before loading it,
     # but we need to know the type of message first
