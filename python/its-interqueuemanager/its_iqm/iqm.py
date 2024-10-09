@@ -59,12 +59,6 @@ class IQM:
             self.span_cb = iot3.core.otel.Otel.noexport_span
 
         logging.info("create local qm")
-        conn = dict()
-        try:
-            conn["host"] = cfg["local"]["host"]
-            conn["port"] = int(cfg["local"]["port"])
-        except TypeError:
-            conn["socket_path"] = cfg["local"]["socket-path"]
 
         qm_data = {
             "copy_qm": None,
@@ -74,9 +68,9 @@ class IQM:
 
         self.local_qm = iot3.core.mqtt.MqttClient(
             client_id=cfg["local"]["client_id"],
+            socket_path=cfg["local"]["socket-path"],
             username=cfg["local"]["username"],
             password=cfg["local"]["password"],
-            **conn,
             msg_cb=self.qm_copy_cb,
             msg_cb_data=qm_data,
             span_ctxmgr_cb=self.span_cb,
