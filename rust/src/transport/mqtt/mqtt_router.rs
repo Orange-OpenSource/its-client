@@ -30,12 +30,6 @@ pub struct MqttRouter {
 }
 
 impl MqttRouter {
-    pub(crate) fn new() -> MqttRouter {
-        MqttRouter {
-            route_map: HashMap::new(),
-        }
-    }
-
     pub fn add_route<T, C>(&mut self, topic: T, callback: C)
     where
         T: Topic,

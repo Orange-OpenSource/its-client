@@ -358,7 +358,7 @@ where
         .spawn(move || {
             trace!("mqtt router dispatching closure entering...");
             //initialize the router
-            let router = &mut mqtt_router::MqttRouter::new();
+            let router = &mut mqtt_router::MqttRouter::default();
 
             for topic in topic_list.iter() {
                 match topic {
