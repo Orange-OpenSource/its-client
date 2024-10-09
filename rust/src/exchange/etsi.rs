@@ -80,10 +80,21 @@ pub(crate) fn acceleration_from_etsi(dm_per_sec_2: i16) -> f64 {
 }
 
 /// Converts acceleration from m/s² to dm/s²
+///
+/// FIXME use this function and remove this clause once mobility message creation is implemented
+///       (cf. [Github issue][1])
+///
+/// [1]: https://github.com/orgs/Orange-OpenSource/projects/3/views/8?pane=issue&itemId=69693871&issue=Orange-OpenSource%7Cits-client%7C131
+#[allow(unused)]
 pub(crate) fn acceleration_to_etsi(m_per_s_2: f64) -> i16 {
     (m_per_s_2 * 10.) as i16
 }
 
+/// FIXME use this function and remove this clause once mobility message creation is implemented
+///       (cf. [Github issue][1])
+///
+/// [1]: https://github.com/orgs/Orange-OpenSource/projects/3/views/8?pane=issue&itemId=69693871&issue=Orange-OpenSource%7Cits-client%7C131
+#[allow(unused)]
 pub(crate) fn timestamp_from_etsi(etsi_timestamp: u64) -> u64 {
     etsi_timestamp + ETSI_TIMESTAMP_OFFSET
 }
