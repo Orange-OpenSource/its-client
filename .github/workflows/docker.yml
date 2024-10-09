@@ -20,14 +20,6 @@ jobs:
         id: extract_branch
         shell: bash
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-      - name: Run Rust docker action
-        uses: ./rust
-        id: rust_run
-        with:
-          log_output: '/tmp'
-      # Use the output from the `hello` step
-      - name: Get the return code
-        run: echo "The return code was ${{ steps.rust_run.outputs.return_code }} on ${{ steps.extract_branch.outputs.branch }}"
       - name: Run Python docker action
         uses: ./python/its-client
         id: python_run
