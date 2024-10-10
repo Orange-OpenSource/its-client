@@ -1,5 +1,5 @@
 /*
- * Software Name : libits
+ * Software Name : libits-client
  * SPDX-FileCopyrightText: Copyright (c) Orange SA
  * SPDX-License-Identifier: MIT
  *
