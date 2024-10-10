@@ -33,7 +33,49 @@ jobs:
         run: |
           cd rust
           cargo build --release --verbose
-      - name: Run tests
+      - name: mobility feature build
+        run: |
+          cd rust
+          cargo build --features mobility --verbose
+      - name: telemetry feature build
+        run: |
+          cd rust
+          cargo build --features telemetry --verbose
+      - name: geo_routing feature build
+        run: |
+          cd rust
+          cargo build --features geo_routing --verbose
+      - name: Build all features
+        run: |
+          cd rust
+          cargo build --all-features --verbose
+      - name: Release build all features
+        run: |
+          cd rust
+          cargo build --all-features --release --verbose
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: No features
         run: |
           cd rust
           cargo test --verbose
+      - name: mobility feature test
+        run: |
+          cd rust
+          cargo test --features mobility --verbose
+      - name: telemetry feature test
+        run: |
+          cd rust
+          cargo test --features telemetry --verbose
+      - name: geo_routing feature test
+        run: |
+          cd rust
+          cargo test --features geo_routing --verbose
+      - name: All feature
+        run: |
+          cd rust
+          cargo test --all-features --verbose
