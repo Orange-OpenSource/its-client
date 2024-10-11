@@ -185,7 +185,7 @@ class IQM:
                 msg_cb_data=qm_data,
                 span_ctxmgr_cb=self.span_cb,
             )
-            self.local_qm.subscribe(topics=[interqueue + "/#"])
+            self.neighbours_clients[nghb_id].subscribe(topics=[interqueue + "/#"])
             self.neighbours_clients[nghb_id].start()
 
     def qm_copy_cb(
