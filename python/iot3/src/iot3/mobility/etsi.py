@@ -5,6 +5,10 @@
 
 import abc
 import datetime
+import enum
+import hashlib
+import its_quadkeys
+import json
 import math
 from typing import Optional
 
@@ -183,7 +187,7 @@ class ETSI(abc.ABC):
 
     @staticmethod
     def generation_delta_time(
-        unix_time: float
+        unix_time: float,
     ) -> int:
         """Convert a UNIX timestamp into an ETSI generation delta time
 
@@ -195,3 +199,92 @@ class ETSI(abc.ABC):
     def __init__(self, *args, **kwargs):
         """It is not allowed to create an instance of this class."""
         ...
+
+
+class Message(abc.ABC):
+    msg_type = ...
+
+    class StationType(enum.IntEnum):
+        # We need those values to *exactly* match those defined in the spec
+        unknown = 0
+        pedestrian = 1
+        cyclist = 2
+        moped = 3
+        motorcycle = 4
+        passengerCar = 5
+        bus = 6
+        lightTruck = 7
+        heavyTruck = 8
+        trailer = 9
+        specialVehicles = 10
+        tram = 11
+        roadSideUnit = 15
+
+    @abc.abstractmethod
+    def __init__(self, *args, **kwargs):
+        ...
+
+    @staticmethod
+    def station_id(uuid: str) -> int:
+        return int(
+            hashlib.sha256(uuid.encode()).hexdigest()[:6],
+            16,
+        )
+
+    def __getitem__(self, key):
+        return self._message[key]
+
+    def __setitem__(self, key, value):
+        self._message[key] = value
+
+    def __delitem__(self, key):
+        del self._message[key]
+
+    def topic(
+        self,
+        *,
+        template: str,
+        depth: int = 22,
+    ):
+        """Formats a template with fields from the message
+
+        :param template: The template string to format
+        :param depth: The depth of the quadkey
+
+        Available fields:
+          - source_uuid     the source_uuid of the message
+          - msg_type        the type of the message, in lower-case (cam, denm...)
+          - quadkey         the quadkey, at the specified depth, with each level
+                            separated by a forward slash '/'
+
+        For example:
+            message.topic(
+                template="prefix/{source_uuid}/{msg_type}/{quadkey}",
+                depth=8,
+            )
+        would return something like:
+            "prefix/entity_id/cam/0/1/2/3/0/1/2/3"
+        """
+        if self.msg_type is ...:
+            raise NameError(f"No message type for {self}")
+
+        if self.latitude is None or self.longitude is None:
+            raise RuntimeError(f"Missing latitude and/or longitude")
+
+        quadkey = its_quadkeys.QuadKey(
+            (
+                self.latitude,
+                self.longitude,
+                depth,
+            )
+        )
+
+        return template.format(
+            source_uuid=self._message["source_uuid"],
+            msg_type=self.msg_type,
+            quadkey=quadkey.to_str("/"),
+        )
+
+    def to_json(self) -> str:
+        # Return the densest-possible JSON sentence
+        return json.dumps(self._message, separators=(",", ":"))
