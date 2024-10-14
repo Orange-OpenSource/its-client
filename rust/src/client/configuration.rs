@@ -23,7 +23,7 @@ use crate::client::configuration::configuration_error::ConfigurationError::{
     FieldNotFound, MissingMandatoryField, MissingMandatorySection, NoCustomSettings, NoPassword,
     TypeError,
 };
-use crate::transport::mqtt::{configure_tls, configure_transport};
+use crate::transport::mqtt::configure_transport;
 
 #[cfg(feature = "telemetry")]
 use crate::client::configuration::telemetry_configuration::{
@@ -142,16 +142,7 @@ impl TryFrom<&Properties> for MqttOptionWrapper {
             .unwrap_or_default()
             .unwrap_or_default();
 
-        // FIXME manage ALPN, and authentication
-        let tls_configuration = if use_tls {
-            let ca_path = get_mandatory_field::<String>("tls_certificate", ("mqtt", properties))
-                .expect("TLS enabled but no certificate path provided");
-            Some(configure_tls(&ca_path, None, None))
-        } else {
-            None
-        };
-
-        configure_transport(tls_configuration, use_websocket, &mut mqtt_options);
+        configure_transport(use_tls, use_websocket, &mut mqtt_options);
 
         Ok(MqttOptionWrapper(mqtt_options))
     }
