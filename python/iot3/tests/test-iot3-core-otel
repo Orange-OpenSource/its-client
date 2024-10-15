@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import iot3.core.otel
-import os
-import sys
 import time
 
 
@@ -27,7 +25,7 @@ with o.span(name="Root span") as s0:
     with o.span(name="Automatic child span level 1 - failed") as s5:
         s5.set_status(
             status_code=iot3.core.otel.SpanStatus.ERROR,
-            status_message="Some failure"
+            status_message="Some failure",
         )
         time.sleep(0.1)
     time.sleep(0.1)

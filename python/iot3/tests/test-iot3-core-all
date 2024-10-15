@@ -4,8 +4,10 @@ import iot3.core.mqtt
 import iot3.core.otel
 import time
 
+
 def recv(data, topic, payload):
     print(f"{topic[:16]}: {payload[:16]}")
+
 
 o = iot3.core.otel.Otel(
     service_name="test-service",

@@ -3,8 +3,10 @@
 import iot3.core
 import time
 
+
 def recv(data, topic, payload):
     print(f"{topic[:16]}: {payload[:16]}")
+
 
 iot3.core.start(
     config=iot3.core.sample_config,
