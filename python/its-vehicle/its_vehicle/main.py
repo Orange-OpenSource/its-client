@@ -33,7 +33,6 @@ DEFAULTS = {
         "password": None,
     },
     "broker.mirror": {
-        "port": 1883,
         "username": None,
         "password": None,
     },
@@ -66,9 +65,25 @@ def main():
     )
     args = parser.parse_args()
 
-    cfg = configparser.ConfigParser()
+    cfg_parsed = configparser.ConfigParser()
     with open(args.config, "r") as f:
-        cfg.read_file(f)
+        cfg_parsed.read_file(f)
+
+    # Make the config a dict() rather than a ConfigParser(), so that
+    # we can store None in there.
+    cfg = {
+        s: {k: cfg_parsed[s][k] for k in cfg_parsed[s]}
+        for s in cfg_parsed
+        if s != "DEFAULT"
+    }
+    # Special case: handle 'tls' specially, as it needs to be a bool but
+    # ConfigParser() does not convert types automatically, and interpreting
+    # the "false" string as a boolean would evaluate to True.
+    cfg["broker.main"]["tls"] = cfg_parsed.getboolean(
+        "broker.main",
+        "tls",
+        fallback=None,
+    )
 
     def _set_default(section, key, default):
         if section not in cfg:
@@ -76,9 +91,6 @@ def main():
         if key not in cfg[section]:
             cfg[section][key] = default
 
-    # Make the config a dict() rather than a ConfigParser(), so that
-    # we can store None in there.
-    cfg = {s: {k: cfg[s][k] for k in cfg[s]} for s in cfg if s != "DEFAULT"}
     for s in DEFAULTS:
         for k in DEFAULTS[s]:
             _set_default(s, k, DEFAULTS[s][k])
@@ -119,6 +131,8 @@ def main():
         conn_opts = {
             "host": cfg["broker.main"]["host"],
             "port": int(cfg["broker.main"]["port"]),
+            "tls": cfg["broker.main"]["tls"],
+            "websocket_path": cfg["broker.main"].get("websocket-path"),
         }
     else:
         conn_opts = {
@@ -133,21 +147,12 @@ def main():
         msg_cb=_msg_cb,
     )
 
-    if "host" in cfg["broker.mirror"] or "socket-path" in cfg["broker.mirror"]:
-        if "host" in cfg["broker.mirror"]:
-            conn_opts = {
-                "host": cfg["broker.mirror"]["host"],
-                "port": int(cfg["broker.mirror"]["port"]),
-            }
-        else:
-            conn_opts = {
-                "socket_path": cfg["broker.mirror"]["socket-path"],
-            }
+    if "socket-path" in cfg["broker.mirror"]:
         mqtt_mirror = iot3.core.mqtt.MqttClient(
             client_id=cfg["broker.mirror"]["client-id"],
+            socket_path=cfg["broker.mirror"]["socket-path"],
             username=cfg["broker.mirror"]["username"],
             password=cfg["broker.mirror"]["password"],
-            **conn_opts,
         )
     else:
         mqtt_mirror = None

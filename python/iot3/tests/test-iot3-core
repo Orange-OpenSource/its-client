@@ -1,24 +1,36 @@
 #!/usr/bin/env python3
 
 import iot3.core
+import random
 import time
+
 
 def recv(data, topic, payload):
     print(f"{topic[:16]}: {payload[:16]}")
 
+
+config = iot3.core.sample_config
+config["mqtt"] = {
+    "host": "test.mosquitto.org",
+    "port": 1883,
+    "client-id": random.randbytes(16).hex(),
+    "username": None,
+    "password": None,
+}
+
+topic = "test/" + random.randbytes(16).hex() + "/iot3"
+
 iot3.core.start(
-    config=iot3.core.sample_config,
+    config=config,
     message_callback=recv,
 )
 
-iot3.core.wait_for_ready()
+iot3.core.subscribe(f"{topic}/+")
 
-iot3.core.subscribe("#")
-
-iot3.core.publish("foo/bar/dropped", "dropped")
+iot3.core.publish(f"{topic}/dropped", "dropped")
 time.sleep(1)
 
-iot3.core.publish("foo/bar/passed", "passed")
+iot3.core.publish(f"{topic}/passed", "passed")
 time.sleep(1)
 
 iot3.core.stop()

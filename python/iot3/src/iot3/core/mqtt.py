@@ -7,6 +7,7 @@ import paho.mqtt.client
 import paho.mqtt.enums
 import paho.mqtt.packettypes
 import paho.mqtt.properties
+import ssl
 import threading
 import time
 from typing import Any, Callable, Optional, TypeAlias, Unpack
@@ -24,7 +25,9 @@ class MqttClient:
         client_id: str,
         host: Optional[str] = None,
         port: Optional[int] = None,
+        websocket_path: Optional[str] = None,
         socket_path: Optional[str] = None,
+        tls: Optional[bool] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
         msg_cb: Optional[MsgCallbackType] = None,
@@ -34,10 +37,13 @@ class MqttClient:
         """
         Create an MQTT client
 
-        :param client_id: The MQT client ID to identify as.
+        :param client_id: The MQTT client ID to identify as.
         :param host: The host name (or IP) of the MQTT broker.
         :param port: The port the MQTT broker listens on.
+        :param websocket_path: The path of the websocket the broker is
+                               reachable at.
         :param socket_path: The path of the UNIX socket.
+        :param tls: Whether to use TLS or not. See below for details.
         :param username: The username to authenticate against the MQTT broker.
         :param password: The password to authenticate against the MQTT broker.
         :param msg_cb: The function to call when a message is received from
@@ -46,6 +52,48 @@ class MqttClient:
                             msg_cb function.
         :param span_ctx_cb: The function to obtain a context manager for an
                             OpenTelemetry span.
+
+        There are two ways to connect to the MQTT broker:
+         * via TCP: both host and port must be specified;
+         * via websockets: all of host, port, and websocket_path must
+           be specified;
+         * via UNIX socket (only for local broker): socket_path must
+           be specified.
+
+        If socket_path is specified, then a connection through the UNIX
+        socket is used; if websocket_path is specified, then a websocket
+        connection is used; otherwise a TCP connection is used.
+
+        If tls is not specified, then a heuristic will be made: if the
+        port is the default well-known clear port, (1883 for MQTT over
+        TCP, 80 for MQTT over WebSockets), then the connection will be
+        attempted without TLS, i.e. in clear; for any other port, TLS is
+        used and there is no fallback to connecting in clear. If tls is
+        specified and is None, then the same heuristic is used as if it
+        were not specified; if it is False, then no TLS is used for the
+        connection; if it is True, TLS is used for the connection. Using
+        TLS requires that the certificate of the authority that signed
+        the server certificate, be present in the system certificate
+        store (e.g. ca-certificates from Mozilla). TLS is never
+        attempted over UNIX socket.
+
+        Specifying a message callback as msg_cb allows subscribing to,
+        and thus receiving messages from specific topics. If no msg_cb
+        is provided, it is not possible to subscribe, and only emitting
+        is permitted. msg_cb must be a callable that accepts at least
+        those keyword arguments: data, topic, payload. Ideally, to be
+        future-proof, it should be declared with:
+            def my_cb(
+                *_args,
+                *,
+                data: Any,
+                topic: str,
+                payload: bytes,
+                **_kwargs,
+            ) -> None
+
+        If msg_cb_data is specified, it is passed as the data keyword
+        argument of msg_cb, otherwise None is passed.
         """
 
         self.msg_cb = msg_cb
@@ -57,11 +105,21 @@ class MqttClient:
             # Fake a valid TCP port to make paho.mqtt happy
             self.port = 1
             self.name = socket_path
+            tls = False
+        elif websocket_path:
+            transport = "websockets"
+            self.host = host
+            self.port = port
+            self.name = f"{host}:{port}/{websocket_path}"
+            if tls is None:
+                tls = port != 80
         else:
             transport = "tcp"
             self.host = host
             self.port = port
             self.name = f"{host}:{port}"
+            if tls is None:
+                tls = port != 1883
 
         self.span_ctxmgr_cb = span_ctxmgr_cb
 
@@ -71,6 +129,11 @@ class MqttClient:
             protocol=paho.mqtt.client.MQTTv5,
             transport=transport,
         )
+        if tls:
+            self.client.tls_set()
+        if transport == "websockets":
+            self.client.ws_set_options(path=websocket_path)
+
         self.client.reconnect_delay_set(min_delay=1, max_delay=2)
         self.client.username_pw_set(username, password)
         self.client.on_connect = self.__on_connect

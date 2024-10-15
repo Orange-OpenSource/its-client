@@ -1,24 +1,83 @@
 #!/usr/bin/env python3
 
 import iot3.core.mqtt
+import random
 import time
 
 
 def recv(data, topic, payload):
-    print(f"{topic[:16]}: {payload[:16]}")
+    print(f"{data}: {topic[:16]}: {payload.decode()[:32]}")
 
+
+client_id = random.randbytes(16).hex()
+topic = "test/" + random.randbytes(16).hex() + "/iot3"
 
 c = iot3.core.mqtt.MqttClient(
-    client_id="test",
-    host="127.0.0.1",
+    client_id=client_id,
+    host="test.mosquitto.org",
     port=1883,
     msg_cb=recv,
+    msg_cb_data="clear",
 )
 c.start()
 
-c.subscribe(topics=["#"])
+c.subscribe(topics=[topic])
 c.wait_for_ready()
-c.publish(topic='foo/bar', payload="pouet")
+c.publish(topic=topic, payload="clear message")
+
+time.sleep(1)
+
+c.stop()
+
+c = iot3.core.mqtt.MqttClient(
+    client_id=client_id,
+    host="test.mosquitto.org",
+    port=8886,
+    msg_cb=recv,
+    msg_cb_data="tls",
+)
+c.start()
+
+c.subscribe(topics=[topic])
+c.wait_for_ready()
+c.publish(topic=topic, payload="3ИСЯЧРТЕD ПЕЅЅД̈GЕ")
+
+time.sleep(1)
+
+c.stop()
+
+c = iot3.core.mqtt.MqttClient(
+    client_id=client_id,
+    host="test.mosquitto.org",
+    port=8080,
+    websocket_path="/mqtt",
+    tls=False,
+    msg_cb=recv,
+    msg_cb_data="ws",
+)
+c.start()
+
+c.subscribe(topics=[topic])
+c.wait_for_ready()
+c.publish(topic=topic, payload="clear message")
+
+time.sleep(1)
+
+c.stop()
+
+c = iot3.core.mqtt.MqttClient(
+    client_id=client_id,
+    host="test.mosquitto.org",
+    port=8081,
+    websocket_path="/mqtt",
+    msg_cb=recv,
+    msg_cb_data="wss",
+)
+c.start()
+
+c.subscribe(topics=[topic])
+c.wait_for_ready()
+c.publish(topic=topic, payload="3ИСЯЧРТЕD ПЕЅЅД̈GЕ")
 
 time.sleep(1)
 

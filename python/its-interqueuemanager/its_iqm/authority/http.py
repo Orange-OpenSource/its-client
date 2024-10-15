@@ -58,6 +58,7 @@ class Authority:
             # Can't download -> don't change the current state;
             # just keep using the neighbours we have, if any.
             logging.debug("failed to download the list of neighbours; changing nothing")
-        # .sections() does not contain the "DEFAULT" section
-        logging.debug(f"loaded {len(loaded_nghbs.sections())} neighbour(s)")
-        self.update_cb({s: dict(loaded_nghbs[s]) for s in loaded_nghbs.sections()})
+        else:
+            # .sections() does not contain the "DEFAULT" section
+            logging.debug(f"loaded {len(loaded_nghbs.sections())} neighbour(s)")
+            self.update_cb({s: dict(loaded_nghbs[s]) for s in loaded_nghbs.sections()})

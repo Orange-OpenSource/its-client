@@ -36,8 +36,7 @@ class MQTTInfoClient:
             "interface": None,
         },
         "mqtt": {
-            "host": "127.0.0.1",
-            "port": 1883,
+            "socket-path": "/run/mosquitto/mqtt.socket",
             "username": None,
             "password": None,
             "topic": "info",
@@ -114,7 +113,10 @@ class MQTTInfoClient:
         self.timer = linuxfd.timerfd(closeOnExec=True)
 
         logging.debug("creating MQTT client")
-        self.client = paho.mqtt.client.Client(client_id=self.cfg["mqtt"]["client_id"])
+        self.client = paho.mqtt.client.Client(
+            client_id=self.cfg["mqtt"]["client_id"],
+            transport="unix",
+        )
         self.client.reconnect_delay_set(
             min_delay=1,
             max_delay=self.cfg["mqtt"]["retry"],
@@ -126,10 +128,7 @@ class MQTTInfoClient:
         self.client.on_connect = self.on_connect
         self.client.on_disconnect = self.on_disconnect
         self.client.on_socket_close = self.on_socket_close
-        self.client.connect_async(
-            host=self.cfg["mqtt"]["host"],
-            port=int(self.cfg["mqtt"]["port"]),
-        )
+        self.client.connect_async(host=self.cfg["mqtt"]["socket-path"])
 
         logging.debug("finished instanciating info object")
 

@@ -28,8 +28,10 @@ class Authority:
             client_id=client_id,
             host=self.cfg["host"],
             port=int(self.cfg["port"]),
-            username=self.cfg["username"] or None,
-            password=self.cfg["password"] or None,
+            websocket_path=self.cfg.get("websocket_path"),
+            tls=self.cfg.get("tls"),
+            username=self.cfg.get("username"),
+            password=self.cfg.get("password"),
             msg_cb=self.msg_cb,
         )
         self.authority_client.subscribe(topics=[self.cfg["topic"]])
