@@ -12,7 +12,12 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class PositionConfidenceEllipse {
+
+    private static final Logger LOGGER = Logger.getLogger(PositionConfidenceEllipse.class.getName());
 
     private final JSONObject jsonPositionConfidenceEllipse = new JSONObject();
     private final int semiMajorConfidence;
@@ -52,7 +57,7 @@ public class PositionConfidenceEllipse {
             if (semiMajorOrientation != UNKNOWN)
                 jsonPositionConfidenceEllipse.put(JsonKey.Confidence.POSITION_SEMI_MAJOR_ORIENTATION.key(), semiMajorOrientation);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "PositionConfidenceEllipse JSON build error", "Error: " + e);
         }
     }
 
@@ -73,7 +78,7 @@ public class PositionConfidenceEllipse {
     }
 
     public static PositionConfidenceEllipse jsonParser(JSONObject jsonPositionConfidenceEllipse) {
-        if(jsonPositionConfidenceEllipse == null || jsonPositionConfidenceEllipse.length() == 0) return null;
+        if(jsonPositionConfidenceEllipse == null || jsonPositionConfidenceEllipse.isEmpty()) return null;
         int semiMajorConfidence = jsonPositionConfidenceEllipse.optInt(JsonKey.Confidence.POSITION_SEMI_MAJOR_CONFIDENCE.key(), UNKNOWN);;
         int semiMinorConfidence = jsonPositionConfidenceEllipse.optInt(JsonKey.Confidence.POSITION_SEMI_MINOR_CONFIDENCE.key(), UNKNOWN);;
         int semiMajorOrientation = jsonPositionConfidenceEllipse.optInt(JsonKey.Confidence.POSITION_SEMI_MAJOR_ORIENTATION.key(), UNKNOWN);

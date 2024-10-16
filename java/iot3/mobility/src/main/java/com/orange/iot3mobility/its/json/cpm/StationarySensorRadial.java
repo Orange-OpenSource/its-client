@@ -12,7 +12,12 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class StationarySensorRadial {
+
+    private static final Logger LOGGER = Logger.getLogger(StationarySensorRadial.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -123,7 +128,7 @@ public class StationarySensorRadial {
             if(sensorPositionOffset != null)
                 json.put(JsonCpmKey.StationarySensorRadial.SENSOR_POSITION_OFFSET.key(), sensorPositionOffset.getJson());
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM StationarySensorRadial JSON build error", "Error: " + e);
         }
     }
 
@@ -156,7 +161,7 @@ public class StationarySensorRadial {
     }
 
     public static StationarySensorRadial jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         try {
             int range = json.getInt(JsonCpmKey.StationarySensorRadial.RANGE.key());
             int horizontalOpeningAngleStart = json.getInt(JsonCpmKey.StationarySensorRadial.HORIZONTAL_OPENING_ANGLE_START.key());
@@ -174,7 +179,7 @@ public class StationarySensorRadial {
                     verticalOpeningAngleEnd,
                     offset);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM StationarySensorRadial JSON parsing error", "Error: " + e);
         }
         return null;
     }

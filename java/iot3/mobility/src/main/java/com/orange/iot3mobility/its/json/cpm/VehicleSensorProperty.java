@@ -12,7 +12,12 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class VehicleSensorProperty {
+
+    private static final Logger LOGGER = Logger.getLogger(VehicleSensorProperty.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -134,7 +139,7 @@ public class VehicleSensorProperty {
             if(verticalOpeningAngleEnd != UNKNOWN)
                 json.put(JsonCpmKey.VehicleSensorProperty.VERTICAL_OPENING_ANGLE_END.key(), verticalOpeningAngleEnd);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM VehicleSensorProperty JSON build error", "Error: " + e);
         }
     }
 
@@ -163,7 +168,7 @@ public class VehicleSensorProperty {
     }
 
     public static VehicleSensorProperty jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         try {
             int range = json.getInt(JsonCpmKey.VehicleSensorProperty.RANGE.key());
             int horizontalOpeningAngleStart = json.getInt(JsonCpmKey.VehicleSensorProperty.HORIZONTAL_OPENING_ANGLE_START.key());
@@ -178,7 +183,7 @@ public class VehicleSensorProperty {
                     verticalOpeningAngleStart,
                     verticalOpeningAngleEnd);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM VehicleSensorProperty JSON parsing error", "Error: " + e);
         }
         return null;
     }

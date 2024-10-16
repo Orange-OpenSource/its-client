@@ -12,7 +12,12 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class StationarySensorCircular {
+
+    private static final Logger LOGGER = Logger.getLogger(StationarySensorCircular.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -56,7 +61,7 @@ public class StationarySensorCircular {
                 json.put(JsonCpmKey.StationarySensorCircular.NODE_CENTER_POINT.key(), nodeCenterPoint.getJson());
             json.put(JsonCpmKey.StationarySensorCircular.RADIUS.key(), radius);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM StationarySensorCircular JSON build error", "Error: " + e);
         }
     }
 
@@ -73,7 +78,7 @@ public class StationarySensorCircular {
     }
 
     public static StationarySensorCircular jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         try {
             JSONObject jsonNodeCenterPoint = json.optJSONObject(JsonCpmKey.StationarySensorCircular.NODE_CENTER_POINT.key());
             Offset nodeCenterPoint = Offset.jsonParser(jsonNodeCenterPoint);
@@ -81,7 +86,7 @@ public class StationarySensorCircular {
 
             return new StationarySensorCircular(nodeCenterPoint, radius);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM StationarySensorCircular JSON parsing error", "Error: " + e);
         }
         return null;
     }

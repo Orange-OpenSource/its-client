@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 
 public class EventType {
 
-    private static final Logger LOGGER = Logger.getLogger(DENM.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(EventType.class.getName());
 
     private final JSONObject jsonEventType = new JSONObject();
     private final int cause;

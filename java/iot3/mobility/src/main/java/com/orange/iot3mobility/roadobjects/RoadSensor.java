@@ -17,6 +17,7 @@ import com.orange.iot3mobility.Utils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 public class RoadSensor {
 
@@ -61,7 +62,7 @@ public class RoadSensor {
         return cpm;
     }
 
-    public void updateSensorObjects(ArrayList<PerceivedObject> perceivedObjects) {
+    public void updateSensorObjects(List<PerceivedObject> perceivedObjects) {
         if(!perceivedObjects.isEmpty()) {
             for(PerceivedObject perceivedObject: perceivedObjects) {
                 String objectId = uuid + "_" + perceivedObject.getObjectId();

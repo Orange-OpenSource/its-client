@@ -12,7 +12,12 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class ObjectClassOther {
+
+    private static final Logger LOGGER = Logger.getLogger(ObjectClassOther.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -35,7 +40,7 @@ public class ObjectClassOther {
         try {
             json.put(JsonCpmKey.ObjectClass.OTHER.key(), subclass);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM ObjectClassOther JSON build error", "Error: " + e);
         }
     }
 
@@ -48,7 +53,7 @@ public class ObjectClassOther {
     }
 
     public static ObjectClassOther jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         int subclass = json.optInt(JsonCpmKey.ObjectClass.OTHER.key(), UNKNOWN);
         if(subclass != UNKNOWN) return new ObjectClassOther(subclass);
         else return null;

@@ -12,7 +12,12 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class OriginatingVehicleConfidence {
+
+    private static final Logger LOGGER = Logger.getLogger(OriginatingVehicleConfidence.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -142,7 +147,7 @@ public class OriginatingVehicleConfidence {
             if(verticalAcceleration != UNKNOWN)
                 json.put(JsonCpmKey.OriginatingVehicleContainer.VERTICAL_ACCELERATION.key(), verticalAcceleration);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM OriginatingVehicleConfidence JSON build error", "Error: " + e);
         }
     }
 
@@ -179,7 +184,7 @@ public class OriginatingVehicleConfidence {
     }
 
     public static OriginatingVehicleConfidence jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         int heading = json.optInt(JsonCpmKey.OriginatingVehicleContainer.HEADING.key(), UNKNOWN);
         int speed = json.optInt(JsonCpmKey.OriginatingVehicleContainer.SPEED.key(), UNKNOWN);
         int vehicleLength = json.optInt(JsonCpmKey.OriginatingVehicleContainer.VEHICLE_LENGTH.key(), UNKNOWN);

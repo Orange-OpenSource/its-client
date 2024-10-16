@@ -21,19 +21,91 @@ import java.util.logging.Logger;
 
 public class ManagementContainer {
 
-    private static final Logger LOGGER = Logger.getLogger(DENM.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ManagementContainer.class.getName());
 
     private JSONObject jsonManagementContainer = new JSONObject();
+
+    /**
+     * Contains the originating ITS-S station ID and the sequence number.
+     */
     private final ActionId actionId;
+
+    /**
+     * Unit: millisecond since ETSI epoch (2004/01/01, so 1072915200000).
+     * Time at which the event is detected by the originating ITS-S.
+     * <p>
+     * For the DENM repetition, this shall remain unchanged.
+     * <p>
+     * utcStartOf2004(0), oneMillisecAfterUTCStartOf2004(1)
+     */
     private final long detectionTime;
+
+    /**
+     * Unit: millisecond since ETSI epoch (2004/01/01, so 1072915200000).
+     * Time at which a new DENM, an update DENM or a cancellation DENM is generated.
+     * <p>
+     * utcStartOf2004(0), oneMillisecAfterUTCStartOf2004(1)
+     */
     private final long referenceTime;
+
+    /**
+     * Set to terminate an existing DENM.
+     * <p>
+     * isCancellation(0), isNegation (1)
+     */
     private int termination;
+
+    /**
+     * Position of the event.
+     * <p>
+     * See {@link Position}
+     */
     private final Position eventPosition;
+
+    /**
+     * Distance at which the event is relevant.
+     * <p>
+     * lessThan50m(0), lessThan100m(1), lessThan200m(2), lessThan500m(3), lessThan1000m(4), lessThan5km(5),
+     * lessThan10km(6), over10km(7)
+     */
     private final int relevanceDistance;
+
+    /**
+     * Traffic direction for which the event is relevant.
+     * <p>
+     * allTrafficDirections(0), upstreamTraffic(1), downstreamTraffic(2), oppositeTraffic(3)
+     */
     private final int relevanceTrafficDirection;
+
+    /**
+     * Unit: second. Validity duration of the event since detection.
+     * <p>
+     * timeOfDetection(0), oneSecondAfterDetection(1)
+     */
     private int validityDuration;
+
+    /**
+     * Unit: millisecond. Transmission interval of the DENM.
+     * <p>
+     * Set if the event is sent periodically.
+     * <p>
+     * oneMilliSecond(1), tenSeconds(10000)
+     */
     private final int transmissionInterval;
+
+    /**
+     * Station type of the originating ITS-S.
+     * <p>
+     * unknown(0), pedestrian(1), cyclist(2), moped(3), motorcycle(4), passengerCar(5), bus(6), lightTruck(7),
+     * heavyTruck(8), trailer(9), specialVehicles(10), tram(11), roadSideUnit(15)
+     */
     private final int stationType;
+
+    /**
+     * Confidence of the event position.
+     * <p>
+     * {@link PositionConfidence}
+     */
     private final PositionConfidence positionConfidence;
 
     public ManagementContainer(

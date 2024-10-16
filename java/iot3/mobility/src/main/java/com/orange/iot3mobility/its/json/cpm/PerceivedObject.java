@@ -14,18 +14,25 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PerceivedObject {
+
+    private static final Logger LOGGER = Logger.getLogger(PerceivedObject.class.getName());
 
     private final JSONObject json = new JSONObject();
 
     /**
      * Identifier assigned to a detected object which remains constant as long as the object is
      * perceived.
-     *
+     * <p>
      * Numbers are assigned in an increasing round-robin fashion. When the last identifier in the
      * allowed range has been used, the first counter for the identifier starts from the beginning
      * of the range again.
+     * <p>
+     * minimumValue(0), maximumValue(255).
      */
     private final int objectId;
 
@@ -38,14 +45,14 @@ public class PerceivedObject {
     /**
      * Unit: 0.01 meter. Distance to detected object from the reference point in x-direction for
      * the time of measurement.
-     *
+     * <p>
      * For a vehicle, the distance is reported in a body-fixed coordinate system as provided by
      * ISO 8855.
-     *
+     * <p>
      * For a RSU, the distance is reported in a coordinate system in which the y-axis corresponds
      * to the North direction, the x-axis to the East direction, and the z-axis to the vertical
      * direction.
-     *
+     * <p>
      * zeroPointZeroOneMeter(1), oneMeter(100).
      */
     private final int xDistance;
@@ -53,14 +60,14 @@ public class PerceivedObject {
     /**
      * Unit: 0.01 meter. Distance to detected object from the reference point in y-direction for
      * the time of measurement.
-     *
+     * <p>
      * For a vehicle, the distance is reported in a body-fixed coordinate system as provided by
      * ISO 8855.
-     *
+     * <p>
      * For a RSU, the distance is reported in a coordinate system in which the y-axis corresponds
      * to the North direction, the x-axis to the East direction, and the z-axis to the vertical
      * direction.
-     *
+     * <p>
      * zeroPointZeroOneMeter(1), oneMeter(100).
      */
     private final int yDistance;
@@ -68,14 +75,14 @@ public class PerceivedObject {
     /**
      * Unit: 0.01 meter. Distance to detected object from the reference point in z-direction for
      * the time of measurement.
-     *
+     * <p>
      * For a vehicle, the distance is reported in a body-fixed coordinate system as provided by
      * ISO 8855.
-     *
+     * <p>
      * For a RSU, the distance is reported in a coordinate system in which the y-axis corresponds
      * to the North direction, the x-axis to the East direction, and the z-axis to the vertical
      * direction.
-     *
+     * <p>
      * zeroPointZeroOneMeter(1), oneMeter(100).
      */
     private final int zDistance;
@@ -84,14 +91,14 @@ public class PerceivedObject {
      * Unit: 0.01 m/s. Speed of the detected object in the detecting reference system in x-direction
      * for the time of measurement (i.e. speed of the object relative to the origin of the station’s
      * reference system).
-     *
+     * <p>
      * For a vehicle, the speed is reported in a body-fixed coordinate system as provided by
      * ISO 8855 originating at the station’s reference point.
-     *
+     * <p>
      * For a RSU, the speed is reported in a coordinate system in which the y-axis corresponds to
      * the North direction, the x-axis to the East direction, and the z-axis to the vertical
      * direction.
-     *
+     * <p>
      * negativeSpeedMaximum(-16383), standstill(0), oneCentimeterPerSec(1), speedMaximum(16382),
      * unavailable(16383).
      */
@@ -101,14 +108,14 @@ public class PerceivedObject {
      * Unit: 0.01 m/s. Speed of the detected object in the detecting reference system in y-direction
      * for the time of measurement (i.e. speed of the object relative to the origin of the station’s
      * reference system).
-     *
+     * <p>
      * For a vehicle, the speed is reported in a body-fixed coordinate system as provided by
      * ISO 8855 originating at the station’s reference point.
-     *
+     * <p>
      * For a RSU, the speed is reported in a coordinate system in which the y-axis corresponds to
      * the North direction, the x-axis to the East direction, and the z-axis to the vertical
      * direction.
-     *
+     * <p>
      * negativeSpeedMaximum(-16383), standstill(0), oneCentimeterPerSec(1), speedMaximum(16382),
      * unavailable(16383).
      */
@@ -118,14 +125,14 @@ public class PerceivedObject {
      * Unit: 0.01 m/s. Speed of the detected object in the detecting reference system in z-direction
      * for the time of measurement (i.e. speed of the object relative to the origin of the station’s
      * reference system).
-     *
+     * <p>
      * For a vehicle, the speed is reported in a body-fixed coordinate system as provided by
      * ISO 8855 originating at the station’s reference point.
-     *
+     * <p>
      * For a RSU, the speed is reported in a coordinate system in which the y-axis corresponds to
      * the North direction, the x-axis to the East direction, and the z-axis to the vertical
      * direction.
-     *
+     * <p>
      * negativeSpeedMaximum(-16383), standstill(0), oneCentimeterPerSec(1), speedMaximum(16382),
      * unavailable(16383).
      */
@@ -134,14 +141,14 @@ public class PerceivedObject {
     /**
      * Unit: 0.1 m/s2. Acceleration of the detected object from the reference point in x-direction
      * for the time of measurement.
-     *
+     * <p>
      * For a vehicle, the acceleration is reported in a body-fixed coordinate system as provided by
      * ISO 8855 originating at the station’s reference point.
-     *
+     * <p>
      * For a RSU, the acceleration is reported in a coordinate system in which the y-axis
      * corresponds to the North direction, the x-axis to the East direction, and the z-axis to the
      * vertical direct.
-     *
+     * <p>
      * pointOneMeterPerSecSquared(1), minusPointOneMeterPerSecSquared(-1), unavailable(161).
      */
     private final int xAcceleration;
@@ -149,14 +156,14 @@ public class PerceivedObject {
     /**
      * Unit: 0.1 m/s2. Acceleration of the detected object from the reference point in y-direction
      * for the time of measurement.
-     *
+     * <p>
      * For a vehicle, the acceleration is reported in a body-fixed coordinate system as provided by
      * ISO 8855 originating at the station’s reference point.
-     *
+     * <p>
      * For a RSU, the acceleration is reported in a coordinate system in which the y-axis
      * corresponds to the North direction, the x-axis to the East direction, and the z-axis to the
      * vertical direct.
-     *
+     * <p>
      * pointOneMeterPerSecSquared(1), minusPointOneMeterPerSecSquared(-1), unavailable(161).
      */
     private final int yAcceleration;
@@ -164,122 +171,122 @@ public class PerceivedObject {
     /**
      * Unit: 0.1 m/s2. Acceleration of the detected object from the reference point in z-direction
      * for the time of measurement.
-     *
+     * <p>
      * For a vehicle, the acceleration is reported in a body-fixed coordinate system as provided by
      * ISO 8855 originating at the station’s reference point.
-     *
+     * <p>
      * For a RSU, the acceleration is reported in a coordinate system in which the y-axis
      * corresponds to the North direction, the x-axis to the East direction, and the z-axis to
      * the vertical direct.
-     *
+     * <p>
      * pointOneMeterPerSecSquared(1), minusPointOneMeterPerSecSquared(-1), unavailable(161).
      */
     private final int zAcceleration;
 
     /**
      * Unit: 0.1 degrees. Roll angle of object from the reference point.
-     *
+     * <p>
      * For a vehicle, the angle is reported in a body-fixed coordinate system as provided by
      * ISO 8855 originating at the station’s reference point.
-     *
+     * <p>
      * For a RSU, the angle is reported in a coordinate system in which the y-axis corresponds to
      * the North direction, the x-axis to the East direction, and the z- axis to the vertical
      * direction.
-     *
+     * <p>
      * The angle is measured with positive values considering the object orientation turning
      * counter-clockwise around the x-axis.
-     *
+     * <p>
      * zeroPointOneDegree(1), oneDegree(10), unavailable(3601).
      */
     private final int rollAngle;
 
     /**
      * Unit: 0.1 degrees. Pitch angle of object from the reference point.
-     *
+     * <p>
      * For a vehicle, the angle is reported in a body-fixed coordinate system as provided by
      * ISO 8855 originating at the station’s reference point.
-     *
+     * <p>
      * For a RSU, the angle is reported in a coordinate system in which the y-axis corresponds to
      * the North direction, the x-axis to the East direction, and the z- axis to the vertical
      * direction.
-     *
+     * <p>
      * The angle is measured with positive values considering the object orientation turning
      * counter-clockwise around the y-axis.
-     *
+     * <p>
      * zeroPointOneDegree(1), oneDegree(10), unavailable(3601).
      */
     private final int pitchAngle;
 
     /**
      * Unit: 0.1 degrees. Yaw angle of object from the reference point.
-     *
+     * <p>
      * For a vehicle, the angle is reported in a body-fixed coordinate system as provided by
      * ISO 8855 originating at the station’s reference point.
-     *
+     * <p>
      * For a RSU, the angle is reported in a coordinate system in which the y-axis corresponds to
      * the North direction, the x-axis to the East direction, and the z- axis to the vertical
      * direction.
-     *
+     * <p>
      * The angle is measured with positive values considering the object orientation turning
      * counter-clockwise around the z-axis.
-     *
+     * <p>
      * zeroPointOneDegree(1), oneDegree(10), unavailable(3601).
      */
     private final int yawAngle;
 
     /**
      * Unit: 0.01 degrees/s. Roll rate of object from the reference point.
-     *
+     * <p>
      * For a vehicle, the angular rate is reported in a body-fixed coordinate system as provided
      * by ISO 8855 originating at the station’s reference point.
-     *
+     * <p>
      * For a RSU, the angular rate is reported in a coordinate system in which the y-axis
      * corresponds to the North direction, the x-axis to the East direction, and the z- axis to
      * the vertical direction.
-     *
+     * <p>
      * The angular rate is measured with positive values considering the object orientation
      * turning counter-clockwise around the x-axis. An angular speed value described in a local
      * Cartesian coordinate system, counted positive in a right-hand local coordinate system from
      * the abscissa.
-     *
+     * <p>
      * noSpeed(0), oneDegreePerSecondAntiClockwise(100), oneDegreePerSecondClockwise(-100).
      */
     private final int rollRate;
 
     /**
      * Unit: 0.01 degrees/s. Pitch rate of object from the reference point.
-     *
+     * <p>
      * For a vehicle, the angular rate is reported in a body-fixed coordinate system as provided
      * by ISO 8855 originating at the station’s reference point.
-     *
+     * <p>
      * For a RSU, the angular rate is reported in a coordinate system in which the y-axis
      * corresponds to the North direction, the x-axis to the East direction, and the z- axis to
      * the vertical direction.
-     *
+     * <p>
      * The angular rate is measured with positive values considering the object orientation turning
      * counter-clockwise around the x-axis. An angular speed value described in a local Cartesian
      * coordinate system, counted positive in a right-hand local coordinate system from the
      * abscissa.
-     *
+     * <p>
      * noSpeed(0), oneDegreePerSecondAntiClockwise(100), oneDegreePerSecondClockwise(-100).
      */
     private final int pitchRate;
 
     /**
      * Unit: 0.01 degrees/s. Yaw rate of object from the reference point.
-     *
+     * <p>
      * For a vehicle, the angular rate is reported in a body-fixed coordinate system as provided
      * by ISO 8855 originating at the station’s reference point.
-     *
+     * <p>
      * For a RSU, the angular rate is reported in a coordinate system in which the y-axis
      * corresponds to the North direction, the x-axis to the East direction, and the z- axis to
      * the vertical direction.
-     *
+     * <p>
      * The angular rate is measured with positive values considering the object orientation turning
      * counter-clockwise around the x-axis. An angular speed value described in a local Cartesian
      * coordinate system, counted positive in a right-hand local coordinate system from the
      * abscissa.
-     *
+     * <p>
      * noSpeed(0), oneDegreePerSecondAntiClockwise(100), oneDegreePerSecondClockwise(-100).
      */
     private final int yawRate;
@@ -287,19 +294,19 @@ public class PerceivedObject {
     /**
      * Unit: 0.01 degrees/s^2 (degrees per second squared).
      * Roll acceleration of object from the reference point.
-     *
+     * <p>
      * For a vehicle, the angular acceleration is reported in a body-fixed coordinate system as
      * provided by ISO 8855 originating at the station’s reference point.
-     *
+     * <p>
      * For a RSU, the angular acceleration is reported in a coordinate system in which the y-axis
      * corresponds to the North direction, the x-axis to the East direction, and the z- axis to
      * the vertical direction.
-     *
+     * <p>
      * The angular acceleration is measured with positive values considering the object orientation
      * turning counter-clockwise around the x-axis. An angular acceleration value described in a
      * local Cartesian coordinate system, counted positive in a right-hand local coordinate system
      * from the abscissa.
-     *
+     * <p>
      * noAcceleration(0), oneDegreePerSecondSquaredAntiClockwise(100),
      * oneDegreePerSecondSquaredClockwise(-100).
      */
@@ -308,19 +315,19 @@ public class PerceivedObject {
     /**
      * Unit: 0.01 degrees/s^2 (degrees per second squared).
      * Pitch acceleration of object from the reference point.
-     *
+     * <p>
      * For a vehicle, the angular acceleration is reported in a body-fixed coordinate system as
      * provided by ISO 8855 originating at the station’s reference point.
-     *
+     * <p>
      * For a RSU, the angular acceleration is reported in a coordinate system in which the y-axis
      * corresponds to the North direction, the x-axis to the East direction, and the z- axis to the
      * vertical direction.
-     *
+     * <p>
      * The angular acceleration is measured with positive values considering the object orientation
      * turning counter-clockwise around the x-axis. An angular acceleration value described in a
      * local Cartesian coordinate system, counted positive in a right-hand local coordinate system
      * from the abscissa.
-     *
+     * <p>
      * noAcceleration(0), oneDegreePerSecondSquaredAntiClockwise(100),
      * oneDegreePerSecondSquaredClockwise(-100).
      */
@@ -329,19 +336,19 @@ public class PerceivedObject {
     /**
      * Unit: 0.01 degrees/s^2 (degrees per second squared).
      * Yaw acceleration of object from the reference point.
-     *
+     * <p>
      * For a vehicle, the angular acceleration is reported in a body-fixed coordinate system as
      * provided by ISO 8855 originating at the station’s reference point.
-     *
+     * <p>
      * For a RSU, the angular acceleration is reported in a coordinate system in which the y-axis
      * corresponds to the North direction, the x-axis to the East direction, and the z- axis to the
      * vertical direction.
-     *
+     * <p>
      * The angular acceleration is measured with positive values considering the object orientation
      * turning counter-clockwise around the x-axis. An angular acceleration value described in a
      * local Cartesian coordinate system, counted positive in a right-hand local coordinate system
      * from the abscissa.
-     *
+     * <p>
      * noAcceleration(0), oneDegreePerSecondSquaredAntiClockwise(100),
      * oneDegreePerSecondSquaredClockwise(-100).
      */
@@ -351,41 +358,41 @@ public class PerceivedObject {
 
     /**
      * Unit: 0.1 m. First dimension of object as provided by the sensor or environment model.
-     *
+     * <p>
      * This dimension is always contained in the plane which is oriented perpendicular to the
      * direction of the angle indicated by the yawAngle and which contains the object's reference
      * point. A dimension for an object.
-     *
+     * <p>
      * zeroPointOneMeter(1), oneMeter(10).",
      */
     private final int planarObjectDimension1;
 
     /**
      * Unit: 0.1 m. Second dimension of the object as provided by the sensor environment model.
-     *
+     * <p>
      * This dimension is contained in the plane oriented in the direction of the angle indicated
      * by the yawAngle and the object's reference point. A dimension for an object.
-     *
+     * <p>
      * zeroPointOneMeter(1), oneMeter(10).
      */
     private final int planarObjectDimension2;
 
     /**
      * Unit: 0.1 m. Vertical dimension of object as provided by the sensor or object model.
-     *
+     * <p>
      * A dimension for an object.
-     *
+     * <p>
      * zeroPointOneMeter(1), oneMeter(10).
      */
     private final int verticalObjectDimension;
 
     /**
      * The reference point on the perceived object.
-     *
+     * <p>
      * The kinematic attitude and state data provided for this object are valid for this reference
      * point of the object. In case no object reference point can be determined, it is assumed to
      * be the center point of the detected object.
-     *
+     * <p>
      * {mid(0), bottomLeft(1), midLeft(2), topLeft(3), bottomMid(4), topMid(5), bottomRight(6),
      * midRight(7), topRight(8).
      */
@@ -393,10 +400,10 @@ public class PerceivedObject {
 
     /**
      * Unit: 1 ms. Provides the age of the detected and described object.
-     *
+     * <p>
      * Age of object in milliseconds, i.e. for how long the object has been observed by the
      * disseminating station.
-     *
+     * <p>
      * oneMiliSec(1), moreThan1Point5Second(1500).
      */
     private final int objectAge;
@@ -404,15 +411,15 @@ public class PerceivedObject {
     /**
      * List of sensor-IDs which provided the measurement data.
      */
-    private final ArrayList<Integer> sensorIdList;
+    private final List<Integer> sensorIdList;
 
     /**
      * Indicated the dynamic capabilities of a detected object.
-     *
+     * <p>
      * Indication whether the detected object is classified as a dynamic (i.e. moving) object.
      * This value indicates whether an object has the general capability to move, i.e. change
      * its position.
-     *
+     * <p>
      * dynamic(0) the object is moving, hasBeenDynamic(1) indicates whether an object
      * has been dynamic before, e.g., a car stopping at a traffic light, static(2) shall be used
      * in case an object is identified to be not moving throughout any previous observation
@@ -423,7 +430,7 @@ public class PerceivedObject {
      * Provides the classification of the described object.
      * Multi-dimensional classification may be provided.
      */
-    private final ArrayList<ClassificationItem> classification;
+    private final List<ClassificationItem> classification;
 
     //matchedPosition not implemented
 
@@ -432,7 +439,10 @@ public class PerceivedObject {
       */
     private final PerceivedObjectConfidence confidence;
 
-    public PerceivedObject(
+    /**
+     * Object which is perceived by one or several sensors.
+     */
+    private PerceivedObject(
             final int objectId,
             final int timeOfMeasurement,
             final int xDistance,
@@ -458,9 +468,9 @@ public class PerceivedObject {
             final int verticalObjectDimension,
             final int objectRefPoint,
             final int objectAge,
-            final ArrayList<Integer> sensorIdList,
+            final List<Integer> sensorIdList,
             final int dynamicStatus,
-            final ArrayList<ClassificationItem> classification,
+            final List<ClassificationItem> classification,
             final PerceivedObjectConfidence confidence
     ) throws IllegalArgumentException {
         if(objectId == UNKNOWN && CPM.isStrictMode()) {
@@ -688,7 +698,7 @@ public class PerceivedObject {
             if(objectRefPoint != UNKNOWN)
                 json.put(JsonCpmKey.PerceivedObjectContainer.OBJECT_REF_POINT.key(), objectRefPoint);
             json.put(JsonCpmKey.PerceivedObjectContainer.OBJECT_AGE.key(), objectAge);
-            if(sensorIdList != null && sensorIdList.size() > 0) {
+            if(sensorIdList != null && !sensorIdList.isEmpty()) {
                 JSONArray jsonSensorIdList = new JSONArray();
                 for(int sensorId: sensorIdList) {
                     jsonSensorIdList.put(sensorId);
@@ -697,17 +707,17 @@ public class PerceivedObject {
             }
             if(dynamicStatus != UNKNOWN)
                 json.put(JsonCpmKey.PerceivedObjectContainer.DYNAMIC_STATUS.key(), dynamicStatus);
-            if(classification != null && classification.size() > 0) {
+            if(classification != null && !classification.isEmpty()) {
                 JSONArray jsonClassification = new JSONArray();
                 for(ClassificationItem classificationItem: classification) {
                     if(classificationItem != null) jsonClassification.put(classificationItem.getJson());
                 }
-                if(jsonClassification.length() > 0)
+                if(!jsonClassification.isEmpty())
                     json.put(JsonCpmKey.PerceivedObjectContainer.CLASSIFICATION.key(), jsonClassification);
             }
             json.put(JsonCpmKey.PerceivedObjectContainer.CONFIDENCE.key(), confidence.getJson());
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM PerceivedObject JSON build error", "Error: " + e);
         }
     }
 
@@ -831,7 +841,7 @@ public class PerceivedObject {
         return objectAge;
     }
 
-    public ArrayList<Integer> getSensorIdList() {
+    public List<Integer> getSensorIdList() {
         return sensorIdList;
     }
 
@@ -839,7 +849,7 @@ public class PerceivedObject {
         return dynamicStatus;
     }
 
-    public ArrayList<ClassificationItem> getClassification() {
+    public List<ClassificationItem> getClassification() {
         return classification;
     }
 
@@ -847,8 +857,303 @@ public class PerceivedObject {
         return confidence;
     }
 
+    public static class PerceivedObjectBuilder {
+        private final int objectId;
+        private final int timeOfMeasurement;
+        private int xDistance;
+        private int yDistance;
+        private int zDistance = UNKNOWN;
+        private int xSpeed;
+        private int ySpeed;
+        private int zSpeed = UNKNOWN;
+        private int xAcceleration = UNKNOWN;
+        private int yAcceleration = UNKNOWN;
+        private int zAcceleration = UNKNOWN;
+        private int rollAngle = UNKNOWN;
+        private int pitchAngle = UNKNOWN;
+        private int yawAngle = UNKNOWN;
+        private int rollRate = UNKNOWN;
+        private int pitchRate = UNKNOWN;
+        private int yawRate = UNKNOWN;
+        private int rollAcceleration = UNKNOWN;
+        private int pitchAcceleration = UNKNOWN;
+        private int yawAcceleration = UNKNOWN;
+        private int planarObjectDimension1 = UNKNOWN;
+        private int planarObjectDimension2 = UNKNOWN;
+        private int verticalObjectDimension = UNKNOWN;
+        private int objectRefPoint = UNKNOWN;
+        private final int objectAge;
+        private List<Integer> sensorIdList;
+        private int dynamicStatus = UNKNOWN;
+        private List<ClassificationItem> classification;
+        private PerceivedObjectConfidence confidence;
+
+        /**
+         * Start building a PerceivedObject.
+         *
+         * @param objectId {@link PerceivedObject#objectId}
+         * @param timeOfMeasurement {@link PerceivedObject#timeOfMeasurement}
+         * @param objectAge {@link PerceivedObject#objectAge}
+         */
+        public PerceivedObjectBuilder(int objectId,
+                                      int timeOfMeasurement,
+                                      int objectAge) {
+            this.objectId = objectId;
+            this.timeOfMeasurement = timeOfMeasurement;
+            this.objectAge = objectAge;
+        }
+
+        /**
+         * Sets the distance between the sensor and the perceived object.
+         * <p>
+         * These fields are mandatory.
+         *
+         * @param xDistance {@link PerceivedObject#xDistance}
+         * @param yDistance {@link PerceivedObject#yDistance}
+         */
+        public PerceivedObjectBuilder distance(int xDistance,
+                                               int yDistance) {
+            this.xDistance = xDistance;
+            this.yDistance = yDistance;
+            return this;
+        }
+
+        /**
+         * Sets the distance between the sensor and the perceived object.
+         * <p>
+         * These fields are mandatory, except zDistance - use {@link #distance(int, int)} if not known.
+         *
+         * @param xDistance {@link PerceivedObject#xDistance}
+         * @param yDistance {@link PerceivedObject#yDistance}
+         * @param zDistance {@link PerceivedObject#zDistance}
+         */
+        public PerceivedObjectBuilder distance(int xDistance,
+                                                  int yDistance,
+                                                  int zDistance) {
+            this.xDistance = xDistance;
+            this.yDistance = yDistance;
+            this.zDistance = zDistance;
+            return this;
+        }
+
+        /**
+         * Sets the speed of the perceived object.
+         * <p>
+         * These fields are mandatory.
+         *
+         * @param xSpeed {@link PerceivedObject#xSpeed}
+         * @param ySpeed {@link PerceivedObject#ySpeed}
+         */
+        public PerceivedObjectBuilder speed(int xSpeed,
+                                            int ySpeed) {
+            this.xSpeed = xSpeed;
+            this.ySpeed = ySpeed;
+            return this;
+        }
+
+        /**
+         * Sets the speed of the perceived object.
+         * <p>
+         * These fields are mandatory, except zSpeed - use {@link #speed(int, int)} if not known.
+         *
+         * @param xSpeed {@link PerceivedObject#xSpeed}
+         * @param ySpeed {@link PerceivedObject#ySpeed}
+         * @param zSpeed {@link PerceivedObject#zSpeed}
+         */
+        public PerceivedObjectBuilder speed(int xSpeed,
+                                               int ySpeed,
+                                               int zSpeed) {
+            this.xSpeed = xSpeed;
+            this.ySpeed = ySpeed;
+            this.zSpeed = zSpeed;
+            return this;
+        }
+
+        /**
+         * Sets the acceleration of the perceived object.
+         * <p>
+         * These fields are optional.
+         *
+         * @param xAcceleration {@link PerceivedObject#xAcceleration}
+         * @param yAcceleration {@link PerceivedObject#yAcceleration}
+         * @param zAcceleration {@link PerceivedObject#zAcceleration}
+         */
+        public PerceivedObjectBuilder acceleration(int xAcceleration,
+                                                   int yAcceleration,
+                                                   int zAcceleration) {
+            this.xAcceleration = xAcceleration;
+            this.yAcceleration = yAcceleration;
+            this.zAcceleration = zAcceleration;
+            return this;
+        }
+
+        /**
+         * Sets the angle of the perceived object.
+         * <p>
+         * These fields are optional.
+         *
+         * @param rollAngle {@link PerceivedObject#rollAngle}
+         * @param pitchAngle {@link PerceivedObject#pitchAngle}
+         * @param yawAngle {@link PerceivedObject#yawAngle}
+         */
+        public PerceivedObjectBuilder angle(int rollAngle,
+                                            int pitchAngle,
+                                            int yawAngle) {
+            this.rollAngle = rollAngle;
+            this.pitchAngle = pitchAngle;
+            this.yawAngle = yawAngle;
+            return this;
+        }
+
+        /**
+         * Sets the angular rate of the perceived object.
+         * <p>
+         * These fields are optional.
+         *
+         * @param rollRate {@link PerceivedObject#rollRate}
+         * @param pitchRate {@link PerceivedObject#pitchRate}
+         * @param yawRate {@link PerceivedObject#yawRate}
+         */
+        public PerceivedObjectBuilder angleRate(int rollRate,
+                                                int pitchRate,
+                                                int yawRate) {
+            this.rollRate = rollRate;
+            this.pitchRate = pitchRate;
+            this.yawRate = yawRate;
+            return this;
+        }
+
+        /**
+         * Sets the angular acceleration of the perceived object.
+         * <p>
+         * These fields are optional.
+         *
+         * @param rollAcceleration {@link PerceivedObject#rollAcceleration}
+         * @param pitchAcceleration {@link PerceivedObject#pitchAcceleration}
+         * @param yawAcceleration {@link PerceivedObject#yawAcceleration}
+         */
+        public PerceivedObjectBuilder angleAcceleration(int rollAcceleration,
+                                                        int pitchAcceleration,
+                                                        int yawAcceleration) {
+            this.rollAcceleration = rollAcceleration;
+            this.pitchAcceleration = pitchAcceleration;
+            this.yawAcceleration = yawAcceleration;
+            return this;
+        }
+
+        /**
+         * Sets the dimensions of the perceived object.
+         * <p>
+         * These fields are optional.
+         *
+         * @param planarObjectDimension1 {@link PerceivedObject#planarObjectDimension1}
+         * @param planarObjectDimension2 {@link PerceivedObject#planarObjectDimension2}
+         * @param verticalObjectDimension {@link PerceivedObject#verticalObjectDimension}
+         * @param objectRefPoint {@link PerceivedObject#objectRefPoint}
+         */
+        public PerceivedObjectBuilder objectDimension(int planarObjectDimension1,
+                                                      int planarObjectDimension2,
+                                                      int verticalObjectDimension,
+                                                      int objectRefPoint) {
+            this.planarObjectDimension1 = planarObjectDimension1;
+            this.planarObjectDimension2 = planarObjectDimension2;
+            this.verticalObjectDimension = verticalObjectDimension;
+            this.objectRefPoint = objectRefPoint;
+            return this;
+        }
+
+        /**
+         * Sets the list of sensors which have detected the perceived object.
+         * <p>
+         * This list is optional.
+         *
+         * @param sensorIdList {@link PerceivedObject#sensorIdList}
+         */
+        public PerceivedObjectBuilder sensorIdList(List<Integer> sensorIdList) {
+            this.sensorIdList = sensorIdList;
+            return this;
+        }
+
+        /**
+         * Sets the dynamic status of the perceived object.
+         * <p>
+         * This field is optional.
+         *
+         * @param dynamicStatus {@link PerceivedObject#dynamicStatus}
+         */
+        public PerceivedObjectBuilder dynamicStatus(int dynamicStatus) {
+            this.dynamicStatus = dynamicStatus;
+            return this;
+        }
+
+        /**
+         * Sets the list of classification of the perceived object.
+         * <p>
+         * This list is optional.
+         *
+         * @param classification {@link PerceivedObject#classification}
+         */
+        public PerceivedObjectBuilder classification(List<ClassificationItem> classification) {
+            this.classification = classification;
+            return this;
+        }
+
+        /**
+         * Sets the confidence of the perceived object.
+         * <p>
+         * This field is mandatory.
+         *
+         * @param confidence {@link PerceivedObject#confidence}
+         */
+        public PerceivedObjectBuilder confidence(PerceivedObjectConfidence confidence) {
+            this.confidence = confidence;
+            return this;
+        }
+
+        /**
+         * Build the perceived object.
+         * <p>
+         * Call after setting all the mandatory fields.
+         *
+         * @return {@link #PerceivedObject}
+         */
+        public PerceivedObject build() {
+            return new PerceivedObject(
+                    objectId,
+                    timeOfMeasurement,
+                    xDistance,
+                    yDistance,
+                    zDistance,
+                    xSpeed,
+                    ySpeed,
+                    zSpeed,
+                    xAcceleration,
+                    yAcceleration,
+                    zAcceleration,
+                    rollAngle,
+                    pitchAngle,
+                    yawAngle,
+                    rollRate,
+                    pitchRate,
+                    yawRate,
+                    rollAcceleration,
+                    pitchAcceleration,
+                    yawAcceleration,
+                    planarObjectDimension1,
+                    planarObjectDimension2,
+                    verticalObjectDimension,
+                    objectRefPoint,
+                    objectAge,
+                    sensorIdList,
+                    dynamicStatus,
+                    classification,
+                    confidence);
+        }
+
+    }
+
     public static PerceivedObject jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         try {
             int objectId = json.getInt(JsonCpmKey.PerceivedObjectContainer.OBJECT_ID.key());
             int timeOfMeasurement = json.getInt(JsonCpmKey.PerceivedObjectContainer.TIME_OF_MEASUREMENT.key());
@@ -895,38 +1200,46 @@ public class PerceivedObject {
             JSONObject jsonConfidence = json.getJSONObject(JsonCpmKey.PerceivedObjectContainer.CONFIDENCE.key());
             PerceivedObjectConfidence confidence = PerceivedObjectConfidence.jsonParser(jsonConfidence);
 
-            return new PerceivedObject(
+            return new PerceivedObjectBuilder(
                     objectId,
                     timeOfMeasurement,
-                    xDistance,
-                    yDistance,
-                    zDistance,
-                    xSpeed,
-                    ySpeed,
-                    zSpeed,
-                    xAcceleration,
-                    yAcceleration,
-                    zAcceleration,
-                    rollAngle,
-                    pitchAngle,
-                    yawAngle,
-                    rollRate,
-                    pitchRate,
-                    yawRate,
-                    rollAcceleration,
-                    pitchAcceleration,
-                    yawAcceleration,
-                    planarObjectDimension1,
-                    planarObjectDimension2,
-                    verticalObjectDimension,
-                    objectRefPoint,
-                    objectAge,
-                    sensorIdList,
-                    dynamicStatus,
-                    classification,
-                    confidence);
+                    objectAge)
+                    .distance(
+                            xDistance,
+                            yDistance,
+                            zDistance)
+                    .speed(
+                            xSpeed,
+                            ySpeed,
+                            zSpeed)
+                    .acceleration(
+                            xAcceleration,
+                            yAcceleration,
+                            zAcceleration)
+                    .angle(
+                            rollAngle,
+                            pitchAngle,
+                            yawAngle)
+                    .angleRate(
+                            rollRate,
+                            pitchRate,
+                            yawRate)
+                    .angleAcceleration(
+                            rollAcceleration,
+                            pitchAcceleration,
+                            yawAcceleration)
+                    .objectDimension(
+                            planarObjectDimension1,
+                            planarObjectDimension2,
+                            verticalObjectDimension,
+                            objectRefPoint)
+                    .sensorIdList(sensorIdList)
+                    .dynamicStatus(dynamicStatus)
+                    .classification(classification)
+                    .confidence(confidence)
+                    .build();
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM PerceivedObject JSON parsing error", "Error: " + e);
         }
         return null;
     }

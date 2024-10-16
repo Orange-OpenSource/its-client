@@ -11,7 +11,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class DetectionArea {
+
+    private static final Logger LOGGER = Logger.getLogger(DetectionArea.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -144,7 +149,7 @@ public class DetectionArea {
             else if(stationarySensorRectangle != null)
                 json.put(JsonCpmKey.DetectionArea.STATIONARY_SENSOR_RECTANGLE.key(), stationarySensorRectangle.getJson());
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM DetectionArea JSON build error", "Error: " + e);
         }
     }
 
@@ -177,7 +182,7 @@ public class DetectionArea {
     }
 
     public static DetectionArea jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         JSONObject jsonVehicleSensor = json.optJSONObject(JsonCpmKey.DetectionArea.VEHICLE_SENSOR.key());
         VehicleSensor vehicleSensor = VehicleSensor.jsonParser(jsonVehicleSensor);
         JSONObject jsonStationarySensorRadial = json.optJSONObject(JsonCpmKey.DetectionArea.STATIONARY_SENSOR_RADIAL.key());

@@ -14,24 +14,48 @@ import com.orange.iot3mobility.TrueTime;
  */
 public abstract class MessageBase {
 
+    /**
+     * Type of the message.
+     * <p>
+     * cam, denm, cpm, etc.
+     */
     private final String type;
+
+    /**
+     * The entity responsible for emitting the message.
+     * <p>
+     * self, global_application, mec_application, on_board_application
+     */
     private final String origin;
+
+    /**
+     * JSON message format version.
+     */
     private final String version;
+
+    /**
+     * The identifier of the entity responsible for emitting the message.
+     * <p>
+     * Format com_type_number, e.g. ora_car_42
+     */
     private final String sourceUuid;
-    private final String destinationUuid;
+
+    /**
+     * The timestamp when the message was generated since Unix Epoch (1970/01/01).
+     * <p>
+     * Unit: millisecond.
+     */
     private long timestamp;
 
     protected MessageBase(String type,
                        String origin,
                        String version,
                        String sourceUuid,
-                       String destinationUuid,
                        long timestamp) {
         this.type = type;
         this.origin = origin;
         this.version = version;
         this.sourceUuid = sourceUuid;
-        this.destinationUuid = destinationUuid;
         this.timestamp = timestamp;
     }
 
@@ -49,10 +73,6 @@ public abstract class MessageBase {
 
     public String getSourceUuid() {
         return sourceUuid;
-    }
-
-    public String getDestinationUuid() {
-        return destinationUuid;
     }
 
     public long getTimestamp() {

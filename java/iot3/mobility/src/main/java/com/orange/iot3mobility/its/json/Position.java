@@ -14,7 +14,21 @@ import com.orange.iot3mobility.its.EtsiUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * Position consisting of a latitude, longitude and altitude.
+ * <p>
+ * Latitude Unit: 0.1 microdegree. oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10), unavailable(900000001)
+ * <p>
+ * Longitude Unit: 0.1 microdegree. oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(1800000001)
+ * <p>
+ * Altitude Unit: 0.01 meter. referenceEllipsoidSurface(0), oneCentimeter(1), unavailable(800001)
+ */
 public class Position {
+
+    private static final Logger LOGGER = Logger.getLogger(Position.class.getName());
 
     private final JSONObject jsonPosition = new JSONObject();
     private final long latitude;
@@ -59,7 +73,7 @@ public class Position {
             if(altitude != UNKNOWN)
                 jsonPosition.put(JsonKey.Position.ALTITUDE.key(), altitude);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "Position JSON build error", "Error: " + e);
         }
     }
 
@@ -92,7 +106,7 @@ public class Position {
     }
 
     public static Position jsonParser(JSONObject jsonPosition) {
-        if(jsonPosition == null || jsonPosition.length() == 0) return null;
+        if(jsonPosition == null || jsonPosition.isEmpty()) return null;
         try {
             long latitude = jsonPosition.getLong(JsonKey.Position.LATITUDE.key());
             long longitude = jsonPosition.getLong(JsonKey.Position.LONGITUDE.key());
@@ -103,7 +117,7 @@ public class Position {
                     longitude,
                     altitude);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "Position JSON parsing error", "Error: " + e);
         }
         return null;
     }

@@ -17,24 +17,52 @@ import org.json.JSONObject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Cooperative Awareness Message.
+ * <p>
+ * Cooperative Awareness Messages (CAMs) are messages exchanged in the ITS network between ITS-Ss to create and
+ * maintain awareness of each other and to support cooperative performance of vehicles using the road network.
+ * <p>
+ * A CAM contains status and attribute information of the originating ITS-S.
+ */
 public class CAM extends MessageBase {
 
     private static final Logger LOGGER = Logger.getLogger(CAM.class.getName());
 
     private final JSONObject jsonCAM = new JSONObject();
+
+    /**
+     * Version of the ITS message and/or communication protocol.
+     */
     private final int protocolVersion;
+
+    /**
+     * ITS-station identifier
+     */
     private final long stationId;
+
+    /**
+     * Time of the reference position in the CAM, considered as time of the CAM generation.
+     * <p>
+     * TimestampIts mod 65 536. TimestampIts represents an integer value in milliseconds since
+     * 2004-01-01T00:00:00:000Z.
+     * <p>
+     * oneMilliSec(1).
+     */
     private final int generationDeltaTime;
+
     private final BasicContainer basicContainer;
     private final HighFrequencyContainer highFrequencyContainer;
     private final LowFrequencyContainer lowFrequencyContainer;
 
-    public CAM(
+    /**
+     * Build a Cooperative Awareness Message.
+     */
+    private CAM(
             final String type,
             final String origin,
             final String version,
             final String sourceUuid,
-            final String destinationUuid,
             final long timestamp,
             final int protocolVersion,
             final long stationId,
@@ -43,7 +71,7 @@ public class CAM extends MessageBase {
             final HighFrequencyContainer highFrequencyContainer,
             final LowFrequencyContainer lowFrequencyContainer)
     {
-        super(type, origin, version, sourceUuid, destinationUuid, timestamp);
+        super(type, origin, version, sourceUuid, timestamp);
         if(protocolVersion > 255 || protocolVersion < 0) {
             throw new IllegalArgumentException("CAM ProtocolVersion should be in the range of [0 - 255]."
                     + " Value: " + protocolVersion);
@@ -87,8 +115,6 @@ public class CAM extends MessageBase {
             jsonCAM.put(JsonKey.Header.ORIGIN.key(), getOrigin());
             jsonCAM.put(JsonKey.Header.VERSION.key(), getVersion());
             jsonCAM.put(JsonKey.Header.SOURCE_UUID.key(), getSourceUuid());
-            if(!getDestinationUuid().isEmpty())
-                jsonCAM.put(JsonKey.Header.DESTINATION_UUID.key(), getDestinationUuid());
             jsonCAM.put(JsonKey.Header.TIMESTAMP.key(), getTimestamp());
             jsonCAM.put(JsonKey.Header.MESSAGE.key(), message);
         } catch (JSONException e) {
@@ -129,7 +155,6 @@ public class CAM extends MessageBase {
         private String origin;
         private String version;
         private String sourceUuid;
-        private String destinationUuid;
         private long timestamp;
         private int protocolVersion;
         private long stationId;
@@ -138,35 +163,43 @@ public class CAM extends MessageBase {
         private HighFrequencyContainer highFrequencyContainer;
         private LowFrequencyContainer lowFrequencyContainer;
 
+        /**
+         * Start building a CAM.
+         */
         public CAMBuilder() {
             this.type = JsonValue.Type.CAM.value();
         }
 
+        /**
+         * Sets the JSON header of the CAM.
+         * <p>
+         * These fields are mandatory.
+         *
+         * @param origin The entity responsible for emitting the message.
+         * @param version JSON message format version.
+         * @param sourceUuid The identifier of the entity responsible for emitting the message.
+         * @param timestamp The timestamp when the message was generated since Unix Epoch (1970/01/01), in milliseconds.
+         */
         public CAMBuilder header(String origin,
                                  String version,
                                  String sourceUuid,
-                                 String destinationUuid,
                                  long timestamp) {
             this.origin = origin;
             this.version = version;
             this.sourceUuid = sourceUuid;
-            this.destinationUuid = destinationUuid;
             this.timestamp = timestamp;
             return this;
         }
 
-        public CAMBuilder header(String origin,
-                                 String version,
-                                 String sourceUuid,
-                                 long timestamp) {
-            this.origin = origin;
-            this.version = version;
-            this.sourceUuid = sourceUuid;
-            this.destinationUuid = "";
-            this.timestamp = timestamp;
-            return this;
-        }
-
+        /**
+         * Sets the PDU header of the CAM.
+         * <p>
+         * These fields are mandatory.
+         *
+         * @param protocolVersion {@link CAM#protocolVersion}
+         * @param stationId {@link CAM#stationId}
+         * @param generationDeltaTime {@link CAM#generationDeltaTime}
+         */
         public CAMBuilder pduHeader(int protocolVersion,
                                     long stationId,
                                     int generationDeltaTime) {
@@ -176,27 +209,48 @@ public class CAM extends MessageBase {
             return this;
         }
 
+        /**
+         * Contains the type and reference position of the emitting vehicle.
+         *
+         * @param basicContainer {@link BasicContainer}
+         */
         public CAMBuilder basicContainer(BasicContainer basicContainer) {
             this.basicContainer = basicContainer;
             return this;
         }
 
+        /**
+         * Contains detailed information about the emitting vehicle.
+         *
+         * @param highFrequencyContainer {@link HighFrequencyContainer}
+         */
         public CAMBuilder highFreqContainer(HighFrequencyContainer highFrequencyContainer) {
             this.highFrequencyContainer = highFrequencyContainer;
             return this;
         }
 
+        /**
+         * Optional, contains additional information about the emitting vehicle.
+         *
+         * @param lowFrequencyContainer {@link LowFrequencyContainer}
+         */
         public CAMBuilder lowFreqContainer(LowFrequencyContainer lowFrequencyContainer) {
             this.lowFrequencyContainer = lowFrequencyContainer;
             return this;
         }
 
+        /**
+         * Build the CAM.
+         * <p>
+         * Call after setting all the mandatory fields.
+         *
+         * @return {@link #CAM}
+         */
         public CAM build() {
             return new CAM(type,
                     origin,
                     version,
                     sourceUuid,
-                    destinationUuid,
                     timestamp,
                     protocolVersion,
                     stationId,
@@ -207,6 +261,12 @@ public class CAM extends MessageBase {
         }
     }
 
+    /**
+     * Parse a CAM in JSON format.
+     *
+     * @param jsonCAM The CAM in JSON format
+     * @return {@link CAM}
+     */
     public static CAM jsonParser(JSONObject jsonCAM) {
         if(jsonCAM == null || jsonCAM.isEmpty()) return null;
         try {
@@ -218,7 +278,6 @@ public class CAM extends MessageBase {
                 String origin = jsonCAM.getString(JsonKey.Header.ORIGIN.key());
                 String version = jsonCAM.getString(JsonKey.Header.VERSION.key());
                 String sourceUuid = jsonCAM.getString(JsonKey.Header.SOURCE_UUID.key());
-                String destinationUuid = jsonCAM.optString(JsonKey.Header.DESTINATION_UUID.key());
                 long timestamp = jsonCAM.getLong(JsonKey.Header.TIMESTAMP.key());
 
                 int protocolVersion = message.getInt(JsonKey.Cam.PROTOCOL_VERSION.key());
@@ -238,7 +297,6 @@ public class CAM extends MessageBase {
                         .header(origin,
                                 version,
                                 sourceUuid,
-                                destinationUuid,
                                 timestamp)
                         .pduHeader(protocolVersion,
                                 stationId,

@@ -12,7 +12,12 @@ import com.orange.iot3mobility.its.EtsiUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class PathPosition {
+
+    private static final Logger LOGGER = Logger.getLogger(PathPosition.class.getName());
 
     private final JSONObject jsonPathPosition = new JSONObject();
     private final int deltaLatitude;
@@ -49,7 +54,7 @@ public class PathPosition {
             jsonPathPosition.put(JsonKey.PathPosition.DELTA_LONGITUDE.key(), deltaLongitude);
             jsonPathPosition.put(JsonKey.PathPosition.DELTA_ALTITUDE.key(), deltaAltitude);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "PathHistory JSON build error", "Error: " + e);
         }
     }
 
@@ -78,7 +83,7 @@ public class PathPosition {
     }
 
     public static PathPosition jsonParser(JSONObject jsonPathPosition) {
-        if(jsonPathPosition == null || jsonPathPosition.length() == 0) return null;
+        if(jsonPathPosition == null || jsonPathPosition.isEmpty()) return null;
         try {
             int deltaLatitude = jsonPathPosition.getInt(JsonKey.PathPosition.DELTA_LATITUDE.key());
             int deltaLongitude = jsonPathPosition.getInt(JsonKey.PathPosition.DELTA_LONGITUDE.key());
@@ -89,7 +94,7 @@ public class PathPosition {
                     deltaLongitude,
                     deltaAltitude);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "PathHistory JSON parsing error", "Error: " + e);
         }
         return null;
     }

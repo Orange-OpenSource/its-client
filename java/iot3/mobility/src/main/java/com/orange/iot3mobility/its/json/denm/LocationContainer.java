@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 
 public class LocationContainer {
 
-    private static final Logger LOGGER = Logger.getLogger(DENM.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(LocationContainer.class.getName());
 
     private final JSONObject jsonLocationContainer = new JSONObject();
     private final int eventSpeed;
@@ -97,7 +97,7 @@ public class LocationContainer {
             jsonLocationContainer.put(JsonKey.LocationContainer.TRACES.key(), traces.getJsonTraces());
             if(roadType != UNKNOWN)
                 jsonLocationContainer.put(JsonKey.LocationContainer.ROAD_TYPE.key(), roadType);
-            if(confidence.length() > 0)
+            if(!confidence.isEmpty())
                 jsonLocationContainer.put(JsonKey.LocationContainer.CONFIDENCE.key(), confidence);
         } catch (JSONException e) {
             LOGGER.log(Level.WARNING, "LocationContainer JSON build error", "Error: " + e);

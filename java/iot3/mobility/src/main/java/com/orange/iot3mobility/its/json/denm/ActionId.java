@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 
 public class ActionId {
 
-    private static final Logger LOGGER = Logger.getLogger(DENM.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ActionId.class.getName());
 
     private final JSONObject jsonActionId = new JSONObject();
     private final long originatingStationId;

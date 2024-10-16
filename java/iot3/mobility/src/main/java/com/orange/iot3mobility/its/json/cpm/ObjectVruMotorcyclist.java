@@ -12,7 +12,12 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class ObjectVruMotorcyclist {
+
+    private static final Logger LOGGER = Logger.getLogger(ObjectVruMotorcyclist.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -38,7 +43,7 @@ public class ObjectVruMotorcyclist {
         try {
             json.put(JsonCpmKey.ObjectClass.MOTORCYLCIST.key(), subclass);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM ObjectVruMotorcyclist JSON build error", "Error: " + e);
         }
     }
 
@@ -51,7 +56,7 @@ public class ObjectVruMotorcyclist {
     }
 
     public static ObjectVruMotorcyclist jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         int subclass = json.optInt(JsonCpmKey.ObjectClass.MOTORCYLCIST.key(), UNKNOWN);
         if(subclass != UNKNOWN) return new ObjectVruMotorcyclist(subclass);
         else return null;

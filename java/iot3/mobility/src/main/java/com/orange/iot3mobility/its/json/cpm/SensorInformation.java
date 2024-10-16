@@ -12,7 +12,12 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class SensorInformation {
+
+    private static final Logger LOGGER = Logger.getLogger(SensorInformation.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -68,7 +73,7 @@ public class SensorInformation {
             json.put(JsonCpmKey.SensorInformationContainer.TYPE.key(), type);
             json.put(JsonCpmKey.SensorInformationContainer.DETECTION_AREA.key(), detectionArea.getJson());
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM SensorInformation JSON build error", "Error: " + e);
         }
     }
 
@@ -85,34 +90,20 @@ public class SensorInformation {
     }
 
     public String getSensorType() {
-        switch (type) {
-            default:
-            case 0:
-                return "undefined";
-            case 1:
-                return "radar";
-            case 2:
-                return "lidar";
-            case 3:
-                return "mono video";
-            case 4:
-                return "stereo vision";
-            case 5:
-                return "night vision";
-            case 6:
-                return "ultrasonic";
-            case 7:
-                return "pmd";
-            case 8:
-                return "fusion";
-            case 9:
-                return "induction loop";
-            case 10:
-                return "spherical camera";
-            case 11:
-                return "its aggregation";
-
-        }
+        return switch (type) {
+            case 1 -> "radar";
+            case 2 -> "lidar";
+            case 3 -> "mono video";
+            case 4 -> "stereo vision";
+            case 5 -> "night vision";
+            case 6 -> "ultrasonic";
+            case 7 -> "pmd";
+            case 8 -> "fusion";
+            case 9 -> "induction loop";
+            case 10 -> "spherical camera";
+            case 11 -> "its aggregation";
+            default -> "undefined";
+        };
     }
 
     public DetectionArea getDetectionArea() {
@@ -120,7 +111,7 @@ public class SensorInformation {
     }
 
     public static SensorInformation jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         try {
             int sensorId = json.getInt(JsonCpmKey.SensorInformationContainer.SENSOR_ID.key());
             int type = json.getInt(JsonCpmKey.SensorInformationContainer.TYPE.key());
@@ -132,7 +123,7 @@ public class SensorInformation {
                     type,
                     detectionArea);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM SensorInformation JSON parsing error", "Error: " + e);
         }
         return null;
     }

@@ -12,7 +12,12 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class StationarySensorEllipse {
+
+    private static final Logger LOGGER = Logger.getLogger(StationarySensorEllipse.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -99,7 +104,7 @@ public class StationarySensorEllipse {
             if(semiHeight != UNKNOWN)
                 json.put(JsonCpmKey.StationarySensorEllipseRect.SEMI_HEIGHT.key(), semiHeight);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM StationarySensorEllipse JSON build error", "Error: " + e);
         }
     }
 
@@ -128,7 +133,7 @@ public class StationarySensorEllipse {
     }
 
     public static StationarySensorEllipse jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         try {
             JSONObject jsonNodeCenterPoint = json.optJSONObject(JsonCpmKey.StationarySensorEllipseRect.NODE_CENTER_POINT.key());
             Offset nodeCenterPoint = Offset.jsonParser(jsonNodeCenterPoint);
@@ -144,7 +149,7 @@ public class StationarySensorEllipse {
                     semiMajorRangeOrientation,
                     semiHeight);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM StationarySensorEllipse JSON parsing error", "Error: " + e);
         }
         return null;
     }

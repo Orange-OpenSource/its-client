@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 
 public class LinkedCause {
 
-    private static final Logger LOGGER = Logger.getLogger(DENM.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(LinkedCause.class.getName());
 
     private final JSONObject jsonLinkedCause = new JSONObject();
     private final int cause;

@@ -12,8 +12,12 @@ import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PathHistory {
+
+    private static final Logger LOGGER = Logger.getLogger(PathHistory.class.getName());
 
     private final JSONArray jsonPathHistory = new JSONArray();
     private final List<PathPoint> pathPoints;
@@ -49,7 +53,7 @@ public class PathHistory {
                 pathPoints.add(pathPoint);
             }
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "PathHistory JSON parsing error", "Error: " + e);
         }
         return new PathHistory(pathPoints);
     }

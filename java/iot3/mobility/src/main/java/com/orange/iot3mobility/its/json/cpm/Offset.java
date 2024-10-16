@@ -12,7 +12,12 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class Offset {
+
+    private static final Logger LOGGER = Logger.getLogger(Offset.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -80,7 +85,7 @@ public class Offset {
             if(z != UNKNOWN)
                 json.put(JsonCpmKey.Offset.Z.key(), z);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM Offset JSON build error", "Error: " + e);
         }
     }
 
@@ -101,7 +106,7 @@ public class Offset {
     }
 
     public static Offset jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         try {
             int x = json.getInt(JsonCpmKey.Offset.X.key());
             int y = json.getInt(JsonCpmKey.Offset.Y.key());
@@ -109,7 +114,7 @@ public class Offset {
 
             return new Offset(x, y, z);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM Offset JSON parsing error", "Error: " + e);
         }
         return null;
     }
