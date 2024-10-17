@@ -10,10 +10,14 @@ import java.util.concurrent.TimeUnit;
 public class Iot3CoreExample {
 
     private static final String EXAMPLE_MQTT_HOST = "mqtt_host";
-    private static final String EXAMPLE_MQTT_USERNAME = "mqtt_username";
-    private static final String EXAMPLE_MQTT_PASSWORD = "mqtt_password";
-    private static final String EXAMPLE_MQTT_CLIENT_ID = "mqtt_client_id";
+    private static final int EXAMPLE_MQTT_PORT_TCP = 1883;
+    private static final int EXAMPLE_MQTT_PORT_TLS = 8883;
+    private static final String EXAMPLE_MQTT_USERNAME = "username";
+    private static final String EXAMPLE_MQTT_PASSWORD = "password";
+    private static final String EXAMPLE_MQTT_CLIENT_ID = "client_id";
     private static final String EXAMPLE_OTL_HOST = "open_telemetry_host";
+    private static final int EXAMPLE_OTL_PORT = 4318;
+    private static final String EXAMPLE_OTL_ENDPOINT = "/otl/endpoint";
 
     private static IoT3Core ioT3Core;
 
@@ -21,6 +25,8 @@ public class Iot3CoreExample {
         // instantiate IoT3Core and its callback
         ioT3Core = new IoT3Core(
                 EXAMPLE_MQTT_HOST,
+                EXAMPLE_MQTT_PORT_TCP,
+                EXAMPLE_MQTT_PORT_TLS,
                 EXAMPLE_MQTT_USERNAME,
                 EXAMPLE_MQTT_PASSWORD,
                 EXAMPLE_MQTT_CLIENT_ID,
@@ -59,27 +65,28 @@ public class Iot3CoreExample {
                         else System.out.println("MQTT unsubscription failed");
                     }
                 },
-                EXAMPLE_OTL_HOST);
+                EXAMPLE_OTL_HOST,
+                EXAMPLE_OTL_PORT,
+                EXAMPLE_OTL_ENDPOINT);
     }
 
     private static void onConnectionComplete() {
         // subscribe to some topics
-        ioT3Core.mqttSubscribe("test/world");
-        ioT3Core.mqttSubscribe("test/world/#");
+        ioT3Core.mqttSubscribe("test/iot3");
+        ioT3Core.mqttSubscribe("test/iot3/core");
 
-        try {
-            final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        try (ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor()) {
             // publish a message on a topic that we have not subscribed to
             executorService.schedule(() -> publishMessage("test",
-                            "Message 1 should not come back"),
+                            "This is a test message, it should not come back"),
                     2, TimeUnit.SECONDS);
             // publish a message on a topic that we have subscribed to
-            executorService.schedule(() -> publishMessage("test/world",
-                            "Message 2 should come back"),
+            executorService.schedule(() -> publishMessage("test/iot3",
+                            "This is an iot3 message, it should come back"),
                     4, TimeUnit.SECONDS);
             // publish a message on a topic that we have subscribed to with the wildcard #
-            executorService.schedule(() -> publishMessage("test/world/anything",
-                            "Message 3 should come back"),
+            executorService.schedule(() -> publishMessage("test/iot3/#",
+                            "This is an iot3 core message, it should also come back"),
                     6, TimeUnit.SECONDS);
             // disconnect the clients of IoT3Core
             executorService.schedule(ioT3Core::disconnectAll, 8, TimeUnit.SECONDS);

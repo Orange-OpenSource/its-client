@@ -18,6 +18,8 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
 
@@ -39,6 +41,8 @@ public class MqttClient {
     private boolean tlsConnection = false;
 
     public MqttClient(String serverHost,
+                      int tcpPort,
+                      int tlsPort,
                       String username,
                       String password,
                       String clientId,
@@ -69,10 +73,10 @@ public class MqttClient {
         }
 
         if(sslConfig == null) {
-            mqttClient = mqttClientBuilder.serverPort(11883)
+            mqttClient = mqttClientBuilder.serverPort(tcpPort)
                     .buildAsync();
         } else {
-            mqttClient = mqttClientBuilder.serverPort(18883)
+            mqttClient = mqttClientBuilder.serverPort(tlsPort)
                     .sslConfig(sslConfig)
                     .buildAsync();
             tlsConnection = true;
@@ -82,14 +86,11 @@ public class MqttClient {
     }
 
     public void disconnect() {
-        Span span = openTelemetryClient.startSpan("MQTT Disconnect");
         if(mqttClient != null) {
             mqttClient.disconnect().whenComplete((mqtt5DisconnectResult, throwable) -> {
                 if(throwable != null) {
-                    openTelemetryClient.endSpan(span, false, "Failed to disconnect from MQTT broker");
                     LOGGER.log(Level.WARNING, "Error during disconnection");
                 } else {
-                    openTelemetryClient.endSpan(span, true, "Disconnected from MQTT broker");
                     LOGGER.log(Level.INFO, "Disconnected");
                 }
             });
@@ -98,23 +99,19 @@ public class MqttClient {
     }
 
     public void connect() {
-        Span span = openTelemetryClient.startSpan("MQTT Connect");
         mqttClient.connectWith()
                 .cleanStart(true)
                 .send()
                 .whenComplete((connAck, throwable) -> {
                     if(throwable != null) {
-                        openTelemetryClient.endSpan(span, false, "Failed to connect to MQTT broker");
                         LOGGER.log(Level.INFO, "Error during connection to the server");
                     } else {
-                        openTelemetryClient.endSpan(span, true, "Connected to MQTT broker");
                         LOGGER.log(Level.INFO, "Success connecting to the server");
                     }
                 });
     }
 
     public void subscribeToTopic(String topic) {
-        Span span = openTelemetryClient.startSpan("MQTT Subscribe");
         LOGGER.log(Level.INFO, "Subscribing to topic: " + topic);
         if(mqttClient != null) {
             mqttClient.subscribeWith()
@@ -123,12 +120,8 @@ public class MqttClient {
                     .send()
                     .whenComplete((subAck, throwable) -> {
                         if (throwable != null) {
-                            openTelemetryClient.endSpan(span, false,
-                                    "Failed to subscribe to MQTT topic: " + topic);
                             LOGGER.log(Level.WARNING, "Subscribed fail!");
                         } else {
-                            openTelemetryClient.endSpan(span, true,
-                                    "Subscribed to MQTT topic: " + topic);
                             LOGGER.log(Level.FINE, "Subscribed!");
                         }
                         callback.subscriptionComplete(throwable);
@@ -139,7 +132,6 @@ public class MqttClient {
     }
 
     public void unsubscribeFromTopic(String topic) {
-        Span span = openTelemetryClient.startSpan("MQTT Unsubscribe");
         LOGGER.log(Level.INFO, "Unsubscribing from topic: " + topic);
         if(mqttClient != null) {
             mqttClient.unsubscribeWith()
@@ -147,12 +139,8 @@ public class MqttClient {
                     .send()
                     .whenComplete((subAck, throwable) -> {
                         if (throwable != null) {
-                            openTelemetryClient.endSpan(span, false,
-                                    "Failed to unsubscribe from MQTT topic: " + topic);
                             LOGGER.log(Level.WARNING, "Unsubscribed fail!");
                         } else {
-                            openTelemetryClient.endSpan(span, true,
-                                    "Unsubscribed from MQTT topic: " + topic);
                             LOGGER.log(Level.INFO, "Unsubscribed!");
                         }
                         callback.unsubscriptionComplete(throwable);
@@ -165,11 +153,11 @@ public class MqttClient {
     public void publishMessage(String topic, String message, boolean retained, int qos) {
         LOGGER.log(Level.INFO, "Sending message: " + topic + " | "+ message);
         if(isValidMqttPubTopic(topic)) {
-            Span span = openTelemetryClient.startSpan("MQTT Send Message");
-            span.setAttribute(AttributeKey.stringKey("messaging.destination"), topic);
-            span.setAttribute(AttributeKey.stringKey("messaging.message_payload_size_bytes"),
+            Span span = openTelemetryClient.startSpan("IoT3 Core MQTT Message", SpanKind.PRODUCER);
+            span.setAttribute(AttributeKey.stringKey("iot3.core.mqtt.topic"), topic);
+            span.setAttribute(AttributeKey.stringKey("iot3.core.mqtt.payload_size"),
                     String.valueOf(message.length()));
-            openTelemetryClient.addEvent(span, "Sending MQTT message");
+            span.setAttribute(AttributeKey.stringKey("iot3.core.sdk_language"), "java");
 
             // Inject the trace context into a map
             Map<String, String> contextMap = new HashMap<>();
@@ -199,10 +187,11 @@ public class MqttClient {
                         .send()
                         .whenComplete((mqtt3Publish, throwable) -> {
                             if (throwable != null) {
-                                openTelemetryClient.endSpan(span, false, "MQTT message could not be sent");
+                                span.setStatus(StatusCode.ERROR);
+                                span.end();
                                 LOGGER.log(Level.WARNING, "Failed publishing message...");
                             } else {
-                                openTelemetryClient.endSpan(span, true, "MQTT message sent");
+                                span.end();
                                 LOGGER.log(Level.INFO, "Success publishing message ["
                                         + (System.currentTimeMillis() - pubTimestamp) + " ms]");
                             }
@@ -256,18 +245,20 @@ public class MqttClient {
         SpanContext receivedSpanContext = Span.fromContext(extractedContext).getSpanContext();
 
         // Create a new span with a link to the received span context
-        Span receivedSpan = openTelemetryClient.startSpanWithLink("MQTT Receive Message",
-                receivedSpanContext.getTraceId(), receivedSpanContext.getSpanId());
-        receivedSpan.setAttribute(AttributeKey.stringKey("messaging.destination"),
+        Span receivedSpan = openTelemetryClient.startSpanWithLink(
+                "IoT3 Core MQTT Message",
+                SpanKind.CONSUMER,
+                receivedSpanContext.getTraceId(),
+                receivedSpanContext.getSpanId());
+        receivedSpan.setAttribute(AttributeKey.stringKey("iot3.core.mqtt.topic"),
                 publish.getTopic().toString());
-        receivedSpan.setAttribute(AttributeKey.stringKey("messaging.message_payload_size_bytes"),
+        receivedSpan.setAttribute(AttributeKey.stringKey("iot3.core.mqtt.payload_size"),
                 String.valueOf(message.length()));
-        openTelemetryClient.addEvent(receivedSpan, "Received MQTT message");
+        receivedSpan.setAttribute(AttributeKey.stringKey("iot3.core.sdk_language"), "java");
+        receivedSpan.end();
 
         LOGGER.log(Level.INFO, "MQTT message arrived on: " + publish.getTopic() + " | " + message);
         callback.messageArrived(publish.getTopic().toString(), message);
-        openTelemetryClient.endSpan(receivedSpan, true,
-                "Processed received MQTT message");
     }
 
     public boolean isConnected() {

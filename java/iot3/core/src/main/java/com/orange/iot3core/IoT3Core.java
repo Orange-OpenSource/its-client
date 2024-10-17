@@ -30,11 +30,12 @@ public class IoT3Core {
     /**
      * Instantiate the IoT3.0 Core SDK.
      *
-     * @param mqttHost MQTT broker address, provided by Orange
-     * @param mqttUsername MQTT username, provided by Orange
-     * @param mqttPassword MQTT password, provided by Orange
+     * @param mqttHost MQTT broker address
+     * @param mqttUsername MQTT username
+     * @param mqttPassword MQTT password
      * @param mqttClientId unique MQTT client ID
      * @param ioT3CoreCallback interface to retrieve the different clients outputs
+     * @param telemetryHost Open Telemetry server address
      */
     public IoT3Core(String mqttHost,
                     String mqttUsername,
@@ -42,13 +43,54 @@ public class IoT3Core {
                     String mqttClientId,
                     IoT3CoreCallback ioT3CoreCallback,
                     String telemetryHost) {
+        this(mqttHost,
+                1883,
+                8883,
+                mqttUsername,
+                mqttPassword,
+                mqttClientId,
+                ioT3CoreCallback,
+                telemetryHost,
+                -1,
+                "/telemetry/default/v1/traces");
+    }
+
+    /**
+     * Instantiate the IoT3.0 Core SDK.
+     *
+     * @param mqttHost MQTT broker address
+     * @param mqttPortTcp TCP port of the MQTT broker
+     * @param mqttPortTls TLS port of the MQTT broker
+     * @param mqttUsername MQTT username
+     * @param mqttPassword MQTT password
+     * @param mqttClientId unique MQTT client ID
+     * @param ioT3CoreCallback interface to retrieve the different clients outputs
+     * @param telemetryHost Open Telemetry server address
+     * @param telemetryPort port of the Open Telemetry server
+     */
+    public IoT3Core(String mqttHost,
+                    int mqttPortTcp,
+                    int mqttPortTls,
+                    String mqttUsername,
+                    String mqttPassword,
+                    String mqttClientId,
+                    IoT3CoreCallback ioT3CoreCallback,
+                    String telemetryHost,
+                    int telemetryPort,
+                    String telemetryEndpoint) {
         // instantiate the OpenTelemetry client
+        OpenTelemetryClient.Scheme scheme = OpenTelemetryClient.Scheme.HTTP;
+        scheme.setCustomPort(telemetryPort);
         this.openTelemetryClient = new OpenTelemetryClient(
-                OpenTelemetryClient.Scheme.HTTP,
-                telemetryHost);
+                scheme,
+                telemetryHost,
+                telemetryEndpoint,
+                mqttClientId);
         // instantiate the MQTT client
         this.mqttClient = new MqttClient(
                 mqttHost,
+                mqttPortTcp,
+                mqttPortTls,
                 mqttUsername,
                 mqttPassword,
                 mqttClientId,
