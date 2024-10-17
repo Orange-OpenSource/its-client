@@ -9,11 +9,12 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+use log::debug;
 use std::time::Duration;
 
 use opentelemetry::global::BoxedSpan;
 use opentelemetry::propagation::{Extractor, TextMapPropagator};
-use opentelemetry::trace::{Link, SpanKind, TraceContextExt, Tracer};
+use opentelemetry::trace::{Link, Span, SpanKind, TraceContextExt, Tracer};
 use opentelemetry::{global, Context, KeyValue};
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
@@ -156,4 +157,30 @@ where
     let _guard = cx.attach();
 
     block()
+}
+
+pub fn add_link<E>(linked_entity: &E, span: &mut BoxedSpan)
+where
+    E: Extractor,
+{
+    let propagator = TraceContextPropagator::new();
+    let trace_cx = propagator.extract(linked_entity);
+    let span_cx = trace_cx.span().span_context().clone();
+
+    span.add_link(span_cx, Vec::new());
+}
+
+pub(crate) fn get_mqtt_span(span_kind: SpanKind, topic: &str, payload_size: i64) -> BoxedSpan {
+    debug!("Starting MQTT span...");
+    let tracer = global::tracer("iot3.core");
+
+    tracer
+        .span_builder("IoT3 Core MQTT Message")
+        .with_kind(span_kind)
+        .with_attributes(vec![
+            KeyValue::new("iot3.core.mqtt.topic", topic.to_string()),
+            KeyValue::new("iot3.core.mqtt.payload_size", payload_size),
+            KeyValue::new("iot3.core.sdk_language", "rust"),
+        ])
+        .start(&tracer)
 }

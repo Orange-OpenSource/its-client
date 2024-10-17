@@ -23,6 +23,9 @@ type BoxedReception = Box<dyn Any + 'static + Send>;
 
 type BoxedCallback = Box<dyn Fn(Publish) -> Option<BoxedReception>>;
 
+#[cfg(feature = "telemetry")]
+use {crate::transport::telemetry::get_mqtt_span, opentelemetry::trace::SpanKind};
+
 #[derive(Default)]
 pub struct MqttRouter {
     route_map: HashMap<String, BoxedCallback>,
@@ -44,6 +47,13 @@ impl MqttRouter {
                 Incoming::Publish(publish) => {
                     match from_utf8(&publish.topic) {
                         Ok(str_topic) => {
+                            #[cfg(feature = "telemetry")]
+                            let _span = get_mqtt_span(
+                                SpanKind::Consumer,
+                                str_topic,
+                                publish.payload.len() as i64,
+                            );
+
                             trace!(
                                 "Publish received for the packet {:?} on the topic {}",
                                 publish.pkid,
