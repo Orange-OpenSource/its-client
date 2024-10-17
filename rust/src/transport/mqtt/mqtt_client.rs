@@ -19,6 +19,9 @@ use rumqttc::v5::mqttbytes::v5::Filter;
 use rumqttc::v5::mqttbytes::QoS;
 use rumqttc::v5::{AsyncClient, Event, EventLoop, MqttOptions};
 
+#[cfg(feature = "telemetry")]
+use {crate::transport::telemetry::get_mqtt_span, opentelemetry::trace::SpanKind};
+
 pub struct MqttClient {
     client: AsyncClient,
 }
@@ -50,6 +53,13 @@ impl<'client> MqttClient {
 
     pub async fn publish<T: Topic, P: Payload>(&self, packet: Packet<T, P>) {
         let payload = serde_json::to_string(&packet.payload).unwrap();
+
+        #[cfg(feature = "telemetry")]
+        let _span = get_mqtt_span(
+            SpanKind::Producer,
+            &packet.topic.to_string(),
+            payload.as_bytes().len() as i64,
+        );
 
         match self
             .client
