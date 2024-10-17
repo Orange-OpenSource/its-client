@@ -13,7 +13,7 @@ use std::time::Duration;
 
 use opentelemetry::global::BoxedSpan;
 use opentelemetry::propagation::{Extractor, TextMapPropagator};
-use opentelemetry::trace::{Link, TraceContextExt, Tracer};
+use opentelemetry::trace::{Link, SpanKind, TraceContextExt, Tracer};
 use opentelemetry::{global, Context, KeyValue};
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
@@ -94,9 +94,51 @@ pub fn init_tracer(
     Ok(())
 }
 
+pub fn get_span(
+    tracer_name: &'static str,
+    span_name: &'static str,
+    span_kind: Option<SpanKind>,
+) -> BoxedSpan {
+    let tracer = global::tracer(tracer_name);
+    let mut span_builder = tracer.span_builder(span_name);
+
+    if let Some(kind) = span_kind {
+        span_builder = span_builder.with_kind(kind)
+    }
+
+    span_builder.start(&tracer)
+}
+
+pub fn get_linked_span<E>(
+    tracer_name: &'static str,
+    span_name: &'static str,
+    span_kind: Option<SpanKind>,
+    from: &E,
+) -> BoxedSpan
+where
+    E: Extractor,
+{
+    let tracer = global::tracer(tracer_name);
+
+    let propagator = TraceContextPropagator::new();
+    let trace_cx = propagator.extract(from);
+    let span_cx = trace_cx.span().span_context().clone();
+
+    let mut span_builder = tracer
+        .span_builder(span_name)
+        .with_links(vec![Link::with_context(span_cx)]);
+
+    if let Some(kind) = span_kind {
+        span_builder = span_builder.with_kind(kind)
+    }
+
+    span_builder.start(&tracer)
+}
+
 pub fn execute_in_span<F, E, R>(
     tracer_name: &'static str,
     span_name: &'static str,
+    span_kind: Option<SpanKind>,
     from: Option<&E>,
     block: F,
 ) -> R
@@ -104,34 +146,14 @@ where
     F: FnOnce() -> R,
     E: Extractor,
 {
-    let span = get_span(tracer_name, span_name, from);
+    let span = if let Some(from) = from {
+        get_linked_span(tracer_name, span_name, span_kind, from)
+    } else {
+        get_span(tracer_name, span_name, span_kind)
+    };
+
     let cx = Context::current_with_span(span);
     let _guard = cx.attach();
 
     block()
-}
-
-pub fn get_span<E>(
-    tracer_name: &'static str,
-    span_name: &'static str,
-    from: Option<&E>,
-) -> BoxedSpan
-where
-    E: Extractor,
-{
-    let tracer = global::tracer(tracer_name);
-
-    let span_builder = if let Some(packet) = from {
-        let propagator = TraceContextPropagator::new();
-        let trace_cx = propagator.extract(packet);
-        let span_cx = trace_cx.span().span_context().clone();
-
-        tracer
-            .span_builder(span_name)
-            .with_links(vec![Link::with_context(span_cx)])
-    } else {
-        tracer.span_builder(span_name)
-    };
-
-    span_builder.start(&tracer)
 }

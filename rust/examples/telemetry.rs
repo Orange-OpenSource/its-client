@@ -19,7 +19,7 @@ use flexi_logger::{with_thread, Cleanup, Criterion, FileSpec, Logger, Naming, Wr
 use ini::Ini;
 use log::{info, warn};
 use opentelemetry::propagation::{Extractor, Injector, TextMapPropagator};
-use opentelemetry::trace::{mark_span_as_active, TraceContextExt};
+use opentelemetry::trace::{mark_span_as_active, SpanKind, TraceContextExt};
 use opentelemetry::{global, Context};
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 
@@ -127,37 +127,61 @@ async fn main() {
     init_tracer(&configuration.telemetry, "iot3").expect("Failed to configure telemetry");
 
     info!("Send a trace with a single span 'ping' root span");
-    let ping_data = execute_in_span(TRACER_NAME, "example/ping", None::<&Data>, || {
-        let context = Context::current();
-        trace_span_context_info!("└─ Ping", context);
+    let ping_data = execute_in_span(
+        TRACER_NAME,
+        "example/ping",
+        Some(SpanKind::Producer),
+        None::<&Data>,
+        || {
+            let context = Context::current();
+            trace_span_context_info!("└─ Ping", context);
 
-        let mut data = Data::default();
+            let mut data = Data::default();
 
-        let propagator = TraceContextPropagator::new();
-        propagator.inject(&mut data);
+            let propagator = TraceContextPropagator::new();
+            propagator.inject(&mut data);
 
-        data
-    });
+            data
+        },
+    );
 
     info!("Send a trace with a single span 'pong' root span linked with the previous one 'ping'");
-    execute_in_span(TRACER_NAME, "example/pong", Some(&ping_data), || {
-        let context = Context::current();
-        trace_span_context_info!("└─ Pong", context);
-    });
+    execute_in_span(
+        TRACER_NAME,
+        "example/pong",
+        Some(SpanKind::Consumer),
+        Some(&ping_data),
+        || {
+            let context = Context::current();
+            trace_span_context_info!("└─ Pong", context);
+        },
+    );
 
     info!("Send a single trace with two spans");
-    execute_in_span(TRACER_NAME, "example/nested_root", None::<&Data>, || {
-        let context = Context::current();
-        trace_span_context_info!("└─ Root", context);
-
-        execute_in_span(TRACER_NAME, "example/nested_child", None::<&Data>, || {
+    execute_in_span(
+        TRACER_NAME,
+        "example/nested_root",
+        None,
+        None::<&Data>,
+        || {
             let context = Context::current();
-            trace_span_context_info!("   └─ Child", context);
-        })
-    });
+            trace_span_context_info!("└─ Root", context);
+
+            execute_in_span(
+                TRACER_NAME,
+                "example/nested_child",
+                None,
+                None::<&Data>,
+                || {
+                    let context = Context::current();
+                    trace_span_context_info!("   └─ Child", context);
+                },
+            )
+        },
+    );
 
     info!("Send a trace with 3 spans from 3 threads");
-    let root_span = get_span(TRACER_NAME, "main_thread", None::<&Data>);
+    let root_span = get_span(TRACER_NAME, "main_thread", None);
     let guard = mark_span_as_active(root_span);
     let cxt = Context::current();
     trace_span_context_info!("└─ Main thread", &cxt);
@@ -171,7 +195,7 @@ async fn main() {
                 let cxt: Context = rx.recv().unwrap();
                 let _guard = cxt.attach();
 
-                execute_in_span(TRACER_NAME, "listener_thread", None::<&Data>, || {
+                execute_in_span(TRACER_NAME, "listener_thread", None, None::<&Data>, || {
                     let cxt = Context::current();
                     trace_span_context_info!("   └─ Listener thread", cxt);
                 });
@@ -189,7 +213,7 @@ async fn main() {
                 let cxt: Context = rx.recv().unwrap();
                 let _guard = cxt.clone().attach();
 
-                execute_in_span(TRACER_NAME, "sender_thread", None::<&Data>, || {
+                execute_in_span(TRACER_NAME, "sender_thread", None, None::<&Data>, || {
                     let inner_cxt = Context::current();
                     trace_span_context_info!("   ├─ Sender thread", inner_cxt);
                     listener_tx
