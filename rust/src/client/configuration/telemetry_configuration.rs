@@ -1,3 +1,4 @@
+use base64::Engine;
 use ini::Properties;
 use log::warn;
 use std::string::ToString;
@@ -28,6 +29,20 @@ pub struct TelemetryConfiguration {
     pub port: u16,
     pub path: String,
     pub batch_size: usize,
+    username: Option<String>,
+    password: Option<String>,
+}
+
+impl TelemetryConfiguration {
+    pub(crate) fn basic_auth_header(&self) -> Option<String> {
+        if let (Some(username), Some(password)) = (&self.username, &self.password) {
+            let raw = format!("{}:{}", username, password);
+            let as_b64 = base64::prelude::BASE64_STANDARD.encode(raw.as_bytes());
+            Some(format!("Basic {}", as_b64))
+        } else {
+            None
+        }
+    }
 }
 
 impl TryFrom<&Properties> for TelemetryConfiguration {
@@ -58,11 +73,22 @@ impl TryFrom<&Properties> for TelemetryConfiguration {
             }
         };
 
+        let (username, password) =
+            match get_optional_from_section::<String>("username", properties)? {
+                Some(username) => {
+                    let password = get_mandatory_field::<String>("password", section)?;
+                    (Some(username), Some(password))
+                }
+                None => (None, None),
+            };
+
         let s = TelemetryConfiguration {
             host: get_mandatory_field::<String>("host", section)?,
             port: get_mandatory_field::<u16>("port", section)?,
             path,
             batch_size,
+            username,
+            password,
         };
 
         Ok(s)
