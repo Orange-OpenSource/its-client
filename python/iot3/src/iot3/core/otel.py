@@ -368,6 +368,7 @@ class Span:
             for span in span_links:
                 self.add_link(link=span)
         self.status_code = SpanStatus.UNSET
+        self.set_attribute(key="iot3.core.sdk_language", value="python")
         self.status_message = None
 
     def finalise(self):
