@@ -182,7 +182,6 @@ class MqttClient:
             kind=otel.SpanKind.PRODUCER,
         ) as span:
             new_traceparent = span.to_traceparent()
-            span.set_attribute(key="test.iot3.core.mqtt.action", value="publish")
             span.set_attribute(key="test.iot3.core.mqtt.topic", value=topic)
             properties = paho.mqtt.properties.Properties(
                 paho.mqtt.packettypes.PacketTypes.PUBLISH,
@@ -292,7 +291,6 @@ class MqttClient:
             pass
         with self.span_ctxmgr_cb(**span_kwargs) as span:
             new_traceparent = span.to_traceparent()
-            span.set_attribute(key="test.iot3.core.mqtt.action", value="receive")
             span.set_attribute(key="test.iot3.core.mqtt.topic", value=message.topic)
             self.msg_cb(
                 data=self.msg_cb_data,
