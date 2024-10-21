@@ -178,7 +178,7 @@ class MqttClient:
         :param payload: The payload to post.
         """
         with self.span_ctxmgr_cb(
-            name="IoT3 Core MQTT message",
+            name="IoT3 Core MQTT Message",
             kind=otel.SpanKind.PRODUCER,
         ) as span:
             new_traceparent = span.to_traceparent()
@@ -281,7 +281,7 @@ class MqttClient:
         message: paho.mqtt.client.MQTTMessage,
     ):
         span_kwargs = {
-            "name": "IoT3 Core MQTT message",
+            "name": "IoT3 Core MQTT Message",
             "kind": otel.SpanKind.CONSUMER,
         }
         try:
