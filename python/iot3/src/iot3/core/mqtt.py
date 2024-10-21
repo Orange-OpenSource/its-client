@@ -183,6 +183,7 @@ class MqttClient:
         ) as span:
             new_traceparent = span.to_traceparent()
             span.set_attribute(key="iot3.core.mqtt.topic", value=topic)
+            span.set_attribute(key="iot3.core.mqtt.payload_size", value=len(payload))
             properties = paho.mqtt.properties.Properties(
                 paho.mqtt.packettypes.PacketTypes.PUBLISH,
             )
@@ -292,6 +293,10 @@ class MqttClient:
         with self.span_ctxmgr_cb(**span_kwargs) as span:
             new_traceparent = span.to_traceparent()
             span.set_attribute(key="iot3.core.mqtt.topic", value=message.topic)
+            span.set_attribute(
+                key="iot3.core.mqtt.payload_size",
+                value=len(message.payload),
+            )
             self.msg_cb(
                 data=self.msg_cb_data,
                 topic=message.topic,
