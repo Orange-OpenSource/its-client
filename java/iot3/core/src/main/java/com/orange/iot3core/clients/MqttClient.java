@@ -187,9 +187,10 @@ public class MqttClient {
                         .send()
                         .whenComplete((mqtt3Publish, throwable) -> {
                             if (throwable != null) {
-                                span.setStatus(StatusCode.ERROR);
+                                span.setStatus(StatusCode.ERROR, throwable.getMessage());
                                 span.end();
-                                LOGGER.log(Level.WARNING, "Failed publishing message...");
+                                LOGGER.log(Level.WARNING, "Failed publishing message... "
+                                        + throwable.getMessage());
                             } else {
                                 span.end();
                                 LOGGER.log(Level.INFO, "Success publishing message ["
