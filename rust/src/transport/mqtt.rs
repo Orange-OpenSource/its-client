@@ -20,48 +20,23 @@ pub mod topic;
 pub mod geo_topic;
 
 pub(crate) fn configure_transport(
-    tls_configuration: Option<TlsConfiguration>,
+    use_tls: bool,
     use_websocket: bool,
     mqtt_options: &mut MqttOptions,
 ) {
-    match (tls_configuration, use_websocket) {
-        (Some(tls), true) => {
+    match (use_tls, use_websocket) {
+        (true, true) => {
             println!("Transport: MQTT over WebSocket; TLS enabled");
-            mqtt_options.set_transport(Transport::Wss(tls));
+            mqtt_options.set_transport(Transport::Wss(TlsConfiguration::default()));
         }
-        (Some(tls), false) => {
+        (true, false) => {
             println!("Transport: standard MQTT; TLS enabled");
-            mqtt_options.set_transport(Transport::Tls(tls));
+            mqtt_options.set_transport(Transport::Tls(TlsConfiguration::default()));
         }
-        (None, true) => {
+        (false, true) => {
             println!("Transport: MQTT over WebSocket; TLS disabled");
             mqtt_options.set_transport(Transport::Ws);
         }
-        (None, false) => println!("Transport: standard MQTT; TLS disabled"),
-    }
-}
-
-pub(crate) fn configure_tls(
-    ca_path: &str,
-    alpn: Option<Vec<Vec<u8>>>,
-    client_auth: Option<(Vec<u8>, Vec<u8>)>,
-) -> TlsConfiguration {
-    let ca: Vec<u8> = std::fs::read(ca_path).expect("Failed to read TLS certificate");
-
-    TlsConfiguration::Simple {
-        ca,
-        alpn,
-        client_auth,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::transport::mqtt::configure_tls;
-
-    #[test]
-    #[should_panic]
-    fn configure_tls_with_invalid_path_should_return_error() {
-        let _ = configure_tls("unextisting/path", None, None);
+        (false, false) => println!("Transport: standard MQTT; TLS disabled"),
     }
 }

@@ -22,6 +22,7 @@ use opentelemetry_sdk::trace::{
     BatchConfigBuilder, BatchSpanProcessor, RandomIdGenerator, Sampler, TracerProvider,
 };
 use opentelemetry_sdk::Resource;
+use reqwest::header;
 
 use crate::client::configuration::telemetry_configuration::TelemetryConfiguration;
 
@@ -42,9 +43,24 @@ pub fn init_tracer(
         configuration.host, configuration.port, path
     );
 
+    let http_client = match configuration.basic_auth_header() {
+        Some(header) => {
+            let mut headers = header::HeaderMap::new();
+            let mut auth_value =
+                header::HeaderValue::try_from(header).expect("Failed to create header value");
+            auth_value.set_sensitive(true);
+            headers.insert(header::AUTHORIZATION, auth_value);
+            reqwest::ClientBuilder::new()
+                .default_headers(headers)
+                .build()
+                .expect("Failed to create telemetry HTTP client")
+        }
+        None => reqwest::Client::new(),
+    };
+
     let http_exporter = opentelemetry_otlp::new_exporter()
         .http()
-        .with_http_client(reqwest::Client::new())
+        .with_http_client(http_client)
         .with_endpoint(endpoint)
         .with_timeout(Duration::from_secs(3))
         .build_span_exporter()?;
