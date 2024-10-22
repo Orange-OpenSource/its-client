@@ -8,6 +8,7 @@
 package com.orange.iot3core.clients;
 
 import com.hivemq.client.mqtt.MqttClientSslConfig;
+import com.hivemq.client.mqtt.MqttGlobalPublishFilter;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5ClientBuilder;
@@ -82,6 +83,9 @@ public class MqttClient {
             tlsConnection = true;
         }
 
+        // single callback for processing messages received on subscribed topics
+        mqttClient.publishes(MqttGlobalPublishFilter.SUBSCRIBED, this::processPublish);
+
         connect();
     }
 
@@ -116,7 +120,6 @@ public class MqttClient {
         if(mqttClient != null) {
             mqttClient.subscribeWith()
                     .topicFilter(topic)
-                    .callback(this::processPublish)
                     .send()
                     .whenComplete((subAck, throwable) -> {
                         if (throwable != null) {
