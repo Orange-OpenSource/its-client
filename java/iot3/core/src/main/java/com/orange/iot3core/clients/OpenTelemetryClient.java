@@ -19,6 +19,7 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 
 import java.time.Duration;
+import java.util.Base64;
 
 public class OpenTelemetryClient {
 
@@ -28,24 +29,39 @@ public class OpenTelemetryClient {
     private final Scheme scheme;
     private final String host;
     private final String endpoint;
+    private final String username;
+    private final String password;
 
-    public OpenTelemetryClient(Scheme scheme, String host, String endpoint, String serviceName) {
+    public OpenTelemetryClient(Scheme scheme,
+                               String host,
+                               String endpoint,
+                               String serviceName,
+                               String username,
+                               String password) {
         this.scheme = scheme;
         this.host = host;
         this.endpoint = endpoint;
         this.serviceName = serviceName;
+        this.username = username;
+        this.password = password;
         initialize();
     }
 
     private void initialize() {
         String url = scheme.getScheme() + "://" + host + ":" + scheme.getPort() + endpoint;
-        OpenTelemetry openTelemetry = initOpenTelemetry(url);
+        OpenTelemetry openTelemetry = initOpenTelemetry(url, username, password);
         this.tracer = openTelemetry.getTracer(serviceName);
     }
 
-    private OpenTelemetry initOpenTelemetry(String endpoint) {
+    private OpenTelemetry initOpenTelemetry(String endpoint, String username, String password) {
+        // Encoding the username and password in Base64 for the Basic Authentication header
+        String credentials = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+
+        if (!endpoint.endsWith("/v1/traces")) endpoint += "/v1/traces";
+
         OtlpHttpSpanExporter spanExporter = OtlpHttpSpanExporter.builder()
                 .setEndpoint(endpoint)
+                .addHeader("Authorization", "Basic " + credentials)  // Add Basic Auth header
                 .build();
 
         BatchSpanProcessor spanProcessor = BatchSpanProcessor.builder(spanExporter)
