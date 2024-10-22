@@ -52,7 +52,9 @@ public class IoT3Core {
                 ioT3CoreCallback,
                 telemetryHost,
                 -1,
-                "/telemetry/default/v1/traces");
+                "/telemetry",
+                "default",
+                "default");
     }
 
     /**
@@ -77,7 +79,9 @@ public class IoT3Core {
                     IoT3CoreCallback ioT3CoreCallback,
                     String telemetryHost,
                     int telemetryPort,
-                    String telemetryEndpoint) {
+                    String telemetryEndpoint,
+                    String telemetryUsername,
+                    String telemetryPassword) {
         // instantiate the OpenTelemetry client
         OpenTelemetryClient.Scheme scheme = OpenTelemetryClient.Scheme.HTTP;
         scheme.setCustomPort(telemetryPort);
@@ -85,7 +89,9 @@ public class IoT3Core {
                 scheme,
                 telemetryHost,
                 telemetryEndpoint,
-                mqttClientId);
+                mqttClientId,
+                telemetryUsername,
+                telemetryPassword);
         // instantiate the MQTT client
         this.mqttClient = new MqttClient(
                 mqttHost,
@@ -218,4 +224,107 @@ public class IoT3Core {
     public void mqttPublish(String topic, String message, boolean retain) {
         if(mqttClient != null) mqttClient.publishMessage(topic, message, retain);
     }
+
+    /**
+     * Build an instance of IoT3Core.
+     */
+    public static class IoT3CoreBuilder {
+        private String mqttHost;
+        private int mqttPortTcp;
+        private int mqttPortTls;
+        private String mqttUsername;
+        private String mqttPassword;
+        private String mqttClientId;
+        private IoT3CoreCallback ioT3CoreCallback;
+        private String telemetryHost;
+        private int telemetryPort;
+        private String telemetryEndpoint;
+        private String telemetryUsername;
+        private String telemetryPassword;
+
+        /**
+         * Start building an instance of IoT3Core.
+         */
+        public IoT3CoreBuilder() {}
+
+        /**
+         * Set the MQTT parameters of your IoT3Core instance.
+         *
+         * @param mqttHost the host or IP address of the MQTT broker
+         * @param mqttPortTcp the TCP port of the MQTT broker
+         * @param mqttPortTls the TLS port of the MQTT broker
+         * @param mqttUsername the username for authentication with the MQTT broker
+         * @param mqttPassword the password for authentication with the MQTT broker
+         * @param mqttClientId your client ID
+         */
+        public IoT3CoreBuilder mqttParams(String mqttHost,
+                                          int mqttPortTcp,
+                                          int mqttPortTls,
+                                          String mqttUsername,
+                                          String mqttPassword,
+                                          String mqttClientId) {
+            this.mqttHost = mqttHost;
+            this.mqttPortTcp = mqttPortTcp;
+            this.mqttPortTls = mqttPortTls;
+            this.mqttUsername = mqttUsername;
+            this.mqttPassword = mqttPassword;
+            this.mqttClientId = mqttClientId;
+            return this;
+        }
+
+        /**
+         * Set the OpenTelemetry parameters of your IoT3Core instance.
+         *
+         * @param telemetryHost the host or IP address of the OpenTelemetry server
+         * @param telemetryPort the port of the OpenTelemetry server
+         * @param telemetryEndpoint the endpoint of the OpenTelemetry server (e.g. /endpoint/example)
+         * @param telemetryUsername the username for authentication with the OpenTelemetry server
+         * @param telemetryPassword the password for authentication with the OpenTelemetry server
+         */
+        public IoT3CoreBuilder telemetryParams(String telemetryHost,
+                                               int telemetryPort,
+                                               String telemetryEndpoint,
+                                               String telemetryUsername,
+                                               String telemetryPassword) {
+            this.telemetryHost = telemetryHost;
+            this.telemetryPort = telemetryPort;
+            this.telemetryEndpoint = telemetryEndpoint;
+            this.telemetryUsername = telemetryUsername;
+            this.telemetryPassword = telemetryPassword;
+            return this;
+        }
+
+        /**
+         * Set the callback of your IoT3Core instance.
+         *
+         * @param ioT3CoreCallback callback to be notified of mainly MQTT-related events, e.g. message reception
+         *                         or connection status
+         */
+        public IoT3CoreBuilder callback(IoT3CoreCallback ioT3CoreCallback) {
+            this.ioT3CoreCallback = ioT3CoreCallback;
+            return this;
+        }
+
+        /**
+         * Build the IoT3Core instance.
+         *
+         * @return Iot3Core instance
+         */
+        public IoT3Core build() {
+            return new IoT3Core(
+                    mqttHost,
+                    mqttPortTcp,
+                    mqttPortTls,
+                    mqttUsername,
+                    mqttPassword,
+                    mqttClientId,
+                    ioT3CoreCallback,
+                    telemetryHost,
+                    telemetryPort,
+                    telemetryEndpoint,
+                    telemetryUsername,
+                    telemetryPassword);
+        }
+    }
+
 }
