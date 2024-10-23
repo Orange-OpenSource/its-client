@@ -11,11 +11,11 @@ public class Iot3CoreExample {
 
     // MQTT parameters
     private static final String EXAMPLE_MQTT_HOST = "mqtt_host";
-    private static final int EXAMPLE_MQTT_PORT_TCP = 1883;
-    private static final int EXAMPLE_MQTT_PORT_TLS = 8883;
+    private static final int EXAMPLE_MQTT_PORT = 1883;
     private static final String EXAMPLE_MQTT_USERNAME = "mqtt_username";
     private static final String EXAMPLE_MQTT_PASSWORD = "mqtt_password";
     private static final String EXAMPLE_MQTT_CLIENT_ID = "mqtt_client_id";
+    private static final boolean EXAMPLE_MQTT_USE_TLS = true;
     // OpenTelemetry parameters
     private static final String EXAMPLE_OTL_HOST = "telemetry_host";
     private static final int EXAMPLE_OTL_PORT = 4318;
@@ -29,11 +29,11 @@ public class Iot3CoreExample {
         // instantiate IoT3Core and its callback
         ioT3Core = new IoT3Core.IoT3CoreBuilder()
                 .mqttParams(EXAMPLE_MQTT_HOST,
-                        EXAMPLE_MQTT_PORT_TCP,
-                        EXAMPLE_MQTT_PORT_TLS,
+                        EXAMPLE_MQTT_PORT,
                         EXAMPLE_MQTT_USERNAME,
                         EXAMPLE_MQTT_PASSWORD,
-                        EXAMPLE_MQTT_CLIENT_ID)
+                        EXAMPLE_MQTT_CLIENT_ID,
+                        EXAMPLE_MQTT_USE_TLS)
                 .telemetryParams(EXAMPLE_OTL_HOST,
                         EXAMPLE_OTL_PORT,
                         EXAMPLE_OTL_ENDPOINT,
