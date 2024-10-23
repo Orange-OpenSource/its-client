@@ -11,7 +11,6 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.*;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
-import io.opentelemetry.context.Scope;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
@@ -20,30 +19,49 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 
 import java.time.Duration;
+import java.util.Base64;
 
 public class OpenTelemetryClient {
 
-    private static final String INSTRUMENTATION_NAME = "com.orange.iot3core";
+    private final String serviceName;
     private Tracer tracer;
     private SdkTracerProvider tracerProvider;
     private final Scheme scheme;
     private final String host;
+    private final String endpoint;
+    private final String username;
+    private final String password;
 
-    public OpenTelemetryClient(Scheme scheme, String host) {
+    public OpenTelemetryClient(Scheme scheme,
+                               String host,
+                               String endpoint,
+                               String serviceName,
+                               String username,
+                               String password) {
         this.scheme = scheme;
         this.host = host;
+        this.endpoint = endpoint;
+        this.serviceName = serviceName;
+        this.username = username;
+        this.password = password;
         initialize();
     }
 
     private void initialize() {
-        String endpoint = scheme.getScheme() + "://" + host + ":" + scheme.getDefaultPort() + "/v1/traces";
-        OpenTelemetry openTelemetry = initOpenTelemetry(endpoint);
-        this.tracer = openTelemetry.getTracer(INSTRUMENTATION_NAME);
+        String url = scheme.getScheme() + "://" + host + ":" + scheme.getPort() + endpoint;
+        OpenTelemetry openTelemetry = initOpenTelemetry(url, username, password);
+        this.tracer = openTelemetry.getTracer(serviceName);
     }
 
-    private OpenTelemetry initOpenTelemetry(String endpoint) {
+    private OpenTelemetry initOpenTelemetry(String endpoint, String username, String password) {
+        // Encoding the username and password in Base64 for the Basic Authentication header
+        String credentials = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+
+        if (!endpoint.endsWith("/v1/traces")) endpoint += "/v1/traces";
+
         OtlpHttpSpanExporter spanExporter = OtlpHttpSpanExporter.builder()
                 .setEndpoint(endpoint)
+                .addHeader("Authorization", "Basic " + credentials)  // Add Basic Auth header
                 .build();
 
         BatchSpanProcessor spanProcessor = BatchSpanProcessor.builder(spanExporter)
@@ -52,7 +70,7 @@ public class OpenTelemetryClient {
                 .build();
 
         Resource resource = Resource.builder()
-                .put("service.name", INSTRUMENTATION_NAME)
+                .put("service.name", serviceName)
                 .build();
 
         SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
@@ -72,36 +90,19 @@ public class OpenTelemetryClient {
         return openTelemetry;
     }
 
-    public Span startSpan(String spanName) {
-        return tracer.spanBuilder(spanName).startSpan();
+    public Span startSpan(String spanName, SpanKind spanKind) {
+        return tracer.spanBuilder(spanName).setSpanKind(spanKind).startSpan();
     }
 
-    public Span startSpanWithLink(String spanName, Span linkedSpan) {
-        return startSpanWithLink(spanName, getTraceId(linkedSpan), getSpanId(linkedSpan));
+    public Span startSpanWithLink(String spanName, SpanKind spanKind, Span linkedSpan) {
+        return startSpanWithLink(spanName, spanKind, getTraceId(linkedSpan), getSpanId(linkedSpan));
     }
 
-    public Span startSpanWithLink(String spanName, String linkedTraceId, String linkedSpanId) {
+    public Span startSpanWithLink(String spanName, SpanKind spanKind, String linkedTraceId, String linkedSpanId) {
         SpanContext spanContext = SpanContext.createFromRemoteParent(
                 linkedTraceId, linkedSpanId, TraceFlags.getDefault(), TraceState.getDefault()
         );
-        return tracer.spanBuilder(spanName).addLink(spanContext).startSpan();
-    }
-
-    public void endSpan(Span span, boolean success, String event) {
-        try (Scope scope = span.makeCurrent()) {
-            span.addEvent(event);
-            if (!success) {
-                span.addEvent("Operation failed");
-            }
-        } catch (Exception e) {
-            span.recordException(e);
-        } finally {
-            span.end();
-        }
-    }
-
-    public void addEvent(Span span, String event) {
-        span.addEvent(event);
+        return tracer.spanBuilder(spanName).setSpanKind(spanKind).addLink(spanContext).startSpan();
     }
 
     public String getSpanId(Span span) {
@@ -121,24 +122,31 @@ public class OpenTelemetryClient {
     }
 
     public enum Scheme {
-        HTTP("http", "4318"),
-        HTTPS("https", "4318"),
-        GRPC("grpc", "4317");
+        HTTP("http", 4318),
+        HTTPS("https", 4318),
+        GRPC("grpc", 4317);
 
         private final String scheme;
-        private final String defaultPort;
+        private final int defaultPort;
+        private int customPort;
 
-        Scheme(String scheme, String defaultPort) {
+        Scheme(String scheme, int defaultPort) {
             this.scheme = scheme;
             this.defaultPort = defaultPort;
+            this.customPort = -1;
         }
 
         public String getScheme() {
             return scheme;
         }
 
-        public String getDefaultPort() {
-            return defaultPort;
+        public int getPort() {
+            if(customPort < 0) return defaultPort;
+            else return customPort;
+        }
+
+        public void setCustomPort(int customPort) {
+            this.customPort = customPort;
         }
     }
 
