@@ -61,6 +61,14 @@ impl From<&Position> for Quadkey {
     }
 }
 
+impl From<&Self> for Quadkey {
+    fn from(quad_key: &Quadkey) -> Self {
+        Self {
+            tiles: quad_key.tiles.clone(),
+        }
+    }
+}
+
 impl FromStr for Quadkey {
     type Err = ParseError;
 
