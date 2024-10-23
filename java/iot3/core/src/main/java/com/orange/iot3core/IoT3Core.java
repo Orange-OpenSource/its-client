@@ -31,51 +31,24 @@ public class IoT3Core {
      * Instantiate the IoT3.0 Core SDK.
      *
      * @param mqttHost MQTT broker address
+     * @param mqttPort port of the MQTT broker
      * @param mqttUsername MQTT username
      * @param mqttPassword MQTT password
      * @param mqttClientId unique MQTT client ID
-     * @param ioT3CoreCallback interface to retrieve the different clients outputs
-     * @param telemetryHost Open Telemetry server address
-     */
-    public IoT3Core(String mqttHost,
-                    String mqttUsername,
-                    String mqttPassword,
-                    String mqttClientId,
-                    IoT3CoreCallback ioT3CoreCallback,
-                    String telemetryHost) {
-        this(mqttHost,
-                1883,
-                8883,
-                mqttUsername,
-                mqttPassword,
-                mqttClientId,
-                ioT3CoreCallback,
-                telemetryHost,
-                -1,
-                "/telemetry",
-                "default",
-                "default");
-    }
-
-    /**
-     * Instantiate the IoT3.0 Core SDK.
-     *
-     * @param mqttHost MQTT broker address
-     * @param mqttPortTcp TCP port of the MQTT broker
-     * @param mqttPortTls TLS port of the MQTT broker
-     * @param mqttUsername MQTT username
-     * @param mqttPassword MQTT password
-     * @param mqttClientId unique MQTT client ID
+     * @param mqttUseTls use TLS for a secure connection with the MQTT broker
      * @param ioT3CoreCallback interface to retrieve the different clients outputs
      * @param telemetryHost Open Telemetry server address
      * @param telemetryPort port of the Open Telemetry server
+     * @param telemetryEndpoint endpoint of the Open Telemetry server URL
+     * @param telemetryUsername Open Telemetry username
+     * @param telemetryPassword Open Telemetry password
      */
-    public IoT3Core(String mqttHost,
-                    int mqttPortTcp,
-                    int mqttPortTls,
+    private IoT3Core(String mqttHost,
+                    int mqttPort,
                     String mqttUsername,
                     String mqttPassword,
                     String mqttClientId,
+                    boolean mqttUseTls,
                     IoT3CoreCallback ioT3CoreCallback,
                     String telemetryHost,
                     int telemetryPort,
@@ -95,12 +68,11 @@ public class IoT3Core {
         // instantiate the MQTT client
         this.mqttClient = new MqttClient(
                 mqttHost,
-                mqttPortTcp,
-                mqttPortTls,
+                mqttPort,
                 mqttUsername,
                 mqttPassword,
                 mqttClientId,
-                null,
+                mqttUseTls,
                 new MqttCallback() {
                     @Override
                     public void connectionLost(Throwable cause) {
@@ -230,11 +202,11 @@ public class IoT3Core {
      */
     public static class IoT3CoreBuilder {
         private String mqttHost;
-        private int mqttPortTcp;
-        private int mqttPortTls;
+        private int mqttPort;
         private String mqttUsername;
         private String mqttPassword;
         private String mqttClientId;
+        private boolean mqttUseTls;
         private IoT3CoreCallback ioT3CoreCallback;
         private String telemetryHost;
         private int telemetryPort;
@@ -251,24 +223,24 @@ public class IoT3Core {
          * Set the MQTT parameters of your IoT3Core instance.
          *
          * @param mqttHost the host or IP address of the MQTT broker
-         * @param mqttPortTcp the TCP port of the MQTT broker
-         * @param mqttPortTls the TLS port of the MQTT broker
+         * @param mqttPort the port of the MQTT broker
          * @param mqttUsername the username for authentication with the MQTT broker
          * @param mqttPassword the password for authentication with the MQTT broker
          * @param mqttClientId your client ID
+         * @param mqttUseTls use TLS for a secure connection with the MQTT broker
          */
         public IoT3CoreBuilder mqttParams(String mqttHost,
-                                          int mqttPortTcp,
-                                          int mqttPortTls,
+                                          int mqttPort,
                                           String mqttUsername,
                                           String mqttPassword,
-                                          String mqttClientId) {
+                                          String mqttClientId,
+                                          boolean mqttUseTls) {
             this.mqttHost = mqttHost;
-            this.mqttPortTcp = mqttPortTcp;
-            this.mqttPortTls = mqttPortTls;
+            this.mqttPort = mqttPort;
             this.mqttUsername = mqttUsername;
             this.mqttPassword = mqttPassword;
             this.mqttClientId = mqttClientId;
+            this.mqttUseTls = mqttUseTls;
             return this;
         }
 
@@ -313,11 +285,11 @@ public class IoT3Core {
         public IoT3Core build() {
             return new IoT3Core(
                     mqttHost,
-                    mqttPortTcp,
-                    mqttPortTls,
+                    mqttPort,
                     mqttUsername,
                     mqttPassword,
                     mqttClientId,
+                    mqttUseTls,
                     ioT3CoreCallback,
                     telemetryHost,
                     telemetryPort,

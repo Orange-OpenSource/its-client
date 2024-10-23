@@ -7,7 +7,6 @@
  */
 package com.orange.iot3core.clients;
 
-import com.hivemq.client.mqtt.MqttClientSslConfig;
 import com.hivemq.client.mqtt.MqttGlobalPublishFilter;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
@@ -42,12 +41,11 @@ public class MqttClient {
     private boolean tlsConnection = false;
 
     public MqttClient(String serverHost,
-                      int tcpPort,
-                      int tlsPort,
+                      int serverPort,
                       String username,
                       String password,
                       String clientId,
-                      MqttClientSslConfig sslConfig,
+                      boolean useTls,
                       MqttCallback callback,
                       OpenTelemetryClient openTelemetryClient) {
         this.callback = callback;
@@ -57,6 +55,7 @@ public class MqttClient {
                 .useMqttVersion5()
                 .identifier(clientId)
                 .serverHost(serverHost)
+                .serverPort(serverPort)
                 .addDisconnectedListener(context1 -> {
                     LOGGER.log(Level.INFO, "Disconnected from MQTT broker " + serverHost);
                     callback.connectionLost(context1.getCause());
@@ -73,14 +72,10 @@ public class MqttClient {
                     .applySimpleAuth();
         }
 
-        if(sslConfig == null) {
-            mqttClient = mqttClientBuilder.serverPort(tcpPort)
-                    .buildAsync();
+        if(useTls) {
+            mqttClient = mqttClientBuilder.sslWithDefaultConfig().buildAsync();
         } else {
-            mqttClient = mqttClientBuilder.serverPort(tlsPort)
-                    .sslConfig(sslConfig)
-                    .buildAsync();
-            tlsConnection = true;
+            mqttClient = mqttClientBuilder.buildAsync();
         }
 
         // single callback for processing messages received on subscribed topics
@@ -93,7 +88,7 @@ public class MqttClient {
         if(mqttClient != null) {
             mqttClient.disconnect().whenComplete((mqtt5DisconnectResult, throwable) -> {
                 if(throwable != null) {
-                    LOGGER.log(Level.WARNING, "Error during disconnection");
+                    LOGGER.log(Level.WARNING, "Error during disconnection: " + throwable.getMessage());
                 } else {
                     LOGGER.log(Level.INFO, "Disconnected");
                 }
@@ -108,7 +103,7 @@ public class MqttClient {
                 .send()
                 .whenComplete((connAck, throwable) -> {
                     if(throwable != null) {
-                        LOGGER.log(Level.INFO, "Error during connection to the server");
+                        LOGGER.log(Level.INFO, "Error during connection to the server: " + throwable.getMessage());
                     } else {
                         LOGGER.log(Level.INFO, "Success connecting to the server");
                     }
@@ -123,7 +118,7 @@ public class MqttClient {
                     .send()
                     .whenComplete((subAck, throwable) -> {
                         if (throwable != null) {
-                            LOGGER.log(Level.WARNING, "Subscribed fail!");
+                            LOGGER.log(Level.WARNING, "Subscription failed: " + throwable.getMessage());
                         } else {
                             LOGGER.log(Level.FINE, "Subscribed!");
                         }
@@ -142,7 +137,7 @@ public class MqttClient {
                     .send()
                     .whenComplete((subAck, throwable) -> {
                         if (throwable != null) {
-                            LOGGER.log(Level.WARNING, "Unsubscribed fail!");
+                            LOGGER.log(Level.WARNING, "Unsubscription failed: " + throwable.getMessage());
                         } else {
                             LOGGER.log(Level.INFO, "Unsubscribed!");
                         }
