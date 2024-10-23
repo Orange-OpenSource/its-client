@@ -10,7 +10,12 @@ package com.orange.iot3mobility.its.json.cpm;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class StationDataContainer {
+
+    private static final Logger LOGGER = Logger.getLogger(StationDataContainer.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -25,6 +30,18 @@ public class StationDataContainer {
     private final OriginatingRsuContainer originatingRsuContainer;
 
     public StationDataContainer(
+            final OriginatingVehicleContainer originatingVehicleContainer
+    ) {
+        this(originatingVehicleContainer, null);
+    }
+
+    public StationDataContainer(
+            final OriginatingRsuContainer originatingRsuContainer
+    ) {
+        this(null, originatingRsuContainer);
+    }
+
+    private StationDataContainer(
             final OriginatingVehicleContainer originatingVehicleContainer,
             final OriginatingRsuContainer originatingRsuContainer
     ) {
@@ -43,7 +60,7 @@ public class StationDataContainer {
                 json.put(JsonCpmKey.StationDataContainer.ORIGINATING_RSU_CONTAINER.key(),
                         originatingRsuContainer.getJson());
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM StationDataContainer JSON build error", "Error: " + e);
         }
     }
 
@@ -60,7 +77,7 @@ public class StationDataContainer {
     }
 
     public static StationDataContainer jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         JSONObject jsonOriginatingVehicleContainer = json.optJSONObject(JsonCpmKey.StationDataContainer.ORIGINATING_VEHICLE_CONTAINER.key());
         OriginatingVehicleContainer originatingVehicleContainer = OriginatingVehicleContainer.jsonParser(jsonOriginatingVehicleContainer);
         JSONObject jsonOriginatingRsuContainer = json.optJSONObject(JsonCpmKey.StationDataContainer.ORIGINATING_RSU_CONTAINER.key());

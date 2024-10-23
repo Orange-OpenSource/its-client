@@ -17,128 +17,53 @@ import org.json.JSONObject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Decentralized Environmental Notification Message (DENM) is a message that is mainly used by ITS applications
+ * in order to alert road users of a detected event.
+ * <p>
+ * DENM is used to describe a variety of events that can be detected by ITS stations (ITS-S).
+ */
 public class DENM extends MessageBase {
 
     private static final Logger LOGGER = Logger.getLogger(DENM.class.getName());
 
     private JSONObject jsonDENM = new JSONObject();
+
+    /**
+     * Version of the ITS message and/or communication protocol.
+     */
     private final int protocolVersion;
+
+    /**
+     * ITS-station identifier
+     */
     private long stationId;
+
+    /**
+     * contains information related to the DENM management and the DENM protocol.
+     */
     private final ManagementContainer managementContainer;
+
+    /**
+     * Contains information related to the type of the detected event.
+     */
     private final SituationContainer situationContainer;
+
+    /**
+     * Contains information of the event location, and the location referencing.
+     */
     private final LocationContainer locationContainer;
+
+    /**
+     * Contains information specific to the use case which requires the transmission of
+     * additional information that is not included in the three previous containers.
+     */
     private final AlacarteContainer alacarteContainer;
 
-    public DENM(final String type,
+    private DENM(final String type,
                 final String origin,
                 final String version,
                 final String sourceUuid,
-                final String destinationUuid,
-                final long timestamp,
-                final int protocolVersion,
-                final long stationId,
-                final ManagementContainer managementContainer)
-    {
-        this(
-                type,
-                origin,
-                version,
-                sourceUuid,
-                destinationUuid,
-                timestamp,
-                protocolVersion,
-                stationId,
-                managementContainer,
-                null,
-                null,
-                null);
-    }
-
-    public DENM(final String type,
-                final String origin,
-                final String version,
-                final String sourceUuid,
-                final String destinationUuid,
-                final long timestamp,
-                final int protocolVersion,
-                final long stationId,
-                final ManagementContainer managementContainer,
-                final SituationContainer situationContainer)
-    {
-        this(
-                type,
-                origin,
-                version,
-                sourceUuid,
-                destinationUuid,
-                timestamp,
-                protocolVersion,
-                stationId,
-                managementContainer,
-                situationContainer,
-                null,
-                null);
-    }
-
-    public DENM(final String type,
-                final String origin,
-                final String version,
-                final String sourceUuid,
-                final String destinationUuid,
-                final long timestamp,
-                final int protocolVersion,
-                final long stationId,
-                final ManagementContainer managementContainer,
-                final SituationContainer situationContainer,
-                final AlacarteContainer alacarteContainer)
-    {
-        this(
-                type,
-                origin,
-                version,
-                sourceUuid,
-                destinationUuid,
-                timestamp,
-                protocolVersion,
-                stationId,
-                managementContainer,
-                situationContainer,
-                null,
-                alacarteContainer);
-    }
-
-    public DENM(final String type,
-                final String origin,
-                final String version,
-                final String sourceUuid,
-                final String destinationUuid,
-                final long timestamp,
-                final int protocolVersion,
-                final long stationId,
-                final ManagementContainer managementContainer,
-                final SituationContainer situationContainer,
-                final LocationContainer locationContainer)
-    {
-        this(
-                type,
-                origin,
-                version,
-                sourceUuid,
-                destinationUuid,
-                timestamp,
-                protocolVersion,
-                stationId,
-                managementContainer,
-                situationContainer,
-                locationContainer,
-                null);
-    }
-
-    public DENM(final String type,
-                final String origin,
-                final String version,
-                final String sourceUuid,
-                final String destinationUuid,
                 final long timestamp,
                 final int protocolVersion,
                 final long stationId,
@@ -147,7 +72,7 @@ public class DENM extends MessageBase {
                 final LocationContainer locationContainer,
                 final AlacarteContainer alacarteContainer)
     {
-        super(type, origin, version, sourceUuid, destinationUuid, timestamp);
+        super(type, origin, version, sourceUuid, timestamp);
         if(protocolVersion > 255 || protocolVersion < 0) {
             throw new IllegalArgumentException("DENM ProtocolVersion should be in the range of [0 - 255]."
                     + " Value: " + protocolVersion);
@@ -186,8 +111,6 @@ public class DENM extends MessageBase {
             jsonDENM.put(JsonKey.Header.ORIGIN.key(), getOrigin());
             jsonDENM.put(JsonKey.Header.VERSION.key(), getVersion());
             jsonDENM.put(JsonKey.Header.SOURCE_UUID.key(), getSourceUuid());
-            if(!getDestinationUuid().isEmpty())
-                jsonDENM.put(JsonKey.Header.DESTINATION_UUID.key(), getDestinationUuid());
             jsonDENM.put(JsonKey.Header.TIMESTAMP.key(), getTimestamp());
             jsonDENM.put(JsonKey.Header.MESSAGE.key(), message);
         } catch (JSONException e) {
@@ -236,11 +159,10 @@ public class DENM extends MessageBase {
     }
 
     public static class DENMBuilder {
-        private String type;
+        private final String type;
         private String origin;
         private String version;
         private String sourceUuid;
-        private String destinationUuid;
         private long timestamp;
         private int protocolVersion;
         private long stationId;
@@ -249,35 +171,42 @@ public class DENM extends MessageBase {
         private LocationContainer locationContainer;
         private AlacarteContainer alacarteContainer;
 
+        /**
+         * Start building a DENM.
+         */
         public DENMBuilder() {
             this.type = JsonValue.Type.DENM.value();
         }
 
+        /**
+         * Sets the JSON header of the DENM.
+         * <p>
+         * These fields are mandatory.
+         *
+         * @param origin The entity responsible for emitting the message.
+         * @param version JSON message format version.
+         * @param sourceUuid The identifier of the entity responsible for emitting the message.
+         * @param timestamp The timestamp when the message was generated since Unix Epoch (1970/01/01), in milliseconds.
+         */
         public DENMBuilder header(String origin,
                                   String version,
                                   String sourceUuid,
-                                  String destinationUuid,
                                   long timestamp) {
             this.origin = origin;
             this.version = version;
             this.sourceUuid = sourceUuid;
-            this.destinationUuid = destinationUuid;
             this.timestamp = timestamp;
             return this;
         }
 
-        public DENMBuilder header(String origin,
-                                  String version,
-                                  String sourceUuid,
-                                  long timestamp) {
-            this.origin = origin;
-            this.version = version;
-            this.sourceUuid = sourceUuid;
-            this.destinationUuid = "";
-            this.timestamp = timestamp;
-            return this;
-        }
-
+        /**
+         * Sets the PDU header of the DENM.
+         * <p>
+         * These fields are mandatory.
+         *
+         * @param protocolVersion {@link DENM#protocolVersion}
+         * @param stationId {@link DENM#stationId}
+         */
         public DENMBuilder pduHeader(int protocolVersion,
                                      long stationId) {
             this.protocolVersion = protocolVersion;
@@ -285,32 +214,66 @@ public class DENM extends MessageBase {
             return this;
         }
 
+        /**
+         * Sets the management container of the DENM.
+         * <p>
+         * This field is mandatory.
+         *
+         * @param managementContainer {@link DENM#managementContainer}
+         */
         public DENMBuilder managementContainer(ManagementContainer managementContainer) {
             this.managementContainer = managementContainer;
             return this;
         }
 
+        /**
+         * Sets the situation container of the DENM.
+         * <p>
+         * This field is optional.
+         *
+         * @param situationContainer {@link DENM#situationContainer}
+         */
         public DENMBuilder situationContainer(SituationContainer situationContainer) {
             this.situationContainer = situationContainer;
             return this;
         }
 
+        /**
+         * Sets the location container of the DENM.
+         * <p>
+         * This field is optional.
+         *
+         * @param locationContainer {@link DENM#locationContainer}
+         */
         public DENMBuilder locationContainer(LocationContainer locationContainer) {
             this.locationContainer = locationContainer;
             return this;
         }
 
+        /**
+         * Sets the a la carte container of the DENM.
+         * <p>
+         * This field is optional.
+         *
+         * @param alacarteContainer {@link DENM#alacarteContainer}
+         */
         public DENMBuilder alacarteContainer(AlacarteContainer alacarteContainer) {
             this.alacarteContainer = alacarteContainer;
             return this;
         }
 
+        /**
+         * Build the DENM.
+         * <p>
+         * Call after setting all the mandatory fields.
+         *
+         * @return {@link DENM}
+         */
         public DENM build() {
             return new DENM(type,
                     origin,
                     version,
                     sourceUuid,
-                    destinationUuid,
                     timestamp,
                     protocolVersion,
                     stationId,
@@ -321,6 +284,12 @@ public class DENM extends MessageBase {
         }
     }
 
+    /**
+     * Parse a DENM in JSON format.
+     *
+     * @param jsonDENM The CAM in JSON format
+     * @return {@link DENM}
+     */
     public static DENM jsonParser(JSONObject jsonDENM) {
         if(jsonDENM == null || jsonDENM.isEmpty()) return null;
         try {
@@ -332,7 +301,6 @@ public class DENM extends MessageBase {
                 String origin = jsonDENM.getString(JsonKey.Header.ORIGIN.key());
                 String version = jsonDENM.getString(JsonKey.Header.VERSION.key());
                 String sourceUuid = jsonDENM.getString(JsonKey.Header.SOURCE_UUID.key());
-                String destinationUuid = jsonDENM.optString(JsonKey.Header.DESTINATION_UUID.key());
                 long timestamp = jsonDENM.getLong(JsonKey.Header.TIMESTAMP.key());
 
                 int protocolVersion = message.getInt(JsonKey.Denm.PROTOCOL_VERSION.key());
@@ -354,7 +322,6 @@ public class DENM extends MessageBase {
                         .header(origin,
                                 version,
                                 sourceUuid,
-                                destinationUuid,
                                 timestamp)
                         .pduHeader(protocolVersion,
                                 stationId)

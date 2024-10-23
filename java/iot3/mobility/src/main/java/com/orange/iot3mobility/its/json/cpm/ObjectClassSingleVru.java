@@ -10,7 +10,12 @@ package com.orange.iot3mobility.its.json.cpm;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class ObjectClassSingleVru {
+
+    private static final Logger LOGGER = Logger.getLogger(ObjectClassSingleVru.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -94,7 +99,7 @@ public class ObjectClassSingleVru {
             if(objectVruAnimal != null)
                 json.put(JsonCpmKey.ObjectClass.SINGLE_VRU.key(), objectVruAnimal.getJson());
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM ObjectClassSingleVru JSON build error", "Error: " + e);
         }
     }
 
@@ -110,7 +115,7 @@ public class ObjectClassSingleVru {
     }
 
     public static ObjectClassSingleVru jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         JSONObject jsonSingleVru = json.optJSONObject(JsonCpmKey.ObjectClass.SINGLE_VRU.key());
         if(jsonSingleVru != null) {
             ObjectVruPedestrian objectVruPedestrian = ObjectVruPedestrian.jsonParser(jsonSingleVru);

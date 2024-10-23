@@ -12,7 +12,12 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class OriginatingRsuContainer {
+
+    private static final Logger LOGGER = Logger.getLogger(OriginatingRsuContainer.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -68,7 +73,7 @@ public class OriginatingRsuContainer {
             if(roadSegmentReferenceId != UNKNOWN)
                 json.put(JsonCpmKey.OriginatingRsuContainer.ROAD_SEGMENT_REFERENCE_ID.key(), roadSegmentReferenceId);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM OriginatingRsuContainer JSON build error", "Error: " + e);
         }
     }
 
@@ -89,7 +94,7 @@ public class OriginatingRsuContainer {
     }
 
     public static OriginatingRsuContainer jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         int region = json.optInt(JsonCpmKey.OriginatingRsuContainer.REGION.key(), UNKNOWN);
         int intersectionReferenceId = json.optInt(JsonCpmKey.OriginatingRsuContainer.INTERSECTION_REFERENCE_ID.key(), UNKNOWN);
         int roadSegmentReferenceId = json.optInt(JsonCpmKey.OriginatingRsuContainer.ROAD_SEGMENT_REFERENCE_ID.key(), UNKNOWN);

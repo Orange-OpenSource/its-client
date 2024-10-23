@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 
 public class AlacarteContainer {
 
-    private static final Logger LOGGER = Logger.getLogger(DENM.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AlacarteContainer.class.getName());
 
     private final JSONObject jsonAlacarteContainer = new JSONObject();
     private final int lanePosition;

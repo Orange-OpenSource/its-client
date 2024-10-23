@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 
 public class SituationContainer {
 
-    private static final Logger LOGGER = Logger.getLogger(DENM.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(SituationContainer.class.getName());
 
     private final JSONObject jsonSituationContainer = new JSONObject();
     private final int infoQuality;

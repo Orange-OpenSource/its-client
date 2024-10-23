@@ -11,18 +11,23 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class SensorInformationContainer {
+
+    private static final Logger LOGGER = Logger.getLogger(SensorInformationContainer.class.getName());
 
     private final JSONArray jsonArray = new JSONArray();
 
     /**
      * List of sensors and their information.
      */
-    private final ArrayList<SensorInformation> sensorInformationList;
+    private final List<SensorInformation> sensorInformationList;
 
     public SensorInformationContainer(
-            final ArrayList<SensorInformation> sensorInformationList
+            final List<SensorInformation> sensorInformationList
     ) {
         this.sensorInformationList = sensorInformationList;
 
@@ -39,11 +44,11 @@ public class SensorInformationContainer {
         return jsonArray;
     }
 
-    public ArrayList<SensorInformation> getSensorInformationList() {
+    public List<SensorInformation> getSensorInformationList() {
         return sensorInformationList;
     }
 
-    public ArrayList<String> getSensorTypeList() {
+    public List<String> getSensorTypeList() {
         ArrayList<String> sensorTypeList = new ArrayList<>();
         for(SensorInformation sensorInformation: sensorInformationList) {
             sensorTypeList.add(sensorInformation.getSensorType());
@@ -52,7 +57,7 @@ public class SensorInformationContainer {
     }
 
     public static SensorInformationContainer jsonParser(JSONArray jsonArray) {
-        if(jsonArray == null || jsonArray.length() == 0) return null;
+        if(jsonArray == null || jsonArray.isEmpty()) return null;
         try {
             ArrayList<SensorInformation> sensorInformationList = new ArrayList<>();
             for (int i = 0; i < jsonArray.length(); i++) {
@@ -62,7 +67,7 @@ public class SensorInformationContainer {
 
             return new SensorInformationContainer(sensorInformationList);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM SensorInformationContainer JSON parsing error", "Error: " + e);
         }
         return null;
     }

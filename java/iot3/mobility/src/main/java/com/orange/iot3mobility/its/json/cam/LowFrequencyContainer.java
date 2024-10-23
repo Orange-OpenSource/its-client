@@ -17,15 +17,46 @@ import org.json.JSONObject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * CAM LowFrequencyContainer.
+ * <p>
+ * Optional, provides additional information about a vehicle.
+ */
 public class LowFrequencyContainer {
 
-    private static final Logger LOGGER = Logger.getLogger(CAM.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(LowFrequencyContainer.class.getName());
 
     private final JSONObject jsonLowFrequencyContainer = new JSONObject();
+
+    /**
+     * The role of the vehicle ITS-S that originates the CAM.
+     * <p>
+     * default(0), publicTransport(1), specialTransport(2), dangerousGoods(3), roadWork(4), rescue(5), emergency(6),
+     * safetyCar(7), agriculture(8),commercial(9),military(10),roadOperator(11),taxi(12), reserved1(13), reserved2(14),
+     * reserved3(15)
+     */
     private final int vehicleRole;
+
+    /**
+     * Status of the exterior light switches represented as a bit string.
+     * <p>
+     * lowBeamHeadlightsOn (0), highBeamHeadlightsOn (1), leftTurnSignalOn (2), rightTurnSignalOn (3),
+     * daytimeRunningLightsOn (4), reverseLightOn (5), fogLightOn (6), parkingLightsOn (7)
+     * <p>
+     * Examples: "00000000", "10011010", "00000110"
+     */
     private final String exteriorLights;
+
+    /**
+     * The path history of the originating ITS-S, a path with a set of path points.
+     */
     private final PathHistory pathHistory;
 
+    /**
+     * Build a CAM LowFrequencyContainer.
+     *
+     * @param vehicleRole {@link #vehicleRole}
+     */
     public LowFrequencyContainer(
             final int vehicleRole
     )
@@ -33,6 +64,12 @@ public class LowFrequencyContainer {
         this(vehicleRole, "");
     }
 
+    /**
+     * Build a CAM LowFrequencyContainer.
+     *
+     * @param vehicleRole {@link #vehicleRole}
+     * @param exteriorLights {@link #exteriorLights}
+     */
     public LowFrequencyContainer(
             final int vehicleRole,
             final String exteriorLights
@@ -41,6 +78,13 @@ public class LowFrequencyContainer {
         this(vehicleRole, exteriorLights, new PathHistory(null));
     }
 
+    /**
+     * Build a CAM LowFrequencyContainer.
+     *
+     * @param vehicleRole {@link #vehicleRole}
+     * @param exteriorLights {@link #exteriorLights}
+     * @param pathHistory {@link #pathHistory}
+     */
     public LowFrequencyContainer(
             final int vehicleRole,
             final String exteriorLights,

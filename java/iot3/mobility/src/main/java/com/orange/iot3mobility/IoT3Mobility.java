@@ -9,12 +9,16 @@ package com.orange.iot3mobility;
 
 import com.orange.iot3core.IoT3Core;
 import com.orange.iot3core.IoT3CoreCallback;
+import com.orange.iot3mobility.its.EtsiUtils;
+import com.orange.iot3mobility.its.HazardType;
 import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.its.json.JsonValue;
 import com.orange.iot3mobility.its.json.Position;
 import com.orange.iot3mobility.its.json.cam.BasicContainer;
 import com.orange.iot3mobility.its.json.cam.CAM;
 import com.orange.iot3mobility.its.json.cam.HighFrequencyContainer;
+import com.orange.iot3mobility.its.json.cpm.CPM;
+import com.orange.iot3mobility.its.json.denm.*;
 import com.orange.iot3mobility.managers.IoT3RoadHazardCallback;
 import com.orange.iot3mobility.managers.IoT3RoadSensorCallback;
 import com.orange.iot3mobility.managers.IoT3RoadUserCallback;
@@ -204,7 +208,8 @@ public class IoT3Mobility {
     }
 
     /**
-     * Share your position and dynamic parameters with other road users
+     * Share your position and dynamic parameters with other road users.
+     * Builds a CAM and uses {@link #sendCam(CAM)}
      *
      * @param stationType your road user type
      * @param position your position (latitude, longitude in degrees)
@@ -231,31 +236,127 @@ public class IoT3Mobility {
                         uuid,
                         TrueTime.getAccurateTime())
                 .pduHeader(
-                        1,
+                        2,
                         stationId,
                         (int) (TrueTime.getAccurateETSITime() % 65536))
                 .basicContainer(
                         new BasicContainer(
                                 stationType.getId(),
                                 new Position(
-                                        (long) (position.getLatitude() * 10000000L),
-                                        (long) (position.getLongitude() * 10000000L),
+                                        (long) (position.getLatitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
+                                        (long) (position.getLongitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
                                         (int) (altitude * 100))))
                 .highFreqContainer(
-                        new HighFrequencyContainer(
-                                (int) (heading * 10),
-                                (int) (speed * 100),
-                                (int) (acceleration * 10),
-                                (int) (yawRate * 10)))
+                        new HighFrequencyContainer.HighFrequencyContainerBuilder()
+                                .heading((int) (heading * 10))
+                                .speed((int) (speed * 100))
+                                .longitudinalAcceleration((int) (acceleration * 10))
+                                .yawRate((int) (yawRate * 10))
+                                .build())
                 .build();
 
+        sendCam(cam);
+    }
+
+    /**
+     * Send a CAM - Cooperative Awareness Message
+     *
+     * @param cam the CAM representing your current state
+     */
+    public void sendCam(CAM cam) {
         // build the topic
-        String quadkey = QuadTileHelper.latLngToQuadKey(position.latitude, position.longitude, 22);
+        String quadkey = QuadTileHelper.latLngToQuadKey(cam.getBasicContainer().getPosition().getLatitudeDegree(),
+                cam.getBasicContainer().getPosition().getLongitudeDegree(), 22);
         String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
         String topic = "SWR/inQueue/v2x/cam/" + uuid + geoExtension;
 
         // send the message
         if(ioT3Core != null) ioT3Core.mqttPublish(topic, cam.getJsonCAM().toString());
+    }
+
+    /**
+     * Inform other road users of a road hazard.
+     * Builds a DENM and uses {@link #sendDenm(DENM)}
+     *
+     * @param hazardType the type of the reported hazard
+     * @param position the hazard's position (latitude, longitude in degrees)
+     * @param lifetime the lifetimes of this hazard in seconds [0 - 86400]
+     * @param infoQuality the quality of this hazard information [0 - 7]
+     * @param stationType your road user type
+     */
+    public void sendHazard(HazardType hazardType, LatLng position, int lifetime, int infoQuality,
+                           StationType stationType) {
+        // check for out of scope values before building the DENM
+        lifetime = (int) Utils.clamp(lifetime, 0, 86400);
+        infoQuality = (int) Utils.clamp(infoQuality, 0, 7);
+
+        // build the DENM
+        DENM denm = new DENM.DENMBuilder()
+                .header(
+                        JsonValue.Origin.SELF.value(),
+                        JsonValue.Version.CURRENT.value(),
+                        uuid,
+                        TrueTime.getAccurateTime())
+                .pduHeader(
+                        2,
+                        stationId)
+                .managementContainer(
+                        new ManagementContainer(
+                                new ActionId(
+                                        stationId,
+                                        EtsiUtils.getNextSequenceNumber()),
+                                TrueTime.getAccurateETSITime(),
+                                TrueTime.getAccurateETSITime(),
+                                new Position(
+                                        (long)(position.getLatitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
+                                        (long)(position.getLongitude() * EtsiUtils.ETSI_COORDINATES_FACTOR)),
+                                lifetime,
+                                stationType.getId()))
+                .situationContainer(
+                        new SituationContainer(
+                                infoQuality,
+                                new EventType(
+                                        hazardType.getCause(),
+                                        hazardType.getSubcause())))
+                .build();
+
+        sendDenm(denm);
+    }
+
+    /**
+     * Send a DENM - Decentralized Environment Notification Message
+     *
+     * @param denm the DENM representing a road event
+     */
+    public void sendDenm(DENM denm) {
+        // build the topic
+        String quadkey = QuadTileHelper.latLngToQuadKey(
+                denm.getManagementContainer().getEventPosition().getLatitudeDegree(),
+                denm.getManagementContainer().getEventPosition().getLongitudeDegree(),
+                22);
+        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
+        String topic = "SWR/inQueue/v2x/denm/" + uuid + geoExtension;
+
+        // send the message
+        if(ioT3Core != null) ioT3Core.mqttPublish(topic, denm.getJsonDENM().toString());
+    }
+
+    /**
+     * Send a CPM - Cooperative Perception Message
+     *
+     * @param cpm the CPM representing your sensors and their perceived objects
+     */
+    public void sendCpm(CPM cpm) {
+        // build the topic
+        String quadkey = QuadTileHelper.latLngToQuadKey(
+                cpm.getManagementContainer().getReferencePosition().getLatitudeDegree(),
+                cpm.getManagementContainer().getReferencePosition().getLongitudeDegree(),
+                22);
+        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
+        String topic = "SWR/inQueue/v2x/cpm/" + uuid + geoExtension;
+
+        // send the message
+        if(ioT3Core != null) ioT3Core.mqttPublish(topic, cpm.getJson().toString());
     }
 
 }

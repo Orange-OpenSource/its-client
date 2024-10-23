@@ -14,8 +14,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class VehicleSensor {
+
+    private static final Logger LOGGER = Logger.getLogger(VehicleSensor.class.getName());
 
     private final JSONObject json = new JSONObject();
 
@@ -108,7 +112,7 @@ public class VehicleSensor {
             }
             json.put(JsonCpmKey.VehicleSensor.VEHICLE_SENSOR_PROPERTY_LIST.key(), jsonVehicleSensorPropertyArray);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM VehicleSensor JSON build error", "Error: " + e);
         }
     }
 
@@ -137,7 +141,7 @@ public class VehicleSensor {
     }
 
     public static VehicleSensor jsonParser(JSONObject json) {
-        if(json == null || json.length() == 0) return null;
+        if(json == null || json.isEmpty()) return null;
         try {
             int refPointId = json.getInt(JsonCpmKey.VehicleSensor.REF_POINT_ID.key());
             int xSensorOffset = json.getInt(JsonCpmKey.VehicleSensor.X_SENSOR_OFFSET.key());
@@ -156,7 +160,7 @@ public class VehicleSensor {
                     zSensorOffset,
                     vehicleSensorPropertyList);
         } catch (JSONException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "CPM VehicleSensor JSON parsing error", "Error: " + e);
         }
         return null;
     }
