@@ -49,60 +49,83 @@ public class IoT3Mobility {
     /**
      * Instantiate the IoT3.0 Mobility SDK.
      *
-     * @param host server address, provided by Orange
-     * @param username username, provided by Orange
-     * @param password password, provided by Orange
-     * @param uuid your unique user ID, usually in the form com_userType_id (e.g. ora_car_123)
-     * @param context can be a specific project name or can be provided by Orange
+     * @param uuid unique user identifier
+     * @param context specific project or client name
+     * @param mqttHost MQTT broker address
+     * @param mqttPort port of the MQTT broker
+     * @param mqttUsername MQTT username
+     * @param mqttPassword MQTT password
+     * @param mqttUseTls use TLS for a secure connection with the MQTT broker
      * @param ioT3MobilityCallback callback to retrieve connection status
+     * @param telemetryHost Open Telemetry server address
+     * @param telemetryPort port of the Open Telemetry server
+     * @param telemetryEndpoint endpoint of the Open Telemetry server URL
+     * @param telemetryUsername Open Telemetry username
+     * @param telemetryPassword Open Telemetry password
      */
-    public IoT3Mobility(String host,
-                        String username,
-                        String password,
-                        String uuid,
+    private IoT3Mobility(String uuid,
                         String context,
+                        String mqttHost,
+                        int mqttPort,
+                        String mqttUsername,
+                        String mqttPassword,
+                        boolean mqttUseTls,
                         IoT3MobilityCallback ioT3MobilityCallback,
-                        String telemetryHost) {
+                        String telemetryHost,
+                        int telemetryPort,
+                        String telemetryEndpoint,
+                        String telemetryUsername,
+                        String telemetryPassword) {
         this.uuid = uuid;
         // random stationId at the moment, will be an option to set it later on
         this.stationId = Utils.randomBetween(999, 99999999);
-        ioT3Core = new IoT3Core(
-                host,
-                username,
-                password,
-                uuid,
-                new IoT3CoreCallback() {
-                    @Override
-                    public void mqttConnectionLost(Throwable throwable) {
-                        ioT3MobilityCallback.connectionLost(throwable);
-                    }
 
-                    @Override
-                    public void mqttMessageArrived(String topic, String message) {
-                        processMessage(topic, message);
-                    }
+        IoT3CoreCallback ioT3CoreCallback = new IoT3CoreCallback() {
+            @Override
+            public void mqttConnectionLost(Throwable throwable) {
+                ioT3MobilityCallback.connectionLost(throwable);
+            }
 
-                    @Override
-                    public void mqttConnectComplete(boolean reconnect, String serverURI) {
-                        ioT3MobilityCallback.connectComplete(reconnect, serverURI);
-                    }
+            @Override
+            public void mqttMessageArrived(String topic, String message) {
+                processMessage(topic, message);
+            }
 
-                    @Override
-                    public void mqttMessagePublished(Throwable publishFailure) {
+            @Override
+            public void mqttConnectComplete(boolean reconnect, String serverURI) {
+                ioT3MobilityCallback.connectComplete(reconnect, serverURI);
+            }
 
-                    }
+            @Override
+            public void mqttMessagePublished(Throwable publishFailure) {
 
-                    @Override
-                    public void mqttSubscriptionComplete(Throwable subscribeFailure) {
+            }
 
-                    }
+            @Override
+            public void mqttSubscriptionComplete(Throwable subscribeFailure) {
 
-                    @Override
-                    public void mqttUnsubscriptionComplete(Throwable unsubscribeFailure) {
+            }
 
-                    }
-                },
-                telemetryHost);
+            @Override
+            public void mqttUnsubscriptionComplete(Throwable unsubscribeFailure) {
+
+            }
+        };
+
+        ioT3Core = new IoT3Core.IoT3CoreBuilder()
+                .mqttParams(mqttHost,
+                        mqttPort,
+                        mqttUsername,
+                        mqttPassword,
+                        uuid,
+                        mqttUseTls)
+                .telemetryParams(telemetryHost,
+                        telemetryPort,
+                        telemetryEndpoint,
+                        telemetryUsername,
+                        telemetryPassword)
+                .callback(ioT3CoreCallback)
+                .build();
 
         roIManager = new RoIManager(ioT3Core, uuid, context);
 
@@ -357,6 +380,113 @@ public class IoT3Mobility {
 
         // send the message
         if(ioT3Core != null) ioT3Core.mqttPublish(topic, cpm.getJson().toString());
+    }
+
+    /**
+     * Build an instance of IoT3Mobility.
+     */
+    public static class IoT3MobilityBuilder {
+        private final String uuid;
+        private final String context;
+        private String mqttHost;
+        private int mqttPort;
+        private String mqttUsername;
+        private String mqttPassword;
+        private boolean mqttUseTls;
+        private IoT3MobilityCallback ioT3MobilityCallback;
+        private String telemetryHost;
+        private int telemetryPort;
+        private String telemetryEndpoint;
+        private String telemetryUsername;
+        private String telemetryPassword;
+
+        /**
+         * Start building an instance of IoT3Mobility.
+         *
+         * @param uuid unique user identifier
+         * @param context specific project or client name
+         */
+        public IoT3MobilityBuilder(String uuid, String context) {
+            this.uuid = uuid;
+            this.context = context;
+        }
+
+        /**
+         * Set the MQTT parameters of your IoT3Mobility instance.
+         *
+         * @param mqttHost the host or IP address of the MQTT broker
+         * @param mqttPort the port of the MQTT broker
+         * @param mqttUsername the username for authentication with the MQTT broker
+         * @param mqttPassword the password for authentication with the MQTT broker
+         * @param mqttUseTls use TLS for a secure connection with the MQTT broker
+         */
+        public IoT3Mobility.IoT3MobilityBuilder mqttParams(String mqttHost,
+                                                   int mqttPort,
+                                                   String mqttUsername,
+                                                   String mqttPassword,
+                                                   boolean mqttUseTls) {
+            this.mqttHost = mqttHost;
+            this.mqttPort = mqttPort;
+            this.mqttUsername = mqttUsername;
+            this.mqttPassword = mqttPassword;
+            this.mqttUseTls = mqttUseTls;
+            return this;
+        }
+
+        /**
+         * Set the OpenTelemetry parameters of your IoT3Mobility instance.
+         *
+         * @param telemetryHost the host or IP address of the OpenTelemetry server
+         * @param telemetryPort the port of the OpenTelemetry server
+         * @param telemetryEndpoint the endpoint of the OpenTelemetry server (e.g. /endpoint/example)
+         * @param telemetryUsername the username for authentication with the OpenTelemetry server
+         * @param telemetryPassword the password for authentication with the OpenTelemetry server
+         */
+        public IoT3Mobility.IoT3MobilityBuilder telemetryParams(String telemetryHost,
+                                                        int telemetryPort,
+                                                        String telemetryEndpoint,
+                                                        String telemetryUsername,
+                                                        String telemetryPassword) {
+            this.telemetryHost = telemetryHost;
+            this.telemetryPort = telemetryPort;
+            this.telemetryEndpoint = telemetryEndpoint;
+            this.telemetryUsername = telemetryUsername;
+            this.telemetryPassword = telemetryPassword;
+            return this;
+        }
+
+        /**
+         * Set the callback of your IoT3Mobility instance.
+         *
+         * @param ioT3MobilityCallback callback to be notified of mainly MQTT-related events, e.g. message reception
+         *                         or connection status
+         */
+        public IoT3Mobility.IoT3MobilityBuilder callback(IoT3MobilityCallback ioT3MobilityCallback) {
+            this.ioT3MobilityCallback = ioT3MobilityCallback;
+            return this;
+        }
+
+        /**
+         * Build the IoT3Mobility instance.
+         *
+         * @return Iot3Mobility instance
+         */
+        public IoT3Mobility build() {
+            return new IoT3Mobility(
+                    uuid,
+                    context,
+                    mqttHost,
+                    mqttPort,
+                    mqttUsername,
+                    mqttPassword,
+                    mqttUseTls,
+                    ioT3MobilityCallback,
+                    telemetryHost,
+                    telemetryPort,
+                    telemetryEndpoint,
+                    telemetryUsername,
+                    telemetryPassword);
+        }
     }
 
 }
