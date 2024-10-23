@@ -493,27 +493,27 @@ public class HighFrequencyContainer {
     }
 
     public static class HighFrequencyContainerBuilder {
-        private int heading;
-        private int speed;
-        private int driveDirection;
-        private int vehicleLength;
-        private int vehicleWidth;
-        private int longitudinalAcceleration;
-        private int lateralAcceleration;
-        private int verticalAcceleration;
-        private int yawRate;
-        private int lanePosition;
-        private int curvature;
-        private int curvatureCalculationMode;
-        private String accelerationControl;
-        private int headingConfidence;
-        private int speedConfidence;
-        private int vehicleLengthConfidence;
-        private int longitudinalAccelerationConfidence;
-        private int lateralAccelerationConfidence;
-        private int verticalAccelerationConfidence;
-        private int yawRateConfidence;
-        private int curvatureConfidence;
+        private int heading = UNKNOWN;
+        private int speed = UNKNOWN;
+        private int driveDirection = UNKNOWN;
+        private int vehicleLength = UNKNOWN;
+        private int vehicleWidth = UNKNOWN;
+        private int longitudinalAcceleration = UNKNOWN;
+        private int lateralAcceleration = UNKNOWN;
+        private int verticalAcceleration = UNKNOWN;
+        private int yawRate = UNKNOWN;
+        private int lanePosition = UNKNOWN;
+        private int curvature = UNKNOWN;
+        private int curvatureCalculationMode = UNKNOWN;
+        private String accelerationControl = "";
+        private int headingConfidence = UNKNOWN;
+        private int speedConfidence = UNKNOWN;
+        private int vehicleLengthConfidence = UNKNOWN;
+        private int longitudinalAccelerationConfidence = UNKNOWN;
+        private int lateralAccelerationConfidence = UNKNOWN;
+        private int verticalAccelerationConfidence = UNKNOWN;
+        private int yawRateConfidence = UNKNOWN;
+        private int curvatureConfidence = UNKNOWN;
 
         /**
          * Start building a HighFrequencyContainer.
