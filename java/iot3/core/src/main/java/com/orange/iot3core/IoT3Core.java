@@ -198,6 +198,14 @@ public class IoT3Core {
     }
 
     /**
+     * Check that the MQTT connection is secured with TLS
+     */
+    public boolean isMqttConnectionSecured() {
+        if(mqttClient != null) return mqttClient.isConnected() && mqttClient.isConnectionSecured();
+        else return false;
+    }
+
+    /**
      * Build an instance of IoT3Core.
      */
     public static class IoT3CoreBuilder {
