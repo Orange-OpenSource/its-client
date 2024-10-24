@@ -178,12 +178,12 @@ class MqttClient:
         :param payload: The payload to post.
         """
         with self.span_ctxmgr_cb(
-            name="IoT3 Core MQTT message",
+            name="IoT3 Core MQTT Message",
             kind=otel.SpanKind.PRODUCER,
         ) as span:
             new_traceparent = span.to_traceparent()
-            span.set_attribute(key="test.iot3.core.mqtt.action", value="publish")
-            span.set_attribute(key="test.iot3.core.mqtt.topic", value=topic)
+            span.set_attribute(key="iot3.core.mqtt.topic", value=topic)
+            span.set_attribute(key="iot3.core.mqtt.payload_size", value=len(payload))
             properties = paho.mqtt.properties.Properties(
                 paho.mqtt.packettypes.PacketTypes.PUBLISH,
             )
@@ -281,7 +281,7 @@ class MqttClient:
         message: paho.mqtt.client.MQTTMessage,
     ):
         span_kwargs = {
-            "name": "IoT3 Core MQTT message",
+            "name": "IoT3 Core MQTT Message",
             "kind": otel.SpanKind.CONSUMER,
         }
         try:
@@ -292,8 +292,11 @@ class MqttClient:
             pass
         with self.span_ctxmgr_cb(**span_kwargs) as span:
             new_traceparent = span.to_traceparent()
-            span.set_attribute(key="test.iot3.core.mqtt.action", value="receive")
-            span.set_attribute(key="test.iot3.core.mqtt.topic", value=message.topic)
+            span.set_attribute(key="iot3.core.mqtt.topic", value=message.topic)
+            span.set_attribute(
+                key="iot3.core.mqtt.payload_size",
+                value=len(message.payload),
+            )
             self.msg_cb(
                 data=self.msg_cb_data,
                 topic=message.topic,
