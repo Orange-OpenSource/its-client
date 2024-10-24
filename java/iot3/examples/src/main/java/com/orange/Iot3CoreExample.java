@@ -78,6 +78,9 @@ public class Iot3CoreExample {
     }
 
     private static void onConnectionComplete() {
+        // Check if MQTT connection is secured
+        if(ioT3Core.isMqttConnectionSecured()) System.out.println("MQTT connection is SECURED");
+        else System.out.println("MQTT connection is NOT SECURED");
         // subscribe to the root test topic and to all iot3 topics using the wildcard #
         ioT3Core.mqttSubscribe("test");
         ioT3Core.mqttSubscribe("test/iot3/#");
