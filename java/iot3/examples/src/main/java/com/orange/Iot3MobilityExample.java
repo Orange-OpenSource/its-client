@@ -30,24 +30,37 @@ import java.util.concurrent.TimeUnit;
 
 public class Iot3MobilityExample {
 
-    private static final String EXAMPLE_HOST = "host";
-    private static final String EXAMPLE_USERNAME = "username";
-    private static final String EXAMPLE_PASSWORD = "password";
     private static final String EXAMPLE_UUID = "uuid";
     private static final String EXAMPLE_CONTEXT = "context";
-    private static final String EXAMPLE_TELEMETRY_HOST = "telemetry_host";
+    // MQTT parameters
+    private static final String EXAMPLE_MQTT_HOST = "mqtt_host";
+    private static final int EXAMPLE_MQTT_PORT = 1883;
+    private static final String EXAMPLE_MQTT_USERNAME = "mqtt_username";
+    private static final String EXAMPLE_MQTT_PASSWORD = "mqtt_password";
+    private static final boolean EXAMPLE_MQTT_USE_TLS = false;
+    // OpenTelemetry parameters
+    private static final String EXAMPLE_OTL_HOST = "telemetry_host";
+    private static final int EXAMPLE_OTL_PORT = 4318;
+    private static final String EXAMPLE_OTL_ENDPOINT = "/telemetry/endpoint";
+    private static final String EXAMPLE_OTL_USERNAME = "telemetry_username";
+    private static final String EXAMPLE_OTL_PASSWORD = "telemetry_password";
 
     private static IoT3Mobility ioT3Mobility;
 
     public static void main(String[] args) {
         // instantiate IoT3Mobility and its callback
-        ioT3Mobility = new IoT3Mobility(
-                EXAMPLE_HOST,
-                EXAMPLE_USERNAME,
-                EXAMPLE_PASSWORD,
-                EXAMPLE_UUID, // serves to identify the road user, app or infrastructure
-                EXAMPLE_CONTEXT, // serves as the root of the MQTT mobility topics
-                new IoT3MobilityCallback() {
+        ioT3Mobility = new IoT3Mobility.IoT3MobilityBuilder(EXAMPLE_UUID, EXAMPLE_CONTEXT)
+                .mqttParams(EXAMPLE_MQTT_HOST,
+                        EXAMPLE_MQTT_PORT,
+                        EXAMPLE_MQTT_USERNAME,
+                        EXAMPLE_MQTT_PASSWORD,
+                        EXAMPLE_MQTT_USE_TLS)
+                .telemetryParams(EXAMPLE_OTL_HOST,
+                        EXAMPLE_OTL_PORT,
+                        EXAMPLE_OTL_ENDPOINT,
+                        EXAMPLE_OTL_USERNAME,
+                        EXAMPLE_OTL_PASSWORD)
+                .callback(new IoT3MobilityCallback() {
                     @Override
                     public void connectionLost(Throwable cause) {
                         System.out.println("MQTT Connection lost...");
@@ -57,8 +70,8 @@ public class Iot3MobilityExample {
                     public void connectComplete(boolean reconnect, String serverURI) {
                         System.out.println("MQTT connection complete: " + serverURI);
                     }
-                },
-                EXAMPLE_TELEMETRY_HOST);
+                })
+                .build();
 
         // set the RoadHazardCallback to be informed of road hazards in the corresponding Region of Interest (RoI)
         ioT3Mobility.setRoadHazardCallback(new IoT3RoadHazardCallback() {
@@ -90,13 +103,13 @@ public class Iot3MobilityExample {
                 // RoadUser is a simple object provided by IoT3Mobility
                 System.out.println("New Road User: " + roadUser.getUuid());
                 LatLng position = roadUser.getPosition();
-                System.out.println("Road User position: " + position.toString());
+                System.out.println("Road User position: " + position);
                 // the CAM on which this object is based can still be accessed
                 CAM originalCam = roadUser.getCam();
                 double latitude = originalCam.getBasicContainer().getPosition().getLatitudeDegree();
                 double longitude = originalCam.getBasicContainer().getPosition().getLongitudeDegree();
                 LatLng camPosition = new LatLng(latitude, longitude);
-                System.out.println("CAM position: " + camPosition.toString());
+                System.out.println("CAM position: " + camPosition);
             }
 
             @Override
