@@ -23,7 +23,7 @@ use libits::transport::mqtt::mqtt_client::MqttClient;
 use libits::transport::mqtt::mqtt_router::MqttRouter;
 use libits::transport::mqtt::topic::Topic;
 use log::{error, info};
-use rumqttc::v5::mqttbytes::v5::Publish;
+use rumqttc::v5::mqttbytes::v5::{Publish, PublishProperties};
 
 #[derive(Clone, Default, Debug, Hash, PartialEq, Eq)]
 struct StrTopic {
@@ -116,19 +116,24 @@ async fn main() {
 
     router.add_route(
         StrTopic::from_str("#").unwrap(),
-        |publish: Publish| -> Option<Box<dyn Any + Send + 'static>> {
+        |publish: Publish| -> Option<(Box<dyn Any + 'static + Send>, PublishProperties)> {
             if let Ok(payload) = std::str::from_utf8(publish.payload.as_ref()) {
                 if serde_json::from_str::<String>(payload).is_ok() {
-                    Some(Box::new(Ok::<(), &'static str>(())))
+                    Some((
+                        Box::new(Ok::<(), &'static str>),
+                        publish.properties.unwrap_or_default(),
+                    ))
                 } else {
-                    Some(Box::new(Err::<(), &'static str>(
-                        "Failed to parse payload as JSON",
-                    )))
+                    Some((
+                        Box::new(Err::<(), &'static str>("Failed to parse payload as JSON")),
+                        publish.properties.unwrap_or_default(),
+                    ))
                 }
             } else {
-                Some(Box::new(Err::<(), &'static str>(
-                    "Failed to parse payload as UTF-8",
-                )))
+                Some((
+                    Box::new(Err::<(), &'static str>("Failed to parse payload as UTF-8")),
+                    publish.properties.unwrap_or_default(),
+                ))
             }
         },
     );
@@ -142,7 +147,7 @@ async fn main() {
         match event_loop.poll().await {
             Ok(event) => {
                 if let Some((_, result)) = router.handle_event::<StrTopic>(event) {
-                    let result = result.downcast::<Result<(), &'static str>>();
+                    let result = result.0.downcast::<Result<(), &'static str>>();
                     if result.is_ok() {
                         json += 1;
                     }

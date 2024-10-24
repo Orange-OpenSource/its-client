@@ -12,16 +12,19 @@
 use std::collections::HashMap;
 
 use log::{error, info, trace, warn};
-use rumqttc::v5::mqttbytes::v5::Publish;
+use rumqttc::v5::mqttbytes::v5::{Publish, PublishProperties};
 use rumqttc::v5::{Event, Incoming};
 
 use crate::transport::mqtt::topic::Topic;
 use std::any::{type_name, Any};
 use std::str::from_utf8;
 
-type BoxedReception = Box<dyn Any + 'static + Send>;
+pub type BoxedReception = (Box<dyn Any + 'static + Send>, PublishProperties);
 
 type BoxedCallback = Box<dyn Fn(Publish) -> Option<BoxedReception>>;
+
+#[cfg(feature = "telemetry")]
+use crate::transport::telemetry::get_reception_mqtt_span;
 
 #[derive(Default)]
 pub struct MqttRouter {
@@ -44,6 +47,9 @@ impl MqttRouter {
                 Incoming::Publish(publish) => {
                     match from_utf8(&publish.topic) {
                         Ok(str_topic) => {
+                            #[cfg(feature = "telemetry")]
+                            let _span = get_reception_mqtt_span(&publish);
+
                             trace!(
                                 "Publish received for the packet {:?} on the topic {}",
                                 publish.pkid,
