@@ -38,7 +38,7 @@ public class MqttClient {
     private final MqttCallback callback;
     private final OpenTelemetryClient openTelemetryClient;
 
-    private boolean tlsConnection = false;
+    private final boolean useTls;
 
     public MqttClient(String serverHost,
                       int serverPort,
@@ -50,6 +50,7 @@ public class MqttClient {
                       OpenTelemetryClient openTelemetryClient) {
         this.callback = callback;
         this.openTelemetryClient = openTelemetryClient;
+        this.useTls = useTls;
 
         Mqtt5ClientBuilder mqttClientBuilder = com.hivemq.client.mqtt.MqttClient.builder()
                 .useMqttVersion5()
@@ -94,7 +95,6 @@ public class MqttClient {
                 }
             });
         }
-        tlsConnection = false;
     }
 
     public void connect() {
@@ -265,7 +265,7 @@ public class MqttClient {
     }
 
     public boolean isConnectionSecured() {
-        return isConnected() && tlsConnection;
+        return isConnected() && useTls;
     }
 
     public boolean isValidMqttPubTopic(String topic) {
