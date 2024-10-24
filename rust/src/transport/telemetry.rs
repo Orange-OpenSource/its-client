@@ -10,6 +10,7 @@
  */
 
 use log::debug;
+use std::str::from_utf8;
 use std::time::Duration;
 
 use opentelemetry::global::BoxedSpan;
@@ -24,6 +25,7 @@ use opentelemetry_sdk::trace::{
 };
 use opentelemetry_sdk::Resource;
 use reqwest::header;
+use rumqttc::v5::mqttbytes::v5::Publish;
 
 use crate::client::configuration::telemetry_configuration::TelemetryConfiguration;
 
@@ -183,4 +185,53 @@ pub(crate) fn get_mqtt_span(span_kind: SpanKind, topic: &str, payload_size: i64)
             KeyValue::new("iot3.core.sdk_language", "rust"),
         ])
         .start(&tracer)
+}
+
+pub(crate) fn get_reception_mqtt_span(publish: &Publish) -> BoxedSpan {
+    let tracer = global::tracer("iot3.core");
+
+    let topic = from_utf8(&publish.topic).unwrap_or_default().to_string();
+    let size = publish.payload.len();
+
+    let propagator = TraceContextPropagator::new();
+    let trace_cx = propagator.extract(&ExtractWrapper(publish));
+    let span_cx = trace_cx.span().span_context().clone();
+
+    tracer
+        .span_builder("IoT3 Core MQTT Message")
+        .with_kind(SpanKind::Consumer)
+        .with_attributes(vec![
+            KeyValue::new("iot3.core.mqtt.topic", topic),
+            KeyValue::new("iot3.core.mqtt.payload_size", size as i64),
+            KeyValue::new("iot3.core.sdk_language", "rust"),
+        ])
+        .with_links(vec![Link::with_context(span_cx)])
+        .start(&tracer)
+}
+
+struct ExtractWrapper<'p>(&'p Publish);
+impl Extractor for ExtractWrapper<'_> {
+    fn get(&self, key: &str) -> Option<&str> {
+        if let Some(properties) = &self.0.properties {
+            properties
+                .user_properties
+                .iter()
+                .find(|(k, _)| key == k)
+                .map(|(_, value)| value.as_str())
+        } else {
+            None
+        }
+    }
+
+    fn keys(&self) -> Vec<&str> {
+        if let Some(properties) = &self.0.properties {
+            properties
+                .user_properties
+                .iter()
+                .map(|(key, _)| key.as_str())
+                .collect::<Vec<&str>>()
+        } else {
+            Vec::new()
+        }
+    }
 }
