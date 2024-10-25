@@ -44,6 +44,7 @@ public class IoT3Mobility {
     private final RoIManager roIManager;
 
     private final String uuid;
+    private final String context;
     private final int stationId;
 
     /**
@@ -77,6 +78,7 @@ public class IoT3Mobility {
                         String telemetryUsername,
                         String telemetryPassword) {
         this.uuid = uuid;
+        this.context = context;
         // random stationId at the moment, will be an option to set it later on
         this.stationId = Utils.randomBetween(999, 99999999);
 
@@ -291,7 +293,7 @@ public class IoT3Mobility {
         String quadkey = QuadTileHelper.latLngToQuadKey(cam.getBasicContainer().getPosition().getLatitudeDegree(),
                 cam.getBasicContainer().getPosition().getLongitudeDegree(), 22);
         String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
-        String topic = "SWR/inQueue/v2x/cam/" + uuid + geoExtension;
+        String topic = context + "/inQueue/v2x/cam/" + uuid + geoExtension;
 
         // send the message
         if(ioT3Core != null) ioT3Core.mqttPublish(topic, cam.getJsonCAM().toString());
@@ -358,7 +360,7 @@ public class IoT3Mobility {
                 denm.getManagementContainer().getEventPosition().getLongitudeDegree(),
                 22);
         String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
-        String topic = "SWR/inQueue/v2x/denm/" + uuid + geoExtension;
+        String topic = context + "/inQueue/v2x/denm/" + uuid + geoExtension;
 
         // send the message
         if(ioT3Core != null) ioT3Core.mqttPublish(topic, denm.getJsonDENM().toString());
@@ -376,7 +378,7 @@ public class IoT3Mobility {
                 cpm.getManagementContainer().getReferencePosition().getLongitudeDegree(),
                 22);
         String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
-        String topic = "SWR/inQueue/v2x/cpm/" + uuid + geoExtension;
+        String topic = context + "/inQueue/v2x/cpm/" + uuid + geoExtension;
 
         // send the message
         if(ioT3Core != null) ioT3Core.mqttPublish(topic, cpm.getJson().toString());
