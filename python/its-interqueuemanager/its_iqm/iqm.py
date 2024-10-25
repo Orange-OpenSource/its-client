@@ -174,6 +174,7 @@ class IQM:
                 client_id=self.cfg["neighbours"]["client_id"],
                 host=loaded_nghbs[nghb_id]["host"],
                 port=int(loaded_nghbs[nghb_id]["port"]),
+                tls=False,
                 **creds,
                 msg_cb=self.qm_copy_cb,
                 msg_cb_data=qm_data,
