@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://orange-opensource.github.io/its-client/schema/dsrc-definitions",
+  "description": "DSRC definitions JSON schema",
+  "definitions": {
+    "minute_of_the_year": {
+      "type": "integer",
+      "description": "Number of elapsed minutes of the current year in the time system being used (typically UTC time). It is typically used to provide a longer range time stamp indicating when a message was created. Taken together with the DSecond data element, it provides a range of one full year with a resolution of 1 millisecond. The value 527040 shall be used for invalid.",
+      "default": 527040,
+      "minimum": 0,
+      "maximum": 527040,
+      "examples": [
+        527040
+      ]
+    },
+    "d_second": {
+      "type": "integer",
+      "description": "Unit: millisecond. The DSRC second consists of integer values from zero to 60999, representing the milliseconds within a minute. A leap second is represented by the value range 60000 to 60999. The value of 65535 shall represent an unavailable value in the range of the minute. The values from 61000 to 65534 are reserved.",
+      "default": 65535,
+      "minimum": 0,
+      "maximum": 65535,
+      "examples": [
+        65535
+      ]
+    },
+    "priority_request_type": {
+      "type": "integer",
+      "description": "Provides a means to indicate if a request (found in the Signal RequestMessage) represents a new service request, a request update, or a request cancellation for either preemption or priority services. priorityRequestTypeReserved (0), priorityRequest (1), priorityRequestUpdate (2), priorityCancellation (3)",
+      "minimum": 0,
+      "maximum": 3
+    },
+    "request_id": {
+      "type": "integer",
+      "description": "Used to provide a unique ID between two parties for various dialog exchanges. Combined with the sender's VehicleID (consisting of a TempID or a Station ID), this provides a unique string for some mutually defined period of time. A typical example of use would be a signal preemption or priority request dialog containing multiple requests from one sender (denoted by the unique RequestID with each). When such a request is processed and reflected in the signal status messages, the original sender and the specific request can both be determined.",
+      "minimum": 0,
+      "maximum": 255
+    },
+    "lane_id": {
+      "type": "integer",
+      "description": "Assigned index that is unique within an intersection. It is used to refer to that lane by other objects in the intersection map data structure. Lanes may be ingress (inbound traffic) or egress (outbound traffic) in nature, as well as barriers and other types of specialty lanes. Each lane (each lane object) is assigned a unique ID. The Lane ID, in conjunction with the intersection ID, forms a regionally unique way to address a specific lane in that region.",
+      "minimum": 0,
+      "maximum": 255
+    },
+    "approach_id": {
+      "type": "integer",
+      "description": "Used to relate the index of an approach, either ingress or egress within the subject lane. In general, an approach index in the context of a timing movement is not of value in the MAP and SPAT process because the lane ID and signal group ID concepts handle this with more precision. This value can also be useful as an aid as it can be used to indicate the gross position of a moving object (vehicle) when its lane level accuracy is unknown. This value can also be used when a deployment represents sets of lanes as groups without further details (as is done in Japan).",
+      "minimum": 0,
+      "maximum": 15
+    },
+    "lane_connection_id": {
+      "type": "integer",
+      "description": "Used to state a connection index for a lane to lane connection. It is used to relate this connection between the lane (defined in the MAP) and any dynamic clearance data sent in the SPAT. It should be noted that the index may be shared with other lanes (for example, two left turn lanes may share the same dynamic clearance data). It should also be noted that a given lane to lane connection may be part of more than one GroupID due to signal phase considerations, but will only have one ConnectionID. The ConnectionID concept is not used (is not present) when dynamic clearance data is not provided in the SPAT.",
+      "minimum": 0,
+      "maximum": 255
+    },
+    "intersection_id": {
+      "type": "integer",
+      "description": "used within a region to uniquely define an intersection within that country or region in a 16-bit field. Assignment rules are established by the regional authority associated with the RoadRegulatorID under which this IntersectionID is assigned. Within the region the policies used to ensure an assigned value\\'s uniqueness before that value is reused (if ever) is the responsibility of that region. Any such reuse would be expected to occur over a long epoch (many years). The values zero through 255 are allocated for testing purposes.",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "road_regulator_id": {
+      "type": "integer",
+      "description": "16-bit globally unique identifier assigned to an entity responsible for assigning Intersection IDs in the region over which it has such authority. The value zero shall be used for testing, and should only be used in the absence of a suitable assignment. A single entity which assigns intersection IDs may be assigned several RoadRegulatorIDs. These assignments are presumed to be permanent.",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "intersection_reference_id": {
+      "type": "object",
+      "description": "Conveys the combination of an optional RoadRegulatorID and of an IntersectionID that is unique within that region.",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "region": {
+          "$ref": "#/definitions/road_regulator_id"
+        },
+        "id": {
+          "$ref": "#/definitions/intersection_id"
+        }
+      }
+    },
+    "intersection_access_point": {
+      "type": "object",
+      "description": "Used to specify the index of either a single approach or a single lane at which a service is needed. This is used, for example, with the Signal Request Message (SRM) to indicate the inbound and outbound points by which the requestor (such as a public safety vehicle) can traverse an intersection.",
+      "required": [
+        "lane",
+        "approach",
+        "connection"
+      ],
+      "properties": {
+        "lane": {
+          "$ref": "#/definitions/lane_id"
+        },
+        "approach": {
+          "$ref": "#/definitions/approach_id"
+        },
+        "connection": {
+          "$ref": "#/definitions/lane_connection_id"
+        }
+      }
+    },
+    "requestor_type": {
+      "type": "object",
+      "description": "Used when a DSRC-equipped device is requesting service from another device. The most common use case is when a vehicle is requesting a signal preemption or priority service call from the signal controller in an intersection. This data frame provides the details of the requestor class taxonomy required to support the request.",
+      "required": [
+        "role"
+      ],
+      "properties": {
+        "role": {
+          "type": "integer",
+          "description": "Basic role of this user at this time. basicVehicle (0), publicTransport (1), specialTransport (2), dangerousGoods (3), roadWork (4), roadRescue (5), emergency (6), safetyCar (7), none-unknown (8), truck (9), motorcycle (10), roadSideSource (11), police (12), fire (13), ambulance (14), dot (15), transit (16), slowMoving (17), stopNgo (18), cyclist (19), pedestrian (20), nonMotorized (21), military (22), tram (23)",
+          "minimum": 0,
+          "maximum": 23
+        },
+        "subrole": {
+          "type": "integer",
+          "description": "Locally defined. Further define the details of the role which any DSRC device might play when making a request to a signal controller.",
+          "minimum": 0,
+          "maximum": 15
+        },
+        "request": {
+          "type": "integer",
+          "description": "Used to state what type of signal request is being made to a signal controller by a DSRC device in a defined role. The levels of the request typically convey a sense of urgency or importance with respect to other demands. importanceLevelUnKnown (0), leastImportanceLevel (1), mostImportanceLevel (14), reservedForFutureUse (15)",
+          "minimum": 0,
+          "maximum": 15
+        },
+        "iso3883": {
+          "type": "integer",
+          "description": "Vehicle type according to ISO 3833. passengerCar (0), saloon (1), convertibleSaloon (2), pullmanSaloon (3), stationWagon (4), truckStationWagon (5), coupe (6), convertible (7), multipurposePassengerCar (8), forwardControlPassengerCar (9), specialPassengerCar (10), bus (11), minibus (12), urbanBus (13), interurbanCoach (14), longDistanceCoach (15), articulatedBus (16), trolleyBus (17), specialBus (18), commercialVehicle (19), specialCommercialVehicle (20), specialVehicle (21), trailingTowingVehicle (22), semiTrailerTowingVehicle (23), trailer (24), busTrailer (25), generalPurposeTrailer (26), caravan (27), specialTrailer (28), semiTrailer (29), busSemiTrailer (30), generalPurposeSemiTrailer (31), specialSemiTrailer (32), roadTrain (33), passengerRoadTrain (34), articulatedRoadTrain (35), doubleRoadTrain (36), compositeRoadTrain (37), specialRoadTrain (38), moped (39), motorCycle (40)",
+          "minimum": 0,
+          "maximum": 40
+        },
+        "hpms_type": {
+          "type": "integer",
+          "description": "Classification of the vehicle in terms of overall size. The data element entries follow the definitions defined in the US DOT Highway Performance Monitoring System (HPMS). none (0), unknown (1), special (2), moto (3), car (4), carOther (5), bus (6), axleCnt2 (7), axleCnt3 (8), axleCnt4 (9), axleCnt4Trailer (10), axleCnt5Trailer (11), axleCnt6Trailer (12), axleCnt5MultiTrailer (13), axleCnt6MultiTrailer (14), axleCnt7MultiTrailer (15)",
+          "minimum": 0,
+          "maximum": 15
+        }
+      }
+    },
+    "requestor_position_vector": {
+      "type": "object",
+      "description": "Report of the requestor\\'s position, speed, and heading. Used by a vehicle or other type of user to request services and at other times when the larger FullPositionVector is not required.",
+      "required": [
+        "position"
+      ],
+      "properties": {
+        "position": {
+          "$ref": "#/definitions/position_3d"
+        },
+        "heading": {
+          "$ref": "#/definitions/angle"
+        },
+        "speed": {
+          "$ref": "#/definitions/transmission_and_speed"
+        }
+      }
+    },
+    "position_3d": {
+      "type": "object",
+      "description": "Provides a precise location in the WGS-84 coordinate system, from which short offsets may be used to create additional data using a flat earth projection centered on this location. Position3D is typically used in the description of maps and intersections, as well as signs and traveler data.",
+      "required": [
+        "latitude",
+        "longitude"
+      ],
+      "properties": {
+        "latitude": {
+          "type": "integer",
+          "description": "Unit: 0.1 microdegree. oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10), unavailable(900000001)",
+          "default": 900000001,
+          "minimum": -900000000,
+          "maximum": 900000001
+        },
+        "longitude": {
+          "type": "integer",
+          "description": "Unit: 0.1 microdegree. oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(1800000001)",
+          "default": 1800000001,
+          "minimum": -1800000000,
+          "maximum": 1800000001
+        },
+        "elevation": {
+          "type": "integer",
+          "description": "Unit: 0.1 meter. referenceEllipsoidSurface(0), tenCentimeters(1), unavailable(-4096)",
+          "default": -4096,
+          "minimum": -4096,
+          "maximum": 61439
+        }
+      }
+    },
+    "angle": {
+      "type": "integer",
+      "description": "Unit: 0.0125 degrees from North. (1) 0.0125 deg, (80) 1 deg, (28799) 359.9875 deg, (28800) unavailable",
+      "minimum": 0,
+      "maximum": 28800
+    },
+    "transmission_and_speed": {
+      "type": "object",
+      "description": "",
+      "required": [
+        "transmission",
+        "speed"
+      ],
+      "properties": {
+        "transmission": {
+          "type": "integer",
+          "description": "neutral (0), park (1), forwardGears (2), reverseGears (3), reserved1 (4), reserved2 (5), reserved3 (6), unavailable (7)",
+          "minimum": 0,
+          "maximum": 7
+        },
+        "speed": {
+          "$ref": "#/definitions/velocity"
+        }
+      }
+    },
+    "velocity": {
+      "type": "integer",
+      "description": "Unit: 0.02 m/s. Represents the velocity of an object, typically a vehicle speed or the recommended speed of travel along a roadway, expressed in unsigned units of 0.02 meters per second.",
+      "minimum": 0,
+      "maximum": 8191
+    }
+  }
+}
