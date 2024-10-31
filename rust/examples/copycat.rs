@@ -30,6 +30,9 @@ use libits::transport::packet::Packet;
 use log::{debug, info, warn};
 use timer::MessageTimer;
 
+#[cfg(feature = "telemetry")]
+use libits::transport::telemetry::init_tracer;
+
 pub struct CopyCat {
     configuration: Arc<Configuration>,
     item_receiver: Receiver<Packet<GeoTopic, Exchange>>,
@@ -232,6 +235,9 @@ async fn main() {
             .mqtt_options
             .set_credentials(username, password.unwrap_or(&String::new()));
     }
+
+    #[cfg(feature = "telemetry")]
+    init_tracer(&configuration.telemetry, "copycat").expect("Failed to init telemetry");
 
     pipeline::run::<CopyCat, NoContext, GeoTopic>(
         Arc::new(configuration),

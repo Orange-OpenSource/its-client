@@ -9,11 +9,13 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+use log::debug;
+use std::str::from_utf8;
 use std::time::Duration;
 
 use opentelemetry::global::BoxedSpan;
 use opentelemetry::propagation::{Extractor, TextMapPropagator};
-use opentelemetry::trace::{Link, TraceContextExt, Tracer};
+use opentelemetry::trace::{Link, Span, SpanKind, TraceContextExt, Tracer};
 use opentelemetry::{global, Context, KeyValue};
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
@@ -23,6 +25,7 @@ use opentelemetry_sdk::trace::{
 };
 use opentelemetry_sdk::Resource;
 use reqwest::header;
+use rumqttc::v5::mqttbytes::v5::Publish;
 
 use crate::client::configuration::telemetry_configuration::TelemetryConfiguration;
 
@@ -94,9 +97,51 @@ pub fn init_tracer(
     Ok(())
 }
 
+pub fn get_span(
+    tracer_name: &'static str,
+    span_name: &'static str,
+    span_kind: Option<SpanKind>,
+) -> BoxedSpan {
+    let tracer = global::tracer(tracer_name);
+    let mut span_builder = tracer.span_builder(span_name);
+
+    if let Some(kind) = span_kind {
+        span_builder = span_builder.with_kind(kind)
+    }
+
+    span_builder.start(&tracer)
+}
+
+pub fn get_linked_span<E>(
+    tracer_name: &'static str,
+    span_name: &'static str,
+    span_kind: Option<SpanKind>,
+    from: &E,
+) -> BoxedSpan
+where
+    E: Extractor,
+{
+    let tracer = global::tracer(tracer_name);
+
+    let propagator = TraceContextPropagator::new();
+    let trace_cx = propagator.extract(from);
+    let span_cx = trace_cx.span().span_context().clone();
+
+    let mut span_builder = tracer
+        .span_builder(span_name)
+        .with_links(vec![Link::with_context(span_cx)]);
+
+    if let Some(kind) = span_kind {
+        span_builder = span_builder.with_kind(kind)
+    }
+
+    span_builder.start(&tracer)
+}
+
 pub fn execute_in_span<F, E, R>(
     tracer_name: &'static str,
     span_name: &'static str,
+    span_kind: Option<SpanKind>,
     from: Option<&E>,
     block: F,
 ) -> R
@@ -104,34 +149,89 @@ where
     F: FnOnce() -> R,
     E: Extractor,
 {
-    let span = get_span(tracer_name, span_name, from);
+    let span = if let Some(from) = from {
+        get_linked_span(tracer_name, span_name, span_kind, from)
+    } else {
+        get_span(tracer_name, span_name, span_kind)
+    };
+
     let cx = Context::current_with_span(span);
     let _guard = cx.attach();
 
     block()
 }
 
-pub fn get_span<E>(
-    tracer_name: &'static str,
-    span_name: &'static str,
-    from: Option<&E>,
-) -> BoxedSpan
+pub fn add_link<E>(linked_entity: &E, span: &mut BoxedSpan)
 where
     E: Extractor,
 {
-    let tracer = global::tracer(tracer_name);
+    let propagator = TraceContextPropagator::new();
+    let trace_cx = propagator.extract(linked_entity);
+    let span_cx = trace_cx.span().span_context().clone();
 
-    let span_builder = if let Some(packet) = from {
-        let propagator = TraceContextPropagator::new();
-        let trace_cx = propagator.extract(packet);
-        let span_cx = trace_cx.span().span_context().clone();
+    span.add_link(span_cx, Vec::new());
+}
 
-        tracer
-            .span_builder(span_name)
-            .with_links(vec![Link::with_context(span_cx)])
-    } else {
-        tracer.span_builder(span_name)
-    };
+pub(crate) fn get_mqtt_span(span_kind: SpanKind, topic: &str, payload_size: i64) -> BoxedSpan {
+    debug!("Starting MQTT span...");
+    let tracer = global::tracer("iot3.core");
 
-    span_builder.start(&tracer)
+    tracer
+        .span_builder("IoT3 Core MQTT Message")
+        .with_kind(span_kind)
+        .with_attributes(vec![
+            KeyValue::new("iot3.core.mqtt.topic", topic.to_string()),
+            KeyValue::new("iot3.core.mqtt.payload_size", payload_size),
+            KeyValue::new("iot3.core.sdk_language", "rust"),
+        ])
+        .start(&tracer)
+}
+
+pub(crate) fn get_reception_mqtt_span(publish: &Publish) -> BoxedSpan {
+    let tracer = global::tracer("iot3.core");
+
+    let topic = from_utf8(&publish.topic).unwrap_or_default().to_string();
+    let size = publish.payload.len();
+
+    let propagator = TraceContextPropagator::new();
+    let trace_cx = propagator.extract(&ExtractWrapper(publish));
+    let span_cx = trace_cx.span().span_context().clone();
+
+    tracer
+        .span_builder("IoT3 Core MQTT Message")
+        .with_kind(SpanKind::Consumer)
+        .with_attributes(vec![
+            KeyValue::new("iot3.core.mqtt.topic", topic),
+            KeyValue::new("iot3.core.mqtt.payload_size", size as i64),
+            KeyValue::new("iot3.core.sdk_language", "rust"),
+        ])
+        .with_links(vec![Link::with_context(span_cx)])
+        .start(&tracer)
+}
+
+struct ExtractWrapper<'p>(&'p Publish);
+impl Extractor for ExtractWrapper<'_> {
+    fn get(&self, key: &str) -> Option<&str> {
+        if let Some(properties) = &self.0.properties {
+            properties
+                .user_properties
+                .iter()
+                .find(|(k, _)| key == k)
+                .map(|(_, value)| value.as_str())
+        } else {
+            None
+        }
+    }
+
+    fn keys(&self) -> Vec<&str> {
+        if let Some(properties) = &self.0.properties {
+            properties
+                .user_properties
+                .iter()
+                .map(|(key, _)| key.as_str())
+                .collect::<Vec<&str>>()
+        } else {
+            Vec::new()
+        }
+    }
 }
