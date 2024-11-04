@@ -23,7 +23,6 @@ pub mod analyzer;
 pub mod pipeline;
 
 // FIXME use custom errors
-#[cfg(feature = "mobility")]
 pub fn create_denm(
     detection_time: u64,
     configuration: &Configuration,
@@ -79,7 +78,6 @@ pub fn create_denm(
 /// Creates an updated copy of the provided DENM
 ///
 /// FIXME check for appropriation
-#[cfg(feature = "mobility")]
 pub fn update_denm(
     detection_time: u64,
     denm: &DecentralizedEnvironmentalNotificationMessage,
