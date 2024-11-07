@@ -57,7 +57,7 @@ impl Topic {
         T: Into<MessageType> + Default,
     {
         Topic {
-            project: "5GCroCo".to_string(),
+            project: "default".to_string(),
             queue: match queue {
                 Some(into_queue) => into_queue.into(),
                 None => Queue::default(),
@@ -205,11 +205,11 @@ mod tests {
 
     #[test]
     fn test_cam_topic_from_str() {
-        let topic_string = "5GCroCo/outQueue/v2x/cam/car_1/0/1/2/3";
+        let topic_string = "default/outQueue/v2x/cam/car_1/0/1/2/3";
         let topic_result = Topic::from_str(topic_string);
         assert!(topic_result.is_ok());
         let topic = topic_result.unwrap();
-        assert_eq!(topic.project, "5GCroCo".to_string());
+        assert_eq!(topic.project, "default".to_string());
         assert_eq!(topic.queue, Queue::Out);
         assert_eq!(topic.server, "v2x".to_string());
         assert_eq!(topic.message_type, MessageType::CAM);
@@ -223,11 +223,11 @@ mod tests {
     #[test]
     fn test_denm_topic_from_str() {
         let topic_string =
-            "5GCroCo/outQueue/v2x/denm/wse_app_bcn1/1/2/0/2/2/2/2/3/3/0/0/3/2/0/2/0/1/0/1/0/3/1/";
+            "default/outQueue/v2x/denm/wse_app_bcn1/1/2/0/2/2/2/2/3/3/0/0/3/2/0/2/0/1/0/1/0/3/1/";
         let topic_result = Topic::from_str(topic_string);
         assert!(topic_result.is_ok());
         let topic = topic_result.unwrap();
-        assert_eq!(topic.project, "5GCroCo".to_string());
+        assert_eq!(topic.project, "default".to_string());
         assert_eq!(topic.queue, Queue::Out);
         assert_eq!(topic.server, "v2x".to_string());
         assert_eq!(topic.message_type, MessageType::DENM);
@@ -237,11 +237,11 @@ mod tests {
 
     #[test]
     fn test_info_topic_from_str() {
-        let topic_string = "5GCroCo/outQueue/v2x/info/broker";
+        let topic_string = "default/outQueue/v2x/info/broker";
         let topic_result = Topic::from_str(topic_string);
         assert!(topic_result.is_ok());
         let topic = topic_result.unwrap();
-        assert_eq!(topic.project, "5GCroCo".to_string());
+        assert_eq!(topic.project, "default".to_string());
         assert_eq!(topic.queue, Queue::Out);
         assert_eq!(topic.server, "v2x".to_string());
         assert_eq!(topic.message_type, MessageType::INFO);
@@ -251,11 +251,11 @@ mod tests {
 
     #[test]
     fn test_in_queue_cam_topic_from_str() {
-        let topic_string = "5GCroCo/inQueue/v2x/cam/car_1/0/1/2/3";
+        let topic_string = "default/inQueue/v2x/cam/car_1/0/1/2/3";
         let topic_result = Topic::from_str(topic_string);
         assert!(topic_result.is_ok());
         let topic = topic_result.unwrap();
-        assert_eq!(topic.project, "5GCroCo".to_string());
+        assert_eq!(topic.project, "default".to_string());
         assert_eq!(topic.queue, Queue::In);
         assert_eq!(topic.server, "v2x".to_string());
         assert_eq!(topic.message_type, MessageType::CAM);
