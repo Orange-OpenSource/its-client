@@ -39,6 +39,7 @@ use crate::client::configuration::{
 #[cfg(feature = "geo_routing")]
 use crate::client::configuration::geo_configuration::{GeoConfiguration, GEO_SECTION};
 
+pub(crate) mod bootstrap_configuration;
 pub mod configuration_error;
 #[cfg(feature = "geo_routing")]
 pub mod geo_configuration;
