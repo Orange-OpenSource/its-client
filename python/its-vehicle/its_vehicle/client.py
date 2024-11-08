@@ -193,7 +193,7 @@ class ITSClient:
                 payload_d.get("source_uuid", None) != self.cfg["instance-id"]
                 or self.cfg["mirror-self"]
             ):
-                self.mqtt_mirror.publish(topic, payload)
+                self.mqtt_mirror.publish(topic=topic, payload=payload)
         except:
             # Payload does not have expected fields, or is not a dict;
             # ignore this invalid message
