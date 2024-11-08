@@ -62,7 +62,7 @@ pub struct Configuration {
     pub mobility: MobilityConfiguration,
     #[cfg(feature = "mobility")]
     pub node: Option<RwLock<NodeConfiguration>>,
-    custom_settings: Option<Ini>,
+    pub(crate) custom_settings: Option<Ini>,
 }
 
 impl Configuration {
@@ -122,7 +122,7 @@ impl Configuration {
 }
 
 // FIXME maybe move this into a dedicated .rs file
-struct MqttOptionWrapper(MqttOptions);
+pub(crate) struct MqttOptionWrapper(MqttOptions);
 impl TryFrom<&Properties> for MqttOptionWrapper {
     type Error = ConfigurationError;
 
@@ -237,12 +237,14 @@ impl TryFrom<Ini> for Configuration {
 
     fn try_from(ini_config: Ini) -> Result<Self, Self::Error> {
         let mut ini_config = ini_config;
-        let mqtt_properties = pick_mandatory_section(MQTT_SECTION, &mut ini_config)?;
 
         Ok(Configuration {
-            mqtt_options: MqttOptionWrapper::try_from(&mqtt_properties)?
-                .deref()
-                .clone(),
+            mqtt_options: MqttOptionWrapper::try_from(&pick_mandatory_section(
+                MQTT_SECTION,
+                &mut ini_config,
+            )?)?
+            .deref()
+            .clone(),
             #[cfg(feature = "geo_routing")]
             geo: GeoConfiguration::try_from(&pick_mandatory_section(
                 GEO_SECTION,

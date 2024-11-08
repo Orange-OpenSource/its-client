@@ -13,6 +13,8 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ConfigurationError {
+    #[error("{0}")]
+    BootstrapFailure(String),
     #[error("Could not found field '{0}'")]
     FieldNotFound(&'static str),
     #[error("Cannot parse '{0}' due to invalid file type")]
