@@ -30,7 +30,11 @@ class Status:
                     "code": m_j["modem"]["3gpp"]["operator-code"],
                     "name": m_j["modem"]["3gpp"]["operator-name"],
                 }
-                tech = m_j["modem"]["generic"]["access-technologies"][0]
+                try:
+                    # We might not yet know what technology is used...
+                    tech = m_j["modem"]["generic"]["access-technologies"][0]
+                except KeyError:
+                    tech = None
                 item["connection"] = {
                     "technology": tech,
                     "signal": [],
