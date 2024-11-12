@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/ssem",
+  "description": "SSEM JSON schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "origin",
+    "version",
+    "source_uuid",
+    "timestamp",
+    "message"
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "Message type",
+      "const": "ssem"
+    },
+    "origin": {
+      "type": "string",
+      "enum": [
+        "self",
+        "global_application",
+        "mec_application",
+        "on_board_application"
+      ],
+      "description": "The entity responsible for this message."
+    },
+    "version": {
+      "type": "string",
+      "description": "JSON message format version.",
+      "const": "1.99.99"
+    },
+    "source_uuid": {
+      "type": "string",
+      "description": "Identifier"
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01).",
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
+    },
+    "message": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "station_id",
+        "second",
+        "status"
+      ],
+      "properties": {
+        "protocol_version": {
+          "type": "integer",
+          "description": "version of the message and/or communication protocol",
+          "minimum": 0,
+          "maximum": 255,
+          "examples": [
+            1
+          ]
+        },
+        "station_id": {
+          "type": "integer",
+          "description": "identifier",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "examples": [
+            1,
+            42
+          ]
+        },
+        "timestamp": {
+          "$ref": "dsrc_schema_1-0-0.json#/definitions/minute_of_the_year"
+        },
+        "second": {
+          "$ref": "dsrc_schema_1-0-0.json#/definitions/d_second"
+        },
+        "sequence_number": {
+          "type": "integer",
+          "description": "The sequence number is set each time a new SSEM is created. It is used to differentiate from other SSEMs by the same ITS-S.",
+          "minimum": 0,
+          "maximum": 127
+        },
+        "status": {
+          "type": "array",
+          "description": "List of SignalStatus entries.",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "description": "Used to provide the status of a single intersection to others, including any active preemption or priority state in effect.",
+            "required": [
+              "sequence_number",
+              "id",
+              "sig_status"
+            ],
+            "properties": {
+              "sequence_number": {
+                "type": "integer",
+                "description": "Changed whenever the below contents have change.",
+                "minimum": 0,
+                "maximum": 127
+              },
+              "id": {
+                "description": "Provides a unique mapping to the intersection map in question which provides complete location and approach/movement/lane data as well as zones for priority/preemption.",
+                "$ref": "dsrc_schema_1-0-0.json#/definitions/intersection_reference_id"
+              },
+              "sig_status": {
+                "type": "array",
+                "description": "List of SignalStatusPackage entries.",
+                "minItems": 1,
+                "maxItems": 32,
+                "items": {
+                  "type": "object",
+                  "description": "contains all the data needed to describe the preemption or priority state of the signal controller with respect to a given request and to uniquely identify the party who requested that state to occur.",
+                  "required": [
+                    "inbound_on",
+                    "status"
+                  ],
+                  "properties": {
+                    "requester": {
+                      "type": "object",
+                      "description": "The party that made the initial SREM request.",
+                      "required": [
+                        "id",
+                        "request",
+                        "sequence_number"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "The ID used in the CAM of the requestor. This ID is presumed not to change during the exchange.",
+                          "minimum": 0,
+                          "maximum": 4294967295
+                        },
+                        "request": {
+                          "description": "Uniquely identifies the requester and the specific request to all parties.",
+                          "$ref": "dsrc_schema_1-0-0.json#/definitions/request_id"
+                        },
+                        "sequence_number": {
+                          "type": "integer",
+                          "description": "Uniquely identifies the requester and the specific request to all parties.",
+                          "minimum": 0,
+                          "maximum": 127
+                        },
+                        "role": {
+                          "type": "integer",
+                          "description": "Basic role of this user at this time. basicVehicle (0), publicTransport (1), specialTransport (2), dangerousGoods (3), roadWork (4), roadRescue (5), emergency (6), safetyCar (7), none-unknown (8), truck (9), motorcycle (10), roadSideSource (11), police (12), fire (13), ambulance (14), dot (15), transit (16), slowMoving (17), stopNgo (18), cyclist (19), pedestrian (20), nonMotorized (21), military (22), tram (23)",
+                          "minimum": 0,
+                          "maximum": 23
+                        },
+                        "type_data": {
+                          "description": "Used when addition data besides the role is needed, at which point the role entry above is not sent.",
+                          "$ref": "dsrc_schema_1-0-0.json#/definitions/requestor_type"
+                        }
+                      }
+                    },
+                    "inbound_on": {
+                      "$ref": "dsrc_schema_1-0-0.json#/definitions/intersection_access_point"
+                    },
+                    "outbound_on": {
+                      "$ref": "dsrc_schema_1-0-0.json#/definitions/intersection_access_point"
+                    },
+                    "minute": {
+                      "description": "The Estimated Time of Arrival (ETA) when the service is requested. This data echos the data of the request.",
+                      "$ref": "dsrc_schema_1-0-0.json#/definitions/minute_of_the_year"
+                    },
+                    "second": {
+                      "description": "Second part of ETA.",
+                      "$ref": "dsrc_schema_1-0-0.json#/definitions/d_second"
+                    },
+                    "duration": {
+                      "description": "Duration part of ETA.",
+                      "$ref": "dsrc_schema_1-0-0.json#/definitions/d_second"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "description": "Indicate the general status of a prior prioritization request. unknown (0), requested (1), processing (2), watchOtherTraffic (3), granted (4), rejected (5), maxPresence (6), reserviceLocked (7)",
+                      "minimum": 0,
+                      "maximum": 7
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

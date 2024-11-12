@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/srem",
+  "description": "SREM JSON schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "origin",
+    "version",
+    "source_uuid",
+    "timestamp",
+    "message"
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "Message type",
+      "const": "srem"
+    },
+    "origin": {
+      "type": "string",
+      "enum": [
+        "self",
+        "global_application",
+        "mec_application",
+        "on_board_application"
+      ],
+      "description": "The entity responsible for this message."
+    },
+    "version": {
+      "type": "string",
+      "description": "JSON message format version.",
+      "const": "1.99.99"
+    },
+    "source_uuid": {
+      "type": "string",
+      "description": "Identifier"
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01).",
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
+    },
+    "message": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "station_id",
+        "second",
+        "requestor"
+      ],
+      "properties": {
+        "protocol_version": {
+          "type": "integer",
+          "description": "version of the message and/or communication protocol",
+          "minimum": 0,
+          "maximum": 255,
+          "examples": [
+            1
+          ]
+        },
+        "station_id": {
+          "type": "integer",
+          "description": "identifier",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "examples": [
+            1,
+            42
+          ]
+        },
+        "timestamp": {
+          "$ref": "dsrc_schema_1-0-0.json#/definitions/minute_of_the_year"
+        },
+        "second": {
+          "$ref": "dsrc_schema_1-0-0.json#/definitions/d_second"
+        },
+        "sequence_number": {
+          "type": "integer",
+          "description": "The sequence number is set each time a new SREM is created. It is used to differentiate from other SREMs by the same ITS-S.",
+          "minimum": 0,
+          "maximum": 127
+        },
+        "requests": {
+          "type": "array",
+          "description": "List of SignalRequest entries.",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "required": [
+              "request"
+            ],
+            "properties": {
+              "request": {
+                "type": "object",
+                "description": "Used (as part of a request message) to request either a priority or a preemption service from a signalized intersection.",
+                "required": [
+                  "id",
+                  "request_id",
+                  "request_type",
+                  "inbound_lane"
+                ],
+                "properties": {
+                  "id": {
+                    "$ref": "dsrc_schema_1-0-0.json#/definitions/intersection_reference_id"
+                  },
+                  "request_id": {
+                    "$ref": "dsrc_schema_1-0-0.json#/definitions/request_id"
+                  },
+                  "request_type": {
+                    "$ref": "dsrc_schema_1-0-0.json#/definitions/priority_request_type"
+                  },
+                  "inbound_lane": {
+                    "$ref": "dsrc_schema_1-0-0.json#/definitions/intersection_access_point"
+                  },
+                  "outbound_lane": {
+                    "$ref": "dsrc_schema_1-0-0.json#/definitions/intersection_access_point"
+                  }
+                }
+              },
+              "minute": {
+                "description": "Time period start. Minute of the year.",
+                "$ref": "dsrc_schema_1-0-0.json#/definitions/minute_of_the_year"
+              },
+              "second": {
+                "description": "Time period start. Milliseconds within the minute.",
+                "$ref": "dsrc_schema_1-0-0.json#/definitions/d_second"
+              },
+              "duration": {
+                "description": "The duration value is used to provide a short interval that extends the ETA so that the requesting vehicle can arrive at the point of service with uncertainty or with some desired duration of service. Unit: millisecond. The DSRC second consists of integer values from zero to 60999, representing the milliseconds within a minute.",
+                "$ref": "dsrc_schema_1-0-0.json#/definitions/d_second"
+              }
+            }
+          }
+        },
+        "requestor": {
+          "type": "object",
+          "description": "Requesting Device and other User Data contains vehicle ID (if from a vehicle) as well as type data and current position and may contain additional transit data.",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer",
+              "description": "The ID used in the CAM of the requestor. This ID is presumed not to change during the exchange.",
+              "minimum": 0,
+              "maximum": 4294967295
+            },
+            "type": {
+              "description": "Information regarding all type and class data about the requesting vehicle.",
+              "$ref": "dsrc_schema_1-0-0.json#/definitions/requestor_type"
+            },
+            "position": {
+              "description": "The location of the requesting vehicle.",
+              "$ref": "dsrc_schema_1-0-0.json#/definitions/requestor_position_vector"
+            },
+            "name": {
+              "type": "string",
+              "description": "A human readable name for debugging use."
+            },
+            "route_name": {
+              "type": "string",
+              "description": "A string for transit operations use."
+            },
+            "transit_status": {
+              "type": "integer",
+              "description": "Used to relate basic information about the transit run in progress. loading (0), anADAuse (1), aBikeLoad (2), doorOpen (3), charging (4), atStopLine (5)",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "transit_occupancy": {
+              "type": "integer",
+              "description": "Used to relate basic level of current ridership. occupancyUnknown (0), occupancyEmpty (1), occupancyVeryLow (2), occupancyLow (3), occupancyMed (4), occupancyHigh (5), occupancyNearlyFull (6), occupancyFull (7)",
+              "minimum": 0,
+              "maximum": 7
+            },
+            "transit_schedule": {
+              "type": "integer",
+              "description": "Unit: 10 seconds. Provides a time definition for an object's schedule adherence (typically a transit vehicle) within a limited range of time. When the reporting object is ahead of schedule, a positive value is used; when behind, a negative value is used. A value of zero indicates schedule adherence.",
+              "minimum": -122,
+              "maximum": 121
+            }
+          }
+        }
+      }
+    }
+  }
+}
