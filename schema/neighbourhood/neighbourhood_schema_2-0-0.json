@@ -37,7 +37,7 @@
     "version": {
       "description": "The version of the schema for this object",
       "type": "string",
-      "const": "1.99.99"
+      "const": "2.0.0"
     },
     "neighbours": {
       "description": "The list of neighbours of an instance",
