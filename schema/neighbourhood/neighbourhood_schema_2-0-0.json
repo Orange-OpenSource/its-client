@@ -6,6 +6,8 @@
   "additionalProperties": false,
   "required": [
     "message_type",
+    "source_uuid",
+    "timestamp",
     "version",
     "neighbours"
   ],
@@ -14,6 +16,23 @@
        "description" : "The type of schema for this object",
        "type": "string",
        "const": "neighbourhood"
+    },
+    "source_uuid": {
+      "type": "string",
+      "description": "identifier",
+      "examples": [
+        "UNKNOWN",
+        "42"
+      ]
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01).",
+      "examples": [
+        1574778515424
+      ],
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
     },
     "version": {
       "description": "The version of the schema for this object",

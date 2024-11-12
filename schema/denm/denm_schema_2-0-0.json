@@ -6,9 +6,9 @@
   "additionalProperties": false,
   "required": [
     "message_type",
-    "version",
     "source_uuid",
     "timestamp",
+    "version",
     "message"
   ],
   "properties": {
@@ -16,11 +16,6 @@
       "type": "string",
       "description": "message type",
       "const": "denm"
-    },
-    "version": {
-      "type": "string",
-      "description": "json message format version",
-      "const": "1.99.99"
     },
     "source_uuid": {
       "type": "string",
@@ -38,6 +33,11 @@
       ],
       "minimum": 1514764800000,
       "maximum": 1830297600000
+    },
+    "version": {
+      "type": "string",
+      "description": "json message format version",
+      "const": "1.99.99"
     },
     "path": {
       "type": "array",

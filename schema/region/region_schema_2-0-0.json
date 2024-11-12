@@ -4,28 +4,52 @@
   "description": "JSon schema describing a geographic region",
   "type": "object",
   "additionalProperties": false,
-  "required": [ "message_type", "version", "kind", "area" ],
+  "required": [
+    "message_type",
+    "source_uuid",
+    "timestamp",
+    "version",
+    "area",
+    "kind"
+  ],
   "properties": {
     "message_type": {
       "description": "The type of schema for this object",
       "type": "string",
       "const": "region"
     },
+    "source_uuid": {
+      "type": "string",
+      "description": "identifier",
+      "examples": [
+        "UNKNOWN",
+        "42"
+      ]
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01).",
+      "examples": [
+        1574778515424
+      ],
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
+    },
     "version": {
       "description": "The version of the schema for this object",
       "type": "string",
       "const": "1.99.99"
-    },
-    "kind": {
-      "description": "The kind of region this object carries",
-      "type": "string",
-      "enum": ["responsibility", "mobility"]
     },
     "area": {
       "description": "The definition of the area",
       "OneOf": [
         { "$ref": "#/$defs/quadkey_area" }
       ]
+    },
+    "kind": {
+      "description": "The kind of region this object carries",
+      "type": "string",
+      "enum": ["responsibility", "mobility"]
     }
   },
   "$defs": {

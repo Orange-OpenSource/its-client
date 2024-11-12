@@ -4,34 +4,34 @@
   "description": "Status JSON schema",
   "type": "object",
   "required": [
-    "version",
-    "id",
     "message_type",
+    "source_uuid",
     "timestamp",
+    "version",
     "system",
     "time_sources",
     "cellular",
     "gnss"
   ],
   "properties": {
-    "version": {
-      "description": "version of the format of this JSON message",
-      "type": "string",
-      "const": "1.99.99"
-    },
-    "id": {
-      "description": "unique id all over the world for this device",
-      "type": "string"
-    },
     "message_type": {
       "description": "type of the message",
       "type": "string",
       "const": "status"
     },
+    "source_uuid": {
+      "description": "unique id all over the world for this device",
+      "type": "string"
+    },
     "timestamp": {
       "description": "date the information was generated, in seconds since 1970-01-01 00:00:00 +00:00, with arbitrary sub-second precision",
       "type": "number",
       "minimum": 0.0
+    },
+    "version": {
+      "description": "version of the format of this JSON message",
+      "type": "string",
+      "const": "1.99.99"
     },
     "system": {
       "description": "system low-level info",
