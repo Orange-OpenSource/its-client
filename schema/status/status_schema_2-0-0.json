@@ -6,7 +6,7 @@
   "required": [
     "version",
     "id",
-    "type",
+    "message_type",
     "timestamp",
     "system",
     "time_sources",
@@ -23,7 +23,7 @@
       "description": "unique id all over the world for this device",
       "type": "string"
     },
-    "type": {
+    "message_type": {
       "description": "type of the message",
       "type": "string",
       "const": "status"

@@ -5,7 +5,7 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "type",
+    "message_type",
     "version",
     "instance_id",
     "instance_type",
@@ -14,7 +14,7 @@
     "validity_duration"
   ],
   "properties": {
-    "type": {
+    "message_type": {
       "description": "type of server",
       "type": "string",
       "enum": [

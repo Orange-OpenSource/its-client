@@ -5,7 +5,7 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "type",
+    "message_type",
     "origin",
     "version",
     "source_uuid",
@@ -13,7 +13,7 @@
     "message"
   ],
   "properties": {
-    "type": {
+    "message_type": {
       "type": "string",
       "description": "Message type",
       "const": "srem"
