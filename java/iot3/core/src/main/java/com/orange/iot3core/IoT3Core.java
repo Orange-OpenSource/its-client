@@ -7,10 +7,13 @@
  */
 package com.orange.iot3core;
 
+import com.orange.iot3core.bootstrap.BootstrapConfig;
 import com.orange.iot3core.clients.Lwm2mClient;
 import com.orange.iot3core.clients.MqttCallback;
 import com.orange.iot3core.clients.MqttClient;
 import com.orange.iot3core.clients.OpenTelemetryClient;
+
+import java.net.URI;
 
 /**
  * Core SDK allowing to establish a connection with the Orange IoT3.0 platform.
@@ -282,6 +285,33 @@ public class IoT3Core {
          */
         public IoT3CoreBuilder callback(IoT3CoreCallback ioT3CoreCallback) {
             this.ioT3CoreCallback = ioT3CoreCallback;
+            return this;
+        }
+
+        /**
+         * Automatically set the MQTT and OpenTelemetry parameters of your IoT3Core instance with parameters from
+         * the bootstrap configuration.
+         * <p>
+         * Use instead of {@link #mqttParams(String, int, String, String, String, boolean)}
+         * and {@link #telemetryParams(String, int, String, String, String)}.
+         *
+         * @param bootstrapConfig the bootstrap configuration object you get from the
+         * {@link com.orange.iot3core.bootstrap.BootstrapHelper} bootstrap sequence
+         */
+        public IoT3CoreBuilder bootstrapConfig(BootstrapConfig bootstrapConfig) {
+            URI mqttUri = bootstrapConfig.getServiceUri(BootstrapConfig.Service.MQTT);
+            this.mqttHost = mqttUri.getHost();
+            this.mqttPort = mqttUri.getPort();
+            this.mqttUsername = bootstrapConfig.getPskRunLogin();
+            this.mqttPassword = bootstrapConfig.getPskRunPassword();
+            this.mqttClientId = bootstrapConfig.getIot3Id();
+            this.mqttUseTls = bootstrapConfig.isServiceSecured(BootstrapConfig.Service.MQTT);
+            URI telemetryUri = bootstrapConfig.getServiceUri(BootstrapConfig.Service.OPEN_TELEMETRY);
+            this.telemetryHost = telemetryUri.getHost();
+            this.telemetryPort = telemetryUri.getPort();
+            this.telemetryEndpoint = telemetryUri.getPath();
+            this.telemetryUsername = bootstrapConfig.getPskRunLogin();
+            this.telemetryPassword = bootstrapConfig.getPskRunPassword();
             return this;
         }
 
