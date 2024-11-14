@@ -9,6 +9,7 @@ package com.orange.iot3mobility;
 
 import com.orange.iot3core.IoT3Core;
 import com.orange.iot3core.IoT3CoreCallback;
+import com.orange.iot3core.bootstrap.BootstrapConfig;
 import com.orange.iot3mobility.its.EtsiUtils;
 import com.orange.iot3mobility.its.HazardType;
 import com.orange.iot3mobility.its.StationType;
@@ -28,6 +29,8 @@ import com.orange.iot3mobility.managers.RoadSensorManager;
 import com.orange.iot3mobility.managers.RoadUserManager;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.quadkey.QuadTileHelper;
+
+import java.net.URI;
 
 /**
  * Mobility SDK based on the Orange IoT3.0 platform.
@@ -454,6 +457,32 @@ public class IoT3Mobility {
             this.telemetryEndpoint = telemetryEndpoint;
             this.telemetryUsername = telemetryUsername;
             this.telemetryPassword = telemetryPassword;
+            return this;
+        }
+
+        /**
+         * Automatically set the MQTT and OpenTelemetry parameters of your IoT3Mobility instance with parameters from
+         * the bootstrap configuration.
+         * <p>
+         * Use instead of {@link #mqttParams(String, int, String, String, boolean)}
+         * and {@link #telemetryParams(String, int, String, String, String)}.
+         *
+         * @param bootstrapConfig the bootstrap configuration object you get from the
+         * {@link com.orange.iot3core.bootstrap.BootstrapHelper} bootstrap sequence
+         */
+        public IoT3Mobility.IoT3MobilityBuilder bootstrapConfig(BootstrapConfig bootstrapConfig) {
+            URI mqttUri = bootstrapConfig.getServiceUri(BootstrapConfig.Service.MQTT);
+            this.mqttHost = mqttUri.getHost();
+            this.mqttPort = mqttUri.getPort();
+            this.mqttUsername = bootstrapConfig.getPskRunLogin();
+            this.mqttPassword = bootstrapConfig.getPskRunPassword();
+            this.mqttUseTls = bootstrapConfig.isServiceSecured(BootstrapConfig.Service.MQTT);
+            URI telemetryUri = bootstrapConfig.getServiceUri(BootstrapConfig.Service.OPEN_TELEMETRY);
+            this.telemetryHost = telemetryUri.getHost();
+            this.telemetryPort = telemetryUri.getPort();
+            this.telemetryEndpoint = telemetryUri.getPath();
+            this.telemetryUsername = bootstrapConfig.getPskRunLogin();
+            this.telemetryPassword = bootstrapConfig.getPskRunPassword();
             return this;
         }
 
