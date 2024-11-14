@@ -74,6 +74,11 @@ they are using the following versions:_
 Languages
 ---------
 
+The features presented above are hereby provided in several languages in an SDK-like form.
+
+Choice has been made to respect each language paradigm over providing a unique implementation;
+it might therefore differ depending on the language.
+
 ### Rust
 
 [![Build Status](https://github.com/Orange-OpenSource/its-client/workflows/Rust/badge.svg)][4]
