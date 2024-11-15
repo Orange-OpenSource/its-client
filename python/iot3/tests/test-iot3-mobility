@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+
+import iot3.core
+import iot3.mobility
+import random
+import time
+
+def recv(*, data, location, cause):
+    print(f"{data}: (lat {location.latitude}, lon {location.longitude}): {cause.name}")
+
+config = iot3.mobility.sample_config
+config["mqtt"] = {
+    "host": "test.mosquitto.org",
+    "port": 1883,
+    "client-id": random.randbytes(16).hex(),
+    "username": None,
+    "password": None,
+}
+
+print("Starting IoT3 Mobility SDK...")
+iot3.mobility.start(
+    config=config,
+    alert_callback=recv,
+    cb_data="alert",
+)
+time.sleep(1)
+
+print("Sending position...")
+iot3.mobility.send_position(
+    latitude=43.6352120,
+    longitude=1.3745620,
+)
+time.sleep(1)
+
+print("Sending alert 'accident'...")
+iot3.mobility.send_alert(
+    latitude=43.6352120,
+    longitude=1.3745620,
+    cause=iot3.mobility.denm.DENM.Cause.accident,
+)
+time.sleep(1)
+
+print("Sending alert 'trafficCondition' as if relayed by an IQM...")
+denm = iot3.mobility.denm.DENM(
+    uuid=config["uuid"],
+    gnss_report=iot3.mobility.gnss.GNSSReport(
+        latitude=43.6352120,
+        longitude=1.3745620,
+    ),
+    cause=iot3.mobility.denm.DENM.Cause.trafficCondition,
+)
+topic_template = f"{config['namespace']}/outQueue/v2x/{{msg_type}}/{{source_uuid}}/{{quadkey}}"
+iot3.core.publish(
+    topic=denm.topic(template=topic_template),
+    payload=denm.to_json(),
+)
+time.sleep(1)
+
+iot3.mobility.stop()

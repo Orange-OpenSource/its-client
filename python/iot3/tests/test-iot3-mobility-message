@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+
+import json
+import math
+import time
+import iot3.mobility
+from iot3.mobility.etsi import Message
+from iot3.mobility.cam import CAM
+from iot3.mobility.denm import DENM
+from iot3.mobility.gnss import GNSSReport
+
+
+print("CAM with nothing available...")
+msg = CAM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(),
+)
+assert msg["message"]["basic_container"]["reference_position"]["latitude"] == 900000001
+assert (
+    msg["message"]["basic_container"]["reference_position"]["longitude"] == 1800000001
+)
+
+print("CAM with latitude and longitude...")
+msg = CAM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(
+        latitude=43.635212,
+        longitude=1.374562,
+    ),
+)
+# Check with direct access to message structure (ETSI values)
+assert msg["message"]["basic_container"]["reference_position"]["latitude"] == 436352120
+assert msg["message"]["basic_container"]["reference_position"]["longitude"] == 13745620
+# Check with properties (SI values, degrees); ~6mm at Equator on surface of Earth
+assert math.fabs(msg.latitude - 43.6352120) < 5 * 10 ** -8
+assert math.fabs(msg.longitude - 1.3745620) < 5 * 10 ** -8
+
+print("CAM serialisation...")
+json_msg = msg.to_json()
+
+print("CAM de-serialisation...")
+msg = iot3.mobility.message_from_json(msg_json=json_msg)
+assert msg.msg_type == "cam"
+assert math.fabs(msg.latitude - 43.6352120) < 5 * 10 ** -8
+assert math.fabs(msg.longitude - 1.3745620) < 5 * 10 ** -8
+
+print("DENM with nothing set...")
+msg = DENM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(),
+)
+
+print("DENM with latitude, longitude, and cause...")
+detect_time = time.time()
+msg = DENM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(
+        latitude=43.635212,
+        longitude=1.374562,
+    ),
+    cause=DENM.Cause.trafficCondition,
+)
+# UNIX time is a float that encodes seconds, while ETSI time is an int that
+# encodes miliseconds, so we should not have a delta of 1ms or more
+assert math.fabs(detect_time - msg.detection_time) < 10 ** -3
+
+seq_num = msg.sequence_number
+detect_time = msg.detection_time
+
+print("DENM continuation (update)...")
+msg = DENM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(
+        latitude=43.635212,
+        longitude=1.374562,
+    ),
+    detection_time=detect_time,
+    cause=DENM.Cause.trafficCondition,
+    sequence_number=seq_num,
+)
+assert seq_num == msg.sequence_number
+assert msg.cause == DENM.Cause.trafficCondition
+# UNIX time: seconds as a float, ETSI time: ms as an int; => delta max = 1ms
+assert math.fabs(detect_time - msg.detection_time) < 10 ** -3
+
+print("DENM continuation (termination)...")
+msg = DENM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(),
+    detection_time=detect_time,
+    termination=DENM.TerminationType.isNegation,
+    sequence_number=seq_num,
+)
+assert msg.termination == DENM.TerminationType.isNegation
+
+print("DENM serialisation...")
+json_msg = msg.to_json()
+
+print("DENM de-serialisation...")
+msg = iot3.mobility.message_from_json(msg_json=json_msg)
+assert msg.msg_type == "denm"
+assert seq_num == msg.sequence_number
+assert msg.termination == DENM.TerminationType.isNegation
+# UNIX time: seconds as a float, ETSI time: ms as an int; => delta max = 1ms
+assert math.fabs(detect_time - msg.detection_time) < 10 ** -3
+
+print("Invalid generic message...")
+try:
+    msg = Message()
+except TypeError:
+    pass
+else:
+    raise RuntimeError("Generic message should not be allowed")
+
+print("De-serialisation of unrecognised message...")
+try:
+    msg = iot3.mobility.message_from_json(msg_json='""')
+except RuntimeError:
+    pass
+else:
+    raise RuntimeError("Deserialisation of unrecognised message should not succeed...")
+
+print("De-serialisation of broken message...")
+try:
+    msg = iot3.mobility.message_from_json(msg_json=json_msg[:-1])
+except RuntimeError:
+    pass
+else:
+    raise RuntimeError("Deserialisation of broken message should not succeed...")

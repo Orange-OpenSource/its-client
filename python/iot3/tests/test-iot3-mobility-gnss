@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+
+import math
+import time
+from iot3.mobility.gnss import GNSSReport, GNSS
+
+print("Basic, empty GNSS report...")
+gnss_report = GNSSReport()
+
+print("Disallow explicit timestamp...")
+try:
+    gnss_report = GNSSReport(
+        timestamp=42,
+    )
+except AttributeError:
+    pass
+else:
+    raise RuntimeError("Timestamp should not be allowed")
+
+print("Validity range...")
+try:
+    gnss_report = GNSSReport(
+        latitude=120,
+    )
+except AttributeError:
+    pass
+else:
+    raise RuntimeError("Out-of-range latitude should not be alowed")
+
+print("Conflicting attributes...")
+try:
+    gnss_report = GNSSReport(
+        latitude=43.635212,
+        latitude_r=1.374562,
+    )
+except AttributeError:
+    pass
+else:
+    raise RuntimeError("Setting both radians and degrees should not be allowed")
+
+print("Attribute degree -> radian conversion...")
+gnss_report = GNSSReport(
+    latitude=43.635212,
+)
+# Can't test floats for equality, so check for a very small delta.
+# 10^-9 radians gives ~6mm delta at the surface of Earth at the equator.
+if math.fabs(gnss_report.latitude_r - math.radians(43.635212)) >= 10 ** -9:
+    raise RuntimeError("Degree -> radian latitude conversion failed")
+
+print("Attribute radian -> degree conversion...")
+gnss_report = GNSSReport(
+    latitude_r=0.761578119,
+)
+# Can't test floats for equality, so check for a very small delta.
+# 5*10^-8 is about the same as 10^-9 radians, above
+if math.fabs(gnss_report.latitude - math.degrees(0.761578119)) >= 5 * 10 ** -8:
+    raise RuntimeError("Degree -> radian latitude conversion failed")
+
+print("gpsd connection to 127.0.0.1:2947...")
+gnss = GNSS(
+    host="127.0.0.1",
+    port=2947,
+)
+gnss.start()
+for i in range(5):
+    time.sleep(1)
+    if gnss() is not None:
+        break
+else:
+    raise RuntimeError("Can't connect to gpsd on 127.0.0.1:2947, is it running?")
