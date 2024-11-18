@@ -27,7 +27,7 @@
       "const": "1.99.99"
     },
     "instance_id": {
-      "description": "unique id all other the world for a server",
+      "description": "unique id all over the world for a server",
       "type": "string"
     },
     "instance_type": {
@@ -40,7 +40,7 @@
       ]
     },
     "central_instance_id": {
-      "description": "unique id all other the world for the central server if the instance is of type edge",
+      "description": "unique id all over the world for the central server if the instance is of type edge",
       "type": "string"
     },
     "running": {
