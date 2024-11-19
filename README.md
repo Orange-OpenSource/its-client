@@ -79,12 +79,12 @@ The features presented above are hereby provided in several languages in an SDK-
 Choice has been made to respect each language paradigm over providing a unique implementation;
 it might therefore differ depending on the language.
 
-### Rust
+### [Rust](rust/README.md)
 
 [![Build Status](https://github.com/Orange-OpenSource/its-client/workflows/Rust/badge.svg)][4]
 [![crates.io](https://img.shields.io/crates/v/its-client)](https://crates.io/crates/its-client)
 
-The Rust library to build a client.
+Provides the basic abstraction for IoT3 and an application oriented V2X (mobility) set of functions and traits.
 
 ### [Python](python/README.md)
 
@@ -122,7 +122,7 @@ Application
 
 On-board Unit oriented application sending CAM messages at high frequency.
 
-### Java IoT3 Core and Mobility libraries
+### [Java IoT3 Core and Mobility libraries](java/iot3/README.md)
 
 [![Build status](https://github.com/Orange-OpenSource/its-client/actions/workflows/java_iot3-core.yml/badge.svg)][10]
 [![Build status](https://github.com/Orange-OpenSource/its-client/actions/workflows/java_iot3-mobility.yml/badge.svg)][11]
