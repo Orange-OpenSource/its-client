@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.json:json:20231013'
+    implementation 'org.json:json:20240303'
     implementation project(':core')
     implementation project(':mobility')
 
