@@ -16,6 +16,7 @@ Features
 |-----------------------|:----:|:------:|:----:|
 | **MQTTv5**            |  ✓   |   ✓    |  ✓   |
 | **Telemetry**         |  ✓   |   ✓    |  ✓   |
+| **Device Management** |      |        |      |
 
 ### Message exchange
 
@@ -49,6 +50,19 @@ Sent traces include the following parameters:
     - `iot3.core.mqtt.topic`
     - `iot3.core.mqtt.payload_size`
     - `iot3.core.sdk_language`
+
+### Device management
+
+_**Work in progress**_
+
+Each implementation is _intended_ to provide an implementation of LwM2M protocol to bootstrap the device or application,
+and to send periodical alive messages.
+
+| Language | Bootstrap | Run |
+|----------|-----------|-----|
+| Rust     |           |     |
+| Python   |           |     |
+| Java     |           |     |
 
 JSON schemas
 ------------
