@@ -128,9 +128,9 @@ impl TryFrom<&Properties> for MqttOptionWrapper {
     fn try_from(properties: &Properties) -> Result<Self, Self::Error> {
         let section = (MQTT_SECTION, properties);
         let mut mqtt_options = MqttOptions::new(
-            get_mandatory_field::<String>("client_id", section)?,
-            get_mandatory_field::<String>("host", section)?,
-            get_mandatory_field::<u16>("port", section)?,
+            get_mandatory_from_section::<String>("client_id", section)?,
+            get_mandatory_from_section::<String>("host", section)?,
+            get_mandatory_from_section::<u16>("port", section)?,
         );
 
         if let Ok(Some(username)) = get_optional_from_section::<String>("username", section.1) {
@@ -190,6 +190,25 @@ pub(crate) fn get_optional_from_section<T: FromStr>(
 }
 
 pub(crate) fn get_mandatory_field<T: FromStr>(
+    section: Option<&'static str>,
+    field: &'static str,
+    ini_config: &Ini,
+) -> Result<T, ConfigurationError> {
+    if let Some(properties) = ini_config.section(section) {
+        if let Some(value) = properties.get(field) {
+            match T::from_str(value) {
+                Ok(value) => Ok(value),
+                Err(_e) => Err(TypeError(field, type_name::<T>())),
+            }
+        } else {
+            Err(MissingMandatoryField(field, section.unwrap_or_default()))
+        }
+    } else {
+        Err(MissingMandatorySection(section.unwrap_or_default()))
+    }
+}
+
+pub(crate) fn get_mandatory_from_section<T: FromStr>(
     field: &'static str,
     section: (&'static str, &Properties),
 ) -> Result<T, ConfigurationError> {

@@ -10,7 +10,7 @@
  */
 
 use crate::client::configuration::configuration_error::ConfigurationError;
-use crate::client::configuration::{get_mandatory_field, get_optional_from_section};
+use crate::client::configuration::{get_mandatory_from_section, get_optional_from_section};
 use crate::exchange::message::information::Information;
 use crate::mobility::quadtree;
 use crate::mobility::quadtree::quadkey::Quadkey;
@@ -118,7 +118,10 @@ impl TryFrom<&Properties> for NodeConfiguration {
         }
 
         let s = Self {
-            responsibility_enabled: get_mandatory_field::<bool>("responsibility_enabled", section)?,
+            responsibility_enabled: get_mandatory_from_section::<bool>(
+                "responsibility_enabled",
+                section,
+            )?,
             thread_count,
             ..Default::default()
         };
