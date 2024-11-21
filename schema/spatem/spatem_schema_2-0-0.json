@@ -1,0 +1,327 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/spatem",
+  "$references": [
+    {
+      "name": "IS TS 103 301",
+      "version": "2.2.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/is_ts103301/-/tree/v2.2.1"
+    }
+  ],
+  "description": "SPATEM JSON schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "message_type",
+    "origin",
+    "version",
+    "source_uuid",
+    "timestamp",
+    "message"
+  ],
+  "properties": {
+    "message_type": {
+      "type": "string",
+      "description": "Message type",
+      "const": "spatem"
+    },
+    "origin": {
+      "type": "string",
+      "enum": [
+        "self",
+        "global_application",
+        "mec_application",
+        "on_board_application"
+      ],
+      "description": "The entity responsible for this message."
+    },
+    "version": {
+      "type": "string",
+      "description": "JSON message format version.",
+      "const": "2.0.0"
+    },
+    "source_uuid": {
+      "type": "string",
+      "description": "Identifier"
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01).",
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
+    },
+    "message": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "station_id",
+        "intersections"
+      ],
+      "properties": {
+        "protocol_version": {
+          "type": "integer",
+          "description": "version of the message and/or communication protocol",
+          "minimum": 0,
+          "maximum": 255,
+          "examples": [
+            1
+          ]
+        },
+        "station_id": {
+          "type": "integer",
+          "description": "identifier",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "examples": [
+            1,
+            42
+          ]
+        },
+        "timestamp": {
+          "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/minute_of_the_year"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human readable name for this collection. For debug use only."
+        },
+        "intersections": {
+          "type": "array",
+          "description": "List of IntersectionState entries.",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "description": "",
+            "required": [
+              "id",
+              "revision",
+              "status",
+              "states"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Human readable name for this intersection. For debug use only."
+              },
+              "id": {
+                "description": "A globally unique value set, consisting of a regionID and intersection ID assignment provides a unique mapping to the intersection MAP in question which provides complete location and approach/move/lane data.",
+                "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/intersection_reference_id"
+              },
+              "revision": {
+                "type": "integer",
+                "description": "The data element revision is used to communicate the actual valid release of the intersection description. If there are no changes in the deployed intersection description, almost the same revision counter is transmitted. Due to a revised deployment of the intersection description (e.g. introduction of additional signal state element), the revision is increased by one. After revision equal to 127, the increment leads to 0 (due to the element range). The intersection state and the intersection geometry is related to each other. Therefore, the revision of the intersection state shall be the same as the revision of the intersection geometry (see the data element revision of DF_IntersectionGeometry in [ISO TS 19091] G.8.2.6).",
+                "minimum": 0,
+                "maximum": 127
+              },
+              "status": {
+                "type": "string",
+                "description": "16-bit string. Bits used: manualControlIsEnabled (0), stopTimeIsActivated (1), failureFlash (2), preemptIsActive (3), signalPriorityIsActive (4), fixedTimeOperation (5), trafficDependentOperation (6), standbyOperation (7), failureMode (8), off (9), recentMAPmessageUpdate (10), recentChangeInMAPassignedLanesIDsUsed (11), noValidMAPisAvailableAtThisTime (12), noValidSPATisAvailableAtThisTime (13), reservedAndSetToZero (14 - 15). General status of the controller(s).",
+                "examples": [
+                  "0100000000000000",
+                  "0001100000000000"
+                ]
+              },
+              "moy": {
+                "description": "Minute of current UTC year, used only with messages to be archived.",
+                "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/minute_of_the_year"
+              },
+              "timestamp": {
+                "description": "The millisecond point in the current UTC minute that this message was constructed.",
+                "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/d_second"
+              },
+              "enabled_lanes": {
+                "type": "array",
+                "description": "A list of lanes where the RevocableLane bit has been set which are now active and therefore part of the current intersection.",
+                "minItems": 1,
+                "maxItems": 16,
+                "items": {
+                  "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/lane_id"
+                }
+              },
+              "states": {
+                "type": "array",
+                "description": "Each Movement is given in turn and contains its signal phase state, mapping to the lanes it applies to, and point in time it will end, and it may contain both active and future states.",
+                "minItems": 1,
+                "maxItems": 255,
+                "items": {
+                  "type": "object",
+                  "description": "MovementState is used to convey various information about the current or future movement state of a designated collection of one or more lanes of a common type. This is referred to as the GroupID. Note that lane object, types supported include both motorized vehicle lanes as well as pedestrian lanes and dedicated rail and transit lanes. Of the reported data elements, the time to change (the time remaining in the current state) is often of the most value. Lanes with a common state (typically adjacent sets of lanes in an approach) in a signalized intersection will have individual lane values such as total vehicle counts, summed. It is used in the SPAT message to convey every active movement in a given intersection so that vehicles, when combined with certain map information, can determine the state of the signal phases.",
+                  "required": [
+                    "signal_group",
+                    "state_time_speed"
+                  ],
+                  "properties": {
+                    "movement_name": {
+                      "type": "string",
+                      "description": "Human readable name for this movement. For debug use only."
+                    },
+                    "signal_group": {
+                      "description": "Used to map to lists of lanes (and their descriptions) which this MovementState data applies to.",
+                      "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/signal_group_id"
+                    },
+                    "state_time_speed": {
+                      "type": "array",
+                      "description": "Consisting of sets of movement data with SignalPhaseState, TimeChangeDetail and AdvisorySpeed Note: one or more of the movement events may be for a future time and that this allows conveying multiple predictive phase and movement timing for various uses for the current signal group.",
+                      "minItems": 1,
+                      "maxItems": 16,
+                      "items": {
+                        "type": "object",
+                        "description": "MovementEvent contains details about a single movement. It is used by the movement state to convey one of number of movements (typically occurring over a sequence of times) for a SignalGroupID.",
+                        "required": [
+                          "event_state"
+                        ],
+                        "properties": {
+                          "event_state": {
+                            "type": "integer",
+                            "description": "unavailable (0), dark (1), stop-Then-Proceed (2), stop-And-Remain (3), pre-Movement (4), permissive-Movement-Allowed (5), protected-Movement-Allowed (6), permissive-clearance (7), protected-clearance (8), caution-Conflicting-Traffic (9). MovementPhaseState provides the overall current state of the movement (in many cases a signal state), including its core phase state and an indication of whether this state is permissive or protected.",
+                            "minimum": 0,
+                            "maximum": 9
+                          },
+                          "timing": {
+                            "type": "object",
+                            "description": "TimeChangeDetails conveys details about the timing of a phase within a movement. The core data concept expressed is the time stamp (time mark) at which the related phase will change to the next state. This is often found in the MinEndTime element, but the other elements may be needed to convey the full concept when adaptive timing is employed.",
+                            "required": [
+                              "min_end_time"
+                            ],
+                            "properties": {
+                              "start_time": {
+                                "description": "Used to relate when the phase itself started or is expected to start. This in turn allows the indication that a set of time change details refers to a future phase, rather than a currently active phase. By this method, timing information about 'pre' phase events (which are the short transitional phase used to alert OBUs to an impending green/go or yellow/caution phase) and the longer yellow-caution phase data is supported in the same form as various green/go phases. In theory, the time change details could be sent for a large sequence of phases if the signal timing was not adaptive and the operator wished to do so. In practice, it is expected only the 'next' future phase will commonly be sent. It should be noted that this also supports the sending of time periods regarding various red phases; however, this is not expected to be done commonly.",
+                                "$ref": "#/$defs/time_mark"
+                              },
+                              "min_end_time": {
+                                "description": "Used to convey the earliest time possible at which the phase could change, except when unpredictable events relating to a preemption or priority call disrupt a currently active timing plan. In a phase where the time is fixed (as in a fixed yellow or clearance time), this element shall be used alone. This value can be viewed as the earliest possible time at which the phase could change, except when unpredictable events relating to a preemption or priority call come into play and disrupt a currently active timing plan.",
+                                "$ref": "#/$defs/time_mark"
+                              },
+                              "max_end_time": {
+                                "description": "Used to convey the latest time possible which the phase could change, except when unpredictable events relating to a preemption or priority call come into play and disrupt a currently active timing plan. In a phase where the time is fixed (as in a fixed yellow or clearance time), this element shall be used alone.",
+                                "$ref": "#/$defs/time_mark"
+                              },
+                              "likely_time": {
+                                "description": "Used to convey the most likely time the phase changes. This occurs between MinEndTime and MaxEndTime and is only relevant for traffic-actuated control programs. This time might be calculated out of logged historical values, detected events (e.g., from inductive loops), or from other sources.",
+                                "$ref": "#/$defs/time_mark"
+                              },
+                              "confidence": {
+                                "type": "integer",
+                                "description": "Used to convey basic confidence data about the likelyTime. 0 - 21%, 1 - 36%, 2 - 47%, 3 - 56%, 4 - 62%, 5 - 68%, 6 - 73%, 7 - 77%, 8 - 81%, 9 - 85%, 10 - 88%, 11 - 91%, 12 - 94%, 13 - 96%, 14 - 98%, 15 - 100%",
+                                "minimum": 0,
+                                "maximum": 15
+                              },
+                              "next_time": {
+                                "description": "Used to express a general (and presumably less precise) value regarding when this phase will next occur. This is intended to be used to alert the OBU when the next green/go may occur so that various ECO driving applications can better manage the vehicle during the intervening stopped time.",
+                                "$ref": "#/$defs/time_mark"
+                              }
+                            }
+                          },
+                          "speeds": {
+                            "type": "array",
+                            "description": "List of AdvisorySpeed entries.",
+                            "minItems": 1,
+                            "maxItems": 16,
+                            "items": {
+                              "type": "object",
+                              "description": "Used to convey a recommended traveling approach speed to an intersection from the message issuer to various travelers and vehicle types. Besides support for various eco-driving applications, this allows transmitting recommended speeds for specialty vehicles such as transit buses.",
+                              "required": [
+                                "type"
+                              ],
+                              "properties": {
+                                "type": {
+                                  "type": "integer",
+                                  "description": "none (0), greenwave (1), ecoDrive (2), transit (3). Relates the type of travel to which a given speed refers. This element is typically used as part of an AdvisorySpeed data frame for signal phase and timing data.",
+                                  "minimum": 0,
+                                  "maximum": 3
+                                },
+                                "speed": {
+                                  "type": "integer",
+                                  "description": "SpeedAdvice represents the recommended velocity of an object, typically a vehicle speed along a roadway, expressed in unsigned units of 0.1 meters per second. LSB units are 0.1 m/s. The value 499 shall be used for values at or greater than 49.9 m/s. The value 500 shall be used to indicate that speed is unavailable.",
+                                  "minimum": 0,
+                                  "maximum": 500
+                                },
+                                "confidence": {
+                                  "type": "integer",
+                                  "description": "unavailable (0), prec100ms (1), prec10ms (2), prec5ms (3), prec1ms (4), prec0-1ms (5), prec0-05ms (6), prec0-01ms (7). Used to provide the 95% confidence level for the currently reported value of Speed, taking into account the current calibration and precision of the sensor(s) used to measure and/or calculate the value. This data element is only to provide the listener with information on the limitations of the sensing system, not to support any type of automatic error correction or to imply a guaranteed maximum error. This data element should not be used for fault detection or diagnosis, but if a vehicle is able to detect a fault, the confidence interval should be increased accordingly.",
+                                  "minimum": 0,
+                                  "maximum": 7
+                                },
+                                "distance": {
+                                  "$ref": "#/$defs/zone_length"
+                                },
+                                "class": {
+                                  "description": "The vehicle types to which it applies. When absent, the AdvisorySpeed applies to all motor vehicle types.",
+                                  "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/restriction_class_id"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "maneuver_assist_list": {
+                      "description": "This information may also be placed in the IntersectionState when common information applies to different lanes in the same way.",
+                      "$ref": "#/$defs/maneuver_assist_list"
+                    }
+                  }
+                }
+              },
+              "maneuver_assist_list": {
+                "description": "Assist data",
+                "$ref": "#/$defs/maneuver_assist_list"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "time_mark": {
+      "type": "integer",
+      "description": "Used to relate a moment in UTC (Coordinated Universal Time)-based time when a signal phase is predicted to change, with a precision of 1/10 of a second. A range of 60 full minutes is supported and it can be presumed that the receiver shares a common sense of time with the sender which is kept aligned to within a fraction of a second or better. If there is a need to send a value greater than the range allowed by the data element (over one hour in the future), the value 36000 shall be sent and shall be interpreted to indicate an indefinite future time value. When the value to be used is undefined or unknown a value of 36001 shall be sent. Note that leap seconds are also supported. The value is tenths of a second in the current or next hour in units of 1/10th second from UTC time  A range of 0-36000 covers one hour The values 35991..35999 are used when a leap second occurs The value 36000 is used to indicate time >3600 seconds 36001 is to be used when value undefined or unknown.",
+      "minimum": 0,
+      "maximum": 36001,
+      "examples": [
+        36000
+      ]
+    },
+    "zone_length": {
+      "type": "integer",
+      "description": "Unit: meter. Used to provide an estimated distance from the stop bar, along the lane centerline back in the lane to which it pertains. It is used in various ways to relate this distance value. When used with clearance zones, it represents the point at which the driver can successfully execute the connection maneuver. It is used in the Clearance Maneuver Assist data frame to relate dynamic data about the lane. It is also used to relate the distance from the stop bar to the rear edge of any queue. It is further used within the context of a vehicle's traveling speed to advise on preferred dynamic approach speeds. 0 = unknown, The value 10000 to be used for Distances >=10000 m (e.g. from known point to another point along a known path, often against traffic flow direction when used for measuring queues).",
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "maneuver_assist_list": {
+      "type": "array",
+      "description": "List of ConnectionManeuverAssist entries.",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "description": "Contains information about the the dynamic flow of traffic for the lane(s) and maneuvers in question (as determined by the LaneConnectionID). Note that this information can be sent regarding any lane-to-lane movement; it need not be limited to the lanes with active (non-red) phases when sent.",
+        "required": [
+          "connection_id"
+        ],
+        "properties": {
+          "connection_id": {
+            "description": "The common connectionID used by all lanes to which this data applies (this value traces to ConnectsTo entries in lanes).",
+            "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/lane_connection_id"
+          },
+          "queue_length": {
+            "description": "The distance from the stop line to the back edge of the last vehicle in the queue, as measured along the lane center line. (Unit = 1 meter, 0 = no queue)",
+            "$ref": "#/$defs/zone_length"
+          },
+          "available_storage_length": {
+            "description": "Distance (e.g. beginning from the downstream stop-line up to a given distance) with a high probability for successfully executing the connecting maneuver between the two lanes during the current cycle. Used for enhancing the awareness of vehicles to anticipate if they can pass the stop line of the lane. Used for optimizing the green wave, due to knowledge of vehicles waiting in front of a red light (downstream). The element nextTime in TimeChangeDetails in the containing data frame contains the next timemark at which an active phase is expected, a form of storage flush interval. (Unit = 1 meter, 0 = no space remains)",
+            "$ref": "#/$defs/zone_length"
+          },
+          "wait_on_stop": {
+            "type": "boolean",
+            "description": "Used to indicate to the vehicle that it must stop at the stop line and not move past. If 'true', the vehicles on this specific connecting maneuver have to stop on the stop-line and not to enter the collision area."
+          },
+          "ped_bicycle_detect": {
+            "type": "boolean",
+            "description": "Used to provide an indication of whether Pedestrians and/or Bicyclists have been detected in the crossing lane. True if ANY Pedestrians or Bicyclists are detected crossing the target lane or lanes."
+          }
+        }
+      }
+    }
+  }
+}
