@@ -26,6 +26,7 @@ dependencies {
     implementation 'io.opentelemetry:opentelemetry-sdk:1.40.0'
     implementation 'io.opentelemetry:opentelemetry-exporter-otlp:1.40.0'
     implementation 'io.opentelemetry:opentelemetry-context:1.40.0'
+    implementation 'org.json:json:20240303'
 
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
