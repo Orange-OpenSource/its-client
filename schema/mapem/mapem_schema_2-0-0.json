@@ -1,0 +1,688 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/mapem",
+  "$references": [
+    {
+      "name": "IS TS 103 301",
+      "version": "2.2.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/is_ts103301/-/tree/v2.2.1"
+    }
+  ],
+  "description": "MAPEM JSON schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "message_type",
+    "origin",
+    "version",
+    "source_uuid",
+    "timestamp",
+    "message"
+  ],
+  "properties": {
+    "message_type": {
+      "type": "string",
+      "description": "Message type",
+      "const": "mapem"
+    },
+    "origin": {
+      "type": "string",
+      "enum": [
+        "self",
+        "global_application",
+        "mec_application",
+        "on_board_application"
+      ],
+      "description": "The entity responsible for this message."
+    },
+    "version": {
+      "type": "string",
+      "description": "JSON message format version.",
+      "const": "2.0.0"
+    },
+    "source_uuid": {
+      "type": "string",
+      "description": "Identifier"
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01).",
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
+    },
+    "message": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "station_id",
+        "msg_issue_revision"
+      ],
+      "properties": {
+        "protocol_version": {
+          "type": "integer",
+          "description": "version of the message and/or communication protocol",
+          "minimum": 0,
+          "maximum": 255,
+          "examples": [
+            1
+          ]
+        },
+        "station_id": {
+          "type": "integer",
+          "description": "identifier",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "examples": [
+            1,
+            42
+          ]
+        },
+        "timestamp": {
+          "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/minute_of_the_year"
+        },
+        "msg_issue_revision": {
+          "type": "integer",
+          "description": "The MapData revision is defined by the data element revision for each intersection geometry (see [ISO TS 19091] G.8.2.4.1). Therefore, an additional revision indication of the overall MapData message is not used in this profile. It shall be set to '0' for this profile.",
+          "minimum": 0,
+          "maximum": 127
+        },
+        "layer_type": {
+          "type": "string",
+          "enum": [
+            "none",
+            "mixedContent",
+            "intersectionData",
+            "curveData",
+            "roadwaySectionData",
+            "parkingAreaData",
+            "sharedLaneData"
+          ],
+          "description": "Used to uniquely identify the type of information to be found in a layer of a geographic map fragment such as an intersection."
+        },
+        "layer_id": {
+          "$comment": "Maybe not worth keeping, and instead forbid the split of large MAPEM into several messages.",
+          "type": "integer",
+          "description": "Large MapData descriptions are not possible to be broadcast with a single message and have to be fragmented using two or more messages over the air. Therefore, the LayerID allows defining an index for fragmentation of large MapData descriptions. The fragmentation of the messages shall be executed on application layer. The fragmentation occurs on an approach base. This means that almost a complete approach (e.g. lanes, connectsTo, etc.) has to be included within a fragment. The decimal value of the layerID is used to define the amount of maximum MapData fragments. The lower value defines the actual fragment.",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "intersections": {
+          "type": "array",
+          "description": "list of IntersectionGeometry entries.",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "revision",
+              "ref_point",
+              "lane_set"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "For debug use only."
+              },
+              "id": {
+                "description": "A globally unique value set, consisting of a regionID and intersection ID assignment.",
+                "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/intersection_reference_id"
+              },
+              "revision": {
+                "type": "integer",
+                "description": "This profile extends the purpose of the revision data element as defined in SAE J2735 as follows. The revision data element is used to communicate the valid release of the intersection geometry description. If there are no changes in the deployed intersection description, the same revision counter is transmitted. Due to a revised deployment of the intersection description (e.g. new lane added, ID's changed, etc.), the revision is increased by one. After revision equal to 127, the increment restarts by 0. The intersection geometry and the signal phase and timing information is related each other. Therefore, the revision of the intersection geometry of the MapData message shall be the same as the revision of the intersection state of the SPAT (see data element revision of DF_IntersectionState in [ISO TS 19091] G.8.2.9)",
+                "minimum": 0,
+                "maximum": 127
+              },
+              "ref_point": {
+                "description": "The reference from which subsequent data points are offset until a new point is used.",
+                "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/position_3d"
+              },
+              "lane_width": {
+                "description": "Reference width used by all subsequent lanes unless a new width is given.",
+                "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/lane_width"
+              },
+              "speed_limits": {
+                "description": "Reference regulatory speed limits used by all subsequent lanes unless a new speed is given.",
+                "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/speed_limit_list"
+              },
+              "lane_set": {
+                "description": "Data about one or more lanes (all lane data is found here) Data describing how to use and request preemption and priority services from this intersection (if supported).",
+                "$ref": "#/$defs/road_lane_set_list"
+              }
+            }
+          }
+        },
+        "road_segments": {
+          "type": "array",
+          "description": "List of RoadSegment entries.",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "description": "Complete description of a RoadSegment including its geometry and its allowed navigational paths (independent of any additional regulatory restrictions that may apply over time or from user classification) and any current disruptions such as a work zone or incident event.",
+            "required": [
+              "id",
+              "revision",
+              "ref_point",
+              "road_lane_set"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "For debug use only."
+              },
+              "id": {
+                "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/road_segment_reference_id"
+              },
+              "revision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 127
+              },
+              "ref_point": {
+                "description": "The reference from which subsequent data points are offset until a new point is used.",
+                "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/position_3d"
+              },
+              "lane_width": {
+                "description": "Reference width used by all subsequent lanes unless a new width is given.",
+                "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/lane_width"
+              },
+              "speed_limits": {
+                "description": "Reference regulatory speed limits used by all subsequent lanes unless a new speed is given.",
+                "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/speed_limit_list"
+              },
+              "road_lane_set": {
+                "description": "Description of a roadway segment. Data describing disruptions in the RoadSegment such as work zones etc will be added here.",
+                "$ref": "#/$defs/road_lane_set_list"
+              }
+            }
+          }
+        },
+        "data_parameters": {
+          "type": "object",
+          "description": "Used to provide basic (static) information on how a map fragment was processed or determined.",
+          "properties": {
+            "process_method": {
+              "type": "string"
+            },
+            "process_agency": {
+              "type": "string"
+            },
+            "last_checked_date": {
+              "type": "string"
+            },
+            "geoid_used": {
+              "type": "string"
+            }
+          }
+        },
+        "restriction_list": {
+          "type": "array",
+          "description": "List of RestrictionClassAssignment entries.",
+          "minItems": 1,
+          "maxItems": 254,
+          "items": {
+            "type": "object",
+            "description": "Used to assign (or bind) a single RestrictionClassID data element to a list of all user classes to which it applies. A collection of these bindings is conveyed in the RestrictionClassList data frame in the MAP message to travelers. The established index is then used in the lane object of the MAP message, in the ConnectTo data frame, to qualify to whom a signal group ID applies when it is sent by the SPAT message about a movement.",
+            "required": [
+              "id",
+              "users"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer",
+                "description": "An intersection-unique value to convey data about classes of users. The mapping used varies with each intersection and is defined in the MAP message if needed. The defined mappings found there are used to determine when a given class is meant. The typical use of this element is to map additional movement restrictions or rights (in both the MAP and SPAT messages) to special classes of users (trucks, high sided vehicles, special vehicles etc.). There is the general presumption that in the absence of this data, any allowed movement extends to all users.",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "users": {
+                "type": "array",
+                "description": "List of RestrictionUserType entries.",
+                "minItems": 1,
+                "maxItems": 16,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "equippedTransit",
+                    "equippedTaxis",
+                    "equippedOther",
+                    "emissionCompliant",
+                    "equippedBicycle",
+                    "weightCompliant",
+                    "heightCompliant",
+                    "pedestrians",
+                    "slowMovingPersons",
+                    "wheelchairUsers",
+                    "visualDisabilities",
+                    "audioDisabilities",
+                    "otherUnknownDisabilities"
+                  ],
+                  "description": "Short list of common vehicle types which may have one or more special movements at an intersection. In general, these movements are not visible to other traffic with signal heads, but the SPAT data reflects the state of the movement. Various restricted movements at an intersection can be expressed using this element to indicate where the movement applies."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "road_lane_set_list": {
+      "type": "array",
+      "description": "list of GenericLane entries.",
+      "minItems": 1,
+      "maxItems": 255,
+      "items": {
+        "type": "object",
+        "description": "Used for all types of lanes, e.g. motorized vehicle lanes, crosswalks, medians. The GenericLane describes the basic attribute information of the lane. The LaneID value for each lane is unique within an intersection. One use for the LaneID is in the SPAT message, where a given signal or movement phase is mapped to a set of applicable lanes using their respective LaneIDs. The NodeList2 data frame includes a sequence of offset points (or node points) representing the center line path of the lane. As described in this standard, node points are sets of variable sized delta orthogonal offsets from the prior point in the node path. (The initial point is offset from the LLH anchor point used in the intersection.) Each node point may convey optional attribute data as well. The use of attributes is described further in the Node definition, and in a later clause, but an example use would be to indicate a node point where the lane width changes.",
+        "required": [
+          "lane_id",
+          "lane_attributes",
+          "node_list"
+        ],
+        "properties": {
+          "lane_id": {
+            "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/lane_id"
+          },
+          "name": {
+            "type": "string",
+            "description": "Often for debug use only but at times used to name pedestrian crossings."
+          },
+          "ingress_approach": {
+            "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/approach_id"
+          },
+          "egress_approach": {
+            "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/approach_id"
+          },
+          "lane_attributes": {
+            "type": "object",
+            "description": "Constant attribute information of any lane object (as well as denoting the basic lane type itself) within a single structure. The structure consists of three element parts as follows: LaneDirection specifies the allowed directions of travel, if any. LaneSharing indicates whether this lane type is shared with other types of travel modes or users. The lane type is defined in LaneTypeAttributes, along with additional attributes specific to that type. The fundamental type of lane object is described by the element selected in the LaneTypeAttributes data concept.",
+            "required": [
+              "directional_use",
+              "shared_with",
+              "lane_type"
+            ],
+            "properties": {
+              "directional_use": {
+                "type": "string",
+                "description": "2-bit string. Bits used: ingressPath (0), egressPath (1). Denote the allowed direction of travel over a lane object. By convention, the lane object is always described from the stop line outwards away from the intersection. Therefore, the ingress direction is from the end of the path to the stop line and the egress direction is from the stop line outwards.",
+                "examples": [
+                  "01",
+                  "10",
+                  "11"
+                ]
+              },
+              "shared_with": {
+                "type": "string",
+                "description": "10-bit string. Bits used: overlappingLaneDescriptionProvided (0), multipleLanesTreatedAsOneLane (1), otherNonMotorizedTrafficTypes (2), individualMotorizedVehicleTraffic (3), busVehicleTraffic (4), taxiVehicleTraffic (5), pedestriansTraffic (6), cyclistVehicleTraffic (7), trackedVehicleTraffic (8), pedestrianTraffic (9). Used to denote the presence of other user types (travel modes) who have an equal right to access and use the lane. There may also be another lane object describing their use of a lane. This data concept is used to indicate lanes and/or users that travel along the same path, and not those that simply cross over the lane's segments path (such as a pedestrian crosswalk crossing a lane for motor vehicle use). The typical use is to alert the user of the MAP data that additional traffic of another mode may be present in the same spatial lane.",
+                "examples": [
+                  "0000000000",
+                  "0001100000",
+                  "0000011000"
+                ]
+              },
+              "lane_type": {
+                "type": "object",
+                "oneOf": [
+                  {
+                    "required": ["vehicle"]
+                  },
+                  {
+                    "required": ["crosswalk"]
+                  },
+                  {
+                    "required": ["bike_lane"]
+                  },
+                  {
+                    "required": ["sidewalk"]
+                  },
+                  {
+                    "required": ["median"]
+                  },
+                  {
+                    "required": ["striping"]
+                  },
+                  {
+                    "required": ["tracked_vehicle"]
+                  },
+                  {
+                    "required": ["parking"]
+                  }
+                ],
+                "properties": {
+                  "vehicle": {
+                    "type": "string",
+                    "description": "8-bit string. Bits used: isVehicleRevocableLane (0), isVehicleFlyOverLane (1), hovLaneUseOnly (2), restrictedToBusUse (3), restrictedToTaxiUse (4), restrictedFromPublicUse (5), hasIRbeaconCoverage (6), permissionOnRequest (7). Specific properties found in a vehicle lane type. This data element provides a means to denote that the use of a lane is restricted to certain vehicle types. Various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
+                    "examples": [
+                      "00100000",
+                      "00010000"
+                    ]
+                  },
+                  "crosswalk": {
+                    "type": "string",
+                    "description": "8-bit string. Bits used: crosswalkRevocableLane (0), bicyleUseAllowed (1), isXwalkFlyOverLane (2), fixedCycleTime (3), biDirectionalCycleTimes (4), hasPushToWalkButton (5), audioSupport (6), rfSignalRequestPresent (7), unsignalizedSegmentsPresent (8). Specific properties found in a crosswalk lane type. It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
+                    "examples": [
+                      "01000000",
+                      "00001000"
+                    ]
+                  },
+                  "bike_lane": {
+                    "type": "string",
+                    "description": "16-bit string. Bits used: bikeRevocableLane (0), pedestrianUseAllowed (1), isBikeFlyOverLane (2), fixedCycleTime (3), biDirectionalCycleTimes (4), isolatedByBarrier (5), unsignalizedSegmentsPresent (6), reservedAndSetToZero (7 - 15). Specific properties found in a bicycle lane type. It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
+                    "examples": [
+                      "0100000000000000",
+                      "0000010000000000"
+                    ]
+                  },
+                  "sidewalk": {
+                    "type": "string",
+                    "description": "16-bit string. Bits used: sidewalk-RevocableLane (0), bicyleUseAllowed (1), isSidewalkFlyOverLane (2), walkBikes (3), reservedAndSetToZero (4 - 15). Specific properties found in a sidewalk lane type. It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
+                    "examples": [
+                      "0000000000000000",
+                      "0100000000000000"
+                    ]
+                  },
+                  "median": {
+                    "type": "string",
+                    "description": "16-bit string. Bits used: median-RevocableLane (0), median (1), whiteLineHashing (2), stripedLines (3), doubleStripedLines (4), trafficCones (5), constructionBarrier (6), trafficChannels (7), lowCurbs (8), highCurbs (9), reservedAndSetToZero (10 - 15). Specific properties found in a Barrier or Median lane type (a type of lane object used to separate traffic lanes). It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
+                    "examples": [
+                      "0101000000000000",
+                      "0100100000000000"
+                    ]
+                  },
+                  "striping": {
+                    "type": "string",
+                    "description": "16-bit string. Bits used: stripeToConnectingLanesRevocableLane (0), stripeDrawOnLeft (1), stripeDrawOnRight (2), stripeToConnectingLanesLeft (3), stripeToConnectingLanesRight (4), stripeToConnectingLanesAhead (5), reservedAndSetToZero (6 - 15). Specific properties found in various types of ground striping lane types. This includes various types of painted lane ground striping and iconic information needs to convey information in a complex intersection. Typically, this consists of visual guidance for drivers to assist them to connect across the intersection to the correct lane. Such markings are typically used with restraint and only under conditions when the geometry of the intersection makes them more beneficial than distracting. It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
+                    "examples": [
+                      "0100000000000000",
+                      "0010000000000000"
+                    ]
+                  },
+                  "tracked_vehicle": {
+                    "type": "string",
+                    "description": "16-bit string. Bits used: spec-RevocableLane (0), spec-commuterRailRoadTrack (1), spec-lightRailRoadTrack (2), spec-heavyRailRoadTrack (3), spec-otherRailType (4), reservedAndSetToZero (5 - 15). Specific properties found in a tracked vehicle lane types (trolley and train lanes). The term rail vehicle can be considered synonymous. In this case, the term does not relate to vehicle types with tracks or treads. It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries. It should also be noted that often this type of lane object does not clearly relate to an approach in the traditional traffic engineering sense, although the message set allows assigning a value when desired.",
+                    "examples": [
+                      "0010000000000000",
+                      "0000100000000000"
+                    ]
+                  },
+                  "parking": {
+                    "type": "string",
+                    "description": "16-bit string. Bits used: parkingRevocableLane (0), parallelParkingInUse (1), headInParkingInUse (2), doNotParkZone (3), parkingForBusUse (4), parkingForTaxiUse (5), noPublicParkingUse (6), reservedAndSetToZero (7 - 15). Specific properties found in a vehicle parking lane type. It should be noted that various common lane attribute properties can be found in other entries.",
+                    "examples": [
+                      "0001000000000000",
+                      "0000100000000000"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "maneuvers": {
+            "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/allowed_maneuvers"
+          },
+          "node_list": {
+            "type": "object",
+            "oneOf": [
+              {
+                "required": ["nodes"]
+              },
+              {
+                "required": ["computed"]
+              }
+            ],
+            "properties": {
+              "nodes": {
+                "type": "array",
+                "description": "list of NodeXY entries.",
+                "minItems": 2,
+                "maxItems": 63,
+                "items": {
+                  "type": "object",
+                  "description": "Structure to hold data for a single node point in a path. Each selected node has an X and Y offset from the prior node point (or a complete lat-long representation in some cases) as well as optional attribute information.",
+                  "required": [
+                    "delta"
+                  ],
+                  "properties": {
+                    "delta": {
+                      "type": "object",
+                      "description": "Structure to hold different sized data frames for a single node point in a lane. Nodes are described in terms of X and Y offsets in units of 1 centimeter (when zoom is 1:1). Each single selected node is computed as an X and Y offset from the prior node point unless one of the entries reflecting a complete lat-long representation is selected. In this case, subsequent entries become offsets from that point.",
+                      "oneOf": [
+                        {
+                          "required": ["node_xy"]
+                        },
+                        {
+                          "required": ["node_lat_lon"]
+                        }
+                      ],
+                      "properties": {
+                        "node_xy": {
+                          "type": "object",
+                          "description": "A 32-bit node type with offset values from the last point in X and Y.",
+                          "required": [
+                            "x",
+                            "y"
+                          ],
+                          "properties": {
+                            "x": {
+                              "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/offset_b16"
+                            },
+                            "y": {
+                              "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/offset_b16"
+                            }
+                          }
+                        },
+                        "node_lat_lon": {
+                          "type": "object",
+                          "description": "A 64-bit node type with lat-long values expressed in one tenth of a micro degree.",
+                          "required": [
+                            "lat",
+                            "lon"
+                          ],
+                          "properties": {
+                            "lat": {
+                              "type": "integer",
+                              "description": "Unit: 0.1 microdegree. oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10), unavailable(900000001)",
+                              "minimum": -900000000,
+                              "maximum": 900000001
+                            },
+                            "lon": {
+                              "type": "integer",
+                              "description": "Unit: 0.1 microdegree. oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(1800000001)",
+                              "minimum": -1800000000,
+                              "maximum": 1800000001
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "description": "All the node attributes are valid in the direction of node declaration and not in driving direction (i.e. along the sequence of the declared nodes). E.g. node attributes of an ingress or an egress lane are defined from the conflict area (first node) to the outside of the intersection (last node). Node attributes with left and right in their name are also defined in the direction of the node declaration. This allows using attributes in a unambiguous way also for lanes with bidirectional driving. See the following attributes examples for additional explanations.",
+                      "properties": {
+                        "local_node": {
+                          "type": "array",
+                          "description": "Attribute states which pertain to this node point.",
+                          "minItems": 1,
+                          "maxItems": 8,
+                          "items": {
+                            "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/node_attribute_xy"
+                          }
+                        },
+                        "disabled": {
+                          "type": "array",
+                          "description": "Attribute states which are disabled at this node point.",
+                          "minItems": 1,
+                          "maxItems": 8,
+                          "items": {
+                            "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/segment_attribute_xy"
+                          }
+                        },
+                        "enabled": {
+                          "type": "array",
+                          "description": "Attribute states which are enabled at this node point and which remain enabled until disabled or the lane ends.",
+                          "minItems": 1,
+                          "maxItems": 8,
+                          "items": {
+                            "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/segment_attribute_xy"
+                          }
+                        },
+                        "data": {
+                          "type": "array",
+                          "description": "Attributes which require an additional data values some of these are local to the node point, while others persist with the provided values until changed and this is indicated in each entry.",
+                          "minItems": 1,
+                          "maxItems": 8,
+                          "items": {
+                            "type": "object",
+                            "description": "Used to relate an attribute and a control value at a node point or along a lane segment from an enumerated list of defined choices. It is then followed by a defined data value associated with it and which is defined elsewhere in this standard.",
+                            "required": [
+                              "path_end_point_angle",
+                              "lane_crown_point_center",
+                              "lane_crown_point_left",
+                              "lane_crown_point_right",
+                              "lane_angle",
+                              "speed_limits"
+                            ],
+                            "properties": {
+                              "path_end_point_angle": {
+                                "type": "integer",
+                                "description": "Unit: degree. Final angle used in the last point of the lane path. Used to 'cant' the stop line of the lane. With an angle range from negative 150 to positive 150 in one degree steps where zero is directly along the axis or the lane center line as defined by the two closest points.",
+                                "minimum": -150,
+                                "maximum": 150
+                              },
+                              "lane_crown_point_center": {
+                                "description": "Sets the canter of the road bed from centerline point.",
+                                "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/roadway_crown_angle"
+                              },
+                              "lane_crown_point_left": {
+                                "description": "Sets the canter of the road bed from left edge.",
+                                "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/roadway_crown_angle"
+                              },
+                              "lane_crown_point_right": {
+                                "description": "Sets the canter of the road bed from right edge.",
+                                "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/roadway_crown_angle"
+                              },
+                              "lane_angle": {
+                                "type": "integer",
+                                "description": "Unit: 1.5 degrees from north. The angle at which another lane path meets the current lanes at the node point. Typically found in the node attributes and used to describe the angle of the departing or merging lane. Note that oblique and obtuse angles are allowed. The value -180 shall be used to represent data is not available or unknown.",
+                                "minimum": -180,
+                                "maximum": 180
+                              },
+                              "speed_limits": {
+                                "description": "Reference regulatory speed limits used by all segments.",
+                                "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/speed_limit_list"
+                              }
+                            }
+                          }
+                        },
+                        "d_width": {
+                          "description": "A value added to the current lane width at this node and from this node onwards, in 1cm steps lane width between nodes are a linear taper between pts the value of zero shall not be sent here.",
+                          "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/offset_b16"
+                        },
+                        "d_elevation": {
+                          "description": "A value added to the current Elevation at this node from this node onwards, in 10cm steps elevations between nodes are a linear taper between pts the value of zero shall not be sent here",
+                          "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/offset_b16"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "computed": {
+                "type": "object",
+                "description": "Used to contain information needed to compute one lane from another (hence the name). This concept is used purely as a means of saving size in the message payload. The new lane is expressed as an X,Y offset from the first point of the source lane. It can be optionally rotated and scaled. Any attribute information found within the node of the source lane list cannot be changed and must be reused.",
+                "required": [
+                  "reference_lane_id",
+                  "offset_x_axis",
+                  "offset_y_axis"
+                ],
+                "properties": {
+                  "reference_lane_id": {
+                    "description": "The lane ID upon which this computed lane will be based Lane Offset in X and Y direction.",
+                    "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/lane_id"
+                  },
+                  "offset_x_axis": {
+                    "description": "A path X offset value for translations of the path's points when creating translated lanes. The values found in the reference lane are all offset based on the X and Y values from the coordinates of the reference lane's initial path point.",
+                    "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/driven_line_offset"
+                  },
+                  "offset_y_axis": {
+                    "description": "A path Y offset value for translations of the path's points when creating translated lanes. The values found in the reference lane are all offset based on the X and Y values from the coordinates of the reference lane's initial path point.",
+                    "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/driven_line_offset"
+                  },
+                  "rotate_xy": {
+                    "description": "A path rotation value for the entire lane Observe that this rotates the existing orientation of the referenced lane, it does not replace it. Rotation occurs about the initial path point.",
+                    "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/angle"
+                  },
+                  "scale_x_axis": {
+                    "description": "Value for translations or zooming of the path's points. The values found in the reference lane are all expanded or contracted based on the X and Y and width values from the coordinates of the reference lane's initial path point. The Z axis remains untouched.",
+                    "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/scale_b12"
+                  },
+                  "scale_y_axis": {
+                    "description": "Value for translations or zooming of the path's points. The values found in the reference lane are all expanded or contracted based on the X and Y and width values from the coordinates of the reference lane's initial path point. The Z axis remains untouched.",
+                    "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/scale_b12"
+                  }
+                }
+              }
+            }
+          },
+          "connects_to": {
+            "type": "array",
+            "description": "List of Connection entries. provide a sequence of other defined lanes to which each lane connects beyond its stop point. See the Connection data frame entry for details. Note that this data frame is not used in some lane object types.",
+            "minItems": 1,
+            "maxItems": 16,
+            "items": {
+              "type": "object",
+              "description": "Used to combine/connect multiple physical lanes (i.e. within intersections or road segments). For signalized movements, the connectsTo data frame defines e.g. the relation between ingress and egress lanes within an intersection. It describes the allowed manoeuvres and includes the link (signalGroup identifier) between the MapData and the SPAT message. The data frame is also used to describe the relation of lanes within a non signalized intersection (e.g. ingress lanes which are bypassing the conflict area and ending in an egress lane without signalization). Within a road segment, it is used to combine two or multiple physical lanes into a single lane object.",
+              "required": [
+                "connecting_lane"
+              ],
+              "properties": {
+                "connecting_lane": {
+                  "type": "object",
+                  "description": "The data concept ties a single lane to a single maneuver needed to reach it from another lane. It is typically used to connect the allowed maneuver from the end of a lane to the outbound lane so that these can be mapped to the SPAT message to which both lanes apply.",
+                  "required": [
+                    "lane"
+                  ],
+                  "properties": {
+                    "lane": {
+                      "description": "Index of the connecting lane.",
+                      "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/lane_id"
+                    },
+                    "maneuver": {
+                      "description": "This data element allows only the description of a subset of possible manoeuvres and therefore represents an incomplete list of possible travel directions. The connecting lane data element gives the exact information about the manoeuvre relation from ingress to egress lane. Therefore the 'maneuver' data element may be used only additionally if the travel direction of the manoeuvre is unambiguously represented (e.g. left, right, straight, etc.).",
+                      "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/allowed_maneuvers"
+                    }
+                  }
+                },
+                "remote_intersections": {
+                  "description": "When used, it indicates that the connecting lane belongs to another intersection.",
+                  "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/intersection_reference_id"
+                },
+                "signal_group": {
+                  "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/signal_group_id"
+                },
+                "restriction_class_id": {
+                  "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/restriction_class_id"
+                },
+                "connection_id": {
+                  "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/lane_connection_id"
+                }
+              }
+            }
+          },
+          "overlays": {
+            "type": "array",
+            "description": "Sequence of lane IDs which refers to lane objects that overlap or overlay the current lane's spatial path. Contains the unique ID numbers for any lane object which have spatial paths that overlay (run on top of, and not simply cross with) the current lane. Such as a train path that overlays a motor vehicle lane object for a roadway segment.",
+            "minItems": 1,
+            "maxItems": 5,
+            "items": {
+              "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/lane_id"
+            }
+          }
+        }
+      }
+    }
+  }
+}
