@@ -24,6 +24,7 @@ DEFAULTS = {
     },
     "telemetry": {
         "endpoint": None,
+        "authentication": "none",
         "username": None,
         "password": None,
     },
@@ -114,7 +115,7 @@ def main():
         otel = iot3.core.otel.Otel(
             service_name="its-vehicle",
             endpoint=cfg["telemetry"]["endpoint"],
-            auth=iot3.core.otel.Auth.BASIC,
+            auth=iot3.core.otel.Auth(cfg["telemetry"]["authentication"]),
             username=cfg["telemetry"]["username"],
             password=cfg["telemetry"]["password"],
             batch_period=5.0,
