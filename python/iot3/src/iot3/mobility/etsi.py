@@ -87,7 +87,8 @@ class ETSI(abc.ABC):
                       dict with keys "min" and "max", in ETSI scale; the bounds are
                       inclusive, but must not include undef and out_of_range.
         :param out_of_range: the special ETSI-scaled value to use when the value is
-                             out of range
+                             out of range; if out_of_range is None, the encoded
+                             value is capped by the specified range if provided.
         :return: the special ETSI-scaled value 'undef' when the value is None, the
                  special ETSI-scaled value 'out_of_range' if the value is out of
                  range, or the value scaled to the ETSI scale otherwise
@@ -116,9 +117,9 @@ class ETSI(abc.ABC):
         etsi_value = int(round(value / scale))
         if range is not None:
             if etsi_value < range["min"]:
-                etsi_value = out_of_range
+                etsi_value = out_of_range if out_of_range is not None else range["min"]
             if etsi_value > range["max"]:
-                etsi_value = out_of_range
+                etsi_value = out_of_range if out_of_range is not None else range["max"]
         return etsi_value
 
     @staticmethod
