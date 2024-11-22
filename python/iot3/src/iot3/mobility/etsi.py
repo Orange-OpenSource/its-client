@@ -69,7 +69,7 @@ class ETSI(abc.ABC):
     def si2etsi(
         value: float | None,
         scale: float,
-        undef: int,
+        undef: Optional[int] = None,
         range: Optional[dict] = None,
         out_of_range: Optional[int] = None,
     ) -> int:
@@ -81,7 +81,8 @@ class ETSI(abc.ABC):
 
         :param value: the value in the SI unit, or None when the value is unknown
         :param scale: the ETSI scale of the key
-        :param undef: the special ETSI-scaled value to use when the value is unknown
+        :param undef: the special ETSI-scaled value to use when the value is unknown;
+                      if undef is None, the value must not be None.
         :param validity_range: the lower and upper bounds of the value range as a
                       dict with keys "min" and "max", in ETSI scale; the bounds are
                       inclusive, but must not include undef and out_of_range.
@@ -107,6 +108,10 @@ class ETSI(abc.ABC):
         of centimeters.
         """
         if value is None:
+            if undef is None:
+                raise AttributeError(
+                    "This conversion to an ETSI scale does not accept an unknown value (None)",
+                )
             return undef
         etsi_value = int(round(value / scale))
         if range is not None:
@@ -120,7 +125,7 @@ class ETSI(abc.ABC):
     def etsi2si(
         value: int,
         scale: float,
-        undef: int,
+        undef: Optional[int] = None,
         out_of_range: Optional[int] = None,
     ) -> float | None:
         """ETSI to SI unit conversions
@@ -148,7 +153,7 @@ class ETSI(abc.ABC):
         altitude as a floating point numbers of meters, or None if the altitude
         is not known or out of range.
         """
-        if value == undef:
+        if undef is not None and value == undef:
             return None
         if out_of_range is not None and value == out_of_range:
             return None
