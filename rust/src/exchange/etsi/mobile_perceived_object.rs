@@ -14,14 +14,15 @@ extern crate integer_sqrt;
 use std::f64::consts::PI;
 use std::hash::{Hash, Hasher};
 
-use log::trace;
-// use serde::{Deserialize, Serialize};
 use self::integer_sqrt::IntegerSquareRoot;
+use crate::exchange::etsi::collective_perception_message::CollectivePerceptionMessage;
 use crate::exchange::etsi::perceived_object::PerceivedObject;
-use crate::exchange::etsi::reference_position::ReferencePosition;
-use crate::exchange::etsi::{heading_from_etsi, speed_from_etsi};
+use crate::exchange::etsi::speed_from_etsi;
 use crate::mobility::mobile::Mobile;
 use crate::mobility::position::{enu_destination, haversine_destination, Position};
+use log::trace;
+
+const PI2: f64 = 2. * PI;
 
 #[derive(Clone, Debug)]
 pub struct MobilePerceivedObject {
@@ -36,42 +37,46 @@ pub struct MobilePerceivedObject {
 impl MobilePerceivedObject {
     // TODO FGA: check how to keep it private and manage end to end CPMs with natively
     //           perceived object mobility
-    pub fn new(
+    pub(crate) fn new(
         perceived_object: PerceivedObject,
-        cpm_station_type: u8,
-        cpm_station_id: u32,
-        cpm_position: &ReferencePosition,
-        cpm_heading: Option<u16>,
+        cpm: &CollectivePerceptionMessage,
     ) -> Self {
-        let compute_mobile_id = compute_id(perceived_object.object_id, cpm_station_id);
-        let computed_reference_position = match cpm_station_type {
-            15 => enu_destination(
-                &cpm_position.as_position(),
-                perceived_object.x_distance as f64 / 100.,
-                perceived_object.y_distance as f64 / 100.,
-                perceived_object.z_distance.unwrap_or_default() as f64 / 100.,
-            ),
-            _ => compute_position_from_mobile(
-                perceived_object.x_distance,
-                perceived_object.y_distance,
-                cpm_position,
-                cpm_heading.unwrap_or_default(),
-            ),
-        };
-        let computed_speed =
-            speed_from_yaw_angle(perceived_object.x_speed, perceived_object.y_speed);
+        let mobile_id = compute_id(perceived_object.object_id, cpm.station_id);
+        let speed = speed_from_yaw_angle(perceived_object.x_speed, perceived_object.y_speed);
+        let (position, heading) = match cpm.management_container.station_type {
+            15 => {
+                let position = enu_destination(
+                    &cpm.position(),
+                    perceived_object.x_distance as f64 / 100.,
+                    perceived_object.y_distance as f64 / 100.,
+                    perceived_object.z_distance.unwrap_or_default() as f64 / 100.,
+                );
+                let heading = compute_heading_from_rsu(&perceived_object);
 
-        let computed_heading = match cpm_station_type {
-            15 => compute_heading_from_rsu(&perceived_object),
-            _ => compute_heading_from_mobile(&perceived_object, cpm_heading.unwrap_or_default()),
+                (position, heading)
+            }
+            _ => {
+                let position = compute_position_from_mobile(
+                    perceived_object.x_distance,
+                    perceived_object.y_distance,
+                    &cpm.position(),
+                    cpm.heading().unwrap_or_default(),
+                );
+                let heading = compute_heading_from_mobile(
+                    &perceived_object,
+                    cpm.heading().unwrap_or_default(),
+                );
+
+                (position, heading)
+            }
         };
 
         Self {
             perceived_object,
-            mobile_id: compute_mobile_id,
-            position: computed_reference_position,
-            speed: computed_speed,
-            heading: computed_heading,
+            mobile_id,
+            position,
+            speed,
+            heading,
             // TODO
             acceleration: 0.0,
         }
@@ -138,13 +143,11 @@ fn compute_id(object_id: u8, cpm_station_id: u32) -> u32 {
 fn compute_position_from_mobile(
     x_distance: i32,
     y_distance: i32,
-    cpm_position: &ReferencePosition,
-    cpm_heading: u16,
+    position: &Position,
+    heading: f64,
 ) -> Position {
     let x_offset_meters = x_distance as f64 / 100.0;
     let y_offset_meters = y_distance as f64 / 100.0;
-    let heading = heading_from_etsi(cpm_heading);
-    let position = cpm_position.as_position();
 
     let intermediate = haversine_destination(&position, heading, x_offset_meters);
     haversine_destination(
@@ -154,13 +157,8 @@ fn compute_position_from_mobile(
     )
 }
 
-/// This does not compute the real PO's heading (follow up in issue [98](https://github.com/Orange-OpenSource/its-client/issues/98)
-fn compute_heading_from_mobile(perceived_object: &PerceivedObject, cpm_heading: u16) -> f64 {
-    // FIXME this does not compute the real PO's heading
-    heading_from_etsi(match perceived_object.y_distance {
-        y if y < 0 => (cpm_heading - 1800) % 3600,
-        _ => cpm_heading,
-    })
+fn compute_heading_from_mobile(perceived_object: &PerceivedObject, cpm_heading: f64) -> f64 {
+    (cpm_heading + compute_heading_from_rsu(perceived_object)) % PI2
 }
 
 pub fn speed_from_yaw_angle(x_speed: i16, y_speed: i16) -> f64 {
@@ -188,6 +186,10 @@ fn compute_heading_from_rsu(perceived_object: &PerceivedObject) -> f64 {
 
 #[cfg(test)]
 mod tests {
+    use crate::exchange::etsi::collective_perception_message::{
+        CollectivePerceptionMessage, ManagementContainer, OriginatingVehicleContainer,
+        StationDataContainer,
+    };
     use crate::exchange::etsi::mobile_perceived_object::{
         compute_heading_from_mobile, compute_heading_from_rsu, compute_id,
         compute_position_from_mobile, MobilePerceivedObject,
@@ -221,8 +223,9 @@ mod tests {
                         latitude: 486251958,
                         longitude: 22415093,
                         altitude: 900,
-                    },
-                    900,
+                    }
+                    .as_position(),
+                    heading_from_etsi(900),
                 );
 
                 println!(
@@ -298,39 +301,6 @@ mod tests {
     }
 
     #[test]
-    fn it_can_compute_a_heading() {
-        let pos_y_distance_po = PerceivedObject {
-            object_id: 1,
-            x_distance: 50000,
-            y_distance: 10000,
-            ..Default::default()
-        };
-        let neg_y_distance_po = PerceivedObject {
-            object_id: 1,
-            x_distance: 50000,
-            y_distance: -10000,
-            ..Default::default()
-        };
-        //east
-        assert!(compute_heading_from_mobile(&pos_y_distance_po, 900) - 90f64.to_radians() <= 1e-11);
-        assert!(
-            compute_heading_from_mobile(&neg_y_distance_po, 2700) - 90f64.to_radians() <= 1e-11
-        );
-        //south
-        assert!(
-            compute_heading_from_mobile(&pos_y_distance_po, 1800) - 180f64.to_radians() <= 1e-11
-        );
-        assert!(compute_heading_from_mobile(&neg_y_distance_po, 1800) - 0f64.to_radians() <= 1e-11);
-        //west
-        assert!(
-            compute_heading_from_mobile(&pos_y_distance_po, 2700) - 2700f64.to_radians() <= 1e-11
-        );
-        assert!(
-            compute_heading_from_mobile(&neg_y_distance_po, 2700) - 900f64.to_radians() <= 1e-11
-        );
-    }
-
-    #[test]
     fn constructor_from_mobile() {
         let perceived_object = PerceivedObject {
             object_id: 1,
@@ -353,14 +323,26 @@ mod tests {
 
         let mobile_perceived_object = MobilePerceivedObject::new(
             perceived_object,
-            5,
-            10,
-            &ReferencePosition {
-                latitude: 434667520,
-                longitude: 1205862,
-                altitude: 220000,
+            &CollectivePerceptionMessage {
+                station_id: 10,
+                management_container: ManagementContainer {
+                    station_type: 5,
+                    reference_position: ReferencePosition {
+                        latitude: 434667520,
+                        longitude: 1205862,
+                        altitude: 220000,
+                    },
+                    ..Default::default()
+                },
+                station_data_container: Some(StationDataContainer {
+                    originating_vehicle_container: Some(OriginatingVehicleContainer {
+                        heading: 1800,
+                        ..Default::default()
+                    }),
+                    originating_rsu_container: None,
+                }),
+                ..Default::default()
             },
-            Some(1800),
         );
 
         assert_eq!(
@@ -413,14 +395,19 @@ mod tests {
 
         let mobile_perceived_object = MobilePerceivedObject::new(
             perceived_object,
-            15,
-            10,
-            &ReferencePosition {
-                latitude: 488417860,
-                longitude: 23678940,
-                altitude: 900,
+            &CollectivePerceptionMessage {
+                station_id: 10,
+                management_container: ManagementContainer {
+                    station_type: 15,
+                    reference_position: ReferencePosition {
+                        latitude: 488417860,
+                        longitude: 23678940,
+                        altitude: 900,
+                    },
+                    ..Default::default()
+                },
+                ..Default::default()
             },
-            Some(0),
         );
 
         assert_eq!(
@@ -480,6 +467,55 @@ mod tests {
             expected_mobile_perceived_object.acceleration
         );
     }
+
+    macro_rules! test_mobile_heading_computation {
+        ($test_name:ident, $po:expr, $mob_heading:expr, $expected:expr) => {
+            #[test]
+            fn $test_name() {
+                let _epsilon = 1e-11;
+
+                let heading = compute_heading_from_mobile(&$po, $mob_heading);
+                let delta = (heading - $expected).abs();
+
+                assert!(
+                    delta <= 1e-11,
+                    "Actual: {} (expected: {})",
+                    heading.to_degrees(),
+                    $expected.to_degrees()
+                );
+            }
+        };
+    }
+    test_mobile_heading_computation!(
+        north_east_heading_mobile_mobile_heading_north,
+        po! {360, 360},
+        0f64.to_radians(),
+        45f64.to_radians()
+    );
+    test_mobile_heading_computation!(
+        north_west_heading_mobile_mobile_heading_north,
+        po! {-360, 360},
+        0f64.to_radians(),
+        315f64.to_radians()
+    );
+    test_mobile_heading_computation!(
+        south_east_heading_mobile_heading_east,
+        po! {360, 360},
+        90f64.to_radians(),
+        135f64.to_radians()
+    );
+    test_mobile_heading_computation!(
+        south_west_heading_mobile_heading_west,
+        po! {-360, 360},
+        270f64.to_radians(),
+        225f64.to_radians()
+    );
+    test_mobile_heading_computation!(
+        north_east_heading_mobile_heading_east,
+        po! {-360, 360},
+        90f64.to_radians(),
+        45f64.to_radians()
+    );
 
     macro_rules! test_rsu_heading_computation {
         ($test_name:ident, $po:expr, $expected:expr) => {

@@ -46,6 +46,8 @@ macro_rules! trace_span_context_info {
 /// - See [Injector]
 /// - See [Extractor]
 /// - See [TraceContextPropagator]
+///
+/// [1]: https://www.w3.org/TR/trace-context/
 #[derive(Debug, Default)]
 struct Data {
     dict: HashMap<String, String>,

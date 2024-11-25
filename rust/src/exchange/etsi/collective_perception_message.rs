@@ -44,37 +44,6 @@ pub struct CollectivePerceptionMessage {
     pub free_space_addendum_container: Vec<FreeSpaceAddendum>,
 }
 
-impl CollectivePerceptionMessage {
-    pub fn mobile_perceived_object_list(&self) -> Vec<MobilePerceivedObject> {
-        let cpm_heading = match &self.station_data_container {
-            Some(station_data_container) => station_data_container
-                .originating_vehicle_container
-                .as_ref()
-                .map(|originating_vehicle_container| originating_vehicle_container.heading),
-            None => None,
-        };
-
-        if !self.perceived_object_container.is_empty() {
-            return self
-                .perceived_object_container
-                .iter()
-                .map(|perceived_object| {
-                    MobilePerceivedObject::new(
-                        //assumed clone : we store a copy into the MobilePerceivedObject container
-                        // TODO use a lifetime to propage the lifecycle betwwen PerceivedObject and MobilePerceivedObject instead of clone
-                        perceived_object.clone(),
-                        self.management_container.station_type,
-                        self.station_id,
-                        &self.management_container.reference_position,
-                        cpm_heading,
-                    )
-                })
-                .collect();
-        }
-        Vec::new()
-    }
-}
-
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ManagementContainer {
@@ -235,6 +204,22 @@ pub struct FreeSpaceArea {
     pub free_space_circular: Option<CircularArea>,
     pub free_space_ellipse: Option<EllipticArea>,
     pub free_space_rectangle: Option<RectangleArea>,
+}
+
+impl CollectivePerceptionMessage {
+    pub fn mobile_perceived_object_list(&self) -> Vec<MobilePerceivedObject> {
+        self.perceived_object_container
+            .iter()
+            .map(|perceived_object| {
+                MobilePerceivedObject::new(
+                    //assumed clone : we store a copy into the MobilePerceivedObject container
+                    // TODO use a lifetime to propage the lifecycle betwwen PerceivedObject and MobilePerceivedObject instead of clone
+                    perceived_object.clone(),
+                    &self,
+                )
+            })
+            .collect()
+    }
 }
 
 impl Mobile for CollectivePerceptionMessage {

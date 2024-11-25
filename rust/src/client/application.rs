@@ -10,6 +10,9 @@
  */
 
 use crate::client::configuration::Configuration;
+use crate::exchange::etsi::cooperative_awareness_message::{
+    BasicContainer, CooperativeAwarenessMessage, HighFrequencyContainer,
+};
 use crate::exchange::etsi::decentralized_environmental_notification_message::{
     DecentralizedEnvironmentalNotificationMessage, RelevanceDistance, RelevanceTrafficDirection,
 };
@@ -18,12 +21,44 @@ use crate::exchange::etsi::{etsi_now, heading_to_etsi, speed_to_etsi, timestamp_
 use crate::exchange::sequence_number::SequenceNumber;
 use crate::exchange::PathElement;
 use crate::mobility::mobile::Mobile;
+use crate::mobility::position::Position;
 
 pub mod analyzer;
 pub mod pipeline;
 
+/// Creates a [CAM][1] message from minimal required information
+///
+/// This function is a helper to quickly create messages, the remaining information is defaulted
+/// If you want to fill more information you can still edit the returned struct, or you can
+/// initialize the struct directly with more information
+///
+/// **Note: All mobility arguments have to be using SI units**
+///
+/// [1]: CooperativeAwarenessMessage
+pub fn create_cam(
+    station_id: u32,
+    station_type: u8,
+    position: Position,
+    speed: f64,
+    heading: f64,
+) -> CooperativeAwarenessMessage {
+    CooperativeAwarenessMessage {
+        station_id,
+        basic_container: BasicContainer {
+            station_type: Some(station_type),
+            reference_position: ReferencePosition::from(position),
+            ..Default::default()
+        },
+        high_frequency_container: HighFrequencyContainer {
+            heading: Some(heading_to_etsi(heading)),
+            speed: Some(speed_to_etsi(speed)),
+            ..Default::default()
+        },
+        ..Default::default()
+    }
+}
+
 // FIXME use custom errors
-#[cfg(feature = "mobility")]
 pub fn create_denm(
     detection_time: u64,
     configuration: &Configuration,
@@ -79,7 +114,6 @@ pub fn create_denm(
 /// Creates an updated copy of the provided DENM
 ///
 /// FIXME check for appropriation
-#[cfg(feature = "mobility")]
 pub fn update_denm(
     detection_time: u64,
     denm: &DecentralizedEnvironmentalNotificationMessage,
