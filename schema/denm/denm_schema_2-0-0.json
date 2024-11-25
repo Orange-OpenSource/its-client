@@ -6,7 +6,6 @@
   "additionalProperties": false,
   "required": [
     "message_type",
-    "origin",
     "version",
     "source_uuid",
     "timestamp",
@@ -17,16 +16,6 @@
       "type": "string",
       "description": "message type",
       "const": "denm"
-    },
-    "origin": {
-      "type": "string",
-      "enum": [
-        "self",
-        "global_application",
-        "mec_application",
-        "on_board_application"
-      ],
-      "description": "the entity responsible for this message"
     },
     "version": {
       "type": "string",
