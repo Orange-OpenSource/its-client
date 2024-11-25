@@ -9,9 +9,7 @@
     "timestamp",
     "version",
     "system",
-    "time_sources",
-    "cellular",
-    "gnss"
+    "time_sources"
   ],
   "properties": {
     "message_type": {
