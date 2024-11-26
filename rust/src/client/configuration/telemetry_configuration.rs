@@ -4,7 +4,7 @@ use log::warn;
 use std::string::ToString;
 
 use crate::client::configuration::configuration_error::ConfigurationError;
-use crate::client::configuration::{get_mandatory_field, get_optional_from_section};
+use crate::client::configuration::{get_mandatory_from_section, get_optional_from_section};
 
 pub(crate) const TELEMETRY_SECTION: &str = "telemetry";
 pub(crate) const DEFAULT_PATH: &str = "v1/traces";
@@ -76,15 +76,15 @@ impl TryFrom<&Properties> for TelemetryConfiguration {
         let (username, password) =
             match get_optional_from_section::<String>("username", properties)? {
                 Some(username) => {
-                    let password = get_mandatory_field::<String>("password", section)?;
+                    let password = get_mandatory_from_section::<String>("password", section)?;
                     (Some(username), Some(password))
                 }
                 None => (None, None),
             };
 
         let s = TelemetryConfiguration {
-            host: get_mandatory_field::<String>("host", section)?,
-            port: get_mandatory_field::<u16>("port", section)?,
+            host: get_mandatory_from_section::<String>("host", section)?,
+            port: get_mandatory_from_section::<u16>("port", section)?,
             path,
             batch_size,
             username,

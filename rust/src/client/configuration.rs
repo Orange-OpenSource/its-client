@@ -39,6 +39,7 @@ use crate::client::configuration::{
 #[cfg(feature = "geo_routing")]
 use crate::client::configuration::geo_configuration::{GeoConfiguration, GEO_SECTION};
 
+pub(crate) mod bootstrap_configuration;
 pub mod configuration_error;
 #[cfg(feature = "geo_routing")]
 pub mod geo_configuration;
@@ -61,7 +62,7 @@ pub struct Configuration {
     pub mobility: MobilityConfiguration,
     #[cfg(feature = "mobility")]
     pub node: Option<RwLock<NodeConfiguration>>,
-    custom_settings: Option<Ini>,
+    pub(crate) custom_settings: Option<Ini>,
 }
 
 impl Configuration {
@@ -121,16 +122,16 @@ impl Configuration {
 }
 
 // FIXME maybe move this into a dedicated .rs file
-struct MqttOptionWrapper(MqttOptions);
+pub(crate) struct MqttOptionWrapper(MqttOptions);
 impl TryFrom<&Properties> for MqttOptionWrapper {
     type Error = ConfigurationError;
 
     fn try_from(properties: &Properties) -> Result<Self, Self::Error> {
         let section = (MQTT_SECTION, properties);
         let mut mqtt_options = MqttOptions::new(
-            get_mandatory_field::<String>("client_id", section)?,
-            get_mandatory_field::<String>("host", section)?,
-            get_mandatory_field::<u16>("port", section)?,
+            get_mandatory_from_section::<String>("client_id", section)?,
+            get_mandatory_from_section::<String>("host", section)?,
+            get_mandatory_from_section::<u16>("port", section)?,
         );
 
         if let Ok(Some(username)) = get_optional_from_section::<String>("username", section.1) {
@@ -190,6 +191,25 @@ pub(crate) fn get_optional_from_section<T: FromStr>(
 }
 
 pub(crate) fn get_mandatory_field<T: FromStr>(
+    section: Option<&'static str>,
+    field: &'static str,
+    ini_config: &Ini,
+) -> Result<T, ConfigurationError> {
+    if let Some(properties) = ini_config.section(section) {
+        if let Some(value) = properties.get(field) {
+            match T::from_str(value) {
+                Ok(value) => Ok(value),
+                Err(_e) => Err(TypeError(field, type_name::<T>())),
+            }
+        } else {
+            Err(MissingMandatoryField(field, section.unwrap_or_default()))
+        }
+    } else {
+        Err(MissingMandatorySection(section.unwrap_or_default()))
+    }
+}
+
+pub(crate) fn get_mandatory_from_section<T: FromStr>(
     field: &'static str,
     section: (&'static str, &Properties),
 ) -> Result<T, ConfigurationError> {
@@ -217,12 +237,14 @@ impl TryFrom<Ini> for Configuration {
 
     fn try_from(ini_config: Ini) -> Result<Self, Self::Error> {
         let mut ini_config = ini_config;
-        let mqtt_properties = pick_mandatory_section(MQTT_SECTION, &mut ini_config)?;
 
         Ok(Configuration {
-            mqtt_options: MqttOptionWrapper::try_from(&mqtt_properties)?
-                .deref()
-                .clone(),
+            mqtt_options: MqttOptionWrapper::try_from(&pick_mandatory_section(
+                MQTT_SECTION,
+                &mut ini_config,
+            )?)?
+            .deref()
+            .clone(),
             #[cfg(feature = "geo_routing")]
             geo: GeoConfiguration::try_from(&pick_mandatory_section(
                 GEO_SECTION,

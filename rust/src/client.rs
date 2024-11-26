@@ -14,4 +14,5 @@
 /// or to create/store data (e.g. counting pedestrian, vehicles, etc. in a specific area)
 #[cfg(feature = "mobility")]
 pub mod application;
+pub mod bootstrap;
 pub mod configuration;

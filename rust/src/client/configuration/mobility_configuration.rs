@@ -12,7 +12,7 @@
 use ini::Properties;
 
 use crate::client::configuration::configuration_error::ConfigurationError;
-use crate::client::configuration::get_mandatory_field;
+use crate::client::configuration::get_mandatory_from_section;
 
 pub(crate) const STATION_SECTION: &str = "station";
 
@@ -29,8 +29,14 @@ impl TryFrom<&Properties> for MobilityConfiguration {
 
     fn try_from(properties: &Properties) -> Result<Self, Self::Error> {
         let s = MobilityConfiguration {
-            station_id: get_mandatory_field(STATION_ID_FIELD, (STATION_SECTION, properties))?,
-            station_type: get_mandatory_field(STATION_TYPE_FIELD, (STATION_SECTION, properties))?,
+            station_id: get_mandatory_from_section(
+                STATION_ID_FIELD,
+                (STATION_SECTION, properties),
+            )?,
+            station_type: get_mandatory_from_section(
+                STATION_TYPE_FIELD,
+                (STATION_SECTION, properties),
+            )?,
         };
 
         Ok(s)
