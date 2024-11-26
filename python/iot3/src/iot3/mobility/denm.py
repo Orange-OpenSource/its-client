@@ -153,9 +153,9 @@ class DecentralizedEnvironmentalNotificationMessage(etsi.Message):
 
     @detection_time.setter
     def detection_time(self, detection_time: float):
-        self._message["message"]["management_container"][
-            "detection_time"
-        ] = etsi.ETSI.unix2etsi_time(detection_time)
+        self._message["message"]["management_container"]["detection_time"] = (
+            etsi.ETSI.unix2etsi_time(detection_time)
+        )
 
     @property
     def latitude(self) -> float:

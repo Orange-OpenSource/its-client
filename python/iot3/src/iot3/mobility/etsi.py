@@ -222,6 +222,7 @@ class Message(abc.ABC):
 
     @abc.abstractmethod
     def __init__(self, *args, **kwargs):
+        """Sub-classes must provide their own, explicit constructor."""
         ...
 
     @staticmethod

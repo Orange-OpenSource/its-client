@@ -93,12 +93,12 @@ def start(
         raise RuntimeError("IoT3 Mobility SDK already initialised.")
 
     _mobility = copy.deepcopy(config)
-    _mobility[
-        "topic_template_send"
-    ] = f"{config['namespace']}/inQueue/v2x/{{msg_type}}/{{source_uuid}}/{{quadkey}}"
-    _mobility[
-        "topic_template_recv"
-    ] = f"{config['namespace']}/outQueue/v2x/{{msg_type}}/{{source_uuid}}/{{quadkey}}"
+    _mobility["topic_template_send"] = (
+        f"{config['namespace']}/inQueue/v2x/{{msg_type}}/{{source_uuid}}/{{quadkey}}"
+    )
+    _mobility["topic_template_recv"] = (
+        f"{config['namespace']}/outQueue/v2x/{{msg_type}}/{{source_uuid}}/{{quadkey}}"
+    )
 
     def _msg_cb(data, topic, payload):
         try:
