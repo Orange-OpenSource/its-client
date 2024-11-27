@@ -1,3 +1,53 @@
+its-quadkeys
+============
+
+This Python-3.10+ package implements usefull abstractions around
+quadtrees, suitable for the ITS clients.
+
+
+its_quadkeys.QuadKey()
+----------------------
+
+This class implements one path in a quadtree. I.e. it represents a
+n-deep branch of a quadtree. It can be represented as a sequence of
+one or more of the characters in the set (0,1,2,3), like: 1332011321
+
+The two main operations on a QuadKey are:
+
+  * its_quadkeys.QuadKey.split(extra_depth):
+    Splits the QuadKey into an extra_depth-deeper QuadZone.
+
+  * its_quadkeys.QuadKey.neighbours():
+    Returns the QuadKeys neighbouring this QuadKey.
+
+
+its_quadeys.QuadZone()
+----------------------
+
+This class implements a zone made of one or more QuadKeys, and allows
+manipulations on that zone.
+
+The two main operations on a QuadZone are:
+
+  * its_quadeys.QuadZone.optimise():
+    Merge the QuadKeys defining the Zone, so as to optimise the number
+    of QuadKeys defining the zone.
+    When a zone is created by adding and removing QuadKeys, the definition
+    for that zone can be sub-optimal, like having two QuadKeys partially
+    covering the same area, or four QuadKeys that can be merged into their
+    super-QuadKey. optimise() allows simplifying the zone.
+
+  * its_quadeys.QuadZone.neighbours(depth):
+    Returns a QuadZone made of the neighbouring QuadKeys of deph 'depth'.
+
+
+Misc thoughts
+=============
+
+This section contains various notes that served as a basis for implementing
+its-quadkeys; it contains details and explanations that are worth keeping,
+but does **not** constitute documentation.
+
 The QuadKeys are organised, starting from the North-West, in the form
 of a Z (on the left), not in an inverted-C, a U, a cyrillic И, or of
 anything else (on the right):
