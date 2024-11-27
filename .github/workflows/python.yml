@@ -12,6 +12,7 @@ jobs:
           - its-info
           - its-interqueuemanager
           - its-quadkeys
+          - its-status
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
