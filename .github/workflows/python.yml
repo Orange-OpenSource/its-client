@@ -1,10 +1,14 @@
-name: Python IoT3 SDK
+name: Python packages
 
 on: [push, pull_request]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package:
+          - iot3
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
@@ -56,10 +60,10 @@ jobs:
               zipp==3.21.0
       - name: Run black
         run: |
-          black --diff --check python/iot3
+          black --diff --check python/${{ matrix.package }}
       - name: Run package creation
         run: |
-          python -m build python/iot3
+          python -m build python/${{ matrix.package }}
       - name: Sanity checks of generated package
         run: |
-          twine check --strict python/iot3/dist/*
+          twine check --strict python/${{ matrix.package }}/dist/*
