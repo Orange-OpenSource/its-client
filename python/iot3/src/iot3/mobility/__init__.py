@@ -14,6 +14,7 @@ from .. import core
 
 from . import etsi
 from .cam import CAM
+from .cpm import CPM
 from .denm import DENM
 from .gnss import GNSSReport
 
@@ -93,12 +94,12 @@ def start(
         raise RuntimeError("IoT3 Mobility SDK already initialised.")
 
     _mobility = copy.deepcopy(config)
-    _mobility[
-        "topic_template_send"
-    ] = f"{config['namespace']}/inQueue/v2x/{{msg_type}}/{{source_uuid}}/{{quadkey}}"
-    _mobility[
-        "topic_template_recv"
-    ] = f"{config['namespace']}/outQueue/v2x/{{msg_type}}/{{source_uuid}}/{{quadkey}}"
+    _mobility["topic_template_send"] = (
+        f"{config['namespace']}/inQueue/v2x/{{msg_type}}/{{source_uuid}}/{{quadkey}}"
+    )
+    _mobility["topic_template_recv"] = (
+        f"{config['namespace']}/outQueue/v2x/{{msg_type}}/{{source_uuid}}/{{quadkey}}"
+    )
 
     def _msg_cb(data, topic, payload):
         try:
@@ -312,6 +313,7 @@ def message_from_json(
     """Create a new ITS message from a json sentence"""
     _MSG_TYPE_CLASS = {
         "cam": CAM,
+        "cpm": CPM,
         "denm": DENM,
     }
     # We should validate msg_json here before loading it,
