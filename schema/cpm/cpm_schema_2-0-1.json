@@ -178,11 +178,12 @@
         },
         "station_data_container": {
           "type": "object",
-          "oneOf": [{
-            "required": [
-              "originating_vehicle_container"
-            ]
-          },
+          "oneOf": [
+            {
+              "required": [
+                "originating_vehicle_container"
+              ]
+            },
             {
               "required": [
                 "originating_rsu_container"
@@ -727,11 +728,12 @@
                     "object_class": {
                       "type": "object",
                       "description": "The class that best describes the detected object. The object can be classified into one of three main categories: vehicle, VRU and other.",
-                      "oneOf": [{
-                        "required": [
-                          "vehicle"
-                        ]
-                      },
+                      "oneOf": [
+                        {
+                          "required": [
+                            "vehicle"
+                          ]
+                        },
                         {
                           "required": [
                             "single_vru"
@@ -757,11 +759,12 @@
                         },
                         "single_vru": {
                           "type": "object",
-                          "oneOf": [{
-                            "required": [
-                              "pedestrian"
-                            ]
-                          },
+                          "oneOf": [
+                            {
+                              "required": [
+                                "pedestrian"
+                              ]
+                            },
                             {
                               "required": [
                                 "bicyclist"
@@ -1054,11 +1057,12 @@
               "free_space_area": {
                 "description": "free space area for which the free space confidence of this addendum container is valid. The described area that is considered as not occupied by any traffic participant or obstacle.",
                 "type": "object",
-                "oneOf": [{
-                  "required": [
-                    "free_space_polygon"
-                  ]
-                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "free_space_polygon"
+                    ]
+                  },
                   {
                     "required": [
                       "free_space_circular"
