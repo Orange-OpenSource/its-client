@@ -897,6 +897,7 @@
                 }
               },
               "confidence": {
+                "type": "object",
                 "required": [
                   "x_distance",
                   "y_distance",
