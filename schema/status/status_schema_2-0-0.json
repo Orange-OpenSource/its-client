@@ -1,0 +1,317 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/status",
+  "description": "Status JSON schema",
+  "type": "object",
+  "required": [
+    "message_type",
+    "source_uuid",
+    "timestamp",
+    "version",
+    "system",
+    "time_sources"
+  ],
+  "properties": {
+    "message_type": {
+      "description": "type of the message",
+      "type": "string",
+      "const": "status"
+    },
+    "source_uuid": {
+      "description": "unique id all over the world for this device",
+      "type": "string"
+    },
+    "timestamp": {
+      "description": "date the information was generated, in seconds since 1970-01-01 00:00:00 +00:00, with arbitrary sub-second precision",
+      "type": "number",
+      "minimum": 0.0
+    },
+    "version": {
+      "description": "version of the format of this JSON message",
+      "type": "string",
+      "const": "2.0.0"
+    },
+    "system": {
+      "description": "system low-level info",
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "type",
+        "hardware",
+        "os_release",
+        "memory",
+        "storage",
+        "cpu_load"
+      ],
+      "properties": {
+        "type": {
+          "description": "type of device",
+          "type": "string",
+          "enum": [ "obu", "other" ]
+        },
+        "hardware": {
+          "description": "type of hardware",
+          "type": "string",
+          "examples": [ "vtc6221", "vtc7251", "rpi2" ]
+        },
+        "os_release": {
+          "description": "a key-value representation of the os-release of the running OS",
+          "type": "object",
+          "$comment": "all keys of os-release are optional; see https://www.freedesktop.org/software/systemd/man/os-release.html",
+          "additionalProperties": true,
+          "properties": {
+            "NAME": { "type": "string" },
+            "VERSION": { "type": "string" },
+            "ID": { "type": "string" },
+            "VERSION_ID": { "type": "string" },
+            "PRETTY_NAME": { "type": "string" }
+          }
+        },
+        "memory": {
+          "description": "RAM usage, in bytes, as a 2-tuple: [total_ram, available_ram]",
+          "type": "array",
+          "items": { "type": "integer" },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "storage": {
+          "description": "writable storage for data, as a 2-tuple: [total_space, free_space]",
+          "type": "array",
+          "items": { "type": "integer" },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "cpu_load": {
+          "description": "CPU load, as a 3-tuple: [1min_load, 5min_load, 15min_load]",
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0.0
+          },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      }
+    },
+    "time_sources": {
+      "description": "status of time-keeping services",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "oneOf": [
+          { "$ref": "#/$defs/ntpTimeSource" },
+          { "$ref": "#/$defs/ppsTimeSource" },
+          { "$ref": "#/$defs/nmeaTimeSource" }
+        ]
+      }
+    },
+    "cellular": {
+      "description": "cellular connections",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "cellular connection status",
+        "required": [
+          "hardware"
+        ],
+        "properties": {
+          "hardware": {
+            "description": "hardware information",
+            "type": "object",
+            "properties": {
+              "vendor": { "type": "string" },
+              "model": { "type": "string" },
+              "revision": { "type": "string" }
+            }
+          },
+          "operator": {
+            "description": "cellular operator",
+            "type": "object",
+            "properties": {
+              "code": { "type": "string" },
+              "name": { "type": "string" }
+            }
+          },
+          "connection": {
+            "description": "connection details",
+            "type": "object",
+            "properties": {
+              "technology": {
+                "description": "technology used to establish the connection",
+                "type": "string",
+                "examples": [
+                  "gsm", "cdma1x", "evdo", "umts", "lte", "5G"
+                ]
+              },
+              "signal": {
+                "description": "signal quality metrics",
+                "type": "array",
+                "items": {
+                  "description": "signal quality metrics for specific transport technology",
+                  "type": "object",
+                  "required": [ "technology" ],
+                  "properties": {
+                    "technology": { "type": "string" },
+                    "ecio": { "type": "number" },
+                    "io": { "type": "number" },
+                    "rscp": { "type": "number" },
+                    "rsrp": { "type": "number" },
+                    "rsrq": { "type": "number" },
+                    "rssi": { "type": "number" },
+                    "sinr": { "type": "number" },
+                    "snr": { "type": "number" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "gnss": {
+      "description": "status of the GNSS subsystem",
+      "type": "object",
+      "$comment": "modelled after the gpsd protocol; references like {gpsd:XXX:YYY[:ZZZ...]} refer to gpsd object XXX, field YYY (sub-field ZZZ, etc...) as defined in the gpsd JSON protocol documentation: https://gpsd.io/gpsd_json.html",
+      "required": [
+        "software",
+        "model",
+        "mode"
+      ],
+      "properties": {
+        "software": {
+          "description": "name and version of the gnss daemon (free form)",
+          "type": "string",
+          "$comment": "typically: literal 'gpsd' followed by {gpsd:VERSION:release}"
+        },
+        "model": {
+          "description": "Brand and model of the GNSS device (free form)",
+          "type": "string",
+          "$comment": "concatenation of the three fields: {gpsd:DEVICE:driver}, {gpsd:DEVICE:subtype}, and {gpsd:DEVICE:subtype1}"
+        },
+        "rate": {
+          "description": "mesaurement rate {gpsd:DEVICE:cycle}",
+          "type": "number",
+          "$comment": "seconds with arbitrary sub-second precision",
+          "exclusiveMinimum": 0.0
+        },
+        "mode": {
+          "description": "FIX mode {gpsd:TPV:mode}",
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "$comment": "0: unkown; 1: none; 2: 2D-FIX; 3: 3D-FIX"
+        },
+        "status": {
+          "description": "FIX status {gpsd:TPV:status}",
+          "type": "integer",
+          "enum": [
+            2,
+            3,
+            4
+          ],
+          "$comment": "2: DGPS; 3: RTK-fixed; 4: RTK-floating"
+        },
+        "nSat": {
+          "description": "Number of satellites seen {gpsd:SKY:nSat}",
+          "type": "integer",
+          "minimum": 1
+        },
+        "uSat": {
+          "description": "Number of satellites used in navigation solution {gpsd:SKY:uSat}",
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  },
+  "$defs": {
+    "genericTimeSource": {
+      "type": "object",
+      "required": [
+        "type",
+        "stratum",
+        "state",
+        "offset",
+        "error"
+      ],
+      "properties": {
+        "type": {
+          "description": "type of the time source",
+          "type": "string",
+          "enum": [ "ntp", "pps", "nmea" ]
+        },
+        "stratum": {
+          "description": "stratum of the clock source",
+          "type": "integer",
+          "minimum": 0
+        },
+        "state": {
+          "description": "state of the source",
+          "type": "string",
+          "enum": [ "best", "combined", "not_combined", "maybe_error", "unstable", "unusable" ]
+        },
+        "offset": {
+          "description": "measured offset in seconds, with arbitrary sub-second precision",
+          "type": "number"
+        },
+        "error": {
+          "description": "estimated error in seconds, with arbitrary sub-second precision",
+          "type": "number"
+        }
+      }
+    },
+    "ntpTimeSource": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/genericTimeSource" },
+        {
+          "type": "object",
+          "required": [ "host" ],
+          "properties": {
+            "type": { "const": "ntp" },
+            "stratum": { "minimum": 1 },
+            "host": {
+              "description": "IP or hostname of the NTP server",
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "ppsTimeSource": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/genericTimeSource" },
+        {
+          "type": "object",
+          "required": [ "label" ],
+          "properties": {
+            "type": { "const": "pps" },
+            "stratum": { "const": 0 },
+            "label": {
+              "description": "PPS label/name",
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "nmeaTimeSource": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/genericTimeSource" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "nmea" },
+            "stratum": { "const": 0 }
+          }
+        }
+      ]
+    }
+  }
+}

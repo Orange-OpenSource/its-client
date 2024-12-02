@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/region",
+  "description": "JSon schema describing a geographic region",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "message_type",
+    "source_uuid",
+    "timestamp",
+    "version",
+    "area",
+    "kind"
+  ],
+  "properties": {
+    "message_type": {
+      "description": "The type of schema for this object",
+      "type": "string",
+      "const": "region"
+    },
+    "source_uuid": {
+      "type": "string",
+      "description": "identifier",
+      "examples": [
+        "UNKNOWN",
+        "42"
+      ]
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01).",
+      "examples": [
+        1574778515424
+      ],
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
+    },
+    "version": {
+      "description": "The version of the schema for this object",
+      "type": "string",
+      "const": "2.0.0"
+    },
+    "area": {
+      "description": "The definition of the area",
+      "OneOf": [
+        { "$ref": "#/$defs/quadkey_area" }
+      ]
+    },
+    "kind": {
+      "description": "The kind of region this object carries",
+      "type": "string",
+      "enum": ["responsibility", "mobility"]
+    }
+  },
+  "$defs": {
+    "basic_area": {
+      "type": "object",
+      "required": [
+        "area_type"
+      ],
+      "properties": {
+        "type": {
+          "description": "The type of region representation",
+          "type": "string"
+        }
+      }
+    },
+    "quadkey_area": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/basic_area" },
+        {
+          "type": "object",
+          "required": [ "quadkeys" ],
+          "properties": {
+            "area_type": { "const": "quadkeys" },
+            "quadkeys": {
+              "description": "The list of the quadkeys covering the region",
+              "type": "array",
+              "items": {
+                "quadkey": {
+                  "description": "Quadkey",
+                  "type": "string",
+                  "examples": [
+                    "12020322313211",
+                    "12020322313213",
+                    "1203"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
