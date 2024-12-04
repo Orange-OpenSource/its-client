@@ -9,9 +9,9 @@ package com.orange.iot3mobility.its;
 
 public enum HazardType {
 	
-	UNDEFINED("roadHazard", 0, 0),
-	
-	TRAFFIC_CONDITION_NO_SUBCAUSE ("trafficJam", 0, 1),
+    UNDEFINED("roadHazard", 0, 0),
+
+    TRAFFIC_CONDITION_NO_SUBCAUSE ("trafficJam", 0, 1),
     INCREASED_VOLUME_OF_TRAFFIC ("increasedVolumeOfTraffic", 1, 1),
     TRAFFIC_JAM_SLOWLY_INCREASING ("trafficJamSlowlyIncreasing", 2, 1),
     TRAFFIC_JAM_INCREASING ("trafficJamIncreasing", 3, 1),
@@ -76,10 +76,6 @@ public enum HazardType {
     HERD_OF_ANIMALS ("herdOfAnimals", 2, 11),
     SMALL_ANIMALS ("smallAnimals", 3, 11),
     LARGE_ANIMALS ("largeAnimals", 4, 11),
-    PIKACHU ("wildPikachuOnTheRoad", 5, 11),
-    CHARMANDER ("wildCharmanderOnTheRoad", 6, 11),
-    SQUIRTLE ("wildSquirtleOnTheRoad", 7, 11),
-    BULBASAUR ("wildBulbasaurOnTheRoad", 8, 11),
 
     HUMAN_PRESENCE_ON_THE_ROAD_NO_SUBCAUSE ("humanPresenceOnTheRoad", 0, 12),
     CHILDREN_ON_ROADWAY ("childrenOnRoadway", 1, 12),
