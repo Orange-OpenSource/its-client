@@ -114,12 +114,29 @@
                 "maximum": 127
               },
               "status": {
-                "type": "string",
-                "description": "16-bit string. Bits used: manualControlIsEnabled (0), stopTimeIsActivated (1), failureFlash (2), preemptIsActive (3), signalPriorityIsActive (4), fixedTimeOperation (5), trafficDependentOperation (6), standbyOperation (7), failureMode (8), off (9), recentMAPmessageUpdate (10), recentChangeInMAPassignedLanesIDsUsed (11), noValidMAPisAvailableAtThisTime (12), noValidSPATisAvailableAtThisTime (13), reservedAndSetToZero (14 - 15). General status of the controller(s).",
-                "examples": [
-                  "0100000000000000",
-                  "0001100000000000"
-                ]
+                "type": "array",
+                "description": "General status of the controller(s).",
+                "minItems": 0,
+                "maxItems": 16,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "manualControlIsEnabled",
+                    "stopTimeIsActivated",
+                    "failureFlash",
+                    "preemptIsActive",
+                    "signalPriorityIsActive",
+                    "fixedTimeOperation",
+                    "trafficDependentOperation",
+                    "standbyOperation",
+                    "failureMode",
+                    "off",
+                    "recentMAPmessageUpdate",
+                    "recentChangeInMAPassignedLanesIDsUsed",
+                    "noValidMAPisAvailableAtThisTime",
+                    "noValidSPATisAvailableAtThisTime"
+                  ]
+                }
               },
               "moy": {
                 "description": "Minute of current UTC year, used only with messages to be archived.",
