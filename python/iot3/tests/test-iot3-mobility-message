@@ -6,6 +6,7 @@ import time
 import iot3.mobility
 from iot3.mobility.etsi import Message
 from iot3.mobility.cam import CAM
+from iot3.mobility.cpm import CPM
 from iot3.mobility.denm import DENM
 from iot3.mobility.gnss import GNSSReport
 
@@ -43,6 +44,76 @@ msg = iot3.mobility.message_from_json(msg_json=json_msg)
 assert msg.msg_type == "cam"
 assert math.fabs(msg.latitude - 43.6352120) < 5 * 10 ** -8
 assert math.fabs(msg.longitude - 1.3745620) < 5 * 10 ** -8
+
+print("CPM with no P.O...")
+msg = CPM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(
+        latitude=43.635212,
+        longitude=1.374562,
+    ),
+)
+assert "station_data_container" not in msg["message"]
+assert len(msg["message"]["perceived_object_container"]) == 0
+
+print("CPM of a car with some P.O...")
+msg = CPM(
+    uuid="test_1234",
+    station_type=Message.StationType.passengerCar,
+    gnss_report=GNSSReport(
+        latitude=43.635212,
+        longitude=1.374562,
+    ),
+    perceived_objects=[
+        CPM.PerceivedObject(
+            object_id= 27,
+            time_of_measurement= time.time(),
+            x_distance= 12,
+            y_distance= -16,
+            object_age= 127,
+        ),
+        CPM.PerceivedObject(
+            object_id= 42,
+            time_of_measurement= time.time(),
+            x_distance= 63,
+            y_distance= -32,
+            object_age= 255,
+            confidence=7,
+        ),
+    ],
+)
+assert "station_data_container" in msg["message"]
+assert len(msg["message"]["perceived_object_container"]) == 2
+
+print("CPM with a new P.O...")
+msg.add_perceived_object(
+    perceived_object=CPM.PerceivedObject(
+        object_id= 12,
+        time_of_measurement= time.time(),
+        x_distance= 1,
+        y_distance= -2,
+        object_age= 3,
+        confidence=15,
+    ),
+)
+assert len(msg["message"]["perceived_object_container"]) == 3
+
+print("CPM iteration of P.O...")
+count = 0
+for po in msg.perceived_objects:
+    assert type(po) is CPM.PerceivedObject
+    count += 1
+assert count == 3
+assert po.confidence == 15
+
+print("CPM serialisation...")
+json_msg = msg.to_json()
+
+print("CPM deserialisation...")
+msg = iot3.mobility.message_from_json(msg_json=json_msg)
+assert msg.msg_type == "cpm"
+assert msg["message"]["management_container"]["station_type"] == Message.StationType.passengerCar
+assert len(msg["message"]["perceived_object_container"]) == 3
 
 print("DENM with nothing set...")
 msg = DENM(
