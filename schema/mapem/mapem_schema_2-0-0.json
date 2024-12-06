@@ -306,22 +306,38 @@
             ],
             "properties": {
               "directional_use": {
-                "type": "string",
-                "description": "2-bit string. Bits used: ingressPath (0), egressPath (1). Denote the allowed direction of travel over a lane object. By convention, the lane object is always described from the stop line outwards away from the intersection. Therefore, the ingress direction is from the end of the path to the stop line and the egress direction is from the stop line outwards.",
-                "examples": [
-                  "01",
-                  "10",
-                  "11"
-                ]
+                "type": "array",
+                "description": "Denote the allowed direction of travel over a lane object. By convention, the lane object is always described from the stop line outwards away from the intersection. Therefore, the ingress direction is from the end of the path to the stop line and the egress direction is from the stop line outwards.",
+                "minItems": 1,
+                "maxItems": 2,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "ingressPath",
+                    "egressPath"
+                  ]
+                }
               },
               "shared_with": {
-                "type": "string",
-                "description": "10-bit string. Bits used: overlappingLaneDescriptionProvided (0), multipleLanesTreatedAsOneLane (1), otherNonMotorizedTrafficTypes (2), individualMotorizedVehicleTraffic (3), busVehicleTraffic (4), taxiVehicleTraffic (5), pedestriansTraffic (6), cyclistVehicleTraffic (7), trackedVehicleTraffic (8), pedestrianTraffic (9). Used to denote the presence of other user types (travel modes) who have an equal right to access and use the lane. There may also be another lane object describing their use of a lane. This data concept is used to indicate lanes and/or users that travel along the same path, and not those that simply cross over the lane's segments path (such as a pedestrian crosswalk crossing a lane for motor vehicle use). The typical use is to alert the user of the MAP data that additional traffic of another mode may be present in the same spatial lane.",
-                "examples": [
-                  "0000000000",
-                  "0001100000",
-                  "0000011000"
-                ]
+                "type": "array",
+                "description": "Used to denote the presence of other user types (travel modes) who have an equal right to access and use the lane. There may also be another lane object describing their use of a lane. This data concept is used to indicate lanes and/or users that travel along the same path, and not those that simply cross over the lane's segments path (such as a pedestrian crosswalk crossing a lane for motor vehicle use). The typical use is to alert the user of the MAP data that additional traffic of another mode may be present in the same spatial lane.",
+                "minItems": 0,
+                "maxItems": 10,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "overlappingLaneDescriptionProvided",
+                    "multipleLanesTreatedAsOneLane",
+                    "otherNonMotorizedTrafficTypes",
+                    "individualMotorizedVehicleTraffic",
+                    "busVehicleTraffic",
+                    "taxiVehicleTraffic",
+                    "pedestriansTraffic",
+                    "cyclistVehicleTraffic",
+                    "trackedVehicleTraffic",
+                    "pedestrianTraffic"
+                  ]
+                }
               },
               "lane_type": {
                 "type": "object",
@@ -353,68 +369,148 @@
                 ],
                 "properties": {
                   "vehicle": {
-                    "type": "string",
-                    "description": "8-bit string. Bits used: isVehicleRevocableLane (0), isVehicleFlyOverLane (1), hovLaneUseOnly (2), restrictedToBusUse (3), restrictedToTaxiUse (4), restrictedFromPublicUse (5), hasIRbeaconCoverage (6), permissionOnRequest (7). Specific properties found in a vehicle lane type. This data element provides a means to denote that the use of a lane is restricted to certain vehicle types. Various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
-                    "examples": [
-                      "00100000",
-                      "00010000"
-                    ]
+                    "type": "array",
+                    "description": "Specific properties found in a vehicle lane type. This data element provides a means to denote that the use of a lane is restricted to certain vehicle types. Various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
+                    "minItems": 0,
+                    "maxItems": 8,
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "isVehicleRevocableLane",
+                        "isVehicleFlyOverLane",
+                        "hovLaneUseOnly",
+                        "restrictedToBusUse",
+                        "restrictedToTaxiUse",
+                        "restrictedFromPublicUse",
+                        "hasIRbeaconCoverage",
+                        "permissionOnRequest"
+                      ]
+                    }
                   },
                   "crosswalk": {
-                    "type": "string",
-                    "description": "8-bit string. Bits used: crosswalkRevocableLane (0), bicyleUseAllowed (1), isXwalkFlyOverLane (2), fixedCycleTime (3), biDirectionalCycleTimes (4), hasPushToWalkButton (5), audioSupport (6), rfSignalRequestPresent (7), unsignalizedSegmentsPresent (8). Specific properties found in a crosswalk lane type. It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
-                    "examples": [
-                      "01000000",
-                      "00001000"
-                    ]
+                    "type": "array",
+                    "description": "Specific properties found in a crosswalk lane type. It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
+                    "minItems": 0,
+                    "maxItems": 16,
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "crosswalkRevocableLane",
+                        "bicyleUseAllowed",
+                        "isXwalkFlyOverLane",
+                        "fixedCycleTime",
+                        "biDirectionalCycleTimes",
+                        "hasPushToWalkButton",
+                        "audioSupport",
+                        "rfSignalRequestPresent",
+                        "unsignalizedSegmentsPresent"
+                      ]
+                    }
                   },
                   "bike_lane": {
-                    "type": "string",
-                    "description": "16-bit string. Bits used: bikeRevocableLane (0), pedestrianUseAllowed (1), isBikeFlyOverLane (2), fixedCycleTime (3), biDirectionalCycleTimes (4), isolatedByBarrier (5), unsignalizedSegmentsPresent (6), reservedAndSetToZero (7 - 15). Specific properties found in a bicycle lane type. It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
-                    "examples": [
-                      "0100000000000000",
-                      "0000010000000000"
-                    ]
+                    "type": "array",
+                    "description": "Specific properties found in a bicycle lane type. It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
+                    "minItems": 0,
+                    "maxItems": 16,
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "bikeRevocableLane",
+                        "pedestrianUseAllowed",
+                        "isBikeFlyOverLane",
+                        "fixedCycleTime",
+                        "biDirectionalCycleTimes",
+                        "isolatedByBarrier",
+                        "unsignalizedSegmentsPresent"
+                      ]
+                    }
                   },
                   "sidewalk": {
-                    "type": "string",
-                    "description": "16-bit string. Bits used: sidewalk-RevocableLane (0), bicyleUseAllowed (1), isSidewalkFlyOverLane (2), walkBikes (3), reservedAndSetToZero (4 - 15). Specific properties found in a sidewalk lane type. It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
-                    "examples": [
-                      "0000000000000000",
-                      "0100000000000000"
-                    ]
+                    "type": "array",
+                    "description": "Specific properties found in a sidewalk lane type. It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
+                    "minItems": 0,
+                    "maxItems": 16,
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "sidewalkRevocableLane",
+                        "bicyleUseAllowed",
+                        "isSidewalkFlyOverLane",
+                        "walkBikes"
+                      ]
+                    }
                   },
                   "median": {
-                    "type": "string",
-                    "description": "16-bit string. Bits used: median-RevocableLane (0), median (1), whiteLineHashing (2), stripedLines (3), doubleStripedLines (4), trafficCones (5), constructionBarrier (6), trafficChannels (7), lowCurbs (8), highCurbs (9), reservedAndSetToZero (10 - 15). Specific properties found in a Barrier or Median lane type (a type of lane object used to separate traffic lanes). It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
-                    "examples": [
-                      "0101000000000000",
-                      "0100100000000000"
-                    ]
+                    "type": "array",
+                    "description": "Specific properties found in a Barrier or Median lane type (a type of lane object used to separate traffic lanes). It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
+                    "minItems": 0,
+                    "maxItems": 16,
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "medianRevocableLane",
+                        "median",
+                        "whiteLineHashing",
+                        "stripedLines",
+                        "doubleStripedLines",
+                        "trafficCones",
+                        "constructionBarrier",
+                        "trafficChannels",
+                        "lowCurbs",
+                        "highCurbs"
+                      ]
+                    }
                   },
                   "striping": {
-                    "type": "string",
-                    "description": "16-bit string. Bits used: stripeToConnectingLanesRevocableLane (0), stripeDrawOnLeft (1), stripeDrawOnRight (2), stripeToConnectingLanesLeft (3), stripeToConnectingLanesRight (4), stripeToConnectingLanesAhead (5), reservedAndSetToZero (6 - 15). Specific properties found in various types of ground striping lane types. This includes various types of painted lane ground striping and iconic information needs to convey information in a complex intersection. Typically, this consists of visual guidance for drivers to assist them to connect across the intersection to the correct lane. Such markings are typically used with restraint and only under conditions when the geometry of the intersection makes them more beneficial than distracting. It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
-                    "examples": [
-                      "0100000000000000",
-                      "0010000000000000"
-                    ]
+                    "type": "array",
+                    "description": "Specific properties found in various types of ground striping lane types. This includes various types of painted lane ground striping and iconic information needs to convey information in a complex intersection. Typically, this consists of visual guidance for drivers to assist them to connect across the intersection to the correct lane. Such markings are typically used with restraint and only under conditions when the geometry of the intersection makes them more beneficial than distracting. It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries.",
+                    "minItems": 0,
+                    "maxItems": 16,
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "stripeToConnectingLanesRevocableLane",
+                        "stripeDrawOnLeft",
+                        "stripeDrawOnRight",
+                        "stripeToConnectingLanesLeft",
+                        "stripeToConnectingLanesRight",
+                        "stripeToConnectingLanesAhead"
+                      ]
+                    }
                   },
                   "tracked_vehicle": {
-                    "type": "string",
-                    "description": "16-bit string. Bits used: spec-RevocableLane (0), spec-commuterRailRoadTrack (1), spec-lightRailRoadTrack (2), spec-heavyRailRoadTrack (3), spec-otherRailType (4), reservedAndSetToZero (5 - 15). Specific properties found in a tracked vehicle lane types (trolley and train lanes). The term rail vehicle can be considered synonymous. In this case, the term does not relate to vehicle types with tracks or treads. It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries. It should also be noted that often this type of lane object does not clearly relate to an approach in the traditional traffic engineering sense, although the message set allows assigning a value when desired.",
-                    "examples": [
-                      "0010000000000000",
-                      "0000100000000000"
-                    ]
+                    "type": "array",
+                    "description": "Specific properties found in a tracked vehicle lane types (trolley and train lanes). The term rail vehicle can be considered synonymous. In this case, the term does not relate to vehicle types with tracks or treads. It should be noted that various common lane attribute properties (such as travel directions and allowed movements or maneuvers) can be found in other entries. It should also be noted that often this type of lane object does not clearly relate to an approach in the traditional traffic engineering sense, although the message set allows assigning a value when desired.",
+                    "minItems": 0,
+                    "maxItems": 16,
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "spec-RevocableLane",
+                        "spec-commuterRailRoadTrack",
+                        "spec-lightRailRoadTrack",
+                        "spec-heavyRailRoadTrack",
+                        "spec-otherRailType"
+                      ]
+                    }
                   },
                   "parking": {
-                    "type": "string",
-                    "description": "16-bit string. Bits used: parkingRevocableLane (0), parallelParkingInUse (1), headInParkingInUse (2), doNotParkZone (3), parkingForBusUse (4), parkingForTaxiUse (5), noPublicParkingUse (6), reservedAndSetToZero (7 - 15). Specific properties found in a vehicle parking lane type. It should be noted that various common lane attribute properties can be found in other entries.",
-                    "examples": [
-                      "0001000000000000",
-                      "0000100000000000"
-                    ]
+                    "type": "array",
+                    "description": "Specific properties found in a vehicle parking lane type. It should be noted that various common lane attribute properties can be found in other entries.",
+                    "minItems": 0,
+                    "maxItems": 16,
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "parkingRevocableLane",
+                        "parallelParkingInUse",
+                        "headInParkingInUse",
+                        "doNotParkZone",
+                        "parkingForBusUse",
+                        "parkingForTaxiUse",
+                        "noPublicParkingUse"
+                      ]
+                    }
                   }
                 }
               }
