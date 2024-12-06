@@ -61,10 +61,10 @@
           ]
         },
         "timestamp": {
-          "$ref": "dsrc_schema_1-0-0.json#/definitions/minute_of_the_year"
+          "$ref": "../dsrc/dsrc_schema_1-0-0.json#/definitions/minute_of_the_year"
         },
         "second": {
-          "$ref": "dsrc_schema_1-0-0.json#/definitions/d_second"
+          "$ref": "../dsrc/dsrc_schema_1-0-0.json#/definitions/d_second"
         },
         "sequence_number": {
           "type": "integer",
@@ -94,7 +94,7 @@
               },
               "id": {
                 "description": "Provides a unique mapping to the intersection map in question which provides complete location and approach/movement/lane data as well as zones for priority/preemption.",
-                "$ref": "dsrc_schema_1-0-0.json#/definitions/intersection_reference_id"
+                "$ref": "../dsrc/dsrc_schema_1-0-0.json#/definitions/intersection_reference_id"
               },
               "sig_status": {
                 "type": "array",
@@ -126,7 +126,7 @@
                         },
                         "request": {
                           "description": "Uniquely identifies the requester and the specific request to all parties.",
-                          "$ref": "dsrc_schema_1-0-0.json#/definitions/request_id"
+                          "$ref": "../dsrc/dsrc_schema_1-0-0.json#/definitions/request_id"
                         },
                         "sequence_number": {
                           "type": "integer",
@@ -142,27 +142,27 @@
                         },
                         "type_data": {
                           "description": "Used when addition data besides the role is needed, at which point the role entry above is not sent.",
-                          "$ref": "dsrc_schema_1-0-0.json#/definitions/requestor_type"
+                          "$ref": "../dsrc/dsrc_schema_1-0-0.json#/definitions/requestor_type"
                         }
                       }
                     },
                     "inbound_on": {
-                      "$ref": "dsrc_schema_1-0-0.json#/definitions/intersection_access_point"
+                      "$ref": "../dsrc/dsrc_schema_1-0-0.json#/definitions/intersection_access_point"
                     },
                     "outbound_on": {
-                      "$ref": "dsrc_schema_1-0-0.json#/definitions/intersection_access_point"
+                      "$ref": "../dsrc/dsrc_schema_1-0-0.json#/definitions/intersection_access_point"
                     },
                     "minute": {
                       "description": "The Estimated Time of Arrival (ETA) when the service is requested. This data echos the data of the request.",
-                      "$ref": "dsrc_schema_1-0-0.json#/definitions/minute_of_the_year"
+                      "$ref": "../dsrc/dsrc_schema_1-0-0.json#/definitions/minute_of_the_year"
                     },
                     "second": {
                       "description": "Second part of ETA.",
-                      "$ref": "dsrc_schema_1-0-0.json#/definitions/d_second"
+                      "$ref": "../dsrc/dsrc_schema_1-0-0.json#/definitions/d_second"
                     },
                     "duration": {
                       "description": "Duration part of ETA.",
-                      "$ref": "dsrc_schema_1-0-0.json#/definitions/d_second"
+                      "$ref": "../dsrc/dsrc_schema_1-0-0.json#/definitions/d_second"
                     },
                     "status": {
                       "type": "integer",
