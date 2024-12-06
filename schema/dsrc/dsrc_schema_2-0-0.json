@@ -249,12 +249,26 @@
       "maximum": 255
     },
     "allowed_maneuvers": {
-      "type": "string",
-      "description": "12-bit string. Bits used: maneuverStraightAllowed (0), maneuverLeftAllowed (1), maneuverRightAllowed (2), maneuverUTurnAllowed (3), maneuverLeftTurnOnRedAllowed (4), maneuverRightTurnOnRedAllowed (5), maneuverLaneChangeAllowed (6), maneuverNoStoppingAllowed (7), yieldAllwaysRequired (8), goWithHalt (9), caution (10), reserved1 (11). Allowed (possible) maneuvers from a lane, typically a motorized vehicle lane. It should be noted that in practice these values may be further restricted by vehicle class, local regulatory environment and other changing conditions.",
-      "examples": [
-        "011000000100",
-        "000000100000"
-      ]
+      "type": "array",
+      "description": "Allowed (possible) maneuvers from a lane, typically a motorized vehicle lane. It should be noted that in practice these values may be further restricted by vehicle class, local regulatory environment and other changing conditions.",
+      "minItems": 0,
+      "maxItems": 12,
+      "items": {
+        "type": "string",
+        "enum": [
+          "maneuverStraightAllowed",
+          "maneuverLeftAllowed",
+          "maneuverRightAllowed",
+          "maneuverUTurnAllowed",
+          "maneuverLeftTurnOnRedAllowed",
+          "maneuverRightTurnOnRedAllowed",
+          "maneuverLaneChangeAllowed",
+          "maneuverNoStoppingAllowed",
+          "yieldAllwaysRequired",
+          "goWithHalt",
+          "caution"
+        ]
+      }
     },
     "offset_b16": {
       "type": "integer",
