@@ -26,9 +26,9 @@ import java.net.URI;
  */
 public class IoT3Core {
 
-    private final MqttClient mqttClient;
-    private final OpenTelemetryClient openTelemetryClient;
-    private final Lwm2mClient lwm2mClient;
+    private MqttClient mqttClient = null;
+    private OpenTelemetryClient openTelemetryClient = null;
+    private Lwm2mClient lwm2mClient = null;
 
     /**
      * Instantiate the IoT3.0 Core SDK.
@@ -58,56 +58,60 @@ public class IoT3Core {
                     String telemetryEndpoint,
                     String telemetryUsername,
                     String telemetryPassword) {
-        // instantiate the OpenTelemetry client
-        OpenTelemetryClient.Scheme scheme = OpenTelemetryClient.Scheme.HTTP;
-        scheme.setCustomPort(telemetryPort);
-        this.openTelemetryClient = new OpenTelemetryClient(
-                scheme,
-                telemetryHost,
-                telemetryEndpoint,
-                mqttClientId,
-                telemetryUsername,
-                telemetryPassword);
-        // instantiate the MQTT client
-        this.mqttClient = new MqttClient(
-                mqttHost,
-                mqttPort,
-                mqttUsername,
-                mqttPassword,
-                mqttClientId,
-                mqttUseTls,
-                new MqttCallback() {
-                    @Override
-                    public void connectionLost(Throwable cause) {
-                        ioT3CoreCallback.mqttConnectionLost(cause);
-                    }
+        // instantiate the OpenTelemetry client if its parameters have been set with the builder
+        if(telemetryHost != null) {
+            OpenTelemetryClient.Scheme scheme = OpenTelemetryClient.Scheme.HTTP;
+            scheme.setCustomPort(telemetryPort);
+            this.openTelemetryClient = new OpenTelemetryClient(
+                    scheme,
+                    telemetryHost,
+                    telemetryEndpoint,
+                    mqttClientId,
+                    telemetryUsername,
+                    telemetryPassword);
+        }
+        // instantiate the MQTT client if its parameters have been set with the builder
+        if(mqttHost != null) {
+            this.mqttClient = new MqttClient(
+                    mqttHost,
+                    mqttPort,
+                    mqttUsername,
+                    mqttPassword,
+                    mqttClientId,
+                    mqttUseTls,
+                    new MqttCallback() {
+                        @Override
+                        public void connectionLost(Throwable cause) {
+                            ioT3CoreCallback.mqttConnectionLost(cause);
+                        }
 
-                    @Override
-                    public void messageArrived(String topic, String message) {
-                        ioT3CoreCallback.mqttMessageArrived(topic, message);
-                    }
+                        @Override
+                        public void messageArrived(String topic, String message) {
+                            ioT3CoreCallback.mqttMessageArrived(topic, message);
+                        }
 
-                    @Override
-                    public void connectComplete(boolean reconnect, String serverURI) {
-                        ioT3CoreCallback.mqttConnectComplete(reconnect, serverURI);
-                    }
+                        @Override
+                        public void connectComplete(boolean reconnect, String serverURI) {
+                            ioT3CoreCallback.mqttConnectComplete(reconnect, serverURI);
+                        }
 
-                    @Override
-                    public void messagePublished(Throwable publishFailure) {
-                        ioT3CoreCallback.mqttMessagePublished(publishFailure);
-                    }
+                        @Override
+                        public void messagePublished(Throwable publishFailure) {
+                            ioT3CoreCallback.mqttMessagePublished(publishFailure);
+                        }
 
-                    @Override
-                    public void subscriptionComplete(Throwable subscriptionFailure) {
-                        ioT3CoreCallback.mqttSubscriptionComplete(subscriptionFailure);
-                    }
+                        @Override
+                        public void subscriptionComplete(Throwable subscriptionFailure) {
+                            ioT3CoreCallback.mqttSubscriptionComplete(subscriptionFailure);
+                        }
 
-                    @Override
-                    public void unsubscriptionComplete(Throwable unsubscriptionFailure) {
-                        ioT3CoreCallback.mqttUnsubscriptionComplete(unsubscriptionFailure);
-                    }
-                },
-                openTelemetryClient);
+                        @Override
+                        public void unsubscriptionComplete(Throwable unsubscriptionFailure) {
+                            ioT3CoreCallback.mqttUnsubscriptionComplete(unsubscriptionFailure);
+                        }
+                    },
+                    openTelemetryClient);
+        }
         // instantiate the LwM2M client
         this.lwm2mClient = new Lwm2mClient();
     }
@@ -212,14 +216,14 @@ public class IoT3Core {
      * Build an instance of IoT3Core.
      */
     public static class IoT3CoreBuilder {
-        private String mqttHost;
+        private String mqttHost = null; // will remain null if not initialized
         private int mqttPort;
         private String mqttUsername;
         private String mqttPassword;
         private String mqttClientId;
         private boolean mqttUseTls;
         private IoT3CoreCallback ioT3CoreCallback;
-        private String telemetryHost;
+        private String telemetryHost = null; // will remain null if not initialized
         private int telemetryPort;
         private String telemetryEndpoint;
         private String telemetryUsername;
@@ -233,7 +237,7 @@ public class IoT3Core {
         /**
          * Set the MQTT parameters of your IoT3Core instance.
          *
-         * @param mqttHost the host or IP address of the MQTT broker
+         * @param mqttHost the host or IP address of the MQTT broker, must not be null
          * @param mqttPort the port of the MQTT broker
          * @param mqttUsername the username for authentication with the MQTT broker
          * @param mqttPassword the password for authentication with the MQTT broker
@@ -246,6 +250,7 @@ public class IoT3Core {
                                           String mqttPassword,
                                           String mqttClientId,
                                           boolean mqttUseTls) {
+            if(mqttHost == null) throw new IllegalArgumentException("mqttHost cannot be null");
             this.mqttHost = mqttHost;
             this.mqttPort = mqttPort;
             this.mqttUsername = mqttUsername;
@@ -258,7 +263,7 @@ public class IoT3Core {
         /**
          * Set the OpenTelemetry parameters of your IoT3Core instance.
          *
-         * @param telemetryHost the host or IP address of the OpenTelemetry server
+         * @param telemetryHost the host or IP address of the OpenTelemetry server, must not be null
          * @param telemetryPort the port of the OpenTelemetry server
          * @param telemetryEndpoint the endpoint of the OpenTelemetry server (e.g. /endpoint/example)
          * @param telemetryUsername the username for authentication with the OpenTelemetry server
@@ -269,6 +274,7 @@ public class IoT3Core {
                                                String telemetryEndpoint,
                                                String telemetryUsername,
                                                String telemetryPassword) {
+            if(telemetryHost == null) throw new IllegalArgumentException("telemetryHost cannot be null");
             this.telemetryHost = telemetryHost;
             this.telemetryPort = telemetryPort;
             this.telemetryEndpoint = telemetryEndpoint;
