@@ -17,6 +17,7 @@ DEFAULTS = {
     },
     "telemetry": {
         "endpoint": None,
+        "authentication": "none",
         "username": None,
         "password": None,
     },
