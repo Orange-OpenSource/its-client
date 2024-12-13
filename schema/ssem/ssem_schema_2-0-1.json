@@ -1,6 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://Orange-OpenSource.github.io/its-client/schema/ssem",
+  "$references": [
+    {
+      "name": "IS TS 103 301",
+      "version": "2.2.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/is_ts103301/-/tree/v2.2.1"
+    }
+  ],
   "description": "SSEM JSON schema",
   "type": "object",
   "additionalProperties": false,
