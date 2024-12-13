@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: MIT
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
+import requests
 import time as _time
+import urllib
 from typing import Any as _Any
 from typing import Callable as _Callable
 from typing import Optional as _Optional
@@ -38,6 +40,14 @@ configuration, which can be used as a template and adpated to a local
 setup.
 """
 
+sample_bootstrap_config = {
+    "endpoint": "http://localhost:1234/bootstrap",
+    "psk": {
+        "login": "username",
+        "password": "secret",
+    },
+}
+
 
 sample_config = {
     "mqtt": {
@@ -61,6 +71,111 @@ sample_config = {
 
 
 MsgCallbackType: _TypeAlias = _Callable[[_Any, str, bytes], None]
+
+
+def bootstrap(
+    *,
+    ue_id: str,
+    role: str,
+    service_name: str,
+    bootstrap_config: dict,
+) -> dict:
+    """Initialise the IoT3 Core SDK.
+
+    Performs the bootstrap sequence to initialise the IoT3 Core SDK.
+    Returns a configuration object to start the IoT3 Core SDK.
+
+    :param ue_id: The ID of this application (User-Equipemnt ID)
+    :param role: The role of this application.
+    :param service_name: The name of the service
+    :param bootstrap_config: The bootstrap config, as a dict with the following
+                             keys (all mandatory):
+                               * endpoint: the URI of the bootstrap server
+                               * psk: the bootstrap PSK, as a dict with key:
+                                   * login
+                                   * password
+    """
+    config = dict()
+    req = {
+        "ue_id": ue_id,
+        "psk_login": bootstrap_config["psk"]["login"],
+        # FIXME: psk_password has been removed, but it's not yet deployed...
+        "psk_password": bootstrap_config["psk"]["password"],
+        "role": role,
+    }
+    rep = requests.post(
+        bootstrap_config["endpoint"],
+        auth=(
+            bootstrap_config["psk"]["login"],
+            bootstrap_config["psk"]["password"],
+        ),
+        json=req,
+    )
+    rep.raise_for_status()
+    bootstrap = rep.json()
+
+    # The order of looked up protocols is important: first, we prefer a
+    # TLS-enabled protocol (mqtts, mqtt-wss), then non-TLS (mqtt, mqtt-ws)
+    # as a fallback; second, we prefer native (mqtt) over websockets (ws).
+    for mqtt_proto in ["mqtts", "mqtt-wss", "mqtt", "mqtt-ws"]:
+        try:
+            mqtt = urllib.parse.urlparse(bootstrap["protocols"][mqtt_proto])
+        except KeyError:
+            pass
+        else:
+            break
+        # UGLY WART!!! Depending on where the app runs, the protocol names
+        # can be prefixed wth "internal-"... Sigh... :-(
+        try:
+            mqtt = urllib.parse.urlparse(
+                bootstrap["protocols"]["internal-" + mqtt_proto]
+            )
+        except KeyError:
+            pass
+        else:
+            break
+    else:
+        raise RuntimeError("No known MQTT protocol available")
+
+    mqtt_tls = mqtt_proto in ["mqtts", "mqtt-wss"]
+    config["mqtt"] = {
+        "client_id": bootstrap["iot3_id"],
+        "host": mqtt.hostname,
+        "port": mqtt.port or (11883 if mqtt_tls else 1883),
+        "tls": mqtt_tls,
+        "username": bootstrap["psk_run_login"],
+        "password": bootstrap["psk_run_password"],
+    }
+    if mqtt_proto.startswith("mqtt-ws"):
+        config["mqtt"]["websocket_path"] = mqtt.path
+
+    for otlp_proto in ["otlp-https", "otlp-http"]:
+        if otlp_proto in bootstrap["protocols"]:
+            break
+        # UGLY WART!!! Depending on where the app runs, the protocol names
+        # can be prefixed wth "internal-"... Sigh... :-(
+        otlp_proto = "internal-" + otlp_proto
+        if otlp_proto in bootstrap["protocols"]:
+            break
+    else:
+        raise RuntimeError("No known OTLP protocol available")
+
+    config["otel"] = {
+        "endpoint": bootstrap["protocols"][otlp_proto],
+        # In practice, there will *always* be credentials provided in
+        # the bootstrap response, so we'll always have authentication
+        # and we know the backend only implements BasicAuth. Prove me
+        # wrong! ;-)
+        "auth": _otel.Auth.BASIC,
+        "username": bootstrap["psk_run_login"],
+        "password": bootstrap["psk_run_password"],
+        "service_name": service_name,
+        "batch_period": 5,
+        "max_backlog": 100,
+        "compression": "gzip",
+    }
+
+    return config
 
 
 def start(
