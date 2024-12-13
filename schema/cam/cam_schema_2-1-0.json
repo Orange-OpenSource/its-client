@@ -49,7 +49,7 @@
     "version": {
       "type": "string",
       "description": "json message format version",
-      "const": "2.1.0-dev"
+      "const": "2.1.0"
     },
     "message": {
       "type": "object",
