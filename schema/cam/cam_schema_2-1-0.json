@@ -1,6 +1,18 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://Orange-OpenSource.github.io/its-client/schema/cam",
+  "$references": [
+    {
+      "name": "CAM TS 103 900",
+      "version": "2.1.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/cam_ts103900/-/tree/V2.1.1"
+    },
+    {
+      "name": "CAM EN 302 637-2",
+      "version": "1.4.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/cam_en302637_2/-/tree/v1.4.1"
+    }
+  ],
   "description": "CAM JSON schema",
   "type": "object",
   "additionalProperties": false,
