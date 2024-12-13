@@ -250,7 +250,10 @@ def send_position(
     )
 
     core.publish(
-        topic=cam.topic(template=_mobility["topic_template_send"]),
+        topic=cam.topic(
+            template=_mobility["topic_template_send"],
+            depth=_mobility["report_depth"],
+        ),
         payload=cam.to_json(),
     )
 
@@ -301,7 +304,10 @@ def send_alert(
     )
 
     core.publish(
-        topic=denm.topic(template=_mobility["topic_template_send"]),
+        topic=denm.topic(
+            template=_mobility["topic_template_send"],
+            depth=_mobility["report_depth"],
+        ),
         payload=denm.to_json(),
     )
 
