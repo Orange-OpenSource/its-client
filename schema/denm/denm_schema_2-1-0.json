@@ -301,6 +301,7 @@
               "$ref": "#/$defs/information_quality"
             },
             "event_type": {
+              "$comment": "Choice has been made not to use CauseCodeV2 object as defined in DENM TS CDD, because it would require a object definition for each cause just to hold the subcause code; Using the deprecated CauseCode instead",
               "type": "object",
               "required": [
                 "cause"
@@ -322,6 +323,7 @@
               }
             },
             "linked_cause": {
+              "$comment": "Choice has been made not to use CauseCodeV2 object as defined in DENM TS CDD, because it would require a object definition for each cause just to hold the subcause code; Using the deprecated CauseCode instead",
               "type": "object",
               "required": [
                 "cause"
