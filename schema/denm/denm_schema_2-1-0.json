@@ -27,7 +27,7 @@
   "properties": {
     "message_type": {
       "type": "string",
-      "description": "message type",
+      "description": "Type of the message carried in 'message' property",
       "const": "denm"
     },
     "source_uuid": {
@@ -49,7 +49,7 @@
     },
     "version": {
       "type": "string",
-      "description": "json message format version",
+      "description": "JSON message format version",
       "const": "2.1.0-dev"
     },
     "path": {
