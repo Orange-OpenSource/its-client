@@ -500,7 +500,7 @@
           "properties": {
             "lane_position": {
               "type": "integer",
-              "description": "offTheRoad(-1), innerHardShoulder(0), innermostDrivingLane(1), secondLaneFromInside(2), outterHardShoulder(14)",
+              "description": "A transversal position on the carriageway at a specific longitudinal position, in resolution of lanes of the carriageway; offTheRoad(-1), innerHardShoulder(0), innermostDrivingLane(1), secondLaneFromInside(2), outterHardShoulder(14)",
               "minimum": -1,
               "maximum": 14
             },
