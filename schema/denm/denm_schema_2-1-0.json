@@ -2,6 +2,19 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://Orange-OpenSource.github.io/its-client/schema/denm",
   "description": "DENM JSON schema",
+  "$references": [
+    {
+      "$comment": "This technical specification file (TS) is hereby considered right over the European standard one (EN); meaning that for any difference that may be present between those files this schema will prefer what is defined in the technical specification",
+      "name": "DENM TS 103 831",
+      "version": "2.2.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/denm_ts103831/-/tree/v2.2.1"
+    },
+    {
+      "name": "DENM EN 302 637-3",
+      "version": "1.3.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/denm_en302637_3/-/tree/v1.3.1"
+    }
+  ],
   "type": "object",
   "additionalProperties": false,
   "required": [
