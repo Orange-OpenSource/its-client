@@ -343,6 +343,63 @@
                   "maximum": 255
                 }
               }
+            },
+            "event_zone": {
+              "type": "array",
+              "description": "List of relative position, using the position indicated in the component eventPosition of the Management container as the reference position for the first position",
+              "items" : {
+                "type": "object",
+                "required": [
+                  "event_position",
+                  "information_quality"
+                ],
+                "properties": {
+                  "event_position": {
+                    "$ref": "#/$defs/delta_reference_position"
+                  },
+                  "event_delta_time": {
+                    "type": "integer",
+                    "description": "The recorded or estimated travel time between a position and a predefined reference position; Unit: 10 millisecond",
+                    "minimum": 0,
+                    "maximum": 65535
+                  },
+                  "information_quality": {
+                    "description": "Information quality of the detection for this event point",
+                    "$ref": "#/$defs/information_quality"
+                  }
+                }
+              }
+            },
+            "linked_denms": {
+              "type": "array",
+              "description": "List of action id pointing to DENMs that are semantically connected because applying to consecutive event zones at the same time",
+              "item": {
+                "type": "object",
+                "required": [
+                  "station_id",
+                  "sequence_number"
+                ],
+                "properties": {
+                  "station_id": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4294967295
+                  },
+                  "sequence_number":{
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 65535
+                  }
+                }
+              },
+              "minimum": 1,
+              "maximum": 8
+            },
+            "event_end": {
+              "type": "integer",
+              "description": "Unit: meter; outOfRange(8190), unavailable(8191)",
+              "minimum": -8190,
+              "maximum": 8191
             }
           }
         },
@@ -478,6 +535,37 @@
       "default": 0,
       "minimum": 0,
       "maximum": 7
+    },
+    "delta_reference_position": {
+      "type": "object",
+      "required": [
+        "delta_latitude",
+        "delta_longitude",
+        "delta_altitude"
+      ],
+      "properties": {
+        "delta_latitude": {
+          "type": "integer",
+          "description": "Offset latitude with regards to a defined latitude value. It may be used to describe a geographical point with regards to a specific reference geographical position; Unit: 0.1 micro degree (10^-7 degree)",
+          "default": 131072,
+          "minimum": -131071,
+          "maximum": 131072
+        },
+        "delta_longitude": {
+          "type:": "integer",
+          "description": "Offset longitude with regards to a defined longitude value. It may be used to describe a geographical point with regards to a specific reference geographical position; Unit: 0.1 micro degree (10^-7 degree)",
+          "default": 131072,
+          "minimum": -131071,
+          "maximum": 131072
+        },
+        "delta_altitude": {
+          "type": "integer",
+          "description": "An offset altitude with regards to a defined altitude value. It may be used to describe a geographical point with regards to a specific reference geographical position; Unit: centimeter; negativeOutOfRange(-12700), positiveOutOfRange(12799), unavailable(12800)",
+          "default": 12800,
+          "minimum": -12700,
+          "maximum": 12800
+        }
+      }
     }
   }
 }
