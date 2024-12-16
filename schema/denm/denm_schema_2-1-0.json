@@ -506,8 +506,9 @@
             },
             "positioning_solution": {
               "type": "integer",
-              "description": "noPositioningSolution(0), sGNSS(1), dGNSS(2), sGNSSplusDR(3), dGNSSplusDR(4), dR(5)",
-              "minimum": 0
+              "description": "The positioning technology being used to estimate a geographical position; noPositioningSolution(0), sGNSS(1), dGNSS(2), sGNSSplusDR(3), dGNSSplusDR(4), dR(5), manuallyByOperator(6)",
+              "minimum": 0,
+              "maximum": 6
             }
           }
         }
