@@ -165,13 +165,13 @@
             },
             "detection_time": {
               "type": "integer",
-              "description": "Unit: millisecond since ETSI epoch (2004/01/01, so 1072915200000). Time at which the event is detected by the originating ITS-S. For the DENM repetition, this DE shall remain unchanged. utcStartOf2004(0), oneMillisecAfterUTCStartOf2004(1)",
+              "description": " Time at which the event is detected by the originating ITS-S. Remains the same on repetition; updated if any value changed in the payload, meaning sequence_number remains unchanged but anything else has been updated; Unit: millisecond since ETSI epoch (2004/01/01, so 1072915200000); utcStartOf2004(0), oneMillisecAfterUTCStartOf2004(1)",
               "minimum": 0,
               "maximum": 4398046511103
             },
             "reference_time": {
               "type": "integer",
-              "description": "Unit: millisecond since ETSI epoch (2004/01/01, so 1072915200000). Time at which a new DENM, an update DENM or a cancellation DENM is generated. utcStartOf2004(0), oneMillisecAfterUTCStartOf2004(1)",
+              "description": "Time at which a new DENM, an update DENM or a cancellation DENM is generated (different for each message, even for repetition); Unit: millisecond since ETSI epoch (2004/01/01, so 1072915200000). utcStartOf2004(0), oneMillisecAfterUTCStartOf2004(1)",
               "minimum": 0,
               "maximum": 4398046511103
             },
