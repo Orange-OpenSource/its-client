@@ -296,10 +296,8 @@
           "properties": {
             "information_quality": {
               "type": "integer",
-              "description": "unavailable(0), lowest(1), highest(7)",
-              "default": 0,
-              "minimum": 0,
-              "maximum": 7
+              "description": "The quality level of the information provided by the ITS-S application of the originating ITS-S. It indicates the probability of the detected event being truly existent at the event position.",
+              "$ref": "#/$defs/information_quality"
             },
             "event_type": {
               "type": "object",
@@ -468,6 +466,15 @@
           }
         }
       }
+    }
+  },
+  "$defs": {
+    "information_quality": {
+      "type": "integer",
+      "description": "unavailable(0), lowest(1), highest(7)",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 7
     }
   }
 }
