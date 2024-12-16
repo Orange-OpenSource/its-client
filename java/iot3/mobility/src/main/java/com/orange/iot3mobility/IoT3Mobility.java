@@ -138,6 +138,13 @@ public class IoT3Mobility {
     }
 
     /**
+     * Retrieve the IoT3Core instance powering IoT3Mobility.
+     */
+    public IoT3Core getIoT3Core() {
+        return ioT3Core;
+    }
+
+    /**
      * Disconnect from the server.
      */
     public void disconnect() {
