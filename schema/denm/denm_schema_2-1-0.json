@@ -410,16 +410,45 @@
           ],
           "properties": {
             "event_speed": {
-              "type": "integer",
-              "description": "Unit 0.01 m/s. standstill(0), oneCentimeterPerSec(1), unavailable(16383)",
-              "minimum": 0,
-              "maximum": 16383
+              "type": "object",
+              "required": [
+                "speed_value",
+                "speed_confidence"
+              ],
+              "properties": {
+                "speed_value": {
+                  "description": "Speed value, i.e. the magnitude of the velocity-vector; Unit 0.01 m/s. standstill(0), oneCentimeterPerSec(1), unavailable(16383), outOfRange(16832)",
+                  "minimum": 0,
+                  "maximum": 16383
+                },
+                "speed_confidence": {
+                  "type": "integer",
+                  "description": "The confidence value of the speed value; Unit: 0.01 m/s. equalOrWithinOneCentimeterPerSec(1), equalOrWithinOneMeterPerSec(100), outOfRange(126), unavailable(127)",
+                  "minimum": 1,
+                  "maximum": 127
+                }
+              }
             },
             "event_position_heading": {
-              "type": "integer",
-              "description": "Unit: 0.1 degree. wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), unavailable(3601)",
-              "minimum": 0,
-              "maximum": 3601
+              "type": "object",
+              "required": [
+                "value",
+                "confidence"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer",
+                  "description": "The angle value, which can be estimated as the mean of the current distribution; Unit: 0.1 degree. wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), doNotUse(3600), unavailable(3601)",
+                  "minimum": 0,
+                  "maximum": 3601
+                },
+                "confidence": {
+                  "type": "integer",
+                  "description": "The angle confidence value which represents the estimated accuracy of an angle value with a default confidence level of 95%; Unit: 0.1 degree. equalOrWithinZeroPointOneDegree (1), equalOrWithinOneDegree (10), outOfRange(126), unavailable(127)",
+                  "minimum": 1,
+                  "maximum": 127
+                }
+              }
             },
             "detection_zones_to_event_position": {
               "type": "array",
@@ -463,23 +492,6 @@
               "description": "Type of a road segment. urban-NoStructuralSeparationToOppositeLanes(0), urban-WithStructuralSeparationToOppositeLanes(1), nonUrban-NoStructuralSeparationToOppositeLanes(2), nonUrban-WithStructuralSeparationToOppositeLanes(3)",
               "minimum": 0,
               "maximum": 3
-            },
-            "confidence": {
-              "type": "object",
-              "properties": {
-                "event_speed": {
-                  "type": "integer",
-                  "description": "Unit: 0.01 m/s. equalOrWithinOneCentimeterPerSec(1), equalOrWithinOneMeterPerSec(100), outOfRange(126), unavailable(127)",
-                  "minimum": 1,
-                  "maximum": 127
-                },
-                "event_position_heading": {
-                  "type": "integer",
-                  "description": "Unit: 0.1 degree. equalOrWithinZeroPointOneDegree (1), equalOrWithinOneDegree (10), outOfRange(126), unavailable(127)",
-                  "minimum": 1,
-                  "maximum": 127
-                }
-              }
             }
           }
         },
