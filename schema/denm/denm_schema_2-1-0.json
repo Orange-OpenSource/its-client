@@ -291,6 +291,7 @@
         "situation_container": {
           "type": "object",
           "required": [
+            "information_quality",
             "event_type"
           ],
           "properties": {
