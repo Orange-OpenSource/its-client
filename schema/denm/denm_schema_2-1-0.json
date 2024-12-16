@@ -254,21 +254,21 @@
                 }
               }
             },
-            "relevance_distance": {
+            "awareness_distance": {
               "type": "integer",
-              "description": "lessThan50m(0), lessThan100m(1), lessThan200m(2), lessThan500m(3), lessThan1000m(4), lessThan5km(5), lessThan10km(6), over10km(7)",
+              "description": "radius of the circular awareness area, with centre at the event position or at any of the event history points; lessThan50m(0), lessThan100m(1), lessThan200m(2), lessThan500m(3), lessThan1000m(4), lessThan5km(5), lessThan10km(6), over10km(7)",
               "minimum": 0,
               "maximum": 7
             },
             "relevance_traffic_direction": {
               "type": "integer",
-              "description": "allTrafficDirections(0), upstreamTraffic(1), downstreamTraffic(2), oppositeTraffic(3)",
+              "description": "Traffic direction along which the receiving ITS-S may encounter the event; allTrafficDirections(0), upstreamTraffic(1), downstreamTraffic(2), oppositeTraffic(3)",
               "minimum": 0,
               "maximum": 3
             },
             "validity_duration": {
               "type": "integer",
-              "description": "Unit: second. timeOfDetection(0), oneSecondAfterDetection(1)",
+              "description": "Duration after which the DENM can be considered invalid; Unit: second. timeOfDetection(0), oneSecondAfterDetection(1)",
               "minimum": 0,
               "maximum": 86400,
               "default": 600
