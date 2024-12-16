@@ -421,18 +421,18 @@
               "minimum": 0,
               "maximum": 3601
             },
-            "traces": {
+            "detection_zones_to_event_position": {
               "type": "array",
-              "description": "the traces, 1 or more path history",
+              "description": "The detection zone information approaching the event position",
               "minItems": 1,
               "maxItems": 7,
               "items": {
                 "type": "object",
                 "required": [
-                  "path_history"
+                  "path"
                 ],
                 "properties": {
-                  "path_history": {
+                  "path": {
                     "type": "array",
                     "description": "the path history, a path with a set of path points",
                     "maxItems": 40,
@@ -443,34 +443,8 @@
                       ],
                       "properties": {
                         "path_position": {
-                          "type": "object",
-                          "description": "offset position of a detected event point with regards to the previous detected event point (event_position).",
-                          "properties": {
-                            "delta_latitude": {
-                              "$comment": "if not provided, 'delta_latitude' = 131072 (unavailable)",
-                              "type": "integer",
-                              "description": "oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10) , unavailable(131072)",
-                              "default": 131072,
-                              "minimum": -131071,
-                              "maximum": 131072
-                            },
-                            "delta_longitude": {
-                              "$comment": "if not provided, 'delta_longitude' = 131072 (unavailable)",
-                              "type": "integer",
-                              "description": "oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(131072)",
-                              "default": 131072,
-                              "minimum": -131071,
-                              "maximum": 131072
-                            },
-                            "delta_altitude": {
-                              "$comment": "if not provided, 'delta_altitude' = 12800 (unavailable)",
-                              "type": "integer",
-                              "description": "oneCentimeterUp (1), oneCentimeterDown (-1), unavailable(12800)",
-                              "default": 12800,
-                              "minimum": -12700,
-                              "maximum": 12800
-                            }
-                          }
+                          "$ref": "#/$defs/delta_reference_position",
+                          "description": "offset position of a detected event point with regards to the previous detected event point (event_position)."
                         },
                         "path_delta_time": {
                           "type": "integer",
