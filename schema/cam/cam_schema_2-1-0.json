@@ -93,11 +93,11 @@
         "basic_container": {
           "type": "object",
           "required": [
+            "station_type",
             "reference_position"
           ],
           "properties": {
             "station_type": {
-              "$comment": "if not provided, 'station_type' = 0 (unknown)",
               "description": "unknown(0), pedestrian(1), cyclist(2), moped(3), motorcycle(4), passengerCar(5), bus(6), lightTruck(7), heavyTruck(8), trailer(9), specialVehicles(10), tram(11), roadSideUnit(15)",
               "type": "integer",
               "default": 0,
@@ -108,8 +108,7 @@
               "type": "object",
               "required": [
                 "latitude",
-                "longitude",
-                "altitude"
+                "longitude"
               ],
               "properties": {
                 "latitude": {
@@ -127,24 +126,31 @@
                   "maximum": 1800000001
                 },
                 "altitude": {
-                  "type": "integer",
-                  "description": "Unit: 0.01 meter. referenceEllipsoidSurface(0), oneCentimeter(1), unavailable(800001)",
-                  "default": 800001,
-                  "minimum": -100000,
-                  "maximum": 800001
-                }
-              }
-            },
-            "confidence": {
-              "$comment": "mandatory on ETSI specification, FIXME?",
-              "type": "object",
-              "properties": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "Unit: 0.01 meter. referenceEllipsoidSurface(0), oneCentimeter(1), unavailable(800001)",
+                      "default": 800001,
+                      "minimum": -100000,
+                      "maximum": 800001
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "alt-000-01 (0), alt-000-02 (1), alt-000-05 (2), alt-000-10 (3), alt-000-20 (4), alt-000-50 (5), alt-001-00 (6), alt-002-00 (7), alt-005-00 (8), alt-010-00 (9), alt-020-00 (10), alt-050-00 (11), alt-100-00 (12), alt-200-00 (13), outOfRange (14), unavailable (15)",
+                      "default": 15,
+                      "minimum": 0,
+                      "maximum": 15
+                    }
+                  }
+                },
                 "position_confidence_ellipse": {
-                  "$comment": "mandatory on ETSI specification, FIXME?",
                   "type": "object",
                   "properties": {
                     "semi_major_confidence": {
-                      "$comment": "if not provided, 'semi_major_confidence' = 4095 (unavailable)",
                       "type": "integer",
                       "description": "oneCentimeter(1), outOfRange(4094), unavailable(4095)",
                       "default": 4095,
@@ -152,7 +158,6 @@
                       "maximum": 4095
                     },
                     "semi_minor_confidence": {
-                      "$comment": "if not provided, 'semi_minor_confidence' = 4095 (unavailable)",
                       "type": "integer",
                       "description": "oneCentimeter(1), outOfRange(4094), unavailable(4095)",
                       "default": 4095,
@@ -160,7 +165,6 @@
                       "maximum": 4095
                     },
                     "semi_major_orientation": {
-                      "$comment": "if not provided, 'semi_major_orientation' = 3601 (unavailable)",
                       "type": "integer",
                       "description": "wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), unavailable(3601)",
                       "default": 3601,
@@ -168,14 +172,6 @@
                       "maximum": 3601
                     }
                   }
-                },
-                "altitude": {
-                  "$comment": "if not provided, 'altitude' = 15 (unavailable)",
-                  "type": "integer",
-                  "description": "alt-000-01 (0), alt-000-02 (1), alt-000-05 (2), alt-000-10 (3), alt-000-20 (4), alt-000-50 (5), alt-001-00 (6), alt-002-00 (7), alt-005-00 (8), alt-010-00 (9), alt-020-00 (10), alt-050-00 (11), alt-100-00 (12), alt-200-00 (13), outOfRange (14), unavailable (15)",
-                  "default": 15,
-                  "minimum": 0,
-                  "maximum": 15
                 }
               }
             }
