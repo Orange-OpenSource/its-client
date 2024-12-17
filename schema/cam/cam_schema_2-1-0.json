@@ -613,6 +613,11 @@
               "required": [
                 "public_transport_container"
               ]
+            },
+            {
+              "required": [
+                "special_transport_container"
+              ]
             }
           ],
           "properties": {
@@ -648,6 +653,36 @@
                       "maxLength": 20
                     }
                   }
+                }
+              }
+            },
+            "special_transport_container": {
+              "type": "object",
+              "description": "detailed information of the Special Transport Container",
+              "required": [
+                "special_transport_type",
+                "light_bar_siren_in_use"
+              ],
+              "properties": {
+                "special_transport_type": {
+                  "type": "string",
+                  "description": "indicates if a vehicle is carrying goods in the special transport conditions as a bit string: heavyLoad(0), excessWidth(1), excessLength(2), excessHeight(3)",
+                  "minLength": 4,
+                  "maxLength": 4,
+                  "example": [
+                    "0000",
+                    "1001"
+                  ]
+                },
+                "light_bar_siren_in_use": {
+                  "type": "string",
+                  "description": "indicates the status of light bar and any sort of audible alarm system besides the horn as a bit string: lightBarActivated(0), sirenActivated(1)",
+                  "minLength": 2,
+                  "maxLength": 2,
+                  "example": [
+                    "00",
+                    "10"
+                  ]
                 }
               }
             }
