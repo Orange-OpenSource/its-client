@@ -69,7 +69,7 @@ class ETSI(abc.ABC):
     def si2etsi(
         value: float | None,
         scale: float,
-        undef: int,
+        undef: Optional[int] = None,
         range: Optional[dict] = None,
         out_of_range: Optional[int] = None,
     ) -> int:
@@ -81,12 +81,14 @@ class ETSI(abc.ABC):
 
         :param value: the value in the SI unit, or None when the value is unknown
         :param scale: the ETSI scale of the key
-        :param undef: the special ETSI-scaled value to use when the value is unknown
+        :param undef: the special ETSI-scaled value to use when the value is unknown;
+                      if undef is None, the value must not be None.
         :param validity_range: the lower and upper bounds of the value range as a
                       dict with keys "min" and "max", in ETSI scale; the bounds are
                       inclusive, but must not include undef and out_of_range.
         :param out_of_range: the special ETSI-scaled value to use when the value is
-                             out of range
+                             out of range; if out_of_range is None, the encoded
+                             value is capped by the specified range if provided.
         :return: the special ETSI-scaled value 'undef' when the value is None, the
                  special ETSI-scaled value 'out_of_range' if the value is out of
                  range, or the value scaled to the ETSI scale otherwise
@@ -107,20 +109,24 @@ class ETSI(abc.ABC):
         of centimeters.
         """
         if value is None:
+            if undef is None:
+                raise AttributeError(
+                    "This conversion to an ETSI scale does not accept an unknown value (None)",
+                )
             return undef
         etsi_value = int(round(value / scale))
         if range is not None:
             if etsi_value < range["min"]:
-                etsi_value = out_of_range
+                etsi_value = out_of_range if out_of_range is not None else range["min"]
             if etsi_value > range["max"]:
-                etsi_value = out_of_range
+                etsi_value = out_of_range if out_of_range is not None else range["max"]
         return etsi_value
 
     @staticmethod
     def etsi2si(
         value: int,
         scale: float,
-        undef: int,
+        undef: Optional[int] = None,
         out_of_range: Optional[int] = None,
     ) -> float | None:
         """ETSI to SI unit conversions
@@ -148,7 +154,7 @@ class ETSI(abc.ABC):
         altitude as a floating point numbers of meters, or None if the altitude
         is not known or out of range.
         """
-        if value == undef:
+        if undef is not None and value == undef:
             return None
         if out_of_range is not None and value == out_of_range:
             return None
@@ -222,6 +228,7 @@ class Message(abc.ABC):
 
     @abc.abstractmethod
     def __init__(self, *args, **kwargs):
+        """Sub-classes must provide their own, explicit constructor."""
         ...
 
     @staticmethod
