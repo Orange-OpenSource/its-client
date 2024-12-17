@@ -633,6 +633,11 @@
               "required": [
                 "rescue_container"
               ]
+            },
+            {
+              "required": [
+                "emergency_container"
+              ]
             }
           ],
           "properties": {
@@ -775,6 +780,50 @@
                 "light_bar_siren_in_use": {
                   "type": "string",
                   "description": "indicates the status of light bar and any sort of audible alarm system besides the horn as a bit string: lightBarActivated(0), sirenActivated(1)",
+                  "minLength": 2,
+                  "maxLength": 2,
+                  "example": [
+                    "00",
+                    "10"
+                  ]
+                }
+              }
+            },
+            "emergency_container": {
+              "type": "object",
+              "description": "detailed information of the Rescue Container",
+              "required": [
+                "light_bar_siren_in_use"
+              ],
+              "properties": {
+                "light_bar_siren_in_use": {
+                  "type": "string",
+                  "description": "indicates the status of light bar and any sort of audible alarm system besides the horn as a bit string: lightBarActivated(0), sirenActivated(1)",
+                  "minLength": 2,
+                  "maxLength": 2,
+                  "example": [
+                    "00",
+                    "10"
+                  ]
+                },
+                "incident_indication": {
+                  "type": "object",
+                  "description": "the optional incident related to the roadworks to provide additional information of the roadworks zone.",
+                  "required": [
+                    "cc_and_scc"
+                  ],
+                  "properties": {
+                    "cc_and_scc": {
+                      "type": "integer",
+                      "description": "reserved for future use(0), trafficCondition(1), accident(2), roadworks(3), reserved for future usage(4), impassability(5), adverseWeatherCondition-Adhesion(6), aquaplaning(7), reserved for future usage(8),hazardousLocation-SurfaceCondition(9), hazardousLocation-ObstacleOnTheRoad(10), hazardousLocation-AnimalOnTheRoad(11), humanPresenceOnTheRoad(12), reserved for future usage(13), wrongWayDriving(14), rescueAndRecoveryWorkInProgress(15), reserved for future usage(16), adverseWeatherCondition-ExtremeWeatherCondition(17), adverseWeatherCondition-Visibility(18), adverseWeatherCondition-Precipitation(19), violence(20), reserved for future usage(21-25), slowVehicle(26), dangerousEndOfQueue(27), reserved for future usage(28-90), vehicleBreakdown(91), postCrash(92), humanProblem(93), stationaryVehicle(94), emergencyVehicleApproaching(95), hazardousLocation-DangerousCurve(96), collisionRisk(97), signalViolation(98), dangerousSituation(99), railwayLevelCrossing(100), reserved for future usage(101-255)",
+                      "minimum": 0,
+                      "maximum": 255
+                    }
+                  }
+                },
+                "emergency_priority": {
+                  "type": "string",
+                  "description": "indicates the right of priority requested or assumed by an operating emergency vehicle as a bit string: requestForRightOfWay(0), requestForFreeCrossingAtATrafficLight(1)",
                   "minLength": 2,
                   "maxLength": 2,
                   "example": [
