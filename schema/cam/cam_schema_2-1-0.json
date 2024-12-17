@@ -628,6 +628,11 @@
               "required": [
                 "road_works_container_basic"
               ]
+            },
+            {
+              "required": [
+                "rescue_container"
+              ]
             }
           ],
           "properties": {
@@ -757,6 +762,25 @@
                       "maxLength": 13
                     }
                   }
+                }
+              }
+            },
+            "rescue_container": {
+              "type": "object",
+              "description": "detailed information of the Rescue Container",
+              "required": [
+                "light_bar_siren_in_use"
+              ],
+              "properties": {
+                "light_bar_siren_in_use": {
+                  "type": "string",
+                  "description": "indicates the status of light bar and any sort of audible alarm system besides the horn as a bit string: lightBarActivated(0), sirenActivated(1)",
+                  "minLength": 2,
+                  "maxLength": 2,
+                  "example": [
+                    "00",
+                    "10"
+                  ]
                 }
               }
             }
