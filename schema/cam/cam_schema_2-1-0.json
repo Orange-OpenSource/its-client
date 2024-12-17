@@ -618,6 +618,11 @@
               "required": [
                 "special_transport_container"
               ]
+            },
+            {
+              "required": [
+                "dangerous_goods_container"
+              ]
             }
           ],
           "properties": {
@@ -683,6 +688,21 @@
                     "00",
                     "10"
                   ]
+                }
+              }
+            },
+            "dangerous_goods_container": {
+              "type": "object",
+              "description": "detailed information of the Dangerous Goods Container",
+              "required": [
+                "dangerous_goods_basic"
+              ],
+              "properties": {
+                "dangerous_goods_basic": {
+                  "type": "integer",
+                  "description": "indicates the type of the dangerous goods being carried by a heavy vehicle: explosives1(0), explosives2(1), explosives3(2), explosives4(3), explosives5(4), explosives6(5), flammableGases(6), nonFlammableGases(7), toxicGases(8), flammableLiquids(9), flammableSolids(10), substancesLiableToSpontaneousCombustion(11), substancesEmittingFlammableGasesUponContactWithWater(12), oxidizingSubstances(13), organicPeroxides(14), toxicSubstances(15), infectiousSubstances(16), radioactiveMaterial(17), corrosiveSubstances(18), miscellaneousDangerousSubstances(19)",
+                  "minimum": 0,
+                  "maximum": 18
                 }
               }
             }
