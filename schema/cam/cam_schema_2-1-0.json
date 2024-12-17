@@ -450,76 +450,79 @@
         },
         "low_frequency_container": {
           "type": "object",
-          "description": "The basic vehicle container low frequency",
           "required": [
-            "exterior_lights",
-            "path_history"
+            "basic_vehicle_container_low_frequency"
           ],
           "properties": {
-            "vehicle_role": {
-              "$comment": "if not provided, 'vehicle_role' = 0 (default)",
-              "type": "integer",
-              "description": "default(0), publicTransport(1), specialTransport(2), dangerousGoods(3), roadWork(4), rescue(5), emergency(6), safetyCar(7), agriculture(8),commercial(9),military(10),roadOperator(11),taxi(12), reserved1(13), reserved2(14), reserved3(15)",
-              "default": 0,
-              "minimum": 0,
-              "maximum": 15
-            },
-            "exterior_lights": {
-              "type": "string",
-              "description": "Status of the exterior light switches represented as a bit string: lowBeamHeadlightsOn (0), highBeamHeadlightsOn (1), leftTurnSignalOn (2), rightTurnSignalOn (3), daytimeRunningLightsOn (4), reverseLightOn (5), fogLightOn (6), parkingLightsOn (7)",
-              "minLength": 8,
-              "maxLength": 8,
-              "example": [
-                "00000000",
-                "10011010",
-                "00000110"
-              ]
-            },
-            "path_history": {
-              "type": "array",
-              "description": "the path history, a path with a set of path points",
-              "maxItems": 40,
-              "items": {
-                "type": "object",
-                "required": [
-                  "path_position"
-                ],
-                "properties": {
-                  "path_position": {
+            "basic_vehicle_container_low_frequency": {
+              "description": "The basic vehicle container low frequency",
+              "required": [
+                "exterior_lights",
+                "path_history"
+              ],
+              "properties": {
+                "vehicle_role": {
+                  "type": "integer",
+                  "description": "default(0), publicTransport(1), specialTransport(2), dangerousGoods(3), roadWork(4), rescue(5), emergency(6), safetyCar(7), agriculture(8),commercial(9),military(10),roadOperator(11),taxi(12), reserved1(13), reserved2(14), reserved3(15)",
+                  "default": 0,
+                  "minimum": 0,
+                  "maximum": 15
+                },
+                "exterior_lights": {
+                  "type": "string",
+                  "description": "Status of the exterior light switches represented as a bit string: lowBeamHeadlightsOn(0), highBeamHeadlightsOn(1), leftTurnSignalOn(2), rightTurnSignalOn(3), daytimeRunningLightsOn(4), reverseLightOn(5), fogLightOn(6), parkingLightsOn(7)",
+                  "minLength": 8,
+                  "maxLength": 8,
+                  "example": [
+                    "00000000",
+                    "10011010",
+                    "00000110"
+                  ]
+                },
+                "path_history": {
+                  "type": "array",
+                  "description": "the path history, a path with a set of path points",
+                  "maxItems": 23,
+                  "items": {
                     "type": "object",
-                    "description": "offset position of a detected event point with regards to the previous detected event point (reference_position).",
+                    "required": [
+                      "path_position"
+                    ],
                     "properties": {
-                      "delta_latitude": {
-                        "$comment": "if not provided, 'delta_latitude' = 131072 (unavailable)",
-                        "type": "integer",
-                        "description": "oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10) , unavailable(131072)",
-                        "default": 131072,
-                        "minimum": -131071,
-                        "maximum": 131072
+                      "path_position": {
+                        "type": "object",
+                        "description": "offset position of a detected event point with regards to the previous detected event point (reference_position).",
+                        "properties": {
+                          "delta_latitude": {
+                            "type": "integer",
+                            "description": "oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10) , unavailable(131072)",
+                            "default": 131072,
+                            "minimum": -131071,
+                            "maximum": 131072
+                          },
+                          "delta_longitude": {
+                            "type": "integer",
+                            "description": "oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(131072)",
+                            "default": 131072,
+                            "minimum": -131071,
+                            "maximum": 131072
+                          },
+                          "delta_altitude": {
+                            "type": "integer",
+                            "description": "oneCentimeterUp (1), oneCentimeterDown (-1), unavailable(12800)",
+                            "default": 12800,
+                            "minimum": -12700,
+                            "maximum": 12800
+                          }
+                        }
                       },
-                      "delta_longitude": {
-                        "$comment": "if not provided, 'delta_longitude' = 131072 (unavailable)",
+                      "path_delta_time": {
                         "type": "integer",
-                        "description": "oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(131072)",
-                        "default": 131072,
-                        "minimum": -131071,
-                        "maximum": 131072
-                      },
-                      "delta_altitude": {
-                        "$comment": "if not provided, 'delta_altitude' = 12800 (unavailable)",
-                        "type": "integer",
-                        "description": "oneCentimeterUp (1), oneCentimeterDown (-1), unavailable(12800)",
-                        "default": 12800,
-                        "minimum": -12700,
-                        "maximum": 12800
+                        "description": "time travelled by the detecting ITS-S since the previous detected event point (generation_delta_time). tenMilliSecondsInPast(1)",
+                        "minimum": 1,
+                        "maximum": 65535
                       }
                     }
-                  },
-                  "path_delta_time": {
-                    "type": "integer",
-                    "description": "time travelled by the detecting ITS-S since the previous detected event point (generation_delta_time). tenMilliSecondsInPast(1)",
-                    "minimum": 1,
-                    "maximum": 65535
                   }
                 }
               }
