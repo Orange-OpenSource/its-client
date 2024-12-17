@@ -623,6 +623,11 @@
               "required": [
                 "dangerous_goods_container"
               ]
+            },
+            {
+              "required": [
+                "road_works_container_basic"
+              ]
             }
           ],
           "properties": {
@@ -703,6 +708,55 @@
                   "description": "indicates the type of the dangerous goods being carried by a heavy vehicle: explosives1(0), explosives2(1), explosives3(2), explosives4(3), explosives5(4), explosives6(5), flammableGases(6), nonFlammableGases(7), toxicGases(8), flammableLiquids(9), flammableSolids(10), substancesLiableToSpontaneousCombustion(11), substancesEmittingFlammableGasesUponContactWithWater(12), oxidizingSubstances(13), organicPeroxides(14), toxicSubstances(15), infectiousSubstances(16), radioactiveMaterial(17), corrosiveSubstances(18), miscellaneousDangerousSubstances(19)",
                   "minimum": 0,
                   "maximum": 18
+                }
+              }
+            },
+            "road_works_container_basic": {
+              "type": "object",
+              "description": "detailed information of the Road Works Container",
+              "required": [
+                "light_bar_siren_in_use"
+              ],
+              "properties": {
+                "road_works_sub_cause_code": {
+                  "type": "integer",
+                  "description": "unavailable(0), majorRoadworks(1),roadMarkingWork(2), slowMovingRoadMaintenance(3), shortTermStationaryRoadworks(4), streetCleaning(5), winterService(6), reserved for future usage (7-255)",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "light_bar_siren_in_use": {
+                  "type": "string",
+                  "description": "indicates the status of light bar and any sort of audible alarm system besides the horn as a bit string: lightBarActivated(0), sirenActivated(1)",
+                  "minLength": 2,
+                  "maxLength": 2,
+                  "example": [
+                    "00",
+                    "10"
+                  ]
+                },
+                "closed_lanes": {
+                  "type": "object",
+                  "description": "indicates the opening/closure status of the lanes of a carriageway.",
+                  "properties": {
+                    "inner_hard_shoulder_status": {
+                      "type": "integer",
+                      "description": "indicates the current status of a hard shoulder: whether it is available for special usage: availableForStopping(0), closed(1), availableForDriving(2)",
+                      "minimum": 0,
+                      "maximum": 2
+                    },
+                    "outer_hard_shoulder_status": {
+                      "type": "integer",
+                      "description": "indicates the current status of a hard shoulder: whether it is available for special usage: availableForStopping(0), closed(1), availableForDriving(2)",
+                      "minimum": 0,
+                      "maximum": 2
+                    },
+                    "driving_lane_status": {
+                      "type": "string",
+                      "description": "indicates whether a driving lane is open to traffic as a bit string. A lane is counted from inside border of the road excluding the hard shoulder. The size of the bit string shall correspond to the total number of the driving lanes in the carriageway",
+                      "minLength": 1,
+                      "maxLength": 13
+                    }
+                  }
                 }
               }
             }
