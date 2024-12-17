@@ -605,6 +605,53 @@
               }
             }
           }
+        },
+        "special_vehicle_container": {
+          "type": "object",
+          "oneOf": [
+            {
+              "required": [
+                "public_transport_container"
+              ]
+            }
+          ],
+          "properties": {
+            "public_transport_container": {
+              "type": "object",
+              "description": "detailed information of the Public Transport Container",
+              "required": [
+                "embarkation_status"
+              ],
+              "properties": {
+                "embarkation_status": {
+                  "type": "boolean",
+                  "description": "indicates whether a vehicle (e.g. public transport vehicle, truck) is under the embarkation process. If that is the case, the value is true, otherwise false "
+                },
+                "pt_activation": {
+                  "type": "object",
+                  "description": "activation data for real-time systems designed for operations control",
+                  "required": [
+                    "pt_activation_data"
+                  ],
+                  "properties": {
+                    "pt_activation-type": {
+                      "type": "integer",
+                      "description": "Coding type of the pt_activation_data data: undefinedCodingType(0), r09-16CodingType(1), vdv-50149CodingType(2), reserved for alternative and future use (3-255)",
+                      "default": 0,
+                      "minimum": 0,
+                      "maximum": 255
+                    },
+                    "pt_activation_data": {
+                      "type": "string",
+                      "description": "used for various tasks in the public transportation environment",
+                      "minLength": 1,
+                      "maxLength": 20
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }
