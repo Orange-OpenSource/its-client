@@ -179,270 +179,347 @@
         },
         "high_frequency_container": {
           "type": "object",
-          "description": "The basic vehicle container high frequency",
-          "properties": {
-            "heading": {
-              "type": "object",
+          "oneOf": [
+            {
               "required": [
-                "value"
-              ],
-              "properties": {
-                "value": {
-                  "type": "integer",
-                  "description": "Unit: 0.1 degree. wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), doNotUse(3600), unavailable(3601)",
-                  "default": 3601,
-                  "minimum": 0,
-                  "maximum": 3601
-                },
-                "confidence": {
-                  "type": "integer",
-                  "description": "equalOrWithinZeroPointOneDegree(1), equalOrWithinOneDegree(10), outOfRange(126), unavailable(127)",
-                  "default": 127,
-                  "minimum": 1,
-                  "maximum": 127
-                }
-              }
-            },
-            "speed": {
-              "type": "object",
-              "required": [
-                "value"
-              ],
-              "properties": {
-                "value": {
-                  "type": "integer",
-                  "description": "Unit 0.01 m/s. standstill(0), oneCentimeterPerSec(1), outOfRange(16382), unavailable(16383)",
-                  "default": 16383,
-                  "minimum": 0,
-                  "maximum": 16383
-                },
-                "confidence": {
-                  "type": "integer",
-                  "description": "equalOrWithinOneCentimeterPerSec(1), equalOrWithinOneMeterPerSec(100), outOfRange(126), unavailable(127)",
-                  "default": 127,
-                  "minimum": 1,
-                  "maximum": 127
-                }
-              }
-            },
-            "drive_direction": {
-              "type": "integer",
-              "description": "forward (0), backward (1), unavailable (2)",
-              "default": 2,
-              "minimum": 0,
-              "maximum": 2
-            },
-            "vehicle_length": {
-              "type": "object",
-              "required": [
-                "value"
-              ],
-              "properties": {
-                "value": {
-                  "type": "integer",
-                  "description": "tenCentimeters(1), outOfRange(1022), unavailable(1023)",
-                  "default": 1023,
-                  "minimum": 1,
-                  "maximum": 1023
-                },
-                "confidence": {
-                  "type": "integer",
-                  "description": "noTrailerPresent(0), trailerPresentWithKnownLength(1), trailerPresentWithUnknownLength(2), trailerPresenceIsUnknown(3), unavailable(4)",
-                  "default": 4,
-                  "minimum": 0,
-                  "maximum": 4
-                }
-              }
-            },
-            "vehicle_width": {
-              "type": "integer",
-              "description": "tenCentimeters(1), outOfRange(61), unavailable(62)",
-              "default": 62,
-              "minimum": 1,
-              "maximum": 62
-            },
-            "longitudinal_acceleration": {
-              "type": "object",
-              "required": [
-                "value"
-              ],
-              "properties": {
-                "value": {
-                  "type": "integer",
-                  "description": "unit: 0.1 m/s2. pointOneMeterPerSecSquaredForward(1), pointOneMeterPerSecSquaredBackward(-1), unavailable(161)",
-                  "default": 161,
-                  "minimum": -160,
-                  "maximum": 161
-                },
-                "confidence": {
-                  "type": "integer",
-                  "description": "pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102)",
-                  "minimum": 0,
-                  "maximum": 102
-                }
-              }
-            },
-            "curvature": {
-              "type": "object",
-              "required": [
-                "value"
-              ],
-              "properties": {
-                "value": {
-                  "type": "integer",
-                  "description": "unit: 1 over 10 000 m, outOfRangeNegative(-1023), straight(0), outOfRangePositive(1022), unavailable(1023)",
-                  "default": 1023,
-                  "minimum": -1023,
-                  "maximum": 1023
-                },
-                "confidence": {
-                  "type": "integer",
-                  "description": "onePerMeter-0-00002(0), onePerMeter-0-0001(1), onePerMeter-0-0005(2), onePerMeter-0-002(3), onePerMeter-0-01(4), onePerMeter-0-1(5), outOfRange(6), unavailable(7)",
-                  "minimum": 0,
-                  "maximum": 7
-                }
-              }
-            },
-            "curvature_calculation_mode": {
-              "type": "integer",
-              "description": "It describes whether the yaw rate is used to calculate the curvature: yawRateUsed(0), yawRateNotUsed(1), unavailable(2)",
-              "default": 2,
-              "minimum": 0,
-              "maximum": 2
-            },
-            "yaw_rate": {
-              "type": "object",
-              "required": [
-                "value"
-              ],
-              "properties": {
-                "value": {
-                  "type": "integer",
-                  "description": "Unit: 0.01 degree/s: negativeOutOfRange(-32766), straight(0), degSec-000-01ToRight(-1), degSec-000-01ToLeft(1), positiveOutOfRange(32766), unavailable(32767)",
-                  "default": 32767,
-                  "minimum": -32766,
-                  "maximum": 32767
-                },
-                "confidence": {
-                  "type": "integer",
-                  "description": "degSec-000-01(0), degSec-000-05(1), degSec-000-10(2), degSec-001-00(3), degSec-005-00(4), degSec-010-00(5), degSec-100-00(6), outOfRange(7), unavailable(8)",
-                  "default": 8,
-                  "minimum": 0,
-                  "maximum": 8
-                }
-              }
-            },
-            "acceleration_control": {
-              "type": "string",
-              "description": "Current controlling mechanism for longitudinal movement of the vehicle. Represented as a bit string: brakePedalEngaged (0), gasPedalEngaged (1), emergencyBrakeEngaged (2), collisionWarningEngaged(3), accEngaged(4), cruiseControlEngaged(5), speedLimiterEngaged(6)",
-              "minLength": 7,
-              "maxLength": 7,
-              "example": [
-                "0000000",
-                "1000000",
-                "0000011"
+                "basic_vehicle_container_high_frequency"
               ]
             },
-            "lane_position": {
-              "type": "integer",
-              "description": "offTheRoad(-1), innerHardShoulder(0), innermostDrivingLane(1), secondLaneFromInside(2), outterHardShoulder(14)",
-              "minimum": -1,
-              "maximum": 14
-            },
-            "steering_wheel_angle": {
-              "type": "object",
+            {
               "required": [
-                "value"
-              ],
+                "rsu_container_high_frequency"
+              ]
+            }
+          ],
+          "properties": {
+            "basic_vehicle_container_high_frequency": {
+              "type": "object",
+              "description": "The basic vehicle container high frequency",
               "properties": {
-                "value": {
-                  "type": "integer",
-                  "description": "Unit: 1;5 degree: negativeOutOfRange(-511), onePointFiveDegreeClockwise(-1), onePointFiveDegreeCounterClockwise(1), positiveOutOfRange(511), unavailable(512)",
-                  "default": 512,
-                  "minimum": -511,
-                  "maximum": 512
+                "heading": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "Unit: 0.1 degree. wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), doNotUse(3600), unavailable(3601)",
+                      "default": 3601,
+                      "minimum": 0,
+                      "maximum": 3601
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "equalOrWithinZeroPointOneDegree(1), equalOrWithinOneDegree(10), outOfRange(126), unavailable(127)",
+                      "default": 127,
+                      "minimum": 1,
+                      "maximum": 127
+                    }
+                  }
                 },
-                "confidence": {
+                "speed": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "Unit 0.01 m/s. standstill(0), oneCentimeterPerSec(1), outOfRange(16382), unavailable(16383)",
+                      "default": 16383,
+                      "minimum": 0,
+                      "maximum": 16383
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "equalOrWithinOneCentimeterPerSec(1), equalOrWithinOneMeterPerSec(100), outOfRange(126), unavailable(127)",
+                      "default": 127,
+                      "minimum": 1,
+                      "maximum": 127
+                    }
+                  }
+                },
+                "drive_direction": {
                   "type": "integer",
-                  "description": "Unit: 1;5 degree: equalOrWithinOnePointFiveDegree(1), outOfRange(126), unavailable (127)",
-                  "default": 127,
+                  "description": "forward (0), backward (1), unavailable (2)",
+                  "default": 2,
+                  "minimum": 0,
+                  "maximum": 2
+                },
+                "vehicle_length": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "tenCentimeters(1), outOfRange(1022), unavailable(1023)",
+                      "default": 1023,
+                      "minimum": 1,
+                      "maximum": 1023
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "noTrailerPresent(0), trailerPresentWithKnownLength(1), trailerPresentWithUnknownLength(2), trailerPresenceIsUnknown(3), unavailable(4)",
+                      "default": 4,
+                      "minimum": 0,
+                      "maximum": 4
+                    }
+                  }
+                },
+                "vehicle_width": {
+                  "type": "integer",
+                  "description": "tenCentimeters(1), outOfRange(61), unavailable(62)",
+                  "default": 62,
                   "minimum": 1,
-                  "maximum": 127
+                  "maximum": 62
+                },
+                "longitudinal_acceleration": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "unit: 0.1 m/s2. pointOneMeterPerSecSquaredForward(1), pointOneMeterPerSecSquaredBackward(-1), unavailable(161)",
+                      "default": 161,
+                      "minimum": -160,
+                      "maximum": 161
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102)",
+                      "minimum": 0,
+                      "maximum": 102
+                    }
+                  }
+                },
+                "curvature": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "unit: 1 over 10 000 m, outOfRangeNegative(-1023), straight(0), outOfRangePositive(1022), unavailable(1023)",
+                      "default": 1023,
+                      "minimum": -1023,
+                      "maximum": 1023
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "onePerMeter-0-00002(0), onePerMeter-0-0001(1), onePerMeter-0-0005(2), onePerMeter-0-002(3), onePerMeter-0-01(4), onePerMeter-0-1(5), outOfRange(6), unavailable(7)",
+                      "minimum": 0,
+                      "maximum": 7
+                    }
+                  }
+                },
+                "curvature_calculation_mode": {
+                  "type": "integer",
+                  "description": "It describes whether the yaw rate is used to calculate the curvature: yawRateUsed(0), yawRateNotUsed(1), unavailable(2)",
+                  "default": 2,
+                  "minimum": 0,
+                  "maximum": 2
+                },
+                "yaw_rate": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "Unit: 0.01 degree/s: negativeOutOfRange(-32766), straight(0), degSec-000-01ToRight(-1), degSec-000-01ToLeft(1), positiveOutOfRange(32766), unavailable(32767)",
+                      "default": 32767,
+                      "minimum": -32766,
+                      "maximum": 32767
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "degSec-000-01(0), degSec-000-05(1), degSec-000-10(2), degSec-001-00(3), degSec-005-00(4), degSec-010-00(5), degSec-100-00(6), outOfRange(7), unavailable(8)",
+                      "default": 8,
+                      "minimum": 0,
+                      "maximum": 8
+                    }
+                  }
+                },
+                "acceleration_control": {
+                  "type": "string",
+                  "description": "Current controlling mechanism for longitudinal movement of the vehicle. Represented as a bit string: brakePedalEngaged (0), gasPedalEngaged (1), emergencyBrakeEngaged (2), collisionWarningEngaged(3), accEngaged(4), cruiseControlEngaged(5), speedLimiterEngaged(6)",
+                  "minLength": 7,
+                  "maxLength": 7,
+                  "example": [
+                    "0000000",
+                    "1000000",
+                    "0000011"
+                  ]
+                },
+                "lane_position": {
+                  "type": "integer",
+                  "description": "offTheRoad(-1), innerHardShoulder(0), innermostDrivingLane(1), secondLaneFromInside(2), outterHardShoulder(14)",
+                  "minimum": -1,
+                  "maximum": 14
+                },
+                "steering_wheel_angle": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "Unit: 1;5 degree: negativeOutOfRange(-511), onePointFiveDegreeClockwise(-1), onePointFiveDegreeCounterClockwise(1), positiveOutOfRange(511), unavailable(512)",
+                      "default": 512,
+                      "minimum": -511,
+                      "maximum": 512
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "Unit: 1;5 degree: equalOrWithinOnePointFiveDegree(1), outOfRange(126), unavailable (127)",
+                      "default": 127,
+                      "minimum": 1,
+                      "maximum": 127
+                    }
+                  }
+                },
+                "lateral_acceleration": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "unit: 0.1 m/s2. pointOneMeterPerSecSquaredForward(1), pointOneMeterPerSecSquaredBackward(-1), unavailable(161)",
+                      "default": 161,
+                      "minimum": -160,
+                      "maximum": 161
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102)",
+                      "minimum": 0,
+                      "maximum": 102
+                    }
+                  }
+                },
+                "vertical_acceleration": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "unit: 0.1 m/s2. pointOneMeterPerSecSquaredForward(1), pointOneMeterPerSecSquaredBackward(-1), unavailable(161)",
+                      "default": 161,
+                      "minimum": -160,
+                      "maximum": 161
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102)",
+                      "minimum": 0,
+                      "maximum": 102
+                    }
+                  }
+                },
+                "performance_class": {
+                  "type": "integer",
+                  "description": "unavailable 0), performanceClassA(1), performanceClassB(2), reserved(3-7)",
+                  "default": 0,
+                  "minimum": 0,
+                  "maximum": 7
+                },
+                "cen_dsrc_tolling_zone": {
+                  "type": "object",
+                  "description": "information about a the position of a CEN DSRC Tolling Station operating in the 5,8 GHz frequency band.",
+                  "properties": {
+                    "protected_zone_latitude": {
+                      "type": "integer",
+                      "description": "Unit: 0.1 microdegree. oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10), unavailable(900000001)",
+                      "default": 900000001,
+                      "minimum": -900000000,
+                      "maximum": 900000001
+                    },
+                    "protected_zone_longitude": {
+                      "type": "integer",
+                      "description": "Unit: 0.1 microdegree. oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(1800000001)",
+                      "default": 1800000001,
+                      "minimum": -1800000000,
+                      "maximum": 1800000001
+                    },
+                    "cen_dsrc_tolling_zone_id": {
+                      "type": "integer",
+                      "description": "id of a protected communication zone",
+                      "minimum": 0,
+                      "maximum": 134217727
+                    }
+                  }
                 }
               }
             },
-            "lateral_acceleration": {
+            "rsu_container_high_frequency": {
               "type": "object",
-              "required": [
-                "value"
-              ],
+              "description": "The basic RSU container high frequency",
               "properties": {
-                "value": {
-                  "type": "integer",
-                  "description": "unit: 0.1 m/s2. pointOneMeterPerSecSquaredForward(1), pointOneMeterPerSecSquaredBackward(-1), unavailable(161)",
-                  "default": 161,
-                  "minimum": -160,
-                  "maximum": 161
-                },
-                "confidence": {
-                  "type": "integer",
-                  "description": "pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102)",
-                  "minimum": 0,
-                  "maximum": 102
-                }
-              }
-            },
-            "vertical_acceleration": {
-              "type": "object",
-              "required": [
-                "value"
-              ],
-              "properties": {
-                "value": {
-                  "type": "integer",
-                  "description": "unit: 0.1 m/s2. pointOneMeterPerSecSquaredForward(1), pointOneMeterPerSecSquaredBackward(-1), unavailable(161)",
-                  "default": 161,
-                  "minimum": -160,
-                  "maximum": 161
-                },
-                "confidence": {
-                  "type": "integer",
-                  "description": "pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102)",
-                  "minimum": 0,
-                  "maximum": 102
-                }
-              }
-            },
-            "performance_class": {
-              "type": "integer",
-              "description": "unavailable 0), performanceClassA(1), performanceClassB(2), reserved(3-7)",
-              "default": 0,
-              "minimum": 0,
-              "maximum": 7
-            },
-            "cen_dsrc_tolling_zone": {
-              "type": "object",
-              "description": "information about a the position of a CEN DSRC Tolling Station operating in the 5,8 GHz frequency band.",
-              "properties": {
-                "protected_zone_latitude": {
-                  "type": "integer",
-                  "description": "Unit: 0.1 microdegree. oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10), unavailable(900000001)",
-                  "default": 900000001,
-                  "minimum": -900000000,
-                  "maximum": 900000001
-                },
-                "protected_zone_longitude": {
-                  "type": "integer",
-                  "description": "Unit: 0.1 microdegree. oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(1800000001)",
-                  "default": 1800000001,
-                  "minimum": -1800000000,
-                  "maximum": 1800000001
-                },
-                "cen_dsrc_tolling_zone_id": {
-                  "type": "integer",
-                  "description": "id of a protected communication zone",
-                  "minimum": 0,
-                  "maximum": 134217727
+                "protected_communication_zones_rsu": {
+                  "type": "array",
+                  "description": "the path history, a path with a set of path points",
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "protected_zone_type",
+                      "protected_zone_latitude",
+                      "protected_zone_longitude"
+                    ],
+                    "properties": {
+                      "protected_zone_type": {
+                        "type": "integer",
+                        "description": "permanentCenDsrcTolling(0), temporaryCenDsrcTolling(1)",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "expiry_time": {
+                        "type": "integer",
+                        "description": "Unit: millisecond. The number of elapsed milliseconds since the ITS epoch (2004/01/01).",
+                        "minimum": 0,
+                        "maximum": 4398046511103
+                      },
+                      "protected_zone_latitude": {
+                        "type": "integer",
+                        "description": "Unit: 0.1 microdegree. oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10), unavailable(900000001)",
+                        "default": 900000001,
+                        "minimum": -900000000,
+                        "maximum": 900000001
+                      },
+                      "protected_zone_longitude": {
+                        "type": "integer",
+                        "description": "Unit: 0.1 microdegree. oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(1800000001)",
+                        "default": 1800000001,
+                        "minimum": -1800000000,
+                        "maximum": 1800000001
+                      },
+                      "protected_zone_radius": {
+                        "type": "integer",
+                        "description": "Unit: m. radius of protected communication zone",
+                        "minimum": 1,
+                        "maximum": 255
+                      },
+                      "protected_zone_id": {
+                        "type": "integer",
+                        "description": "id of a protected communication zone",
+                        "minimum": 0,
+                        "maximum": 134217727
+                      }
+                    }
+                  }
                 }
               }
             }
