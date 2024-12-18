@@ -27,6 +27,9 @@ python/**/monitoring.csv
 python/**/reception.txt
 python/**/sending.txt
 
+# macOS
+.DS_Store
+
 # Custom
 .idea
 *.iml
