@@ -75,7 +75,7 @@ public class BootstrapHelper {
                 BootstrapConfig bootstrapConfig = new BootstrapConfig(jsonResponse);
                 bootstrapCallback.boostrapSuccess(bootstrapConfig);
             }
-        } catch (InterruptedException | URISyntaxException | IOException exception) {
+        } catch (IllegalArgumentException | InterruptedException | IOException | URISyntaxException exception) {
             bootstrapCallback.boostrapError(exception);
         }
     }

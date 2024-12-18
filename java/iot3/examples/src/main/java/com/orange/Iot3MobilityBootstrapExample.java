@@ -42,6 +42,7 @@ public class Iot3MobilityBootstrapExample {
     private static final String BOOTSTRAP_PASSWORD = "bootstrap_password";
     private static final BootstrapHelper.Role BOOTSTRAP_ROLE = BootstrapHelper.Role.EXTERNAL_APP;
     private static final String BOOTSTRAP_URI = "bootstrap.uri.com";
+    private static final boolean ENABLE_TELEMETRY = true;
 
     private static IoT3Mobility ioT3Mobility;
 
@@ -79,7 +80,7 @@ public class Iot3MobilityBootstrapExample {
     private static void initIoT3Mobility(BootstrapConfig bootstrapConfig) {
         // instantiate IoT3Mobility and its callback
         ioT3Mobility = new IoT3Mobility.IoT3MobilityBuilder(EXAMPLE_UUID, EXAMPLE_CONTEXT)
-                .bootstrapConfig(bootstrapConfig)
+                .bootstrapConfig(bootstrapConfig, ENABLE_TELEMETRY)
                 .callback(new IoT3MobilityCallback() {
                     @Override
                     public void connectionLost(Throwable cause) {
