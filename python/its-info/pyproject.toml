@@ -3,12 +3,12 @@ requires = ["setuptools>=65.5.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "iot3"
+name = "its-info"
 version = "0.0.1"
 authors = [
   { name="Yann E. MORIN", email="yann.morin@orange.com" },
 ]
-description = "IoT3 SDK"
+description = "ITS information message emitter"
 readme = "README.md"
 requires-python = ">=3.11"
 classifiers = [
@@ -18,11 +18,15 @@ classifiers = [
     "Development Status :: 4 - Beta",
 ]
 dependencies = [
-    "paho-mqtt>=2.1.0",
-    "requests>=2.31.0",
+    "linuxfd==1.5",
+    "netifaces==0.11.0",
+    "paho-mqtt >=1.6.1, !=2.0.*",
     "its-quadkeys @ git+https://github.com/Orange-OpenSource/its-client@2083d20a59c5191a1258ece823c0741fce672443#subdirectory=python/its-quadkeys"
 ]
 
 [project.urls]
 "Homepage" = "https://github.com/Orange-OpenSource/its-client"
 "Bug Tracker" = "https://github.com/Orange-OpenSource/its-client/issues"
+
+[project.scripts]
+its-info = "its_info.main:main"
