@@ -173,3 +173,9 @@
 #### HiveMQ MQTT Client
 - [Source code](https://github.com/hivemq/hivemq-mqtt-client)
 
+## Swift
+
+### License Apache 2.0
+
+#### MQTT NIO
+- [Source code](https://github.com/swift-server-community/mqtt-nio)
