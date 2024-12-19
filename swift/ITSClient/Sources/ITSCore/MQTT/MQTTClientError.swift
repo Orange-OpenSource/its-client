@@ -8,3 +8,13 @@
  *
  * Software description: Swift ITS client.
  */
+
+import Foundation
+
+enum MQTTClientError: Error {
+    case connectionFailed
+    case clientNotConnected
+    case subscriptionFailed
+    case disconnectionFailed
+    case sendPayloadFailed
+}

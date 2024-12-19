@@ -44,6 +44,9 @@
 #### map_3d
 - [Source code](https://github.com/gberrante/map_3d)
 
+#### MQTT NIO
+- [Source code](https://github.com/swift-server-community/mqtt-nio)
+
 #### rumqtt
 - [Source code](https://github.com/bytebeamio/rumqtt)
 
