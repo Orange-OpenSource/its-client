@@ -9,9 +9,9 @@
  * Software description: Swift ITS client.
  */
 
-import Testing
-@testable import ITSClient
+import Foundation
 
-@Test func example() async throws {
-    // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+struct MQTTMessage {
+    let payload: Data
+    let topic: String
 }
