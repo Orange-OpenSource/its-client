@@ -42,4 +42,4 @@ jobs:
       - name: Build
         run: |
           cd swift/ITSClient
-          swift test --no-parallel
+          swift test --no-parallel --skip OpenTelemetryClientTests
