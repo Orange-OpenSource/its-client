@@ -27,4 +27,4 @@ dependencies = [
 "Bug Tracker" = "https://github.com/Orange-OpenSource/its-client/issues"
 
 [project.scripts]
-its-vehicle = "its_vehicle.main:main"
+its-iqm = "its_iqm.main:main"
