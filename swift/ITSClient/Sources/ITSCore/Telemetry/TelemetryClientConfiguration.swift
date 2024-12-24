@@ -1,0 +1,26 @@
+/*
+ * Software Name : ITSClient
+ * SPDX-FileCopyrightText: Copyright (c) Orange SA
+ * SPDX-License-Identifier: MIT
+ *
+ * This software is distributed under the MIT license,
+ * see the "LICENSE.txt" file for more details or https://opensource.org/license/MIT/
+ *
+ * Software description: Swift ITS client.
+ */
+
+import Foundation
+
+struct TelemetryClientConfiguration {
+    let url: URL
+    let user: String?
+    let password: String?
+    let serviceName: String
+
+    init(url: URL, user: String? = nil, password: String? = nil, serviceName: String) {
+        self.url = url
+        self.user = user
+        self.password = password
+        self.serviceName = serviceName
+    }
+}
