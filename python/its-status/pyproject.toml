@@ -28,4 +28,4 @@ dependencies = [
 "Bug Tracker" = "https://github.com/Orange-OpenSource/its-client/issues"
 
 [project.scripts]
-its-info = "its_status.main:main"
+its-status = "its_status.main:main"
