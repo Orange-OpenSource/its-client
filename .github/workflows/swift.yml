@@ -42,4 +42,4 @@ jobs:
       - name: Build
         run: |
           cd swift/ITSClient
-          swift test
+          swift test --no-parallel
