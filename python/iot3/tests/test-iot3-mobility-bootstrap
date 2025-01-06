@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+
+import iot3.mobility
+import json
+import random
+import time
+
+
+bootstrap_config = {
+    "endpoint": "https://localhost:1234/bootstrap",
+    "psk": {
+        "login": "username",
+        "password": "secret",
+    },
+}
+bootstrap_device = {
+    "ue_id": "1234abcd",
+    "role": "my-role",
+    "service_name": "my-service",
+}
+
+config = iot3.mobility.bootstrap(
+    bootstrap_config=bootstrap_config,
+    **bootstrap_device,
+)
+
+print(json.dumps(config, indent=2, sort_keys=True))
+
+# Check all needed MQTT config is present
+config["mqtt"]["host"]
+config["mqtt"]["port"]
+config["mqtt"]["tls"]
+config["mqtt"]["username"]
+config["mqtt"]["password"]
+config["mqtt"]["client_id"]
+
+# Check all needed OTLP config is present
+config["otel"]["endpoint"]
+config["otel"]["auth"]
+config["otel"]["username"]
+config["otel"]["password"]
+config["otel"]["service_name"]
+config["otel"]["batch_period"]
+config["otel"]["max_backlog"]
+config["otel"]["compression"]
+
+# Check all needed mobility config is present
+config["namespace"]
+config["report_depth"]
+config["roi_depth"]
+config["station_type"]
+config["uuid"]
