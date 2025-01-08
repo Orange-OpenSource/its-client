@@ -10,19 +10,24 @@ let package = Package(
         .iOS(.v16)
     ],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "ITSClient",
-            targets: ["ITSClient"]),
+            name: "ITSCore",
+            targets: ["ITSCore"]),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/swift-server-community/mqtt-nio.git", from: "2.11.0")
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "ITSClient"),
+            name: "ITSCore",
+            dependencies:
+            [
+                .product(name: "MQTTNIO", package: "mqtt-nio"),
+            ]
+        ),
         .testTarget(
-            name: "ITSClientTests",
-            dependencies: ["ITSClient"]
+            name: "ITSCoreTests",
+            dependencies: ["ITSCore"]
         ),
     ]
 )
