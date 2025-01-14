@@ -32,7 +32,7 @@ pub struct MqttClient {
     client: AsyncClient,
 }
 
-impl<'client> MqttClient {
+impl MqttClient {
     pub fn new(options: &MqttOptions) -> (Self, EventLoop) {
         let (client, event_loop) = AsyncClient::new(options.clone(), 1000);
         (MqttClient { client }, event_loop)
