@@ -156,24 +156,21 @@ def bootstrap(
         # can be prefixed wth "internal-"... Sigh... :-(
         otlp_proto = "internal-" + otlp_proto
         if otlp_proto in bootstrap["protocols"]:
+            config["otel"] = {
+                "endpoint": bootstrap["protocols"][otlp_proto],
+                # In practice, there will *always* be credentials provided in
+                # the bootstrap response, so we'll always have authentication
+                # and we know the backend only implements BasicAuth. Prove me
+                # wrong! ;-)
+                "auth": _otel.Auth.BASIC,
+                "username": bootstrap["psk_run_login"],
+                "password": bootstrap["psk_run_password"],
+                "service_name": service_name,
+                "batch_period": 5,
+                "max_backlog": 100,
+                "compression": "gzip",
+            }
             break
-    else:
-        raise RuntimeError("No known OTLP protocol available")
-
-    config["otel"] = {
-        "endpoint": bootstrap["protocols"][otlp_proto],
-        # In practice, there will *always* be credentials provided in
-        # the bootstrap response, so we'll always have authentication
-        # and we know the backend only implements BasicAuth. Prove me
-        # wrong! ;-)
-        "auth": _otel.Auth.BASIC,
-        "username": bootstrap["psk_run_login"],
-        "password": bootstrap["psk_run_password"],
-        "service_name": service_name,
-        "batch_period": 5,
-        "max_backlog": 100,
-        "compression": "gzip",
-    }
 
     return config
 
@@ -201,33 +198,39 @@ def start(
     if _core is not None:
         raise RuntimeError("IoT3 Core SDK already intialised.")
 
+    _core = dict()
     o_kwargs = dict()
 
-    for auth in _otel.Auth:
-        if config["otel"]["auth"] == auth.value:
-            o_kwargs["auth"] = auth
-            if auth != otel.Auth.NONE:
-                o_kwargs["username"] = config["otel"]["username"]
-                o_kwargs["password"] = config["otel"]["password"]
-            break
-    else:
-        raise ValueError(f"unknown authentication {config['otel']['auth']}")
+    if "otel" in config:
+        for auth in _otel.Auth:
+            if config["otel"]["auth"] == auth.value:
+                o_kwargs["auth"] = auth
+                if auth != otel.Auth.NONE:
+                    o_kwargs["username"] = config["otel"]["username"]
+                    o_kwargs["password"] = config["otel"]["password"]
+                break
+        else:
+            raise ValueError(f"unknown authentication {config['otel']['auth']}")
 
-    for comp in _otel.Compression:
-        if config["otel"]["compression"] == comp.value:
-            o_kwargs["compression"] = comp
-            break
-    else:
-        raise ValueError(f"unknown compression {config['otel']['compression']}")
+        for comp in _otel.Compression:
+            if config["otel"]["compression"] == comp.value:
+                o_kwargs["compression"] = comp
+                break
+        else:
+            raise ValueError(f"unknown compression {config['otel']['compression']}")
 
-    o = _otel.Otel(
-        service_name=config["otel"]["service_name"],
-        endpoint=config["otel"]["endpoint"],
-        batch_period=config["otel"]["batch_period"],
-        max_backlog=config["otel"]["max_backlog"],
-        **o_kwargs,
-    )
-    o.start()
+        o = _otel.Otel(
+            service_name=config["otel"]["service_name"],
+            endpoint=config["otel"]["endpoint"],
+            batch_period=config["otel"]["batch_period"],
+            max_backlog=config["otel"]["max_backlog"],
+            **o_kwargs,
+        )
+        o.start()
+        _core["otel"] = o
+        span_ctxmgr = o.span
+    else:
+        span_ctxmgr = None
 
     # Wrap the callback to avoid leaking telemetry into the simple API
     def _msg_cb(*, data, topic, payload, **_kwargs):
@@ -241,11 +244,11 @@ def start(
         password=config["mqtt"]["password"],
         msg_cb=_msg_cb if message_callback else None,
         msg_cb_data=callback_data,
-        span_ctxmgr_cb=o.span,
+        span_ctxmgr_cb=span_ctxmgr,
     )
     m.start()
 
-    _core = dict([("otel", o), ("mqtt", m)])
+    _core["mqtt"] = m
 
 
 def stop():
@@ -256,7 +259,8 @@ def stop():
         raise RuntimeError("IoT3 Core SDK not initialised.")
 
     _core["mqtt"].stop()
-    _core["otel"].stop()
+    if "otel" in _core:
+        _core["otel"].stop()
     _core = None
 
 
