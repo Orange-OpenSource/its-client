@@ -202,22 +202,12 @@ def start(
     o_kwargs = dict()
 
     if "otel" in config:
-        for auth in _otel.Auth:
-            if config["otel"]["auth"] == auth.value:
-                o_kwargs["auth"] = auth
-                if auth != otel.Auth.NONE:
-                    o_kwargs["username"] = config["otel"]["username"]
-                    o_kwargs["password"] = config["otel"]["password"]
-                break
-        else:
-            raise ValueError(f"unknown authentication {config['otel']['auth']}")
+        o_kwargs["auth"] = _otel.Auth(config["otel"]["auth"])
+        if o_kwargs["auth"] != _otel.Auth.NONE:
+            o_kwargs["username"] = config["otel"]["username"]
+            o_kwargs["password"] = config["otel"]["password"]
 
-        for comp in _otel.Compression:
-            if config["otel"]["compression"] == comp.value:
-                o_kwargs["compression"] = comp
-                break
-        else:
-            raise ValueError(f"unknown compression {config['otel']['compression']}")
+        o_kwargs["compression"] = _otel.Compression(config["otel"]["compression"])
 
         o = _otel.Otel(
             service_name=config["otel"]["service_name"],
