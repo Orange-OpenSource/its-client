@@ -32,7 +32,7 @@ class MqttClient:
         password: Optional[str] = None,
         msg_cb: Optional[MsgCallbackType] = None,
         msg_cb_data: Any = None,
-        span_ctxmgr_cb: Optional[SpanCallableType] = otel.Otel.noexport_span,
+        span_ctxmgr_cb: Optional[SpanCallableType] = None,
     ):
         """
         Create an MQTT client
@@ -121,7 +121,7 @@ class MqttClient:
             if tls is None:
                 tls = port != 1883
 
-        self.span_ctxmgr_cb = span_ctxmgr_cb
+        self.span_ctxmgr_cb = span_ctxmgr_cb or otel.Otel.noexport_span
 
         self.client = paho.mqtt.client.Client(
             callback_api_version=paho.mqtt.enums.CallbackAPIVersion.VERSION2,
