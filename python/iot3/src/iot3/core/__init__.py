@@ -276,7 +276,7 @@ def is_ready() -> bool:
 
 
 def wait_for_ready():
-    """Wait until the IoT2 Core SDK is ready.
+    """Wait until the IoT3 Core SDK is ready.
 
     Beware that this may take an indeterminate amount of time; in
     case the MQTT client can't connect at all, wait_for_ready()
