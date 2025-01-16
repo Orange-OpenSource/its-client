@@ -9,6 +9,7 @@ package com.orange.iot3mobility.its.json.cpm;
 
 import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -78,7 +79,7 @@ public class StationarySensorCircular {
     }
 
     public static StationarySensorCircular jsonParser(JSONObject json) {
-        if(json == null || json.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(json)) return null;
         try {
             JSONObject jsonNodeCenterPoint = json.optJSONObject(JsonCpmKey.StationarySensorCircular.NODE_CENTER_POINT.key());
             Offset nodeCenterPoint = Offset.jsonParser(jsonNodeCenterPoint);

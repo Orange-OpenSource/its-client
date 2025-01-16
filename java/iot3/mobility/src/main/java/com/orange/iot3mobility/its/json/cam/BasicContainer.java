@@ -8,6 +8,7 @@
 package com.orange.iot3mobility.its.json.cam;
 
 import com.orange.iot3mobility.its.json.JsonKey;
+import com.orange.iot3mobility.its.json.JsonUtil;
 import com.orange.iot3mobility.its.json.Position;
 import com.orange.iot3mobility.its.json.PositionConfidence;
 
@@ -126,7 +127,7 @@ public class BasicContainer {
     }
 
     public static BasicContainer jsonParser(JSONObject jsonBasicContainer) {
-        if(jsonBasicContainer == null || jsonBasicContainer.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonBasicContainer)) return null;
         try {
             int stationType = jsonBasicContainer.getInt(JsonKey.BasicContainer.STATION_TYPE.key());
             JSONObject jsonPosition = jsonBasicContainer.getJSONObject(JsonKey.BasicContainer.POSITION.key());

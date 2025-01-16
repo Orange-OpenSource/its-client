@@ -9,6 +9,7 @@ package com.orange.iot3mobility.its.json.cpm;
 
 import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -712,7 +713,7 @@ public class PerceivedObject {
                 for(ClassificationItem classificationItem: classification) {
                     if(classificationItem != null) jsonClassification.put(classificationItem.getJson());
                 }
-                if(!jsonClassification.isEmpty())
+                if(!JsonUtil.isNullOrEmpty(jsonClassification))
                     json.put(JsonCpmKey.PerceivedObjectContainer.CLASSIFICATION.key(), jsonClassification);
             }
             json.put(JsonCpmKey.PerceivedObjectContainer.CONFIDENCE.key(), confidence.getJson());
@@ -1153,7 +1154,7 @@ public class PerceivedObject {
     }
 
     public static PerceivedObject jsonParser(JSONObject json) {
-        if(json == null || json.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(json)) return null;
         try {
             int objectId = json.getInt(JsonCpmKey.PerceivedObjectContainer.OBJECT_ID.key());
             int timeOfMeasurement = json.getInt(JsonCpmKey.PerceivedObjectContainer.TIME_OF_MEASUREMENT.key());

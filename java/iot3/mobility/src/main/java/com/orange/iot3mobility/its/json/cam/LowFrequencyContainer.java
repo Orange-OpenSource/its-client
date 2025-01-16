@@ -8,6 +8,7 @@
 package com.orange.iot3mobility.its.json.cam;
 
 import com.orange.iot3mobility.its.json.JsonKey;
+import com.orange.iot3mobility.its.json.JsonUtil;
 import com.orange.iot3mobility.its.json.PathHistory;
 
 import org.json.JSONArray;
@@ -130,7 +131,7 @@ public class LowFrequencyContainer {
     }
 
     public static LowFrequencyContainer jsonParser(JSONObject jsonLowFreqContainer) {
-        if(jsonLowFreqContainer == null || jsonLowFreqContainer.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonLowFreqContainer)) return null;
         try {
             int vehicleRole = jsonLowFreqContainer.getInt(JsonKey.LowFrequencyContainer.VEHICLE_ROLE.key());
             String exteriorLights = jsonLowFreqContainer.optString(JsonKey.LowFrequencyContainer.EXTERIOR_LIGHTS.key());

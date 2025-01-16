@@ -11,6 +11,7 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 
 import com.orange.iot3mobility.its.json.JsonKey;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -97,7 +98,7 @@ public class LocationContainer {
             jsonLocationContainer.put(JsonKey.LocationContainer.TRACES.key(), traces.getJsonTraces());
             if(roadType != UNKNOWN)
                 jsonLocationContainer.put(JsonKey.LocationContainer.ROAD_TYPE.key(), roadType);
-            if(!confidence.isEmpty())
+            if(!JsonUtil.isNullOrEmpty(confidence))
                 jsonLocationContainer.put(JsonKey.LocationContainer.CONFIDENCE.key(), confidence);
         } catch (JSONException e) {
             LOGGER.log(Level.WARNING, "LocationContainer JSON build error", "Error: " + e);
@@ -133,7 +134,7 @@ public class LocationContainer {
     }
 
     public static LocationContainer jsonParser(JSONObject jsonLocationContainer) {
-        if(jsonLocationContainer == null || jsonLocationContainer.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonLocationContainer)) return null;
         try {
             int eventSpeed = jsonLocationContainer.optInt(JsonKey.LocationContainer.EVENT_SPEED.key(), UNKNOWN);
             int eventPositionHeading = jsonLocationContainer.optInt(JsonKey.LocationContainer.EVENT_POSITION_HEADING.key(), UNKNOWN);

@@ -10,6 +10,7 @@ package com.orange.iot3mobility.its.json.cpm;
 import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 
 import com.orange.iot3mobility.its.json.JsonKey;
+import com.orange.iot3mobility.its.json.JsonUtil;
 import com.orange.iot3mobility.its.json.JsonValue;
 import com.orange.iot3mobility.its.json.MessageBase;
 
@@ -331,7 +332,7 @@ public class CPM extends MessageBase {
      * @return {@link CPM}
      */
     public static CPM jsonParser(JSONObject jsonCPM) {
-        if(jsonCPM == null || jsonCPM.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonCPM)) return null;
         try {
             String type = jsonCPM.getString(JsonKey.Header.TYPE.key());
 

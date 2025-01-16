@@ -9,6 +9,7 @@ package com.orange.iot3mobility.its.json.cpm;
 
 import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -141,7 +142,7 @@ public class VehicleSensor {
     }
 
     public static VehicleSensor jsonParser(JSONObject json) {
-        if(json == null || json.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(json)) return null;
         try {
             int refPointId = json.getInt(JsonCpmKey.VehicleSensor.REF_POINT_ID.key());
             int xSensorOffset = json.getInt(JsonCpmKey.VehicleSensor.X_SENSOR_OFFSET.key());

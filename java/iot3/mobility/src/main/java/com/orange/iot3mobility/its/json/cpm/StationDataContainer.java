@@ -7,6 +7,7 @@
  */
 package com.orange.iot3mobility.its.json.cpm;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -77,7 +78,7 @@ public class StationDataContainer {
     }
 
     public static StationDataContainer jsonParser(JSONObject json) {
-        if(json == null || json.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(json)) return null;
         JSONObject jsonOriginatingVehicleContainer = json.optJSONObject(JsonCpmKey.StationDataContainer.ORIGINATING_VEHICLE_CONTAINER.key());
         OriginatingVehicleContainer originatingVehicleContainer = OriginatingVehicleContainer.jsonParser(jsonOriginatingVehicleContainer);
         JSONObject jsonOriginatingRsuContainer = json.optJSONObject(JsonCpmKey.StationDataContainer.ORIGINATING_RSU_CONTAINER.key());

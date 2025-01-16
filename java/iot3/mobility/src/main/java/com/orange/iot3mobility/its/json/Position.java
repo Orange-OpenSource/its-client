@@ -106,7 +106,7 @@ public class Position {
     }
 
     public static Position jsonParser(JSONObject jsonPosition) {
-        if(jsonPosition == null || jsonPosition.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonPosition)) return null;
         try {
             long latitude = jsonPosition.getLong(JsonKey.Position.LATITUDE.key());
             long longitude = jsonPosition.getLong(JsonKey.Position.LONGITUDE.key());

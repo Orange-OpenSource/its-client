@@ -7,6 +7,7 @@
  */
 package com.orange.iot3mobility.its.json.cpm;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 
@@ -57,7 +58,7 @@ public class SensorInformationContainer {
     }
 
     public static SensorInformationContainer jsonParser(JSONArray jsonArray) {
-        if(jsonArray == null || jsonArray.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonArray)) return null;
         try {
             ArrayList<SensorInformation> sensorInformationList = new ArrayList<>();
             for (int i = 0; i < jsonArray.length(); i++) {

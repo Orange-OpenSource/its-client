@@ -45,7 +45,7 @@ public class PathHistory {
     }
 
     public static PathHistory jsonParser(JSONArray jsonPathHistory) {
-        if(jsonPathHistory == null || jsonPathHistory.isEmpty()) return new PathHistory(null);
+        if(JsonUtil.isNullOrEmpty(jsonPathHistory)) return new PathHistory(null);
         ArrayList<PathPoint> pathPoints = new ArrayList<>();
         try {
             for(int i = 0; i < jsonPathHistory.length(); i++) {

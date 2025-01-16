@@ -7,6 +7,7 @@
  */
 package com.orange.iot3mobility.its.json.cpm;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import com.orange.iot3mobility.its.json.Position;
 import com.orange.iot3mobility.its.json.PositionConfidence;
 
@@ -89,7 +90,7 @@ public class ManagementContainer {
     }
 
     public static ManagementContainer jsonParser(JSONObject json) {
-        if(json == null || json.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(json)) return null;
         try {
             int stationType = json.getInt(JsonCpmKey.ManagementContainer.STATION_TYPE.key());
             JSONObject jsonReferencePosition = json.getJSONObject(JsonCpmKey.ManagementContainer.REFERENCE_POSITION.key());

@@ -9,6 +9,7 @@ package com.orange.iot3mobility.its.json.cpm;
 
 import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -53,7 +54,7 @@ public class ObjectClassOther {
     }
 
     public static ObjectClassOther jsonParser(JSONObject json) {
-        if(json == null || json.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(json)) return null;
         int subclass = json.optInt(JsonCpmKey.ObjectClass.OTHER.key(), UNKNOWN);
         if(subclass != UNKNOWN) return new ObjectClassOther(subclass);
         else return null;
