@@ -6,8 +6,10 @@ import time
 
 
 def recv(data, topic, payload):
-    print(f"{topic[:16]}: {payload[:16]}")
+    print(f"{topic}: {payload[:16]}")
 
+
+print("IoT3 Core SDK with MQTT and OTLP")
 
 config = iot3.core.sample_config
 config["mqtt"] = {
@@ -19,6 +21,28 @@ config["mqtt"] = {
 }
 
 topic = "test/" + random.randbytes(16).hex() + "/iot3"
+
+iot3.core.start(
+    config=config,
+    message_callback=recv,
+)
+
+iot3.core.subscribe(f"{topic}/+")
+
+iot3.core.publish(f"{topic}/dropped", "dropped")
+time.sleep(1)
+
+iot3.core.publish(f"{topic}/passed", "passed")
+time.sleep(1)
+
+iot3.core.stop()
+
+
+print("IoT3 Core SDK with MQTT and no OTLP")
+
+del config["otel"]
+
+topic = "test/" + random.randbytes(16).hex() + "/iot3/no-otlp"
 
 iot3.core.start(
     config=config,
