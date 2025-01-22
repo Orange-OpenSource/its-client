@@ -15,6 +15,7 @@ enum MQTTClientError: Error {
     case connectionFailed
     case clientNotConnected
     case subscriptionFailed
+    case unsubscriptionFailed
     case disconnectionFailed
     case sendPayloadFailed
 }

@@ -13,10 +13,9 @@ import Foundation
 import MQTTNIO
 import NIOCore
 
-actor MQTTNIOClient: MQTTClient {
+final class MQTTNIOClient: MQTTClient {
     private let client: MQTTNIO.MQTTClient
     private let listenerName = "MQTTNIOClientListener"
-    private var subscribedTopics = [String]()
     
     var isConnected: Bool {
         client.isActive()
@@ -72,9 +71,20 @@ actor MQTTNIOClient: MQTTClient {
         do {
             _ = try await client.v5.subscribe(to: [MQTTSubscribeInfoV5(topicFilter: topic,
                                                                        qos: .atLeastOnce)])
-            subscribedTopics.append(topic)
         } catch {
             throw .subscriptionFailed
+        }
+    }
+    
+    func unsubscribe(from topic: String) async throws(MQTTClientError) {
+        guard isConnected else {
+            throw .clientNotConnected
+        }
+        
+        do {
+            _ = try await client.v5.unsubscribe(from: [topic])
+        } catch {
+            throw .unsubscriptionFailed
         }
     }
     
@@ -82,9 +92,6 @@ actor MQTTNIOClient: MQTTClient {
         guard isConnected else { return }
         
         do {
-            if !subscribedTopics.isEmpty {
-                _ = try await client.v5.unsubscribe(from: subscribedTopics)
-            }
             try await client.v5.disconnect()
         } catch {
             throw .disconnectionFailed

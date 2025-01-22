@@ -11,12 +11,13 @@
 
 import Foundation
 
-protocol MQTTClient: Actor {
+protocol MQTTClient: Sendable {
     var isConnected: Bool { get }
     
     init(configuration: MQTTClientConfiguration, messageReceivedHandler: (@Sendable @escaping (MQTTMessage) -> Void))
     func connect() async throws(MQTTClientError)
     func subscribe(to topic: String) async throws(MQTTClientError)
+    func unsubscribe(from topic: String) async throws(MQTTClientError)
     func disconnect() async throws(MQTTClientError)
     func publish(_ message: MQTTMessage) async throws(MQTTClientError)
 }
