@@ -14,4 +14,12 @@ import Foundation
 struct MQTTMessage {
     let payload: Data
     let topic: String
+    let userProperty: MQTTMessageUserProperty?
 }
+
+struct MQTTMessageUserProperty {
+    let key: String
+    let value: String
+}
+
+extension MQTTMessageUserProperty: Equatable {}

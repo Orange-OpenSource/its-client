@@ -38,7 +38,17 @@ actor MQTTNIOClient: MQTTClient {
             switch result {
             case .success(let publishInfo):
                 let receivedData = Data(buffer: publishInfo.payload)
-                let message = MQTTMessage(payload: receivedData, topic: publishInfo.topicName)
+                let userProperty = publishInfo.properties.compactMap({
+                    switch $0 {
+                    case .userProperty(let key, let value):
+                        return MQTTMessageUserProperty(key: key, value: value)
+                    default:
+                        return nil
+                    }
+                }).first
+                let message = MQTTMessage(payload: receivedData,
+                                          topic: publishInfo.topicName,
+                                          userProperty: userProperty)
                 Task { [weak self] in
                     await self?.messageReceivedHandler?(message)
                 }
@@ -111,9 +121,13 @@ actor MQTTNIOClient: MQTTClient {
         }
 
         do {
+            let mqttProperties = message.userProperty.map {
+                MQTTProperties([.userProperty($0.key, $0.value)])
+            }
             _ = try await client.v5.publish(to: message.topic,
                                             payload: ByteBufferAllocator().buffer(data: message.payload),
-                                            qos: .atLeastOnce)
+                                            qos: .atLeastOnce,
+                                            properties: mqttProperties ?? .init())
         } catch {
             throw .sendPayloadFailed
         }
