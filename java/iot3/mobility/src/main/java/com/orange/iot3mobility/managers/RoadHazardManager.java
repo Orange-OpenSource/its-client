@@ -49,7 +49,8 @@ public class RoadHazardManager {
                 ioT3RoadHazardCallback.denmArrived(denm);
 
                 //associate the received DENM to a RoadHazard object
-                String uuid = denm.getSourceUuid() + "_" + denm.getStationId();
+                String uuid = denm.getManagementContainer().getActionId().getOriginatingStationId()
+                        + "_" + denm.getManagementContainer().getActionId().getSequenceNumber();
                 int cause = denm.getSituationContainer().getEventType().getCause();
                 int subcause = denm.getSituationContainer().getEventType().getSubcause();
                 LatLng position = new LatLng(
