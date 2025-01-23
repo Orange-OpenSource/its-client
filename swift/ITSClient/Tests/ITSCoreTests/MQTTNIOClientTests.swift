@@ -14,7 +14,7 @@ import Testing
 
 struct MQTTNIOClientTests {
     private let clientIdentifier = "MQTTNIOClientTests"
-    
+
     @Test("MQTT anonymous connection should succeed")
     func mqtt_anonymous_connection_should_succeed() async throws {
         // Given
@@ -22,15 +22,15 @@ struct MQTTNIOClientTests {
                                                               port: 1883,
                                                               clientIdentifier: clientIdentifier,
                                                               useSSL: false)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration) { _ in }
-        
+        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+
         // When
         try await mqttClient.connect()
-        
+
         // Then
-        #expect(mqttClient.isConnected)
+        #expect(await mqttClient.isConnected)
     }
-    
+
     @Test("MQTT anonymous connection with SSL should succeed")
     func mqtt_anonymous_connection_with_SSL_should_succeed() async throws {
         // Given
@@ -38,15 +38,15 @@ struct MQTTNIOClientTests {
                                                               port: 8886,
                                                               clientIdentifier: clientIdentifier,
                                                               useSSL: true)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration) { _ in }
-        
+        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+
         // When
         try await mqttClient.connect()
-        
+
         // Then
-        #expect(mqttClient.isConnected)
+        #expect(await mqttClient.isConnected)
     }
-    
+
     @Test("MQTT authenticated connection should succeed")
     func mqtt_authenticated_connection_should_succeed() async throws {
         // Given
@@ -56,15 +56,15 @@ struct MQTTNIOClientTests {
                                                               userName: "rw",
                                                               password: "readwrite",
                                                               useSSL: false)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration) { _ in }
-        
+        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+
         // When
         try await mqttClient.connect()
-        
+
         // Then
-        #expect(mqttClient.isConnected)
+        #expect(await mqttClient.isConnected)
     }
-    
+
     @Test("MQTT websocket connection should succeed")
     func mqtt_websocket_connection_should_succeed() async throws {
         // Given
@@ -73,15 +73,15 @@ struct MQTTNIOClientTests {
                                                               clientIdentifier: clientIdentifier,
                                                               useSSL: true,
                                                               useWebSockets: true)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration) { _ in }
-        
+        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+
         // When
         try await mqttClient.connect()
-        
+
         // Then
-        #expect(mqttClient.isConnected)
+        #expect(await mqttClient.isConnected)
     }
-    
+
     @Test("MQTT message should be received if published on a subscribed topic")
     func mqtt_message_should_be_received_if_published_on_a_subscribed_topic() async throws {
         // Given
@@ -91,25 +91,29 @@ struct MQTTNIOClientTests {
                                                               useSSL: false)
         let topic = "its-test-topic"
         let payload = "payload"
-        
+        let userProperty = MQTTMessageUserProperty(key: "test", value: "its")
+
         try await confirmation(expectedCount: 1) { confirmation in
-            let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration) { message in
+            let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+            await mqttClient.setMessageReceivedHandler(messageReceivedHandler: { message in
                 // Then
                 #expect(message.topic == topic)
                 #expect(message.payload == payload.data(using: .utf8))
+                #expect(message.userProperty == userProperty)
                 confirmation()
-            }
-            
+            })
+
             // When
             try await mqttClient.connect()
             try await mqttClient.subscribe(to: topic)
             try await mqttClient.publish(MQTTMessage(payload: payload.data(using: .utf8)!,
-                                                     topic: topic))
+                                                     topic: topic,
+                                                     userProperty: userProperty))
             // Wait the message
             try await Task.sleep(for: .seconds(0.5))
         }
     }
-    
+
     @Test("MQTT message should not be received if published on a unsubscribed topic")
     func mqtt_message_should_not_be_received_if_published_on_a_unsubscribed_topic() async throws {
         // Given
@@ -119,12 +123,13 @@ struct MQTTNIOClientTests {
                                                               useSSL: false)
         let topic = "its-test-topic"
         let payload = "payload"
-        
+
         try await confirmation(expectedCount: 0) { confirmation in
-            let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration) { message in
+            let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+            await mqttClient.setMessageReceivedHandler(messageReceivedHandler: { _ in
                 confirmation()
-            }
-            
+            })
+
             // When
             try await mqttClient.connect()
             try await mqttClient.subscribe(to: topic)
@@ -136,7 +141,7 @@ struct MQTTNIOClientTests {
             try await Task.sleep(for: .seconds(0.5))
         }
     }
-    
+
     @Test("MQTT disconnect after connection should succeed")
     func mqtt_disconnect_after_connection_should_succeed() async throws {
         // Given
@@ -144,17 +149,17 @@ struct MQTTNIOClientTests {
                                                               port: 1883,
                                                               clientIdentifier: clientIdentifier,
                                                               useSSL: false)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration) { _ in }
-        
+        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+
         // When
         try await mqttClient.connect()
-        #expect(mqttClient.isConnected)
+        #expect(await mqttClient.isConnected)
         try await mqttClient.disconnect()
-        
+
         // Then
-        #expect(!mqttClient.isConnected)
+        #expect(await !mqttClient.isConnected)
     }
-    
+
     @Test("MQTT disconnect after connection and subscription should succeed")
     func mqtt_disconnect_after_connection_subscription_should_succeed() async throws {
         // Given
@@ -162,18 +167,18 @@ struct MQTTNIOClientTests {
                                                               port: 1883,
                                                               clientIdentifier: clientIdentifier,
                                                               useSSL: false)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration) { _ in }
-        
+        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+
         // When
         try await mqttClient.connect()
-        #expect(mqttClient.isConnected)
+        #expect(await mqttClient.isConnected)
         try await mqttClient.subscribe(to: "test")
         try await mqttClient.disconnect()
-        
+
         // Then
-        #expect(!mqttClient.isConnected)
+        #expect(await !mqttClient.isConnected)
     }
-    
+
     @Test("MQTT subscription without connection should fail")
     func mqtt_subscription_without_connection_should_fail() async throws {
         // Given
@@ -181,8 +186,8 @@ struct MQTTNIOClientTests {
                                                               port: 1883,
                                                               clientIdentifier: clientIdentifier,
                                                               useSSL: false)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration) { _ in }
-        
+        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+
         // When
         do {
             try await mqttClient.subscribe(to: "test")
@@ -191,7 +196,7 @@ struct MQTTNIOClientTests {
             #expect(error == .clientNotConnected)
         }
     }
-    
+
     @Test("MQTT publication without connection should fail")
     func mqtt_publication_without_connection_should_fail() async throws {
         // Given
@@ -199,13 +204,14 @@ struct MQTTNIOClientTests {
                                                               port: 1883,
                                                               clientIdentifier: clientIdentifier,
                                                               useSSL: false)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration) { _ in }
-        
+        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+
         // When
         do {
             let payload = "payload"
             try await mqttClient.publish(MQTTMessage(payload: payload.data(using: .utf8)!,
-                                                     topic: "test"))
+                                                     topic: "test",
+                                                     userProperty: nil))
         } catch {
             // Then
             #expect(error == .clientNotConnected)
