@@ -9,7 +9,7 @@
  * Software description: Swift ITS client.
  */
 
-struct MQTTClientConfiguration {
+public struct MQTTClientConfiguration: Sendable {
     let host: String
     let port: Int
     let clientIdentifier: String
@@ -17,7 +17,7 @@ struct MQTTClientConfiguration {
     let password: String?
     let useSSL: Bool
     let useWebSockets: Bool
-    
+
     init(
         host: String,
         port: Int,

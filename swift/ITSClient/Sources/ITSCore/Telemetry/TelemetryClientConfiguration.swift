@@ -11,7 +11,7 @@
 
 import Foundation
 
-struct TelemetryClientConfiguration {
+public struct TelemetryClientConfiguration: Sendable {
     let url: URL
     let user: String?
     let password: String?
