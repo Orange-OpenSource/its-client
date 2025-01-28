@@ -64,11 +64,16 @@ public class RoadHazardManager {
                     synchronized (ROAD_HAZARD_MAP) {
                         RoadHazard roadHazard = ROAD_HAZARD_MAP.get(uuid);
                         if(roadHazard != null) {
-                            roadHazard.updateTimestamp(timestamp);
-                            roadHazard.setPosition(position);
-                            roadHazard.setLifetime(lifetime);
-                            roadHazard.setDenm(denm);
-                            ioT3RoadHazardCallback.roadHazardUpdate(roadHazard);
+                            if(terminate) {
+                                ROAD_HAZARD_MAP.values().remove(roadHazard);
+                                ioT3RoadHazardCallback.roadHazardExpired(roadHazard);
+                            } else {
+                                roadHazard.updateTimestamp(timestamp);
+                                roadHazard.setPosition(position);
+                                roadHazard.setLifetime(lifetime);
+                                roadHazard.setDenm(denm);
+                                ioT3RoadHazardCallback.roadHazardUpdate(roadHazard);
+                            }
                         }
                     }
                 } else if(!terminate && !expired) {
