@@ -15,7 +15,8 @@ let package = Package(
             targets: ["ITSCore"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/swift-server-community/mqtt-nio.git", from: "2.11.0")
+        .package(url: "https://github.com/swift-server-community/mqtt-nio.git", from: "2.11.0"),
+        .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "1.12.1")
     ],
     targets: [
         .target(
@@ -23,6 +24,7 @@ let package = Package(
             dependencies:
             [
                 .product(name: "MQTTNIO", package: "mqtt-nio"),
+                .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
             ]
         ),
         .testTarget(

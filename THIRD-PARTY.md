@@ -179,3 +179,7 @@
 
 #### MQTT NIO
 - [Source code](https://github.com/swift-server-community/mqtt-nio)
+
+#### opentelemetry-swift
+
+- [Source code](https://github.com/open-telemetry/opentelemetry-swift)

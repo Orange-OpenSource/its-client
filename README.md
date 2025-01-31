@@ -40,7 +40,7 @@ by propagating the [W3C Trace Context][12] using MQTTv5 properties.
 
 Sent traces include the following parameters:
 
-- `service_name` client app name (configurable)
+- `service.name` client app name (configurable)
 - `span.status` Error if anything went wrong, Unset otherwise
 - `span.name` IoT3 Core MQTT Message
 - `span.kind`
