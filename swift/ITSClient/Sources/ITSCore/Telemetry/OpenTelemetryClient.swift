@@ -19,7 +19,7 @@ actor OpenTelemetryClient: TelemetryClient {
     private let configuration: TelemetryClientConfiguration
     private var tracer: Tracer?
     private var tracerProvider: TracerProviderSdk?
-    private var spans = [String: Span]()
+    private var spans = [SpanID: Span]()
 
     init(configuration: TelemetryClientConfiguration) {
         self.configuration = configuration
@@ -68,8 +68,7 @@ actor OpenTelemetryClient: TelemetryClient {
             span.setAttribute(key: $0.key, value: AttributeValue($0.value))
         }
 
-        let spanID = span.context.spanId.hexString
-        spans[spanID] = span
+        let spanID = save(span)
 
         return spanID
     }
@@ -103,8 +102,7 @@ actor OpenTelemetryClient: TelemetryClient {
             span.setAttribute(key: $0.key, value: AttributeValue($0.value))
         }
 
-        let spanID = span.context.spanId.hexString
-        spans[spanID] = span
+        let spanID = save(span)
 
         return spanID
     }
@@ -137,6 +135,12 @@ actor OpenTelemetryClient: TelemetryClient {
         case .consumer: return .consumer
         case .producer: return .producer
         }
+    }
+
+    private func save(_ span: Span) -> SpanID {
+        let spanID = span.context.spanId.hexString
+        spans[spanID] = span
+        return spanID
     }
 }
 
