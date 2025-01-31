@@ -16,11 +16,22 @@ struct TelemetryClientConfiguration {
     let user: String?
     let password: String?
     let serviceName: String
+    let scheduleDelay: TimeInterval
+    let batchSize: Int
 
-    init(url: URL, user: String? = nil, password: String? = nil, serviceName: String) {
+    init(
+        url: URL,
+        user: String? = nil,
+        password: String? = nil,
+        serviceName: String,
+        scheduleDelay: TimeInterval = 5,
+        batchSize: Int = 50
+    ) {
         self.url = url
         self.user = user
         self.password = password
         self.serviceName = serviceName
+        self.scheduleDelay = scheduleDelay
+        self.batchSize = batchSize
     }
 }

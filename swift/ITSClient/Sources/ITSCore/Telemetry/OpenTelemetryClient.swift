@@ -37,7 +37,8 @@ actor OpenTelemetryClient: TelemetryClient {
         let url = configuration.url.appendingPathComponent("v1/traces")
         let httpTraceExporter = OtlpHttpTraceExporter(endpoint: url, config: otlpConfiguration)
         let batchSpanProcessor = BatchSpanProcessor(spanExporter: httpTraceExporter,
-                                                    maxExportBatchSize: 50)
+                                                    scheduleDelay: configuration.scheduleDelay,
+                                                    maxExportBatchSize: configuration.batchSize)
         let resource = Resource(attributes: [ResourceAttributes.serviceName.rawValue: .string(configuration.serviceName)])
         let tracerProvider = TracerProviderSdk(resource: resource,
                                                spanProcessors: [batchSpanProcessor])
