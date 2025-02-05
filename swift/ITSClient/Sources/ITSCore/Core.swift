@@ -22,12 +22,11 @@ public actor Core {
         continuationsByTopic = [:]
     }
 
-    public func start(
-        mqttClientConfiguration: MQTTClientConfiguration,
-        telemetryClientConfiguration: TelemetryClientConfiguration?
-    ) async throws(CoreError) {
-        let telemetryClient = telemetryClientConfiguration.map { OpenTelemetryClient(configuration: $0) }
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+    public func start(coreConfiguration: CoreConfiguration) async throws(CoreError) {
+        let telemetryClient = coreConfiguration.telemetryClientConfiguration.map {
+            OpenTelemetryClient(configuration: $0)
+        }
+        let mqttClient = MQTTNIOClient(configuration: coreConfiguration.mqttClientConfiguration)
 
         try await start(mqttClient: mqttClient, telemetryClient: telemetryClient)
     }
