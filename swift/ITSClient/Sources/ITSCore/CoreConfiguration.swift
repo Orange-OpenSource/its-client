@@ -9,11 +9,16 @@
  * Software description: Swift ITS client.
  */
 
+/// A structure to configure the core.
 public struct CoreConfiguration: Sendable {
     let mqttClientConfiguration: MQTTClientConfiguration
     let telemetryClientConfiguration: TelemetryClientConfiguration?
 
-    init(
+    /// Initializes a `CoreConfiguration`.
+    /// - Parameters:
+    ///   - mqttClientConfiguration: The MQTT client configuration.
+    ///   - telemetryClientConfiguration: The telemetry client configuration. Can be nil to opt-out telemetry.
+    public init(
         mqttClientConfiguration: MQTTClientConfiguration,
         telemetryClientConfiguration: TelemetryClientConfiguration?
     ) {

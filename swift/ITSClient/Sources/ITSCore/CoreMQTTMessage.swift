@@ -11,7 +11,10 @@
 
 import Foundation
 
+/// The representation of a message received or sent by the core.
 public struct CoreMQTTMessage: Sendable {
-    let payload: Data
-    let topic: String
+    /// The message payload.
+    public let payload: Data
+    /// The topic on which the message is received or sent.
+    public let topic: String
 }

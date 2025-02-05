@@ -11,7 +11,10 @@
 
 import Foundation
 
+/// The errors thrown by the core.
 public enum CoreError: Error, Equatable {
+    /// The core must be started before performing this action.
     case notStarted
+    /// A MQTT error occured.
     case mqttError(EquatableError)
 }

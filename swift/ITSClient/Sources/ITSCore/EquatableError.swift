@@ -9,10 +9,13 @@
  * Software description: Swift ITS client.
  */
 
+/// A structure to manage equatable errors for underlying errors.
 public struct EquatableError: Error, Equatable {
+    /// The wrapped error.
     public let wrappedError: any Error & Equatable
     private let equalsClosure: (@Sendable (any Error & Equatable) -> Bool)
 
+    /// The localized  description.
     public var localizedDescription: String {
         return wrappedError.localizedDescription
     }

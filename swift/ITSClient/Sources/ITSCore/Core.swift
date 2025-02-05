@@ -11,6 +11,8 @@
 
 import Foundation
 
+/// An object that manages a MQTT client and a telemetry client.
+/// Depending the configuration, MQTT message publishing and reception might be automatically traced.
 public actor Core {
     private var mqttClient: MQTTClient?
     private var telemetryClient: TelemetryClient?
@@ -18,10 +20,14 @@ public actor Core {
     private let spanName = "IoT3 Core MQTT Message"
     private let traceParentProperty = "traceparent"
 
+    /// Initializes a `Core`.
     public init() {
         continuationsByTopic = [:]
     }
 
+    /// Starts the `Core` with a configuration to connect to a MQTT server and initialize the telemetry client.
+    /// - Parameter coreConfiguration: The configuration used to start the MQTT client and the telemetry client.
+    /// - Throws: A `CoreError` if the MQTT connection fails.
     public func start(coreConfiguration: CoreConfiguration) async throws(CoreError) {
         let telemetryClient = coreConfiguration.telemetryClientConfiguration.map {
             OpenTelemetryClient(configuration: $0)
@@ -31,6 +37,11 @@ public actor Core {
         try await start(mqttClient: mqttClient, telemetryClient: telemetryClient)
     }
 
+    /// Subscribes to a MQTT topic.
+    /// If the `TelemetryClientConfiguration`is set, a linked span is created.
+    /// - Parameter topic: The topic to subscribe.
+    /// - Returns: An async stream to receive the messages of the subscribed topic.
+    /// - Throws: A `CoreError` if the MQTT subscription fails or the `Core` is not started.
     public func subscribe(to topic: String) async throws(CoreError) -> AsyncStream<CoreMQTTMessage> {
         guard let mqttClient else {
             throw .notStarted
@@ -52,6 +63,9 @@ public actor Core {
         }
     }
 
+    /// Unsubscribes from a MQTT topic.
+    /// - Parameter topic: The topic to unsubscribe.
+    /// - Throws: A `CoreError` if the MQTT unsubscription fails or the `Core` is not started.
     public func unsubscribe(from topic: String) async throws(CoreError) {
         guard let mqttClient else {
             throw .notStarted
@@ -70,6 +84,10 @@ public actor Core {
         }
     }
 
+    /// Publishes a MQTT message on a topic.
+    /// If the `TelemetryClientConfiguration`is set, a span is created.
+    /// - Parameter message: The message to publish.
+    /// - Throws: A `CoreError` if the MQTT publishing fails or the `Core` is not started.
     public func publish(message: CoreMQTTMessage) async throws(CoreError) {
         guard let mqttClient else {
             throw .notStarted
@@ -95,6 +113,8 @@ public actor Core {
         }
     }
 
+    /// Stops the `Core` disconnecting the MQTT client and stopping the telemetry client.
+    /// - Throws: A `CoreError` if the MQTT unsubscriptions or disconnection fails.
     public func stop() async throws(CoreError) {
         for topic in continuationsByTopic.keys {
             try await unsubscribe(from: topic)
