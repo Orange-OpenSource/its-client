@@ -49,7 +49,8 @@ public class RoadHazardManager {
                 ioT3RoadHazardCallback.denmArrived(denm);
 
                 //associate the received DENM to a RoadHazard object
-                String uuid = denm.getSourceUuid() + "_" + denm.getStationId();
+                String uuid = denm.getManagementContainer().getActionId().getOriginatingStationId()
+                        + "_" + denm.getManagementContainer().getActionId().getSequenceNumber();
                 int cause = denm.getSituationContainer().getEventType().getCause();
                 int subcause = denm.getSituationContainer().getEventType().getSubcause();
                 LatLng position = new LatLng(
@@ -63,11 +64,16 @@ public class RoadHazardManager {
                     synchronized (ROAD_HAZARD_MAP) {
                         RoadHazard roadHazard = ROAD_HAZARD_MAP.get(uuid);
                         if(roadHazard != null) {
-                            roadHazard.updateTimestamp(timestamp);
-                            roadHazard.setPosition(position);
-                            roadHazard.setLifetime(lifetime);
-                            roadHazard.setDenm(denm);
-                            ioT3RoadHazardCallback.roadHazardUpdate(roadHazard);
+                            if(terminate) {
+                                ROAD_HAZARD_MAP.values().remove(roadHazard);
+                                ioT3RoadHazardCallback.roadHazardExpired(roadHazard);
+                            } else {
+                                roadHazard.updateTimestamp(timestamp);
+                                roadHazard.setPosition(position);
+                                roadHazard.setLifetime(lifetime);
+                                roadHazard.setDenm(denm);
+                                ioT3RoadHazardCallback.roadHazardUpdate(roadHazard);
+                            }
                         }
                     }
                 } else if(!terminate && !expired) {
