@@ -7,6 +7,7 @@
  */
 package com.orange.iot3mobility.its.json.denm;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import com.orange.iot3mobility.its.json.PathHistory;
 
 import org.json.JSONArray;
@@ -42,7 +43,7 @@ public class Traces {
     }
 
     public static Traces jsonParser(JSONArray jsonTraces) {
-        if(jsonTraces == null || jsonTraces.isEmpty()) return new Traces(null);
+        if(JsonUtil.isNullOrEmpty(jsonTraces)) return new Traces(null);
         ArrayList<PathHistory> pathHistories = new ArrayList<>();
         for(int i = 0; i < jsonTraces.length(); i++) {
             PathHistory pathHistory = PathHistory.jsonParser(jsonTraces.optJSONArray(i));

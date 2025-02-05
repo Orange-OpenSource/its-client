@@ -9,6 +9,7 @@ package com.orange.iot3mobility.its.json.cpm;
 
 import com.orange.iot3mobility.its.StationType;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -238,7 +239,7 @@ public class ClassificationItem {
     }
 
     public static ClassificationItem jsonParser(JSONObject json) {
-        if(json == null || json.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(json)) return null;
         try {
             JSONObject jsonObjectClass = json.getJSONObject(JsonCpmKey.Classification.OBJECT_CLASS.key());
             ObjectClassVehicle objectClassVehicle = ObjectClassVehicle.jsonParser(jsonObjectClass);

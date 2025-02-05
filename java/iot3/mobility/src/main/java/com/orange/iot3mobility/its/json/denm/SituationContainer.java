@@ -11,6 +11,7 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 
 import com.orange.iot3mobility.its.json.JsonKey;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -101,7 +102,7 @@ public class SituationContainer {
     }
 
     public static SituationContainer jsonParser(JSONObject jsonSituationContainer) {
-        if(jsonSituationContainer == null || jsonSituationContainer.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonSituationContainer)) return null;
         try {
             int infoQuality = jsonSituationContainer.optInt(JsonKey.SituationContainer.INFO_QUALITY.key(), UNKNOWN);
             JSONObject jsonEventType = jsonSituationContainer.getJSONObject(JsonKey.SituationContainer.EVENT_TYPE.key());

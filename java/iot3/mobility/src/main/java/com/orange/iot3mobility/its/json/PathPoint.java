@@ -70,7 +70,7 @@ public class PathPoint {
     }
 
     public static PathPoint jsonParser(JSONObject jsonPathPoint) {
-        if(jsonPathPoint == null || jsonPathPoint.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonPathPoint)) return null;
         JSONObject jsonPathPosition = jsonPathPoint.optJSONObject(JsonKey.PathPoint.PATH_POSITION.key());
         PathPosition pathPosition = PathPosition.jsonParser(jsonPathPosition);
         int pathDeltaTime = jsonPathPoint.optInt(JsonKey.PathPoint.PATH_DELTA_TIME.key(), UNKNOWN);

@@ -78,7 +78,7 @@ public class PositionConfidenceEllipse {
     }
 
     public static PositionConfidenceEllipse jsonParser(JSONObject jsonPositionConfidenceEllipse) {
-        if(jsonPositionConfidenceEllipse == null || jsonPositionConfidenceEllipse.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonPositionConfidenceEllipse)) return null;
         int semiMajorConfidence = jsonPositionConfidenceEllipse.optInt(JsonKey.Confidence.POSITION_SEMI_MAJOR_CONFIDENCE.key(), UNKNOWN);;
         int semiMinorConfidence = jsonPositionConfidenceEllipse.optInt(JsonKey.Confidence.POSITION_SEMI_MINOR_CONFIDENCE.key(), UNKNOWN);;
         int semiMajorOrientation = jsonPositionConfidenceEllipse.optInt(JsonKey.Confidence.POSITION_SEMI_MAJOR_ORIENTATION.key(), UNKNOWN);

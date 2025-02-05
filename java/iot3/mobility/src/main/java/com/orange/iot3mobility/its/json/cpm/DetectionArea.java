@@ -7,6 +7,7 @@
  */
 package com.orange.iot3mobility.its.json.cpm;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -182,7 +183,7 @@ public class DetectionArea {
     }
 
     public static DetectionArea jsonParser(JSONObject json) {
-        if(json == null || json.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(json)) return null;
         JSONObject jsonVehicleSensor = json.optJSONObject(JsonCpmKey.DetectionArea.VEHICLE_SENSOR.key());
         VehicleSensor vehicleSensor = VehicleSensor.jsonParser(jsonVehicleSensor);
         JSONObject jsonStationarySensorRadial = json.optJSONObject(JsonCpmKey.DetectionArea.STATIONARY_SENSOR_RADIAL.key());

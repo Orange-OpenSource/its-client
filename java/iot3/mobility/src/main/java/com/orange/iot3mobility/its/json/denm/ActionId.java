@@ -11,6 +11,7 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 
 import com.orange.iot3mobility.its.json.JsonKey;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -72,7 +73,7 @@ public class ActionId {
     }
 
     public static ActionId jsonParser(JSONObject jsonActionId) {
-        if(jsonActionId == null || jsonActionId.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonActionId)) return null;
         try {
             long originStationId = jsonActionId.getLong(JsonKey.ActionId.ORIGINATING_STATION_ID.key());
             int sequenceNumber = jsonActionId.optInt(JsonKey.ActionId.SEQUENCE_NUMBER.key(), UNKNOWN);

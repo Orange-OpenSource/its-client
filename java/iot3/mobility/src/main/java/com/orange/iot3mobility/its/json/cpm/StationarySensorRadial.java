@@ -9,6 +9,7 @@ package com.orange.iot3mobility.its.json.cpm;
 
 import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -161,7 +162,7 @@ public class StationarySensorRadial {
     }
 
     public static StationarySensorRadial jsonParser(JSONObject json) {
-        if(json == null || json.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(json)) return null;
         try {
             int range = json.getInt(JsonCpmKey.StationarySensorRadial.RANGE.key());
             int horizontalOpeningAngleStart = json.getInt(JsonCpmKey.StationarySensorRadial.HORIZONTAL_OPENING_ANGLE_START.key());

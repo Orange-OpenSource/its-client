@@ -12,6 +12,7 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 import com.orange.iot3mobility.its.EtsiUtils;
 import com.orange.iot3mobility.its.json.JsonKey;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import com.orange.iot3mobility.its.json.cpm.PerceivedObject;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -357,7 +358,7 @@ public class HighFrequencyContainer {
                 jsonHighFrequencyContainer.put(JsonKey.HighFrequencyContainer.CURVATURE_CALCULATION_MODE.key(), curvatureCalculationMode);
             if(!accelerationControl.isEmpty())
                 jsonHighFrequencyContainer.put(JsonKey.HighFrequencyContainer.ACCELERATION_CONTROL.key(), accelerationControl);
-            if(!confidence.isEmpty())
+            if(!JsonUtil.isNullOrEmpty(confidence))
                 jsonHighFrequencyContainer.put(JsonKey.HighFrequencyContainer.CONFIDENCE.key(), confidence);
         } catch (JSONException e) {
             LOGGER.log(Level.WARNING, "HighFrequencyContainer JSON build error", "Error: " + e);
@@ -780,7 +781,7 @@ public class HighFrequencyContainer {
     }
 
     public static HighFrequencyContainer jsonParser(JSONObject jsonHighFrequencyContainer) {
-        if(jsonHighFrequencyContainer == null || jsonHighFrequencyContainer.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonHighFrequencyContainer)) return null;
         int heading = jsonHighFrequencyContainer.optInt(JsonKey.HighFrequencyContainer.HEADING.key(), UNKNOWN);
         int speed = jsonHighFrequencyContainer.optInt(JsonKey.HighFrequencyContainer.SPEED.key(), UNKNOWN);
         int driveDirection = jsonHighFrequencyContainer.optInt(JsonKey.HighFrequencyContainer.DRIVE_DIRECTION.key(), UNKNOWN);

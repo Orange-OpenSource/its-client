@@ -10,6 +10,7 @@ package com.orange.iot3mobility.its.json.denm;
 import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 
 import com.orange.iot3mobility.its.json.JsonKey;
+import com.orange.iot3mobility.its.json.JsonUtil;
 import com.orange.iot3mobility.its.json.Position;
 import com.orange.iot3mobility.its.json.PositionConfidence;
 
@@ -305,7 +306,7 @@ public class ManagementContainer {
     }
 
     public static ManagementContainer jsonParser(JSONObject jsonManagementContainer) {
-        if(jsonManagementContainer == null || jsonManagementContainer.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonManagementContainer)) return null;
         try {
             JSONObject jsonActionId = jsonManagementContainer.getJSONObject(JsonKey.ManagementContainer.ACTION_ID.key());
             ActionId actionId = ActionId.jsonParser(jsonActionId);

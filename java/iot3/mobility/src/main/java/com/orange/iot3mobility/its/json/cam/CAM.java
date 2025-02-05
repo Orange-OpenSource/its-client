@@ -8,6 +8,7 @@
 package com.orange.iot3mobility.its.json.cam;
 
 import com.orange.iot3mobility.its.json.JsonKey;
+import com.orange.iot3mobility.its.json.JsonUtil;
 import com.orange.iot3mobility.its.json.JsonValue;
 import com.orange.iot3mobility.its.json.MessageBase;
 
@@ -268,7 +269,7 @@ public class CAM extends MessageBase {
      * @return {@link CAM}
      */
     public static CAM jsonParser(JSONObject jsonCAM) {
-        if(jsonCAM == null || jsonCAM.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonCAM)) return null;
         try {
             String type = jsonCAM.getString(JsonKey.Header.TYPE.key());
 

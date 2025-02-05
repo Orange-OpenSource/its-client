@@ -7,6 +7,7 @@
  */
 package com.orange.iot3mobility.its.json.cpm;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -115,7 +116,7 @@ public class ObjectClassSingleVru {
     }
 
     public static ObjectClassSingleVru jsonParser(JSONObject json) {
-        if(json == null || json.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(json)) return null;
         JSONObject jsonSingleVru = json.optJSONObject(JsonCpmKey.ObjectClass.SINGLE_VRU.key());
         if(jsonSingleVru != null) {
             ObjectVruPedestrian objectVruPedestrian = ObjectVruPedestrian.jsonParser(jsonSingleVru);

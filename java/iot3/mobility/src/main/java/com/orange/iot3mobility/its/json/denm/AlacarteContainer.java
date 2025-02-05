@@ -11,6 +11,7 @@ import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 
 import com.orange.iot3mobility.its.json.JsonKey;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -107,7 +108,7 @@ public class AlacarteContainer {
     }
 
     public static AlacarteContainer jsonParser(JSONObject jsonAlacarteContainer) {
-        if(jsonAlacarteContainer == null || jsonAlacarteContainer.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonAlacarteContainer)) return null;
         int lanePosition = jsonAlacarteContainer.optInt(JsonKey.AlacarteContainer.LANE_POSITION.key(), UNKNOWN);
         int impactReduction = jsonAlacarteContainer.optInt(JsonKey.AlacarteContainer.IMPACT_REDUCTION.key(), UNKNOWN);
         final int externalTemperature = jsonAlacarteContainer.optInt(JsonKey.AlacarteContainer.EXTERNAL_TEMPERATURE.key(), UNKNOWN);

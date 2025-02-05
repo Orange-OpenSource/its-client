@@ -7,6 +7,7 @@
  */
 package com.orange.iot3mobility.its.json.cpm;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONArray;
 
 import java.util.ArrayList;
@@ -44,7 +45,7 @@ public class StationarySensorPolygon {
     }
 
     public static StationarySensorPolygon jsonParser(JSONArray jsonArray) {
-        if(jsonArray == null || jsonArray.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonArray)) return null;
         ArrayList<Offset> offsetPoints = new ArrayList<>();
         for (int i = 0; i < jsonArray.length(); i++) {
             Offset offsetPoint = Offset.jsonParser(jsonArray.optJSONObject(i));

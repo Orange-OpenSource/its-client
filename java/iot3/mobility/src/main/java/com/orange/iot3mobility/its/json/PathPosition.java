@@ -83,7 +83,7 @@ public class PathPosition {
     }
 
     public static PathPosition jsonParser(JSONObject jsonPathPosition) {
-        if(jsonPathPosition == null || jsonPathPosition.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonPathPosition)) return null;
         try {
             int deltaLatitude = jsonPathPosition.getInt(JsonKey.PathPosition.DELTA_LATITUDE.key());
             int deltaLongitude = jsonPathPosition.getInt(JsonKey.PathPosition.DELTA_LONGITUDE.key());

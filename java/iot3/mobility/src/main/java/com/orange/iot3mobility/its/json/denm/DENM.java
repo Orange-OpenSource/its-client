@@ -8,6 +8,7 @@
 package com.orange.iot3mobility.its.json.denm;
 
 import com.orange.iot3mobility.its.json.JsonKey;
+import com.orange.iot3mobility.its.json.JsonUtil;
 import com.orange.iot3mobility.its.json.JsonValue;
 import com.orange.iot3mobility.its.json.MessageBase;
 
@@ -291,7 +292,7 @@ public class DENM extends MessageBase {
      * @return {@link DENM}
      */
     public static DENM jsonParser(JSONObject jsonDENM) {
-        if(jsonDENM == null || jsonDENM.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonDENM)) return null;
         try {
             String type = jsonDENM.getString(JsonKey.Header.TYPE.key());
 

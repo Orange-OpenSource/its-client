@@ -9,6 +9,7 @@ package com.orange.iot3mobility.its.json.denm;
 
 import com.orange.iot3mobility.its.json.JsonKey;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -63,7 +64,7 @@ public class LinkedCause {
     }
 
     public static LinkedCause jsonParser(JSONObject jsonLinkedCause) {
-        if(jsonLinkedCause == null || jsonLinkedCause.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonLinkedCause)) return null;
         try {
             int cause = jsonLinkedCause.getInt(JsonKey.EventType.CAUSE.key());
             int subcause = jsonLinkedCause.getInt(JsonKey.EventType.SUBCAUSE.key());

@@ -9,6 +9,7 @@ package com.orange.iot3mobility.its.json.cpm;
 
 import static com.orange.iot3mobility.its.json.JsonUtil.UNKNOWN;
 
+import com.orange.iot3mobility.its.json.JsonUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -94,7 +95,7 @@ public class OriginatingRsuContainer {
     }
 
     public static OriginatingRsuContainer jsonParser(JSONObject json) {
-        if(json == null || json.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(json)) return null;
         int region = json.optInt(JsonCpmKey.OriginatingRsuContainer.REGION.key(), UNKNOWN);
         int intersectionReferenceId = json.optInt(JsonCpmKey.OriginatingRsuContainer.INTERSECTION_REFERENCE_ID.key(), UNKNOWN);
         int roadSegmentReferenceId = json.optInt(JsonCpmKey.OriginatingRsuContainer.ROAD_SEGMENT_REFERENCE_ID.key(), UNKNOWN);

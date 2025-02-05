@@ -53,7 +53,8 @@ public class PositionConfidence {
     private void createJson() {
         try {
             if(positionConfidenceEllipse != null)
-                jsonPositionConfidence.put(JsonKey.Confidence.POSITION_CONFIDENCE_ELLIPSE.key(), positionConfidenceEllipse);
+                jsonPositionConfidence.put(JsonKey.Confidence.POSITION_CONFIDENCE_ELLIPSE.key(),
+                        positionConfidenceEllipse.getJsonPositionConfidenceEllipse());
             if(altitudeConfidence != UNKNOWN)
                 jsonPositionConfidence.put(JsonKey.Confidence.ALTITUDE.key(), altitudeConfidence);
         } catch (JSONException e) {
@@ -74,7 +75,7 @@ public class PositionConfidence {
     }
 
     public static PositionConfidence jsonParser(JSONObject jsonPositionConfidence) {
-        if(jsonPositionConfidence == null || jsonPositionConfidence.isEmpty()) return null;
+        if(JsonUtil.isNullOrEmpty(jsonPositionConfidence)) return null;
         JSONObject jsonPositionConfidenceEllipse = jsonPositionConfidence.optJSONObject(JsonKey.Confidence.POSITION_CONFIDENCE_ELLIPSE.key());
         PositionConfidenceEllipse positionConfidenceEllipse = PositionConfidenceEllipse.jsonParser(jsonPositionConfidenceEllipse);
         int altitudeConfidence = jsonPositionConfidence.optInt(JsonKey.Confidence.ALTITUDE.key(), UNKNOWN);
