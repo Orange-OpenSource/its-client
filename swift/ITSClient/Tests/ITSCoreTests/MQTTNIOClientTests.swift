@@ -29,6 +29,8 @@ struct MQTTNIOClientTests {
 
         // Then
         #expect(await mqttClient.isConnected)
+
+        try await mqttClient.disconnect()
     }
 
     @Test("MQTT anonymous connection with SSL should succeed")
@@ -45,6 +47,8 @@ struct MQTTNIOClientTests {
 
         // Then
         #expect(await mqttClient.isConnected)
+
+        try await mqttClient.disconnect()
     }
 
     @Test("MQTT authenticated connection should succeed")
@@ -63,6 +67,8 @@ struct MQTTNIOClientTests {
 
         // Then
         #expect(await mqttClient.isConnected)
+
+        try await mqttClient.disconnect()
     }
 
     @Test("MQTT websocket connection should succeed")
@@ -80,6 +86,8 @@ struct MQTTNIOClientTests {
 
         // Then
         #expect(await mqttClient.isConnected)
+
+        try await mqttClient.disconnect()
     }
 
     @Test("MQTT message should be received if published on a subscribed topic")
@@ -111,6 +119,8 @@ struct MQTTNIOClientTests {
                                                      userProperty: userProperty))
             // Wait the message
             try await Task.sleep(for: .seconds(0.5))
+
+            try await mqttClient.disconnect()
         }
     }
 
@@ -139,6 +149,8 @@ struct MQTTNIOClientTests {
                                                      userProperty: nil))
             // Wait the message
             try await Task.sleep(for: .seconds(0.5))
+
+            try await mqttClient.disconnect()
         }
     }
 
