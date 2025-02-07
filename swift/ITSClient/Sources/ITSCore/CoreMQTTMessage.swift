@@ -17,4 +17,13 @@ public struct CoreMQTTMessage: Sendable {
     public let payload: Data
     /// The topic on which the message is received or sent.
     public let topic: String
+
+    /// Initializes a `CoreMQTTMessage`
+    /// - Parameters:
+    ///   - payload: The message payload.
+    ///   - topic: The topic on which the message is received or sent.
+    public init(payload: Data, topic: String) {
+        self.payload = payload
+        self.topic = topic
+    }
 }
