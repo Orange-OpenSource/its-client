@@ -82,8 +82,7 @@ struct CoreTests {
 
         // When
         let topic = "its-topic-test"
-        let coreConfiguration = CoreConfiguration(mqttClientConfiguration: coreConfiguration.mqttClientConfiguration,
-                                                  telemetryClientConfiguration: nil)
+        let coreConfiguration = CoreConfiguration(mqttClientConfiguration: coreConfiguration.mqttClientConfiguration)
         try await core.start(coreConfiguration: coreConfiguration)
         let message = CoreMQTTMessage(payload: Data(), topic: topic)
         try await core.publish(message: message)

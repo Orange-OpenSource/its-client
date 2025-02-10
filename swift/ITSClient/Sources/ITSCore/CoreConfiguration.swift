@@ -20,7 +20,7 @@ public struct CoreConfiguration: Sendable {
     ///   - telemetryClientConfiguration: The telemetry client configuration. Can be nil to opt-out telemetry.
     public init(
         mqttClientConfiguration: MQTTClientConfiguration,
-        telemetryClientConfiguration: TelemetryClientConfiguration?
+        telemetryClientConfiguration: TelemetryClientConfiguration? = nil
     ) {
         self.mqttClientConfiguration = mqttClientConfiguration
         self.telemetryClientConfiguration = telemetryClientConfiguration
