@@ -9,7 +9,8 @@
  * Software description: Swift ITS client.
  */
 
-struct MQTTClientConfiguration {
+/// A structure to configure a MQTT client.
+public struct MQTTClientConfiguration: Sendable {
     let host: String
     let port: Int
     let clientIdentifier: String
@@ -17,8 +18,17 @@ struct MQTTClientConfiguration {
     let password: String?
     let useSSL: Bool
     let useWebSockets: Bool
-    
-    init(
+
+    /// Initializes a `MQTTClientConfiguration`.
+    /// - Parameters:
+    ///   - host: The MQTT server host.
+    ///   - port: The MQTT server port.
+    ///   - clientIdentifier: The MQTT client identifier.
+    ///   - userName: The MQTT user name if authentication is enabled on the server.
+    ///   - password: The MQTT password if authentication is enabled on the server.
+    ///   - useSSL: `true` to use an encrypted connection to the server.
+    ///   - useWebSockets: `true` to use a websocket connection to the server.
+    public init(
         host: String,
         port: Int,
         clientIdentifier: String,

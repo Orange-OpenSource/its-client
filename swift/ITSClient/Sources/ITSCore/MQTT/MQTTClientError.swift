@@ -15,6 +15,26 @@ enum MQTTClientError: Error {
     case connectionFailed
     case clientNotConnected
     case subscriptionFailed
+    case unsubscriptionFailed
     case disconnectionFailed
     case sendPayloadFailed
+}
+
+extension MQTTClientError {
+    var localizedDescription: String {
+        switch self {
+        case .connectionFailed:
+            return "The connection to the server has failed."
+        case .clientNotConnected:
+            return "Unable to perform the operation because the client is not connected."
+        case .subscriptionFailed:
+            return "The subscription has failed."
+        case .unsubscriptionFailed:
+            return "The unsubscription has failed."
+        case .disconnectionFailed:
+            return "The disconnection from the server has failed."
+        case .sendPayloadFailed:
+            return "The MQTT message can't be sent."
+        }
+    }
 }

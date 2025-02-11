@@ -16,13 +16,13 @@ import NIOCore
 actor MQTTNIOClient: MQTTClient {
     private let client: MQTTNIO.MQTTClient
     private let listenerName = "MQTTNIOClientListener"
-    private var subscribedTopics = [String]()
-    
+    private var messageReceivedHandler: (@Sendable (MQTTMessage) -> Void)?
+
     var isConnected: Bool {
         client.isActive()
     }
-    
-    init(configuration: MQTTClientConfiguration, messageReceivedHandler: (@Sendable @escaping (MQTTMessage) -> Void)) {
+
+    init(configuration: MQTTClientConfiguration) {
         client = MQTTNIO.MQTTClient(
             host: configuration.host,
             port: configuration.port,
@@ -34,75 +34,102 @@ actor MQTTNIOClient: MQTTClient {
                                  useSSL: configuration.useSSL,
                                  useWebSockets: configuration.useWebSockets)
         )
-        client.addPublishListener(named: listenerName) { [messageReceivedHandler] result in
+        client.addPublishListener(named: listenerName) { result in
             switch result {
             case .success(let publishInfo):
                 let receivedData = Data(buffer: publishInfo.payload)
-                let message = MQTTMessage(payload: receivedData, topic: publishInfo.topicName)
-                messageReceivedHandler(message)
+                let userProperty = publishInfo.properties.compactMap({
+                    switch $0 {
+                    case .userProperty(let key, let value):
+                        return MQTTMessageUserProperty(key: key, value: value)
+                    default:
+                        return nil
+                    }
+                }).first
+                let message = MQTTMessage(payload: receivedData,
+                                          topic: publishInfo.topicName,
+                                          userProperty: userProperty)
+                Task { [weak self] in
+                    await self?.messageReceivedHandler?(message)
+                }
             default:
                 break
             }
         }
     }
-    
+
     deinit {
         client.removePublishListener(named: listenerName)
-        
+
         do {
             try client.syncShutdownGracefully()
         } catch {}
     }
-    
+
+    func setMessageReceivedHandler(messageReceivedHandler: @escaping (@Sendable (MQTTMessage) -> Void)) {
+        self.messageReceivedHandler = messageReceivedHandler
+    }
+
     func connect() async throws(MQTTClientError) {
         guard !isConnected else { return }
-        
+
         do {
             _ = try await client.v5.connect(cleanStart: true)
         } catch {
             throw .connectionFailed
         }
     }
-    
+
     func subscribe(to topic: String) async throws(MQTTClientError) {
         guard isConnected else {
             throw .clientNotConnected
         }
-        
+
         do {
             _ = try await client.v5.subscribe(to: [MQTTSubscribeInfoV5(topicFilter: topic,
                                                                        qos: .atLeastOnce)])
-            subscribedTopics.append(topic)
         } catch {
             throw .subscriptionFailed
         }
     }
-    
+
+    func unsubscribe(from topic: String) async throws(MQTTClientError) {
+        guard isConnected else {
+            throw .clientNotConnected
+        }
+
+        do {
+            _ = try await client.v5.unsubscribe(from: [topic])
+        } catch {
+            throw .unsubscriptionFailed
+        }
+    }
+
     func disconnect() async throws(MQTTClientError) {
         guard isConnected else { return }
-        
+
         do {
-            if !subscribedTopics.isEmpty {
-                _ = try await client.v5.unsubscribe(from: subscribedTopics)
-            }
             try await client.v5.disconnect()
         } catch {
             throw .disconnectionFailed
         }
     }
-    
+
     func publish(_ message: MQTTMessage) async throws(MQTTClientError) {
         guard isConnected else {
             throw .clientNotConnected
         }
-        
+
         do {
+            let mqttProperties = message.userProperty.map {
+                MQTTProperties([.userProperty($0.key, $0.value)])
+            }
             _ = try await client.v5.publish(to: message.topic,
                                             payload: ByteBufferAllocator().buffer(data: message.payload),
-                                            qos: .atLeastOnce)
+                                            qos: .atLeastOnce,
+                                            properties: mqttProperties ?? .init())
         } catch {
             throw .sendPayloadFailed
         }
     }
 }
-

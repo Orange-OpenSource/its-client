@@ -11,15 +11,10 @@
 
 import Foundation
 
-struct MQTTMessage {
-    let payload: Data
-    let topic: String
-    let userProperty: MQTTMessageUserProperty?
+/// The errors thrown by the core.
+public enum CoreError: Error, Equatable {
+    /// The core must be started before performing this action.
+    case notStarted
+    /// A MQTT error occured.
+    case mqttError(EquatableError)
 }
-
-struct MQTTMessageUserProperty {
-    let key: String
-    let value: String
-}
-
-extension MQTTMessageUserProperty: Equatable {}
