@@ -40,6 +40,7 @@ public class IoT3Core {
      * @param mqttClientId unique MQTT client ID
      * @param mqttUseTls use TLS for a secure connection with the MQTT broker
      * @param ioT3CoreCallback interface to retrieve the different clients outputs
+     * @param telemetryScheme Open Telemetry scheme (HTTP, HTTPS...)
      * @param telemetryHost Open Telemetry server address
      * @param telemetryPort port of the Open Telemetry server
      * @param telemetryEndpoint endpoint of the Open Telemetry server URL
@@ -53,6 +54,7 @@ public class IoT3Core {
                     String mqttClientId,
                     boolean mqttUseTls,
                     IoT3CoreCallback ioT3CoreCallback,
+                    String telemetryScheme,
                     String telemetryHost,
                     int telemetryPort,
                     String telemetryEndpoint,
@@ -60,7 +62,7 @@ public class IoT3Core {
                     String telemetryPassword) {
         // instantiate the OpenTelemetry client if its parameters have been set with the builder
         if(telemetryHost != null) {
-            OpenTelemetryClient.Scheme scheme = OpenTelemetryClient.Scheme.HTTP;
+            OpenTelemetryClient.Scheme scheme = OpenTelemetryClient.getScheme(telemetryScheme);
             scheme.setCustomPort(telemetryPort);
             this.openTelemetryClient = new OpenTelemetryClient(
                     scheme,
@@ -223,6 +225,7 @@ public class IoT3Core {
         private String mqttClientId;
         private boolean mqttUseTls;
         private IoT3CoreCallback ioT3CoreCallback;
+        private String telemetryScheme;
         private String telemetryHost = null; // will remain null if not initialized
         private int telemetryPort;
         private String telemetryEndpoint;
@@ -263,13 +266,15 @@ public class IoT3Core {
         /**
          * Set the OpenTelemetry parameters of your IoT3Core instance.
          *
+         * @param telemetryScheme the scheme of the OpenTelemetry server (e.g. http, https)
          * @param telemetryHost the host or IP address of the OpenTelemetry server, must not be null
          * @param telemetryPort the port of the OpenTelemetry server
          * @param telemetryEndpoint the endpoint of the OpenTelemetry server (e.g. /endpoint/example)
          * @param telemetryUsername the username for authentication with the OpenTelemetry server
          * @param telemetryPassword the password for authentication with the OpenTelemetry server
          */
-        public IoT3CoreBuilder telemetryParams(String telemetryHost,
+        public IoT3CoreBuilder telemetryParams(String telemetryScheme,
+                                               String telemetryHost,
                                                int telemetryPort,
                                                String telemetryEndpoint,
                                                String telemetryUsername,
@@ -299,7 +304,7 @@ public class IoT3Core {
          * the bootstrap configuration.
          * <p>
          * Use instead of {@link #mqttParams(String, int, String, String, String, boolean)}
-         * and {@link #telemetryParams(String, int, String, String, String)}.
+         * and {@link #telemetryParams(String, String, int, String, String, String)}.
          *
          * @param bootstrapConfig the bootstrap configuration object you get from the
          * {@link com.orange.iot3core.bootstrap.BootstrapHelper} bootstrap sequence
@@ -313,6 +318,7 @@ public class IoT3Core {
             this.mqttClientId = bootstrapConfig.getIot3Id();
             this.mqttUseTls = bootstrapConfig.isServiceSecured(BootstrapConfig.Service.MQTT);
             URI telemetryUri = bootstrapConfig.getServiceUri(BootstrapConfig.Service.OPEN_TELEMETRY);
+            this.telemetryScheme = telemetryUri.getScheme();
             this.telemetryHost = telemetryUri.getHost();
             this.telemetryPort = telemetryUri.getPort();
             this.telemetryEndpoint = telemetryUri.getPath();
@@ -335,6 +341,7 @@ public class IoT3Core {
                     mqttClientId,
                     mqttUseTls,
                     ioT3CoreCallback,
+                    telemetryScheme,
                     telemetryHost,
                     telemetryPort,
                     telemetryEndpoint,

@@ -150,4 +150,12 @@ public class OpenTelemetryClient {
         }
     }
 
+    public static Scheme getScheme(String scheme) {
+        return switch (scheme) {
+            case "https" -> Scheme.HTTPS;
+            case "grpc" -> Scheme.GRPC;
+            default -> Scheme.HTTP;
+        };
+    }
+
 }
