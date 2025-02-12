@@ -61,6 +61,7 @@ public class IoT3Mobility {
      * @param mqttPassword MQTT password
      * @param mqttUseTls use TLS for a secure connection with the MQTT broker
      * @param ioT3MobilityCallback callback to retrieve connection status
+     * @param telemetryScheme Open Telemetry scheme (e.g. http, https)
      * @param telemetryHost Open Telemetry server address
      * @param telemetryPort port of the Open Telemetry server
      * @param telemetryEndpoint endpoint of the Open Telemetry server URL
@@ -75,6 +76,7 @@ public class IoT3Mobility {
                         String mqttPassword,
                         boolean mqttUseTls,
                         IoT3MobilityCallback ioT3MobilityCallback,
+                        String telemetryScheme,
                         String telemetryHost,
                         int telemetryPort,
                         String telemetryEndpoint,
@@ -127,7 +129,8 @@ public class IoT3Mobility {
                 .callback(ioT3CoreCallback);
 
         if(telemetryHost != null) {
-            ioT3CoreBuilder.telemetryParams(telemetryHost,
+            ioT3CoreBuilder.telemetryParams(telemetryScheme,
+                    telemetryHost,
                     telemetryPort,
                     telemetryEndpoint,
                     telemetryUsername,
@@ -410,6 +413,7 @@ public class IoT3Mobility {
         private String mqttPassword;
         private boolean mqttUseTls;
         private IoT3MobilityCallback ioT3MobilityCallback;
+        private String telemetryScheme;
         private String telemetryHost = null; // will remain null if not initialized
         private int telemetryPort;
         private String telemetryEndpoint;
@@ -452,18 +456,21 @@ public class IoT3Mobility {
         /**
          * Optional. Set the OpenTelemetry parameters of your IoT3Mobility instance.
          *
+         * @param telemetryScheme the scheme of the OpenTelemetry server (e.g. http, https)
          * @param telemetryHost the host or IP address of the OpenTelemetry server, must not be null
          * @param telemetryPort the port of the OpenTelemetry server
          * @param telemetryEndpoint the endpoint of the OpenTelemetry server (e.g. /endpoint/example)
          * @param telemetryUsername the username for authentication with the OpenTelemetry server
          * @param telemetryPassword the password for authentication with the OpenTelemetry server
          */
-        public IoT3Mobility.IoT3MobilityBuilder telemetryParams(String telemetryHost,
-                                                        int telemetryPort,
-                                                        String telemetryEndpoint,
-                                                        String telemetryUsername,
-                                                        String telemetryPassword) {
+        public IoT3Mobility.IoT3MobilityBuilder telemetryParams(String telemetryScheme,
+                                                                String telemetryHost,
+                                                                int telemetryPort,
+                                                                String telemetryEndpoint,
+                                                                String telemetryUsername,
+                                                                String telemetryPassword) {
             if(telemetryHost == null) throw new IllegalArgumentException("telemetryHost cannot be null");
+            this.telemetryScheme = telemetryScheme;
             this.telemetryHost = telemetryHost;
             this.telemetryPort = telemetryPort;
             this.telemetryEndpoint = telemetryEndpoint;
@@ -477,7 +484,7 @@ public class IoT3Mobility {
          * the bootstrap configuration.
          * <p>
          * Use instead of {@link #mqttParams(String, int, String, String, boolean)}
-         * and {@link #telemetryParams(String, int, String, String, String)}.
+         * and {@link #telemetryParams(String, String, int, String, String, String)}.
          *
          * @param bootstrapConfig the bootstrap configuration object you get from the
          * @param enableTelemetry enable telemetry for performance measurements
@@ -493,6 +500,7 @@ public class IoT3Mobility {
             this.mqttUseTls = bootstrapConfig.isServiceSecured(BootstrapConfig.Service.MQTT);
             if(enableTelemetry) {
                 URI telemetryUri = bootstrapConfig.getServiceUri(BootstrapConfig.Service.OPEN_TELEMETRY);
+                this.telemetryScheme = telemetryUri.getScheme();
                 this.telemetryHost = telemetryUri.getHost();
                 this.telemetryPort = telemetryUri.getPort();
                 this.telemetryEndpoint = telemetryUri.getPath();
@@ -528,6 +536,7 @@ public class IoT3Mobility {
                     mqttPassword,
                     mqttUseTls,
                     ioT3MobilityCallback,
+                    telemetryScheme,
                     telemetryHost,
                     telemetryPort,
                     telemetryEndpoint,
