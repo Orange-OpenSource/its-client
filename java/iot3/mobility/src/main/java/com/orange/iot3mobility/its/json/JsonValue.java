@@ -51,7 +51,9 @@ public class JsonValue {
 
     public enum Version {
 
-        CURRENT("1.0.0");
+        CURRENT_CAM("1.1.3"),
+        CURRENT_CPM("1.2.1"),
+        CURRENT_DENM("1.1.3");
 
         private final String value;
 
