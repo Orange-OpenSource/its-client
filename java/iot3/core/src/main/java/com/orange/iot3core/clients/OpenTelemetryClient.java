@@ -60,7 +60,10 @@ public class OpenTelemetryClient {
         // Encoding the username and password in Base64 for the Basic Authentication header
         String credentials = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        if (!endpoint.endsWith("/v1/traces")) endpoint += "/v1/traces";
+        if (!endpoint.endsWith("/v1/traces")) {
+            if(!endpoint.endsWith("/")) endpoint += "/";
+            endpoint += "v1/traces";
+        }
 
         OtlpHttpSpanExporter spanExporter = OtlpHttpSpanExporter.builder()
                 .setEndpoint(endpoint)
