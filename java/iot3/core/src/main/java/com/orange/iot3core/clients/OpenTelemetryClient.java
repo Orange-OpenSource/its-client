@@ -26,20 +26,23 @@ public class OpenTelemetryClient {
     private final String serviceName;
     private Tracer tracer;
     private SdkTracerProvider tracerProvider;
-    private final Scheme scheme;
+    private final String scheme;
     private final String host;
+    private final int port;
     private final String endpoint;
     private final String username;
     private final String password;
 
-    public OpenTelemetryClient(Scheme scheme,
+    public OpenTelemetryClient(String scheme,
                                String host,
+                               int port,
                                String endpoint,
                                String serviceName,
                                String username,
                                String password) {
         this.scheme = scheme;
         this.host = host;
+        this.port = port;
         this.endpoint = endpoint;
         this.serviceName = serviceName;
         this.username = username;
@@ -48,7 +51,7 @@ public class OpenTelemetryClient {
     }
 
     private void initialize() {
-        String url = scheme.getScheme() + "://" + host + ":" + scheme.getPort() + endpoint;
+        String url = scheme + "://" + host + ":" + port + endpoint;
         OpenTelemetry openTelemetry = initOpenTelemetry(url, username, password);
         this.tracer = openTelemetry.getTracer(serviceName);
     }
@@ -57,7 +60,10 @@ public class OpenTelemetryClient {
         // Encoding the username and password in Base64 for the Basic Authentication header
         String credentials = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
 
-        if (!endpoint.endsWith("/v1/traces")) endpoint += "/v1/traces";
+        if (!endpoint.endsWith("/v1/traces")) {
+            if(!endpoint.endsWith("/")) endpoint += "/";
+            endpoint += "v1/traces";
+        }
 
         OtlpHttpSpanExporter spanExporter = OtlpHttpSpanExporter.builder()
                 .setEndpoint(endpoint)
@@ -119,35 +125,6 @@ public class OpenTelemetryClient {
 
     public void connect() {
         initialize();
-    }
-
-    public enum Scheme {
-        HTTP("http", 4318),
-        HTTPS("https", 4318),
-        GRPC("grpc", 4317);
-
-        private final String scheme;
-        private final int defaultPort;
-        private int customPort;
-
-        Scheme(String scheme, int defaultPort) {
-            this.scheme = scheme;
-            this.defaultPort = defaultPort;
-            this.customPort = -1;
-        }
-
-        public String getScheme() {
-            return scheme;
-        }
-
-        public int getPort() {
-            if(customPort < 0) return defaultPort;
-            else return customPort;
-        }
-
-        public void setCustomPort(int customPort) {
-            this.customPort = customPort;
-        }
     }
 
 }

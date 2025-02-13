@@ -39,6 +39,7 @@ public class Iot3MobilityExample {
     private static final String EXAMPLE_MQTT_PASSWORD = "mqtt_password";
     private static final boolean EXAMPLE_MQTT_USE_TLS = false;
     // OpenTelemetry parameters
+    private static final String EXAMPLE_OTL_SCHEME = "http";
     private static final String EXAMPLE_OTL_HOST = "telemetry_host";
     private static final int EXAMPLE_OTL_PORT = 4318;
     private static final String EXAMPLE_OTL_ENDPOINT = "/telemetry/endpoint";
@@ -55,7 +56,8 @@ public class Iot3MobilityExample {
                         EXAMPLE_MQTT_USERNAME,
                         EXAMPLE_MQTT_PASSWORD,
                         EXAMPLE_MQTT_USE_TLS)
-                .telemetryParams(EXAMPLE_OTL_HOST,
+                .telemetryParams(EXAMPLE_OTL_SCHEME,
+                        EXAMPLE_OTL_HOST,
                         EXAMPLE_OTL_PORT,
                         EXAMPLE_OTL_ENDPOINT,
                         EXAMPLE_OTL_USERNAME,
