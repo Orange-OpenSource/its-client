@@ -274,7 +274,7 @@ public class IoT3Mobility {
         CAM cam = new CAM.CAMBuilder()
                 .header(
                         JsonValue.Origin.SELF.value(),
-                        JsonValue.Version.CURRENT.value(),
+                        JsonValue.Version.CURRENT_CAM.value(),
                         uuid,
                         TrueTime.getAccurateTime())
                 .pduHeader(
@@ -336,7 +336,7 @@ public class IoT3Mobility {
         DENM denm = new DENM.DENMBuilder()
                 .header(
                         JsonValue.Origin.SELF.value(),
-                        JsonValue.Version.CURRENT.value(),
+                        JsonValue.Version.CURRENT_DENM.value(),
                         uuid,
                         TrueTime.getAccurateTime())
                 .pduHeader(
