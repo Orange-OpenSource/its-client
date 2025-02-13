@@ -20,7 +20,9 @@ actor MQTTNIOClient: MQTTClient {
     private var topicSubscriptions = [String]()
     private var isReconnecting = false
     private var reconnectionTask: Task<Void, Never>?
+    private var networkMonitoringTask: Task<Void, Never>?
     private var isDisconnectedFromUser = false
+    private let networkMonitor: NetworkMonitor
 
     var isConnected: Bool {
         client.isActive()
@@ -38,6 +40,7 @@ actor MQTTNIOClient: MQTTClient {
                                  useSSL: configuration.useSSL,
                                  useWebSockets: configuration.useWebSockets)
         )
+        networkMonitor = NetworkMonitor()
         client.addPublishListener(named: listenerName) { result in
             switch result {
             case .success(let publishInfo):
@@ -92,6 +95,9 @@ actor MQTTNIOClient: MQTTClient {
         do {
             isDisconnectedFromUser = false
             _ = try await client.v5.connect(cleanStart: true)
+            // As MQTTNIO close connection event is not triggered quickly when network is lost,
+            // monitor the network to be more reactive.
+            startNetworkMonitoring()
         } catch {
             throw .connectionFailed
         }
@@ -130,6 +136,7 @@ actor MQTTNIOClient: MQTTClient {
 
     func disconnect() async throws(MQTTClientError) {
         stopReconnectionTask()
+        stopNetworkMonitoring()
 
         guard isConnected else {
             removeAllSubscriptions()
@@ -202,5 +209,25 @@ actor MQTTNIOClient: MQTTClient {
         for topic in topicSubscriptions {
             try await subscribe(to: topic)
         }
+    }
+
+    private func startNetworkMonitoring() {
+        guard networkMonitoringTask == nil else { return }
+
+        networkMonitoringTask = Task {
+            var previousNetworkStatus: NetworkStatus?
+            for await networkStatus in networkMonitor.start() {
+                if networkStatus != previousNetworkStatus &&
+                    networkStatus == .disconnected && isConnected {
+                    // Disconnect to close connection early when the network is disconnected
+                    try? await client.v5.disconnect()
+                }
+                previousNetworkStatus = networkStatus
+            }
+        }
+    }
+
+    private func stopNetworkMonitoring() {
+        networkMonitoringTask?.cancel()
     }
 }
