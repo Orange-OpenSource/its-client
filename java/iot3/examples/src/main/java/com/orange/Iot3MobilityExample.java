@@ -247,7 +247,7 @@ public class Iot3MobilityExample {
 
         CPM cpm = new CPM.CPMBuilder()
                 .header(JsonValue.Origin.SELF.value(),
-                        JsonValue.Version.CURRENT.value(),
+                        JsonValue.Version.CURRENT_CPM.value(),
                         EXAMPLE_UUID,
                         TrueTime.getAccurateTime())
                 .pduHeader(2,
@@ -258,7 +258,8 @@ public class Iot3MobilityExample {
                                 StationType.ROAD_SIDE_UNIT.getId(),
                                 new Position(
                                         (long) (position.getLatitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
-                                        (long) (position.getLongitude() * EtsiUtils.ETSI_COORDINATES_FACTOR)),
+                                        (long) (position.getLongitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
+                                        0),
                                 new PositionConfidence(
                                         new PositionConfidenceEllipse(0, 0, 0),
                                         0)))
