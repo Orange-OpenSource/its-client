@@ -62,11 +62,10 @@ public class IoT3Core {
                     String telemetryPassword) {
         // instantiate the OpenTelemetry client if its parameters have been set with the builder
         if(telemetryHost != null) {
-            OpenTelemetryClient.Scheme scheme = OpenTelemetryClient.getScheme(telemetryScheme);
-            scheme.setCustomPort(telemetryPort);
             this.openTelemetryClient = new OpenTelemetryClient(
-                    scheme,
+                    telemetryScheme,
                     telemetryHost,
+                    telemetryPort,
                     telemetryEndpoint,
                     mqttClientId,
                     telemetryUsername,
@@ -280,6 +279,7 @@ public class IoT3Core {
                                                String telemetryUsername,
                                                String telemetryPassword) {
             if(telemetryHost == null) throw new IllegalArgumentException("telemetryHost cannot be null");
+            this.telemetryScheme = telemetryScheme;
             this.telemetryHost = telemetryHost;
             this.telemetryPort = telemetryPort;
             this.telemetryEndpoint = telemetryEndpoint;
