@@ -307,9 +307,9 @@ public class JsonKey {
 
     public enum Confidence {
 
-        POSITION_SEMI_MAJOR_CONFIDENCE("position_semi_major_confidence"),
-        POSITION_SEMI_MINOR_CONFIDENCE("position_semi_minor_confidence"),
-        POSITION_SEMI_MAJOR_ORIENTATION("position_semi_major_orientation"),
+        POSITION_SEMI_MAJOR_CONFIDENCE("semi_major_confidence"),
+        POSITION_SEMI_MINOR_CONFIDENCE("semi_minor_confidence"),
+        POSITION_SEMI_MAJOR_ORIENTATION("semi_major_orientation"),
         ALTITUDE("altitude"),
         HEADING("heading"),
         SPEED("speed"),
