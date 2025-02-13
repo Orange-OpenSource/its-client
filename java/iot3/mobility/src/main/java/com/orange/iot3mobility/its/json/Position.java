@@ -37,13 +37,6 @@ public class Position {
 
     public Position(
             final long latitude,
-            final long longitude)
-    {
-        this(latitude, longitude, UNKNOWN);
-    }
-
-    public Position(
-            final long latitude,
             final long longitude,
             final int altitude)
     {
