@@ -351,7 +351,8 @@ public class IoT3Mobility {
                                 TrueTime.getAccurateETSITime(),
                                 new Position(
                                         (long)(position.getLatitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
-                                        (long)(position.getLongitude() * EtsiUtils.ETSI_COORDINATES_FACTOR)),
+                                        (long)(position.getLongitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
+                                        0),
                                 lifetime,
                                 stationType.getId()))
                 .situationContainer(
