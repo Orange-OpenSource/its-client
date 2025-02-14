@@ -7,14 +7,9 @@
  */
 package com.orange.iot3core.bootstrap;
 
+import okhttp3.*;
 import org.json.JSONObject;
-
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
@@ -51,31 +46,40 @@ public class BootstrapHelper {
         jsonRequest.put("role", role.getJsonValue());
 
         // Encode credentials in Base64 for Basic Authentication
-        String credentials = Base64.getEncoder().encodeToString((login + ":" + password).getBytes());
+        String credentials = Base64.getEncoder().encodeToString((login + ":" + password).getBytes(StandardCharsets.UTF_8));
+
+        // Define the MediaType for JSON
+        MediaType JSON = MediaType.get("application/json; charset=utf-8");
+
+        // Create the request body with the JSON payload
+        RequestBody body = RequestBody.create(jsonRequest.toString(), JSON);
 
         try {
-            // Create the HttpRequest
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                    .uri(new URI(bootstrapUri))
+            // Build the HTTP request using OkHttp
+            Request request = new Request.Builder()
+                    .url(bootstrapUri)
                     .header("Content-Type", "application/json")
                     .header("Authorization", "Basic " + credentials)
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonRequest.toString(), StandardCharsets.UTF_8))
+                    .post(body)
                     .build();
 
-            // Create the HttpClient
-            HttpClient client = HttpClient.newHttpClient();
+            // Create the OkHttpClient
+            OkHttpClient client = new OkHttpClient();
 
-            // Send the request and retrieve the response
-            HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            int statusCode = response.statusCode();
-            if (statusCode >= 400 && statusCode < 600) {
-                bootstrapCallback.boostrapError(new Throwable("Error: " + statusCode + " - " + response.body()));
-            } else {
-                JSONObject jsonResponse = new JSONObject(response.body());
-                BootstrapConfig bootstrapConfig = new BootstrapConfig(jsonResponse);
-                bootstrapCallback.boostrapSuccess(bootstrapConfig);
+            // Send the request and retrieve the response (synchronously)
+            try (Response response = client.newCall(request).execute()) {
+                int statusCode = response.code();
+                String responseBody = response.body() != null ? response.body().string() : "";
+
+                if (statusCode >= 400 && statusCode < 600) {
+                    bootstrapCallback.boostrapError(new Throwable("Error: " + statusCode + " - " + responseBody));
+                } else {
+                    JSONObject jsonResponse = new JSONObject(responseBody);
+                    BootstrapConfig bootstrapConfig = new BootstrapConfig(jsonResponse);
+                    bootstrapCallback.boostrapSuccess(bootstrapConfig);
+                }
             }
-        } catch (IllegalArgumentException | InterruptedException | IOException | URISyntaxException exception) {
+        } catch (IllegalArgumentException | IOException exception) {
             bootstrapCallback.boostrapError(exception);
         }
     }
