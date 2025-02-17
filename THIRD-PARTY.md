@@ -173,6 +173,12 @@
 #### HiveMQ MQTT Client
 - [Source code](https://github.com/hivemq/hivemq-mqtt-client)
 
+#### OpenTelemetry Java
+- [Source code](https://github.com/open-telemetry/opentelemetry-java)
+
+#### Square OkHttp
+- [Source code](https://github.com/square/okhttp)
+
 ## Swift
 
 ### License Apache 2.0
