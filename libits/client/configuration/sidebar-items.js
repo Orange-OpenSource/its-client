@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["configuration_error"],"struct":["Configuration"]};
