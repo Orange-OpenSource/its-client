@@ -13,6 +13,9 @@ let package = Package(
         .library(
             name: "ITSCore",
             targets: ["ITSCore"]),
+        .library(
+            name: "ITSMobility",
+            targets: ["ITSMobility"]),
     ],
     dependencies: [
         .package(url: "https://github.com/swift-server-community/mqtt-nio.git", from: "2.11.0"),
@@ -29,6 +32,10 @@ let package = Package(
         ),
         .testTarget(
             name: "ITSCoreTests",
+            dependencies: ["ITSCore"]
+        ),
+        .target(
+            name: "ITSMobility",
             dependencies: ["ITSCore"]
         ),
     ]
