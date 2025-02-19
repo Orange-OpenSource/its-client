@@ -38,5 +38,9 @@ let package = Package(
             name: "ITSMobility",
             dependencies: ["ITSCore"]
         ),
+        .testTarget(
+            name: "ITSMobilityTests",
+            dependencies: ["ITSMobility"]
+        ),
     ]
 )
