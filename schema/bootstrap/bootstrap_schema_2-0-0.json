@@ -48,6 +48,13 @@
           "items": {
             "$ref": "#/$defs/message/mqtt"
           }
+        },
+        "telemetry": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/telemetry/otlp-http"
+          }
         }
       }
     }
@@ -108,6 +115,33 @@
                 "topic_root": {
                   "type": "string",
                   "description": "The prefix to add in front of all topics before posting or subscribing"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "properties": {
+        "otlp-http": {
+          "type": "object",
+          "allOf": [
+            {
+              "$ref": "#/$defs/service"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "payload": {
+                  "enum": [
+                    "otlp/json",
+                    "otlp/grpc"
+                  ]
+                },
+                "uri": {
+                  "$ref": "#/$defs/uri/http"
                 }
               }
             }
