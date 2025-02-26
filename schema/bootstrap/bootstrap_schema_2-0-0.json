@@ -38,7 +38,17 @@
     },
     "services": {
       "type": "object",
+      "required": [
+        "message"
+      ],
       "properties": {
+        "message": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/message/mqtt"
+          }
+        }
       }
     }
   },
@@ -69,6 +79,40 @@
       "mqtt": {
         "format": "uri",
         "pattern": "^mqtt(\\+ws)?s?://[^/]+(/.+)?$"
+      }
+    },
+    "message": {
+      "type": "object",
+      "properties": {
+        "mqtt": {
+          "type": "object",
+          "allOf": [
+            {
+              "$ref": "#/$def/service"
+            },
+            {
+              "type": "object",
+              "required": [
+                "topic_root"
+              ],
+              "properties": {
+                "payload": {
+                  "enum": [
+                    "json",
+                    "binary"
+                  ]
+                },
+                "uri": {
+                  "$ref": "#/$defs/uri/mqtt"
+                },
+                "topic_root": {
+                  "type": "string",
+                  "description": "The prefix to add in front of all topics before posting or subscribing"
+                }
+              }
+            }
+          ]
+        }
       }
     }
   }
