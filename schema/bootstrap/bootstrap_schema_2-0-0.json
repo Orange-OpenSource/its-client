@@ -43,7 +43,23 @@
     }
   },
   "$defs": {
-    "type": "object",
-    "properties": {}
+    "service": {
+      "type": "object",
+      "description": "Generic service definition",
+      "required": [
+        "payload",
+        "uri"
+      ],
+      "properties": {
+        "payload": {
+          "type": "string",
+          "description": "The type of payload the service accepts at that URI"
+        },
+        "uri": {
+          "type": "string",
+          "description": "The URI the service is reachable at"
+        }
+      }
+    }
   }
 }
