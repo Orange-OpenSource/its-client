@@ -22,7 +22,7 @@
     "version": {
       "type": "string",
       "description": "json message format version",
-      "const": "2.0.0-dev"
+      "const": "2.0.0"
     },
     "iot3_id": {
       "type": "string",
