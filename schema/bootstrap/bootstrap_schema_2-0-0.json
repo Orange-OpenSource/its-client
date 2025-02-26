@@ -55,6 +55,13 @@
           "items": {
             "$ref": "#/$defs/telemetry/otlp-http"
           }
+        },
+        "api": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/api/jaeger"
+          }
         }
       }
     }
@@ -139,6 +146,30 @@
                     "otlp/json",
                     "otlp/grpc"
                   ]
+                },
+                "uri": {
+                  "$ref": "#/$defs/uri/http"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "api": {
+      "type": "object",
+      "properties": {
+        "jaeger": {
+          "type": "object",
+          "allOf": [
+            {
+              "$ref": "#/$defs/service"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "payload": {
+                  "const": "jaeger"
                 },
                 "uri": {
                   "$ref": "#/$defs/uri/http"
