@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/bootstrap",
+  "$references": [],
+  "description": "Bootstrap JSON schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "message_type",
+    "version",
+    "iot3_id",
+    "psk_iot3_id",
+    "psk_iot3_secret",
+    "services"
+  ],
+  "properties": {
+    "message_type": {
+      "type": "string",
+      "description": "message type",
+      "const": "bootstrap"
+    },
+    "version": {
+      "type": "string",
+      "description": "json message format version",
+      "const": "2.0.0-dev"
+    },
+    "iot3_id": {
+      "type": "string",
+      "description": "IoT3 ID, to serve as the prefix to MQTT client-ID"
+    },
+    "psk_iot3_id": {
+      "type": "string",
+      "description": "The PSK IoT3 ID (aka login) to use to authenticate against the IoT3 services"
+    },
+    "psk_iot3_secret": {
+      "type": "string",
+      "description": "The PSK IoT3 secret (aka password) to use to authenticate against the IoT3 services"
+    },
+    "services": {
+      "type": "object",
+      "properties": {
+      }
+    }
+  },
+  "$defs": {
+    "type": "object",
+    "properties": {}
+  }
+}
