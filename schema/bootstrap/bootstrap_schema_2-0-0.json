@@ -60,6 +60,16 @@
           "description": "The URI the service is reachable at"
         }
       }
+    },
+    "uri": {
+      "http": {
+        "format": "uri",
+        "pattern": "^https?://"
+      },
+      "mqtt": {
+        "format": "uri",
+        "pattern": "^mqtt(\\+ws)?s?://[^/]+(/.+)?$"
+      }
     }
   }
 }
