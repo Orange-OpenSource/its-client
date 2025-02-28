@@ -12,7 +12,7 @@
 use crate::mobility::position::Position;
 use crate::mobility::quadtree::parse_error::ParseError;
 use crate::mobility::quadtree::tile::Tile;
-use crate::mobility::quadtree::{coordinates_to_quadkey, DEFAULT_DEPTH};
+use crate::mobility::quadtree::{DEFAULT_DEPTH, coordinates_to_quadkey};
 use core::fmt;
 use std::cmp::Ordering;
 use std::str;
@@ -432,7 +432,7 @@ mod tests {
     }
 
     macro_rules! test_reduce {
-        ($test_name:ident, $k:expr, $d:expr, $e:expr) => {
+        ($test_name:ident, $k:expr_2021, $d:expr_2021, $e:expr_2021) => {
             #[test]
             fn $test_name() {
                 let mut quadkey = Quadkey::from_str($k).expect("Failed to convert '{}' to quadkey");
@@ -454,7 +454,7 @@ mod tests {
     );
 
     macro_rules! test_as_reduced {
-        ($test_name:ident, $k:expr, $d:expr, $e:expr) => {
+        ($test_name:ident, $k:expr_2021, $d:expr_2021, $e:expr_2021) => {
             #[test]
             fn $test_name() {
                 let quadkey = Quadkey::from_str($k).expect("Failed to convert '{}' to quadkey");

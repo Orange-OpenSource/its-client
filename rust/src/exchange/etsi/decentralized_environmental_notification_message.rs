@@ -13,12 +13,12 @@ use std::hash;
 
 use crate::client::configuration::Configuration;
 use crate::exchange::etsi::decentralized_environmental_notification_message::RelevanceDistance::{
-    LessThan1000m, LessThan100m, LessThan10Km, LessThan200m, LessThan500m, LessThan50m,
-    LessThan5Km, Over10Km,
+    LessThan5Km, LessThan10Km, LessThan50m, LessThan100m, LessThan200m, LessThan500m,
+    LessThan1000m, Over10Km,
 };
 use crate::exchange::etsi::reference_position::ReferencePosition;
 use crate::exchange::etsi::{
-    etsi_now, heading_from_etsi, speed_from_etsi, PathHistory, PositionConfidence,
+    PathHistory, PositionConfidence, etsi_now, heading_from_etsi, speed_from_etsi,
 };
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;

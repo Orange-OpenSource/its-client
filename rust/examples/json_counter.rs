@@ -16,7 +16,7 @@ use std::path::Path;
 use std::str::FromStr;
 
 use clap::{Arg, Command};
-use flexi_logger::{with_thread, Cleanup, Criterion, Logger, Naming, WriteMode};
+use flexi_logger::{Cleanup, Criterion, Logger, Naming, WriteMode, with_thread};
 use ini::Ini;
 use libits::client::configuration::Configuration;
 use libits::transport::mqtt::mqtt_client::MqttClient;

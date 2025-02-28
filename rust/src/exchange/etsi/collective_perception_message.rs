@@ -14,7 +14,7 @@ use crate::exchange::etsi::mobile_perceived_object::MobilePerceivedObject;
 use crate::exchange::etsi::perceived_object::PerceivedObject;
 use crate::exchange::etsi::reference_position::ReferencePosition;
 use crate::exchange::etsi::{
-    acceleration_from_etsi, heading_from_etsi, speed_from_etsi, PositionConfidence,
+    PositionConfidence, acceleration_from_etsi, heading_from_etsi, speed_from_etsi,
 };
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
@@ -213,9 +213,9 @@ impl CollectivePerceptionMessage {
             .map(|perceived_object| {
                 MobilePerceivedObject::new(
                     //assumed clone : we store a copy into the MobilePerceivedObject container
-                    // TODO use a lifetime to propage the lifecycle betwwen PerceivedObject and MobilePerceivedObject instead of clone
+                    // TODO use a lifetime to propage the lifecycle between PerceivedObject and MobilePerceivedObject instead of clone
                     perceived_object.clone(),
-                    &self,
+                    self,
                 )
             })
             .collect()
@@ -305,12 +305,12 @@ mod tests {
 
     use crate::exchange::etsi::perceived_object::PerceivedObject;
     use crate::exchange::etsi::reference_position::{
-        altitude_from_etsi, coordinate_from_etsi, ReferencePosition,
+        ReferencePosition, altitude_from_etsi, coordinate_from_etsi,
     };
     use crate::exchange::etsi::speed_from_etsi;
 
     macro_rules! assert_float_eq {
-        ($a:expr, $b:expr, $e:expr) => {
+        ($a:expr_2021, $b:expr_2021, $e:expr_2021) => {
             let delta = ($a - $b).abs();
             assert!(delta <= $e, "Actual:   {}\nExpected: {}", $a, $b)
         };
@@ -1219,12 +1219,16 @@ mod tests {
                 assert_eq!(stationary_sensor_radial.horizontal_opening_angle_start, 2);
                 assert_eq!(stationary_sensor_radial.horizontal_opening_angle_end, 3);
                 assert!(stationary_sensor_radial.sensor_position_offset.is_none());
-                assert!(stationary_sensor_radial
-                    .vertical_opening_angle_start
-                    .is_none());
-                assert!(stationary_sensor_radial
-                    .vertical_opening_angle_end
-                    .is_none());
+                assert!(
+                    stationary_sensor_radial
+                        .vertical_opening_angle_start
+                        .is_none()
+                );
+                assert!(
+                    stationary_sensor_radial
+                        .vertical_opening_angle_end
+                        .is_none()
+                );
             }
             Err(e) => panic!(
                 "Failed to deserialize minimal StationarySensorRadial: '{}'",
@@ -1426,22 +1430,30 @@ mod tests {
 
         match serde_json::from_str::<FreeSpaceAddendum>(data) {
             Ok(free_space_addendum) => {
-                assert!(free_space_addendum
-                    .free_space_area
-                    .free_space_polygon
-                    .is_some());
-                assert!(free_space_addendum
-                    .free_space_area
-                    .free_space_circular
-                    .is_none());
-                assert!(free_space_addendum
-                    .free_space_area
-                    .free_space_rectangle
-                    .is_none());
-                assert!(free_space_addendum
-                    .free_space_area
-                    .free_space_ellipse
-                    .is_none());
+                assert!(
+                    free_space_addendum
+                        .free_space_area
+                        .free_space_polygon
+                        .is_some()
+                );
+                assert!(
+                    free_space_addendum
+                        .free_space_area
+                        .free_space_circular
+                        .is_none()
+                );
+                assert!(
+                    free_space_addendum
+                        .free_space_area
+                        .free_space_rectangle
+                        .is_none()
+                );
+                assert!(
+                    free_space_addendum
+                        .free_space_area
+                        .free_space_ellipse
+                        .is_none()
+                );
                 assert_eq!(free_space_addendum.free_space_confidence, 12);
                 assert!(free_space_addendum.sensor_id_list.is_empty());
                 assert!(free_space_addendum.shadowing_applies.is_none());
@@ -1470,22 +1482,30 @@ mod tests {
 
         match serde_json::from_str::<FreeSpaceAddendum>(data) {
             Ok(free_space_addendum) => {
-                assert!(free_space_addendum
-                    .free_space_area
-                    .free_space_polygon
-                    .is_none());
-                assert!(free_space_addendum
-                    .free_space_area
-                    .free_space_circular
-                    .is_some());
-                assert!(free_space_addendum
-                    .free_space_area
-                    .free_space_rectangle
-                    .is_none());
-                assert!(free_space_addendum
-                    .free_space_area
-                    .free_space_ellipse
-                    .is_none());
+                assert!(
+                    free_space_addendum
+                        .free_space_area
+                        .free_space_polygon
+                        .is_none()
+                );
+                assert!(
+                    free_space_addendum
+                        .free_space_area
+                        .free_space_circular
+                        .is_some()
+                );
+                assert!(
+                    free_space_addendum
+                        .free_space_area
+                        .free_space_rectangle
+                        .is_none()
+                );
+                assert!(
+                    free_space_addendum
+                        .free_space_area
+                        .free_space_ellipse
+                        .is_none()
+                );
                 assert_eq!(free_space_addendum.free_space_confidence, 101);
                 assert_eq!(free_space_addendum.sensor_id_list.len(), 3);
                 assert_eq!(free_space_addendum.shadowing_applies, Some(true))

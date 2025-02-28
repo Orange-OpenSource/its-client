@@ -11,7 +11,7 @@
 
 use crate::exchange::etsi::reference_position::ReferencePosition;
 use crate::exchange::etsi::{
-    acceleration_from_etsi, heading_from_etsi, speed_from_etsi, PathHistory, PositionConfidence,
+    PathHistory, PositionConfidence, acceleration_from_etsi, heading_from_etsi, speed_from_etsi,
 };
 use crate::mobility::mobile::Mobile;
 use std::any::type_name;
