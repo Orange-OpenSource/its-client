@@ -11,19 +11,19 @@
 
 use std::fs;
 use std::path::Path;
-use std::sync::mpsc::{channel, Receiver, TryRecvError};
+use std::sync::mpsc::{Receiver, TryRecvError, channel};
 use std::sync::{Arc, RwLock};
 
 use clap::{Arg, Command};
 use flexi_logger::{
-    with_thread, Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming, WriteMode,
+    Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming, WriteMode, with_thread,
 };
 use ini::Ini;
 use libits::client::application::analyzer::Analyzer;
 use libits::client::application::pipeline;
 use libits::client::configuration::Configuration;
-use libits::exchange::sequence_number::SequenceNumber;
 use libits::exchange::Exchange;
+use libits::exchange::sequence_number::SequenceNumber;
 use libits::now;
 use libits::transport::mqtt::geo_topic::GeoTopic;
 use libits::transport::packet::Packet;

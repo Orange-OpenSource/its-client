@@ -19,7 +19,7 @@ use crate::exchange::etsi::collective_perception_message::CollectivePerceptionMe
 use crate::exchange::etsi::perceived_object::PerceivedObject;
 use crate::exchange::etsi::speed_from_etsi;
 use crate::mobility::mobile::Mobile;
-use crate::mobility::position::{Position, enu_destination, haversine_destination};
+use crate::mobility::position::{enu_destination, haversine_destination, Position};
 use log::trace;
 
 const PI2: f64 = 2. * PI;
@@ -191,12 +191,12 @@ mod tests {
         StationDataContainer,
     };
     use crate::exchange::etsi::mobile_perceived_object::{
-        MobilePerceivedObject, compute_heading_from_mobile, compute_heading_from_rsu, compute_id,
-        compute_position_from_mobile,
+        compute_heading_from_mobile, compute_heading_from_rsu, compute_id,
+        compute_position_from_mobile, MobilePerceivedObject,
     };
     use crate::exchange::etsi::perceived_object::PerceivedObject;
     use crate::exchange::etsi::reference_position::{
-        ReferencePosition, altitude_from_etsi, coordinate_from_etsi,
+        altitude_from_etsi, coordinate_from_etsi, ReferencePosition,
     };
     use crate::exchange::etsi::{heading_from_etsi, speed_from_etsi};
     use crate::mobility::position::Position;
