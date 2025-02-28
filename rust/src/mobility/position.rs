@@ -8,9 +8,8 @@
  *
  * Authors: see CONTRIBUTORS.md
  */
-
-use geo::EuclideanDistance;
-
+use geo::prelude::*;
+use geo::{LineString, Point};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter, Result};
 use std::hash::{Hash, Hasher};
@@ -206,15 +205,14 @@ pub fn distance_to_line(position: &Position, line: &[Position]) -> f64 {
             geo::coord! { x: position.latitude.to_degrees(), y: position.longitude.to_degrees() },
         );
     }
-    let lane_line = geo::LineString::new(coordinates);
+    let lane_line = LineString::new(coordinates);
 
-    let reference_point: geo::Point<f64> = (
+    let reference_point = Point::new(
         position.latitude.to_degrees(),
-        position.latitude.to_degrees(),
-    )
-        .into();
+        position.longitude.to_degrees(),
+    );
 
-    reference_point.euclidean_distance(&lane_line)
+    Euclidean::distance(&reference_point, &lane_line)
 }
 
 #[cfg(test)]

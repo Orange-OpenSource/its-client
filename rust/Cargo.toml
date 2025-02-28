@@ -9,7 +9,7 @@
 
 [package]
 name = "libits-client"
-version = "2.0.0"
+version = "2.0.1"
 authors = ["Frédéric Gardes <frederic.gardes@orange.com>", "Nicolas Buffon <nicolas.buffon@orange.com>"]
 license = "MIT"
 description = "library to connect on an ITS MQTT server"
@@ -18,7 +18,7 @@ documentation = "https://docs.rs/its-client"
 repository = "https://github.com/Orange-OpenSource/its-client.git"
 readme = "README.md"
 keywords = ["network", "its", "vehicle", "mqtt", "etsi"]
-edition = "2021"
+edition = "2024"
 
 [lib]
 name = "libits"
@@ -30,57 +30,66 @@ edition = "2021"
 crate-type = ["lib"]
 
 [features]
-mobility = []
+mobility = ["geo"]
 geo_routing = ["mobility"]
-telemetry = ["dep:base64"]
+telemetry = ["base64", "opentelemetry", "opentelemetry-http", "opentelemetry-otlp", "opentelemetry_sdk"]
 
 [[example]]
-name = "copycat"
-required-features = ["geo_routing"]
+name = "json_counter"
 
 [[example]]
 name = "telemetry"
 required-features = ["telemetry"]
 
+[[example]]
+name = "copycat"
+required-features = ["geo_routing"]
+
 [dependencies]
 crossbeam-channel = "0.5"
 enum_dispatch = "0.3"
-geo = "0.27"
-http = "1.1"
 integer-sqrt = "0.1"
 log = "0.4"
 map_3d = "0.1"
-rust-ini = "0.20"
+rust-ini = "0.21"
 serde_json = "1.0"
 serde_repr = "0.1"
-thiserror = "1.0"
+thiserror = "2.0"
 threadpool = "1.8"
 
 [dependencies.base64]
 version = "0.22"
 optional = true
 
+[dependencies.geo]
+version = "0.29"
+optional = true
+
+[dependencies.opentelemetry]
+version = "0.26"
+optional = true
+
+[dependencies.opentelemetry-http]
+version = "0.26"
+features = ["reqwest"]
+optional = true
+
+[dependencies.opentelemetry-otlp]
+version = "0.26"
+features = ["trace", "http-proto"]
+optional = true
+
+[dependencies.opentelemetry_sdk]
+version = "0.26"
+features = ["trace", "rt-tokio"]
+optional = true
+
 [dependencies.rumqttc]
 version = "0.24"
 features = ["websocket"]
 
-[dependencies.opentelemetry]
-version = "0.23"
-
-[dependencies.opentelemetry-http]
-version = "0.12"
-features = ["reqwest"]
-
-[dependencies.opentelemetry-otlp]
-version = "0.16"
-features = ["trace", "http-proto"]
-
-[dependencies.opentelemetry_sdk]
-version = "0.23"
-features = ["trace", "rt-tokio"]
-
 [dependencies.reqwest]
-version = "0.11"
+version = "0.12"
 features = ["json"]
 
 [dependencies.serde]
@@ -95,9 +104,6 @@ features = ["json"]
 version = "1.23"
 features = ["full", "macros"]
 
-[dependencies.async-channel]
-version = "1.5"
-
 [dev-dependencies]
 clap = "4.4"
 chrono = "0.4"
@@ -106,7 +112,7 @@ lazy_static = "1.4"
 timer = "0.2"
 
 [dev-dependencies.flexi_logger]
-version = "0.28"
+version = "0.29"
 features = ["async", "compress"]
 
 [[bench]]

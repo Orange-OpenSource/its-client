@@ -79,7 +79,7 @@ pub fn init_tracer(
     let tracer_provider = TracerProvider::builder()
         .with_span_processor(batch_processor)
         .with_config(
-            opentelemetry_sdk::trace::config()
+            opentelemetry_sdk::trace::Config::default()
                 .with_sampler(Sampler::AlwaysOn)
                 .with_id_generator(RandomIdGenerator::default())
                 .with_max_events_per_span(64)
