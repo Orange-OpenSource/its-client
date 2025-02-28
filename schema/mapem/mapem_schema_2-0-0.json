@@ -343,28 +343,44 @@
                 "type": "object",
                 "oneOf": [
                   {
-                    "required": ["vehicle"]
+                    "required": [
+                      "vehicle"
+                    ]
                   },
                   {
-                    "required": ["crosswalk"]
+                    "required": [
+                      "crosswalk"
+                    ]
                   },
                   {
-                    "required": ["bike_lane"]
+                    "required": [
+                      "bike_lane"
+                    ]
                   },
                   {
-                    "required": ["sidewalk"]
+                    "required": [
+                      "sidewalk"
+                    ]
                   },
                   {
-                    "required": ["median"]
+                    "required": [
+                      "median"
+                    ]
                   },
                   {
-                    "required": ["striping"]
+                    "required": [
+                      "striping"
+                    ]
                   },
                   {
-                    "required": ["tracked_vehicle"]
+                    "required": [
+                      "tracked_vehicle"
+                    ]
                   },
                   {
-                    "required": ["parking"]
+                    "required": [
+                      "parking"
+                    ]
                   }
                 ],
                 "properties": {
@@ -523,10 +539,14 @@
             "type": "object",
             "oneOf": [
               {
-                "required": ["nodes"]
+                "required": [
+                  "nodes"
+                ]
               },
               {
-                "required": ["computed"]
+                "required": [
+                  "computed"
+                ]
               }
             ],
             "properties": {
@@ -547,10 +567,14 @@
                       "description": "Structure to hold different sized data frames for a single node point in a lane. Nodes are described in terms of X and Y offsets in units of 1 centimeter (when zoom is 1:1). Each single selected node is computed as an X and Y offset from the prior node point unless one of the entries reflecting a complete lat-long representation is selected. In this case, subsequent entries become offsets from that point.",
                       "oneOf": [
                         {
-                          "required": ["node_xy"]
+                          "required": [
+                            "node_xy"
+                          ]
                         },
                         {
-                          "required": ["node_lat_lon"]
+                          "required": [
+                            "node_lat_lon"
+                          ]
                         }
                       ],
                       "properties": {

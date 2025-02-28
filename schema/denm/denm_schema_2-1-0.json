@@ -213,7 +213,7 @@
                 "confidence": {
                   "$comment": "Despite being mandatory in the ETSI specification, we consider it as optionnal as all required field have a default value",
                   "type": "object",
-		  "required": [
+                  "required": [
                     "position_confidence_ellipse"
                   ],
                   "properties": {
@@ -347,7 +347,7 @@
             "event_zone": {
               "type": "array",
               "description": "List of relative position, using the position indicated in the component eventPosition of the Management container as the reference position for the first position",
-              "items" : {
+              "items": {
                 "type": "object",
                 "required": [
                   "event_position",
@@ -385,7 +385,7 @@
                     "minimum": 0,
                     "maximum": 4294967295
                   },
-                  "sequence_number":{
+                  "sequence_number": {
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 65535

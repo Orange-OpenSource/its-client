@@ -13,9 +13,9 @@
   ],
   "properties": {
     "message_type": {
-       "description" : "The type of schema for this object",
-       "type": "string",
-       "const": "neighbourhood"
+      "description": "The type of schema for this object",
+      "type": "string",
+      "const": "neighbourhood"
     },
     "source_uuid": {
       "type": "string",
@@ -44,7 +44,9 @@
       "type": "array",
       "items": {
         "oneOf": [
-          { "$ref": "#/$defs/mqtt_neighbour" }
+          {
+            "$ref": "#/$defs/mqtt_neighbour"
+          }
         ]
       }
     }
@@ -64,8 +66,12 @@
         "border_definition": {
           "description": "Information on how to compute the bordering with a neighbour",
           "oneOf": [
-            { "$ref": "#/$defs/whole_neighbour_border" },
-            { "$ref": "#/$defs/area_border" }
+            {
+              "$ref": "#/$defs/whole_neighbour_border"
+            },
+            {
+              "$ref": "#/$defs/area_border"
+            }
           ]
         }
       }
@@ -73,7 +79,9 @@
     "mqtt_neighbour": {
       "type": "object",
       "allOf": [
-        { "$ref": "#/$defs/basic_neighbour" },
+        {
+          "$ref": "#/$defs/basic_neighbour"
+        },
         {
           "type": "object",
           "required": [
@@ -84,7 +92,9 @@
             "queue"
           ],
           "properties": {
-            "neighbour_type": { "const": "mqtt" },
+            "neighbour_type": {
+              "const": "mqtt"
+            },
             "host": {
               "description": "Hostname of MQTT broker to connect to",
               "type": "string"
@@ -95,10 +105,18 @@
               "minItems": 1,
               "items": {
                 "oneOf": [
-                  { "$ref": "#/$defs/mqtt_protocol"},
-                  { "$ref": "#/$defs/mqtts_protocol"},
-                  { "$ref": "#/$defs/ws_protocol"},
-                  { "$ref": "#/$defs/wss_protocol"}
+                  {
+                    "$ref": "#/$defs/mqtt_protocol"
+                  },
+                  {
+                    "$ref": "#/$defs/mqtts_protocol"
+                  },
+                  {
+                    "$ref": "#/$defs/ws_protocol"
+                  },
+                  {
+                    "$ref": "#/$defs/wss_protocol"
+                  }
                 ]
               }
             },
@@ -120,22 +138,34 @@
     },
     "basic_protocol": {
       "type": "object",
-      "required": ["protocol_type"],
+      "required": [
+        "protocol_type"
+      ],
       "properties": {
-        "protocol_type": {"type": "string"}
+        "protocol_type": {
+          "type": "string"
+        }
       }
     },
     "mqtt_protocol": {
       "type": "object",
       "allOf": [
-        { "$ref": "#/$defs/basic_protocol" },
+        {
+          "$ref": "#/$defs/basic_protocol"
+        },
         {
           "description": "Neighbour listening on insecure (plain) MQTT",
           "type": "object",
-          "required": ["port"],
+          "required": [
+            "port"
+          ],
           "properties": {
-            "protocol_type": {"const": "mqtt"},
-            "port": {"type": "integer"}
+            "protocol_type": {
+              "const": "mqtt"
+            },
+            "port": {
+              "type": "integer"
+            }
           }
         }
       ]
@@ -143,14 +173,22 @@
     "mqtts_protocol": {
       "type": "object",
       "allOf": [
-        { "$ref": "#/$defs/basic_protocol" },
+        {
+          "$ref": "#/$defs/basic_protocol"
+        },
         {
           "description": "Neighbour listening on MQTT over TLS",
           "type": "object",
-          "required": ["port"],
+          "required": [
+            "port"
+          ],
           "properties": {
-            "protocol_type": {"const": "mqtts"},
-            "port": {"type": "integer"}
+            "protocol_type": {
+              "const": "mqtts"
+            },
+            "port": {
+              "type": "integer"
+            }
           }
         }
       ]
@@ -158,15 +196,26 @@
     "ws_protocol": {
       "type": "object",
       "allOf": [
-        { "$ref": "#/$defs/basic_protocol" },
+        {
+          "$ref": "#/$defs/basic_protocol"
+        },
         {
           "description": "Neighbour listening on MQTT over Websockets over TLS",
           "type": "object",
-          "required": ["port", "path"],
+          "required": [
+            "port",
+            "path"
+          ],
           "properties": {
-            "protocol_type": {"const": "ws"},
-            "port": {"type": "integer"},
-            "path": {"type": "string"}
+            "protocol_type": {
+              "const": "ws"
+            },
+            "port": {
+              "type": "integer"
+            },
+            "path": {
+              "type": "string"
+            }
           }
         }
       ]
@@ -174,35 +223,54 @@
     "wss_protocol": {
       "type": "object",
       "allOf": [
-        { "$ref": "#/$defs/basic_protocol" },
+        {
+          "$ref": "#/$defs/basic_protocol"
+        },
         {
           "description": "Neighbour listening on MQTT over Websockets over TLS",
           "type": "object",
-          "required": ["port", "path"],
+          "required": [
+            "port",
+            "path"
+          ],
           "properties": {
-            "protocol_type": {"const": "wss"},
-            "port": {"type": "integer"},
-            "path": {"type": "string"}
+            "protocol_type": {
+              "const": "wss"
+            },
+            "port": {
+              "type": "integer"
+            },
+            "path": {
+              "type": "string"
+            }
           }
         }
       ]
     },
     "basic_border_definition": {
       "type": "object",
-      "required": ["border_type"],
+      "required": [
+        "border_type"
+      ],
       "properties": {
-        "border_type": {"type": "string"}
+        "border_type": {
+          "type": "string"
+        }
       }
     },
     "whole_neighbour_border": {
       "type": "object",
       "allOf": [
-        { "$ref": "#/$defs/basic_border_definition" },
+        {
+          "$ref": "#/$defs/basic_border_definition"
+        },
         {
           "description": "Retrieve all messages of the neighbours",
           "type": "object",
           "properties": {
-            "border_type": {"const": "whole"}
+            "border_type": {
+              "const": "whole"
+            }
           }
         }
       ]
@@ -210,13 +278,20 @@
     "area_border": {
       "type": "object",
       "allOf": [
-        { "$ref": "#/$defs/basic_border_definition" },
+        {
+          "$ref": "#/$defs/basic_border_definition"
+        },
         {
           "description": "Consider messages corresponding to an area border",
           "type": "object",
-          "required": ["quadkeys_depth", "border_width"],
+          "required": [
+            "quadkeys_depth",
+            "border_width"
+          ],
           "properties": {
-            "border_type": {"const": "area"},
+            "border_type": {
+              "const": "area"
+            },
             "quadkeys_depth": {
               "description": "The depth of the quadkeys to use to compute the border",
               "type": "integer",

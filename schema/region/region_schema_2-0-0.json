@@ -43,13 +43,18 @@
     "area": {
       "description": "The definition of the area",
       "OneOf": [
-        { "$ref": "#/$defs/quadkey_area" }
+        {
+          "$ref": "#/$defs/quadkey_area"
+        }
       ]
     },
     "kind": {
       "description": "The kind of region this object carries",
       "type": "string",
-      "enum": ["responsibility", "mobility"]
+      "enum": [
+        "responsibility",
+        "mobility"
+      ]
     }
   },
   "$defs": {
@@ -68,12 +73,18 @@
     "quadkey_area": {
       "type": "object",
       "allOf": [
-        { "$ref": "#/$defs/basic_area" },
+        {
+          "$ref": "#/$defs/basic_area"
+        },
         {
           "type": "object",
-          "required": [ "quadkeys" ],
+          "required": [
+            "quadkeys"
+          ],
           "properties": {
-            "area_type": { "const": "quadkeys" },
+            "area_type": {
+              "const": "quadkeys"
+            },
             "quadkeys": {
               "description": "The list of the quadkeys covering the region",
               "type": "array",
