@@ -275,8 +275,11 @@ class MqttClient:
         *,
         topics: list[str],
     ):
+        opts = paho.mqtt.client.SubscribeOptions(
+            qos=0,
+        )
         self.client.subscribe(
-            list(map(lambda t: (t, 0), self.subscriptions)),
+            list(map(lambda t: (t, opts), self.subscriptions)),
         )
 
     # In theory, we would not need this method, as we could very well
