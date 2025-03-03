@@ -81,14 +81,14 @@ class MqttClient:
         and thus receiving messages from specific topics. If no msg_cb
         is provided, it is not possible to subscribe, and only emitting
         is permitted. msg_cb must be a callable that accepts at least
-        those keyword arguments: data, topic, payload. Ideally, to be
-        future-proof, it should be declared with:
+        those keyword arguments: data, topic, payload, retain. Ideally,
+        to be future-proof, it should be declared with:
             def my_cb(
                 *_args,
-                *,
                 data: Any,
                 topic: str,
                 payload: bytes,
+                retain: bool,
                 **_kwargs,
             ) -> None
 
@@ -171,11 +171,18 @@ class MqttClient:
         self.client.disconnect()
         self.client.loop_stop()
 
-    def publish(self, *, topic: str, payload: bytes | str):
+    def publish(
+        self,
+        *,
+        topic: str,
+        payload: bytes | str,
+        retain: bool = False,
+    ):
         """Publish an MQTT message
 
         :param topic: The MQTT topic to post on.
         :param payload: The payload to post.
+        :param retain: Whether the message should be set to retain
         """
         with self.span_ctxmgr_cb(
             name="IoT3 Core MQTT Message",
@@ -187,11 +194,14 @@ class MqttClient:
             new_traceparent = span.to_traceparent()
             span.set_attribute(key="iot3.core.mqtt.topic", value=topic)
             span.set_attribute(key="iot3.core.mqtt.payload_size", value=len(payload))
+            if retain:
+                span.set_attribute(key="iot3.core.mqtt.retain", value=True)
             if new_traceparent:
                 properties.UserProperty = ("traceparent", new_traceparent)
             msg_info = self.client.publish(
                 topic=topic,
                 payload=payload,
+                retain=retain,
                 properties=properties,
             )
             if msg_info.rc:
@@ -309,10 +319,13 @@ class MqttClient:
                 key="iot3.core.mqtt.payload_size",
                 value=len(message.payload),
             )
+            if message.retain:
+                span.set_attribute(key="iot3.core.mqtt.retain", value=True)
             self.msg_cb(
                 data=self.msg_cb_data,
                 topic=message.topic,
                 payload=message.payload,
+                retain=message.retain,
             )
 
     def __on_connect(
