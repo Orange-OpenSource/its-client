@@ -214,7 +214,7 @@ class MqttClient:
         with self.subscriptions_lock:
             sub = topics.difference(self.subscriptions)
             if sub and self.client.is_connected():
-                self.client.subscribe(list(map(lambda t: (t, 0), sub)))
+                self._do_subscribe(topics=sub)
             self.subscriptions.update(topics)
 
     def subscribe_replace(self, *, topics: list[str]):
@@ -242,7 +242,7 @@ class MqttClient:
                 if unsub:
                     self.client.unsubscribe(list(unsub))
                 if sub:
-                    self.client.subscribe(list(map(lambda t: (t, 0), sub)))
+                    self._do_subscribe(topics=sub)
             self.subscriptions.clear()
             self.subscriptions.update(topics)
 
@@ -269,6 +269,15 @@ class MqttClient:
         # unsubscribe().
         with self.subscriptions_lock:
             self.unsubscribe(topics=self.subscriptions)
+
+    def _do_subscribe(
+        self,
+        *,
+        topics: list[str],
+    ):
+        self.client.subscribe(
+            list(map(lambda t: (t, 0), self.subscriptions)),
+        )
 
     # In theory, we would not need this method, as we could very well
     # have set   self.client.on_message = msg_cb   and be done with
@@ -313,6 +322,4 @@ class MqttClient:
     ):
         with self.subscriptions_lock:
             if self.subscriptions:
-                self.client.subscribe(
-                    list(map(lambda t: (t, 0), self.subscriptions)),
-                )
+                self._do_subscribe(topics=self.subscriptions)
