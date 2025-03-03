@@ -37,6 +37,7 @@ struct CoreTests {
         let topic = "its-topic-test"
         let incomingMessage = CoreMQTTMessage(payload: Data(), topic: topic)
         try await core.start(coreConfiguration: coreConfiguration)
+        try await core.subscribe(to: topic)
         Task {
             try await Task.sleep(for: .seconds(0.5))
             try await core.publish(message: incomingMessage)
@@ -45,12 +46,15 @@ struct CoreTests {
         }
 
         try await confirmation(expectedCount: 1) { confirmation in
-            for await message in try await core.subscribe(to: topic) {
+            await core.setMessageReceivedHandler(messageReceivedHandler: { message in
                 // Then
                 #expect(message.payload == incomingMessage.payload)
                 #expect(message.topic == incomingMessage.topic)
                 confirmation()
-            }
+                // Wait a bit to simulate a task that takes time
+                Thread.sleep(forTimeInterval: 0.25)
+            })
+            try await Task.sleep(for: .seconds(1.0))
         }
 
         // Wait a bit for the spans flush
@@ -102,18 +106,17 @@ struct CoreTests {
         let incomingMessage = CoreMQTTMessage(payload: Data(), topic: topic)
         let coreConfiguration = CoreConfiguration(mqttClientConfiguration: coreConfiguration.mqttClientConfiguration)
         try await core.start(coreConfiguration: coreConfiguration)
+        try await core.subscribe(to: topic)
         Task {
             try await Task.sleep(for: .seconds(0.5))
             try await core.publish(message: incomingMessage)
             try await Task.sleep(for: .seconds(0.5))
         }
 
-        var messagesReceivedCount = 0
-        Task {
-            for await _ in try await core.subscribe(to: topic) {
-                messagesReceivedCount += 1
-            }
-        }
+        nonisolated(unsafe) var messagesReceivedCount = 0
+        await core.setMessageReceivedHandler(messageReceivedHandler: { message in
+            messagesReceivedCount += 1
+        })
 
         try await Task.sleep(for: .seconds(1))
 
