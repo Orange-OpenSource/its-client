@@ -42,4 +42,4 @@ jobs:
       - name: Build
         run: |
           cd swift/ITSClient
-          swift test --no-parallel --skip OpenTelemetryClientTests --skip CoreTests.mqtt_connection_should_be_resumed_after_network_disconnection
+          xcodebuild -scheme ITSClient test -testPlan ITSClient-UnitTests -destination "name=iPhone 16"
