@@ -88,12 +88,19 @@ class MqttClient:
                 data: Any,
                 topic: str,
                 payload: bytes,
-                retain: bool,
+                retain: bool | int,
                 **_kwargs,
             ) -> None
 
         If msg_cb_data is specified, it is passed as the data keyword
         argument of msg_cb, otherwise None is passed.
+
+        Note: the retain flag will be set to False if the message was
+        not published in retain; it will be set to True if the message
+        was published in retain without a Message Expiry Interval; it
+        will be set to a non-zero integer representing the remaining
+        Message Expiry Interval if the message was published in retain
+        with a non-zero Message Expiry Interval.
         """
 
         self.msg_cb = msg_cb
@@ -176,13 +183,18 @@ class MqttClient:
         *,
         topic: str,
         payload: bytes | str,
-        retain: bool = False,
+        retain: bool | int = False,
     ):
         """Publish an MQTT message
 
         :param topic: The MQTT topic to post on.
         :param payload: The payload to post.
-        :param retain: Whether the message should be set to retain
+        :param retain: Whether the message should be set to retain; can be
+                       either a bool(), in which case the message will not
+                       be retained (False) or retained indefinitely (True),
+                       or a strictly positive int(), in which case the message
+                       will be sent in retain with a Message Expiry Interval
+                       set to the specified value (min: 1, max: 2^32-1).
         """
         with self.span_ctxmgr_cb(
             name="IoT3 Core MQTT Message",
@@ -196,6 +208,13 @@ class MqttClient:
             span.set_attribute(key="iot3.core.mqtt.payload_size", value=len(payload))
             if retain:
                 span.set_attribute(key="iot3.core.mqtt.retain", value=True)
+                if isinstance(retain, int):
+                    if retain < 1:
+                        raise ValueError(
+                            f"retain must be strictly positive (not: {retain})"
+                        )
+                    properties.MessageExpiryInterval = retain
+                    retain = True
             if new_traceparent:
                 properties.UserProperty = ("traceparent", new_traceparent)
             msg_info = self.client.publish(
@@ -308,9 +327,13 @@ class MqttClient:
             "kind": otel.SpanKind.CONSUMER,
         }
         try:
-            properties = dict(message.properties.UserProperty)
-            span_kwargs["span_links"] = [properties["traceparent"]]
-        except Exception:
+            properties = message.properties
+        except TypeError:
+            properties = None
+        try:
+            user_properties = dict(properties.UserProperty)
+            span_kwargs["span_links"] = [user_properties["traceparent"]]
+        except (AttributeError, KeyError):
             # There was ultimately no traceparent in that message, ignore
             pass
         with self.span_ctxmgr_cb(**span_kwargs) as span:
@@ -322,11 +345,20 @@ class MqttClient:
             )
             if message.retain:
                 span.set_attribute(key="iot3.core.mqtt.retain", value=True)
+                try:
+                    retain = properties.MessageExpiryInterval
+                    if retain < 1:
+                        # Glitch, it should not happen: can't be zero
+                        retain = 1
+                except AttributeError:
+                    retain = True
+            else:
+                retain = False
             self.msg_cb(
                 data=self.msg_cb_data,
                 topic=message.topic,
                 payload=message.payload,
-                retain=message.retain,
+                retain=retain,
             )
 
     def __on_connect(
