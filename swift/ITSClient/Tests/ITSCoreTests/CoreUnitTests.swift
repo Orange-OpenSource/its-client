@@ -43,24 +43,17 @@ struct CoreUnitTests {
         #expect(await mockTelemetryClient.startCallsCount == 1)
     }
 
-    @Test("Core stop should finish subscribe stream and telemetry")
-    func core_stop_should_finish_subscribe_stream_and_telemetry() async throws {
+    @Test("Core stop should disconnect from MQTT and stop telemetry")
+    func core_stop_should_disconnect_mqtt_and_stop_telemetry() async throws {
         // Given
         let core = Core()
 
         // When
         try await core.start(mqttClient: mockMQTTClient, telemetryClient: mockTelemetryClient)
-        Task {
-            try await Task.sleep(for: .seconds(0.5))
-            try await core.stop()
-        }
+        try await Task.sleep(for: .seconds(0.5))
+        try await core.stop()
 
         // Then
-        try await confirmation(expectedCount: 1) { confirmation in
-            for await _ in try await core.subscribe(to: "topic") {
-            }
-            confirmation()
-        }
         #expect(await !mockMQTTClient.isConnected)
         #expect(await mockTelemetryClient.stopCallsCount == 1)
     }
@@ -74,22 +67,23 @@ struct CoreUnitTests {
         // When
         try await core.start(mqttClient: mockMQTTClient, telemetryClient: mockTelemetryClient)
         let incomingMessage = MQTTMessage(payload: Data(), topic: topic, userProperty: nil)
+        try await core.subscribe(to: topic)
         Task {
             try await Task.sleep(for: .seconds(0.5))
             await mockMQTTClient.simulateMessageReceived(incomingMessage)
             await mockMQTTClient.simulateMessageReceived(incomingMessage)
-            try await Task.sleep(for: .seconds(0.5))
-            try await core.unsubscribe(from: topic)
         }
 
         // Then
         try await confirmation(expectedCount: 2) { confirmation in
-            for await message in try await core.subscribe(to: topic) {
+            await core.setMessageReceivedHandler(messageReceivedHandler: { message in
                 #expect(message.payload == incomingMessage.payload)
                 #expect(message.topic == incomingMessage.topic)
                 confirmation()
-            }
+            })
+            try await Task.sleep(for: .seconds(1))
         }
+
         #expect(await mockTelemetryClient.startSpanWithContextCallsCount == 2)
         #expect(await mockTelemetryClient.stopSpanCallsCount == 2)
     }
@@ -117,15 +111,13 @@ struct CoreUnitTests {
         // Given
         let core = Core()
 
-        // When
-        let task = Task {
-            for await _ in try await core.subscribe(to: "topic") {
-            }
-        }
-
-        // Then
-        await #expect(throws: CoreError.notStarted) {
-            try await task.value
+        do {
+            // When
+            try await core.subscribe(to: "topic")
+            Issue.record("subscribe should throw an error")
+        } catch {
+            // Then
+            #expect(error == .notStarted)
         }
     }
 
@@ -137,16 +129,12 @@ struct CoreUnitTests {
         // When
         try await core.start(mqttClient: mockMQTTClient, telemetryClient: nil)
         mockMQTTClient.throwsSubscribeError = true
-        let task = Task {
-            for await _ in try await core.subscribe(to: "topic") {
-            }
-        }
 
-        // Then
         do {
-            try await task.value
+            try await core.subscribe(to: "topic")
+            Issue.record("subscribe should throw an error")
         } catch {
-            if case .mqttError(let wrappedError) = error as? CoreError {
+            if case .mqttError(let wrappedError) = error {
                 #expect(wrappedError == EquatableError(wrappedError: MQTTClientError.subscriptionFailed))
             }
         }
@@ -157,10 +145,13 @@ struct CoreUnitTests {
         // Given
         let core = Core()
 
-        // Then
-        await #expect(throws: CoreError.notStarted) {
+        do {
             // When
             try await core.unsubscribe(from: "topic")
+            Issue.record("unsubscribe should throw an error")
+        } catch {
+            // Then
+            #expect(error == .notStarted)
         }
     }
 
@@ -204,11 +195,14 @@ struct CoreUnitTests {
         // Given
         let core = Core()
 
-        // Then
-        await #expect(throws: CoreError.notStarted) {
+        do {
             // When
             let message = CoreMQTTMessage(payload: Data(), topic: "topic")
             try await core.publish(message: message)
+            Issue.record("publish should throw an error")
+        } catch {
+            // Then
+            #expect(error == .notStarted)
         }
     }
 
