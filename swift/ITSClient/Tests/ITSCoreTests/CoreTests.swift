@@ -90,4 +90,68 @@ struct CoreTests {
         // Wait a bit for the spans flush
         try await Task.sleep(for: .seconds(0.5))
     }
+
+#if os(macOS)
+
+    @Test("MQTT connection should be resumed after a network disconnection")
+    func mqtt_connection_should_be_resumed_after_network_disconnection() async throws {
+        let core = Core()
+        let networkManager = NetworkManager()
+
+        let topic = "its-topic-test"
+        let incomingMessage = CoreMQTTMessage(payload: Data(), topic: topic)
+        let coreConfiguration = CoreConfiguration(mqttClientConfiguration: coreConfiguration.mqttClientConfiguration)
+        try await core.start(coreConfiguration: coreConfiguration)
+        Task {
+            try await Task.sleep(for: .seconds(0.5))
+            try await core.publish(message: incomingMessage)
+            try await Task.sleep(for: .seconds(0.5))
+        }
+
+        var messagesReceivedCount = 0
+        Task {
+            for await _ in try await core.subscribe(to: topic) {
+                messagesReceivedCount += 1
+            }
+        }
+
+        try await Task.sleep(for: .seconds(1))
+
+        // Expect one message is received
+        #expect(messagesReceivedCount == 1)
+
+        messagesReceivedCount = 0
+        // Disable network
+        networkManager.disableNetwork()
+        try await Task.sleep(for: .seconds(1))
+
+        Task {
+            try await Task.sleep(for: .seconds(0.5))
+            try await core.publish(message: incomingMessage)
+            try await Task.sleep(for: .seconds(0.5))
+        }
+
+        try await Task.sleep(for: .seconds(1))
+
+        // Expect that no message is received
+        #expect(messagesReceivedCount == 0)
+
+        // Enable the network
+        networkManager.enableNetwork()
+        try await Task.sleep(for: .seconds(5))
+
+        Task {
+            try await Task.sleep(for: .seconds(0.5))
+            try await core.publish(message: incomingMessage)
+            try await Task.sleep(for: .seconds(0.5))
+        }
+
+        try await Task.sleep(for: .seconds(1))
+
+        // Expect that one message is received
+        #expect(messagesReceivedCount == 1)
+
+        try await core.stop()
+    }
+#endif
 }
