@@ -7,9 +7,9 @@ from __future__ import annotations
 import configparser
 import iot3.core.mqtt
 import iot3.core.otel
-import its_iqm.authority
 import logging
 import time
+from . import authority
 
 
 class IQM:
@@ -79,7 +79,7 @@ class IQM:
         # will need to have a valid local_qm to pass to the neighbours
         # queue managers, so we need to handle the central authority
         # after we create the local QM.
-        self.authority = its_iqm.authority.Authority(
+        self.authority = authority.Authority(
             self.instance_id,
             self.cfg["authority"],
             self.update_cb,
