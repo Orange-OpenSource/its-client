@@ -181,12 +181,12 @@ class MqttClient:
             name="IoT3 Core MQTT Message",
             kind=otel.SpanKind.PRODUCER,
         ) as span:
-            new_traceparent = span.to_traceparent()
-            span.set_attribute(key="iot3.core.mqtt.topic", value=topic)
-            span.set_attribute(key="iot3.core.mqtt.payload_size", value=len(payload))
             properties = paho.mqtt.properties.Properties(
                 paho.mqtt.packettypes.PacketTypes.PUBLISH,
             )
+            new_traceparent = span.to_traceparent()
+            span.set_attribute(key="iot3.core.mqtt.topic", value=topic)
+            span.set_attribute(key="iot3.core.mqtt.payload_size", value=len(payload))
             if new_traceparent:
                 properties.UserProperty = ("traceparent", new_traceparent)
             msg_info = self.client.publish(
