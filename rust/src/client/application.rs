@@ -10,6 +10,7 @@
  */
 
 use crate::client::configuration::Configuration;
+use crate::exchange::PathElement;
 use crate::exchange::etsi::cooperative_awareness_message::{
     BasicContainer, CooperativeAwarenessMessage, HighFrequencyContainer,
 };
@@ -19,7 +20,6 @@ use crate::exchange::etsi::decentralized_environmental_notification_message::{
 use crate::exchange::etsi::reference_position::ReferencePosition;
 use crate::exchange::etsi::{etsi_now, heading_to_etsi, speed_to_etsi, timestamp_to_etsi};
 use crate::exchange::sequence_number::SequenceNumber;
-use crate::exchange::PathElement;
 use crate::mobility::mobile::Mobile;
 use crate::mobility::position::Position;
 

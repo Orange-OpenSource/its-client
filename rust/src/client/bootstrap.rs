@@ -16,12 +16,12 @@ use crate::client::configuration::configuration_error::ConfigurationError;
 use crate::client::configuration::geo_configuration::GeoConfiguration;
 #[cfg(feature = "telemetry")]
 use crate::client::configuration::telemetry_configuration::TelemetryConfiguration;
-use crate::client::configuration::{get_optional_from_section, Configuration, MqttOptionWrapper};
+use crate::client::configuration::{Configuration, MqttOptionWrapper, get_optional_from_section};
 #[cfg(feature = "mobility")]
 use {
     crate::client::configuration::{
         mobility_configuration::MobilityConfiguration,
-        node_configuration::{NodeConfiguration, NODE_SECTION},
+        node_configuration::{NODE_SECTION, NodeConfiguration},
         pick_mandatory_section,
     },
     std::sync::RwLock,
@@ -37,7 +37,7 @@ use ini::{Ini, Properties};
 use log::{debug, error, info, trace, warn};
 use reqwest::Url;
 use rumqttc::v5::MqttOptions;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::ops::Deref;
 
@@ -345,7 +345,7 @@ mod tests {
     }
 
     macro_rules! try_from_invalid_response_returns_error {
-        ($test_name:ident, $response:expr) => {
+        ($test_name:ident, $response:expr_2021) => {
             #[test]
             fn $test_name() {
                 let response = serde_json::from_str::<Value>($response)

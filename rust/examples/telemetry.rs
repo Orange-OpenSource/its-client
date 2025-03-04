@@ -15,12 +15,12 @@ use std::path::Path;
 use std::{fs, thread};
 
 use clap::{Arg, Command};
-use flexi_logger::{with_thread, Cleanup, Criterion, FileSpec, Logger, Naming, WriteMode};
+use flexi_logger::{Cleanup, Criterion, FileSpec, Logger, Naming, WriteMode, with_thread};
 use ini::Ini;
 use log::{info, warn};
 use opentelemetry::propagation::{Extractor, Injector, TextMapPropagator};
-use opentelemetry::trace::{mark_span_as_active, SpanKind, TraceContextExt};
-use opentelemetry::{global, Context};
+use opentelemetry::trace::{SpanKind, TraceContextExt, mark_span_as_active};
+use opentelemetry::{Context, global};
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 
 use libits::client::configuration::Configuration;

@@ -11,18 +11,18 @@
 
 use crate::client::application::analyzer::Analyzer;
 use crate::client::configuration::Configuration;
+use crate::exchange::Exchange;
 use crate::exchange::cause::Cause;
 use crate::exchange::message::information::Information;
 use crate::exchange::sequence_number::SequenceNumber;
-use crate::exchange::Exchange;
 use crate::monitor::trace_exchange;
-use crate::transport::mqtt::mqtt_client::{listen, MqttClient};
+use crate::transport::mqtt::mqtt_client::{MqttClient, listen};
 use crate::transport::mqtt::mqtt_router;
 use crate::transport::mqtt::mqtt_router::BoxedReception;
 use crate::transport::mqtt::topic::Topic;
 use crate::transport::packet::Packet;
 use crate::transport::payload::Payload;
-use crossbeam_channel::{unbounded, Receiver};
+use crossbeam_channel::{Receiver, unbounded};
 use log::{debug, error, info, trace, warn};
 use rumqttc::v5::mqttbytes::v5::PublishProperties;
 use rumqttc::v5::{Event, EventLoop};
@@ -235,7 +235,7 @@ where
                     .read()
                     .unwrap();
 
-                if let Some(gateway_component_name) = node_configuration.gateway_component_name() {
+                match node_configuration.gateway_component_name() { Some(gateway_component_name) => {
                     trace_exchange(
                         &packet.payload,
                         cause,
@@ -248,9 +248,9 @@ where
                             packet.payload.source_uuid
                         ),
                     );
-                } else {
+                } _ => {
                     info!("Cannot trace exchange, missing gateway component name in node configuration");
-                }
+                }}
             }
         })
         .unwrap();
@@ -395,17 +395,22 @@ where
                                     }
                                 }
                             }
-                        } else if let Ok(information) = reception.downcast::<Information>() {
-                            match information_sender.send(Packet {
-                                topic,
-                                payload: *information,
-                                properties: PublishProperties::default(),
-                            }) {
-                                Ok(()) => trace!("mqtt information sent"),
-                                Err(error) => {
-                                    error!("stopped to send mqtt information: {}", error);
-                                    break;
+                        } else {
+                            match reception.downcast::<Information>() {
+                                Ok(information) => {
+                                    match information_sender.send(Packet {
+                                        topic,
+                                        payload: *information,
+                                        properties: PublishProperties::default(),
+                                    }) {
+                                        Ok(()) => trace!("mqtt information sent"),
+                                        Err(error) => {
+                                            error!("stopped to send mqtt information: {}", error);
+                                            break;
+                                        }
+                                    }
                                 }
+                                _ => {}
                             }
                         }
                     }

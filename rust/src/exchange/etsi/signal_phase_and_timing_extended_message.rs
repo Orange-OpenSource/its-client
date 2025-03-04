@@ -41,7 +41,7 @@ pub struct SignalPhaseAndTimingExtendedMessage {
     pub region: Option<u64>,
     pub revision: Option<u32>,
     pub protocol_version: Option<u16>,
-    /// State list for each signal group ot he intersection
+    /// State list for each signal group ot the intersection
     pub states: Vec<State>,
 }
 
@@ -123,7 +123,7 @@ pub enum TrafficLightState {
 }
 
 impl fmt::Display for TrafficLightState {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{:?}", *self)
     }
 }
@@ -178,7 +178,7 @@ impl fmt::Display for State {
 }
 
 impl fmt::Debug for State {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", self)
     }
 }
@@ -241,7 +241,7 @@ mod test {
                 assert!(spat.revision.is_none());
                 assert!(spat.protocol_version.is_none());
                 assert_eq!(spat.states.len(), 1);
-                assert!(spat.states.first().is_some());
+                assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
                 assert_eq!(state.id, 16);
                 assert_eq!(state.state, TrafficLightState::StopAndRemain);
@@ -295,7 +295,7 @@ mod test {
                 assert_eq!(spat.revision.unwrap(), 14);
                 assert_eq!(spat.protocol_version.unwrap(), 15);
                 assert_eq!(spat.states.len(), 1);
-                assert!(spat.states.first().is_some());
+                assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
                 assert_eq!(state.id, 16);
                 assert_eq!(state.state, TrafficLightState::StopAndRemain);
@@ -343,7 +343,7 @@ mod test {
                 assert_eq!(spat.revision.unwrap(), 14);
                 assert_eq!(spat.protocol_version.unwrap(), 15);
                 assert_eq!(spat.states.len(), 1);
-                assert!(spat.states.first().is_some());
+                assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
                 assert_eq!(state.id, 16);
                 assert_eq!(state.state, TrafficLightState::StopAndRemain);
@@ -389,7 +389,7 @@ mod test {
                 assert_eq!(spat.revision.unwrap(), 14);
                 assert_eq!(spat.protocol_version.unwrap(), 15);
                 assert_eq!(spat.states.len(), 1);
-                assert!(spat.states.first().is_some());
+                assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
                 assert_eq!(state.id, 16);
                 assert_eq!(state.state, TrafficLightState::StopAndRemain);
@@ -441,7 +441,7 @@ mod test {
                 assert_eq!(spat.revision.unwrap(), 14);
                 assert_eq!(spat.protocol_version.unwrap(), 15);
                 assert_eq!(spat.states.len(), 1);
-                assert!(spat.states.first().is_some());
+                assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
                 assert_eq!(state.id, 16);
                 assert_eq!(state.state, TrafficLightState::StopAndRemain);
@@ -502,7 +502,7 @@ mod test {
                 assert_eq!(spat.revision.unwrap(), 14);
                 assert_eq!(spat.protocol_version.unwrap(), 15);
                 assert_eq!(spat.states.len(), 1);
-                assert!(spat.states.first().is_some());
+                assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
                 assert_eq!(state.id, 16);
                 assert_eq!(state.state, TrafficLightState::StopAndRemain);

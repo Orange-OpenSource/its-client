@@ -15,16 +15,16 @@ use crate::transport::payload::Payload;
 
 use crossbeam_channel::Sender;
 use log::{debug, error, info, trace, warn};
-use rumqttc::v5::mqttbytes::v5::Filter;
 use rumqttc::v5::mqttbytes::QoS;
+use rumqttc::v5::mqttbytes::v5::Filter;
 use rumqttc::v5::{AsyncClient, Event, EventLoop, MqttOptions};
 
 #[cfg(feature = "telemetry")]
 use {
     crate::transport::telemetry::get_mqtt_span,
+    opentelemetry::Context,
     opentelemetry::propagation::TextMapPropagator,
     opentelemetry::trace::{SpanKind, TraceContextExt},
-    opentelemetry::Context,
     opentelemetry_sdk::propagation::TraceContextPropagator,
 };
 
@@ -65,7 +65,7 @@ impl MqttClient {
         let span = get_mqtt_span(
             SpanKind::Producer,
             &packet.topic.to_string(),
-            payload.as_bytes().len() as i64,
+            payload.len() as i64,
         );
 
         let cx = Context::current().with_span(span);

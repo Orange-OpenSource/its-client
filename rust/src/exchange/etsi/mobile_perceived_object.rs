@@ -19,7 +19,7 @@ use crate::exchange::etsi::collective_perception_message::CollectivePerceptionMe
 use crate::exchange::etsi::perceived_object::PerceivedObject;
 use crate::exchange::etsi::speed_from_etsi;
 use crate::mobility::mobile::Mobile;
-use crate::mobility::position::{enu_destination, haversine_destination, Position};
+use crate::mobility::position::{Position, enu_destination, haversine_destination};
 use log::trace;
 
 const PI2: f64 = 2. * PI;
@@ -149,7 +149,7 @@ fn compute_position_from_mobile(
     let x_offset_meters = x_distance as f64 / 100.0;
     let y_offset_meters = y_distance as f64 / 100.0;
 
-    let intermediate = haversine_destination(&position, heading, x_offset_meters);
+    let intermediate = haversine_destination(position, heading, x_offset_meters);
     haversine_destination(
         &intermediate,
         (heading - PI / 2. + 2. * PI) % (2. * PI),
@@ -191,19 +191,19 @@ mod tests {
         StationDataContainer,
     };
     use crate::exchange::etsi::mobile_perceived_object::{
-        compute_heading_from_mobile, compute_heading_from_rsu, compute_id,
-        compute_position_from_mobile, MobilePerceivedObject,
+        MobilePerceivedObject, compute_heading_from_mobile, compute_heading_from_rsu, compute_id,
+        compute_position_from_mobile,
     };
     use crate::exchange::etsi::perceived_object::PerceivedObject;
     use crate::exchange::etsi::reference_position::{
-        altitude_from_etsi, coordinate_from_etsi, ReferencePosition,
+        ReferencePosition, altitude_from_etsi, coordinate_from_etsi,
     };
     use crate::exchange::etsi::{heading_from_etsi, speed_from_etsi};
     use crate::mobility::position::Position;
     use std::f64::consts::PI;
 
     macro_rules! po {
-        ($x_speed:expr, $y_speed:expr) => {
+        ($x_speed:expr_2021, $y_speed:expr_2021) => {
             PerceivedObject {
                 x_speed: $x_speed,
                 y_speed: $y_speed,
@@ -213,7 +213,7 @@ mod tests {
     }
 
     macro_rules! test_compute_position_from_mobile {
-        ($test_name:ident, $x:expr, $y:expr, $expected:expr) => {
+        ($test_name:ident, $x:expr_2021, $y:expr_2021, $expected:expr_2021) => {
             #[test]
             fn $test_name() {
                 let position = compute_position_from_mobile(
@@ -469,7 +469,7 @@ mod tests {
     }
 
     macro_rules! test_mobile_heading_computation {
-        ($test_name:ident, $po:expr, $mob_heading:expr, $expected:expr) => {
+        ($test_name:ident, $po:expr_2021, $mob_heading:expr_2021, $expected:expr_2021) => {
             #[test]
             fn $test_name() {
                 let _epsilon = 1e-11;
@@ -518,7 +518,7 @@ mod tests {
     );
 
     macro_rules! test_rsu_heading_computation {
-        ($test_name:ident, $po:expr, $expected:expr) => {
+        ($test_name:ident, $po:expr_2021, $expected:expr_2021) => {
             #[test]
             fn $test_name() {
                 let _epsilon = 1e-11;

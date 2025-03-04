@@ -19,7 +19,7 @@ use crate::exchange::message::content_error::ContentError;
 use crate::exchange::message::content_error::ContentError::{NotAMobile, NotAMortal};
 use crate::exchange::mortal::Mortal;
 use crate::mobility::mobile::Mobile;
-use crate::mobility::position::{distance_to_line, position_from_degrees, Position};
+use crate::mobility::position::{Position, distance_to_line, position_from_degrees};
 use serde::{Deserialize, Serialize};
 use serde_repr::Deserialize_repr;
 use std::hash::{Hash, Hasher};

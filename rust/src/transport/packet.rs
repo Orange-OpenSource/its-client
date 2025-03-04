@@ -8,8 +8,9 @@
  *
  * Authors: see CONTRIBUTORS.md
  */
-
+#[cfg(feature = "telemetry")]
 use opentelemetry::propagation::{Extractor, Injector};
+
 use rumqttc::v5::mqttbytes::v5::PublishProperties;
 use std::fmt::Debug;
 
@@ -37,6 +38,7 @@ impl<T: Topic, P: Payload> Packet<T, P> {
     }
 }
 
+#[cfg(feature = "telemetry")]
 impl<T: Topic, P: Payload> Injector for Packet<T, P> {
     fn set(&mut self, key: &str, value: String) {
         self.properties
@@ -45,6 +47,7 @@ impl<T: Topic, P: Payload> Injector for Packet<T, P> {
     }
 }
 
+#[cfg(feature = "telemetry")]
 impl<T: Topic, P: Payload> Extractor for Packet<T, P> {
     fn get(&self, key: &str) -> Option<&str> {
         self.properties
