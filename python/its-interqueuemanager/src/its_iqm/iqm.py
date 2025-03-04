@@ -10,6 +10,7 @@ import iot3.core.otel
 import logging
 import time
 from . import authority
+from . import filters
 
 
 class IQM:
@@ -41,6 +42,12 @@ class IQM:
         # it every time
         self.outqueue = outqueue
 
+        queues = {
+            "inQueue": inqueue,
+            "outQueue": outqueue,
+            "interQueue": interqueue,
+        }
+
         if cfg["telemetry"]["endpoint"]:
             self.otel = iot3.core.otel.Otel(
                 service_name="its-interqueuemanager",
@@ -57,12 +64,29 @@ class IQM:
             self.otel = None
             self.span_cb = iot3.core.otel.Otel.noexport_span
 
+        self.filters = {
+            "in": list(),
+            "out": list(),
+        }
+        for sect_name in [s for s in cfg if s.startswith("filter.")]:
+            filter_name = sect_name[7:]
+            new_filter = filters.Filter(
+                name=filter_name,
+                filter_cfg=cfg[sect_name],
+                instance_id=self.instance_id,
+                prefix=prefix,
+                suffix=suffix,
+                queues=queues,
+            )
+            self.filters[new_filter.type].append(new_filter)
+
         logging.info("create local qm")
 
         qm_data = {
             "copy_qm": None,
             "copy_from": inqueue,
             "copy_to": [outqueue, interqueue],
+            "filters": self.filters,
         }
 
         self.local_qm = iot3.core.mqtt.MqttClient(
@@ -161,6 +185,7 @@ class IQM:
                 "copy_qm": self.local_qm,
                 "copy_from": interqueue,
                 "copy_to": [self.outqueue],
+                "filters": self.filters,
             }
             creds = {
                 "username": None,
@@ -190,10 +215,32 @@ class IQM:
         payload: bytes,
         **_kwargs,
     ):
-        mqtt_cli = data["copy_qm"] or self.local_qm
-        for cp_to in data["copy_to"]:
-            new_topic = cp_to + topic[len(data["copy_from"]) :]
-            mqtt_cli.publish(
-                topic=new_topic,
+        retain = False
+        for in_filter in data["filters"]["in"]:
+            topic, payload, retain = in_filter.apply(
+                topic=topic,
                 payload=payload,
+                retain=retain,
             )
+            if topic is None:
+                break
+        else:
+            mqtt_cli = data["copy_qm"] or self.local_qm
+            for cp_to in data["copy_to"]:
+                new_topic = cp_to + topic[len(data["copy_from"]) :]
+                new_payload = payload
+                new_retain = retain
+                for out_filter in data["filters"]["out"]:
+                    new_topic, new_payload, new_retain = out_filter.apply(
+                        topic=new_topic,
+                        payload=new_payload,
+                        retain=new_retain,
+                    )
+                    if new_topic is None:
+                        break
+                else:
+                    mqtt_cli.publish(
+                        topic=new_topic,
+                        payload=new_payload,
+                        retain=new_retain,
+                    )
