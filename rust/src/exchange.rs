@@ -15,8 +15,8 @@ pub mod message;
 pub mod mortal;
 pub mod sequence_number;
 
-use crate::exchange::message::content::Content;
 use crate::exchange::message::Message;
+use crate::exchange::message::content::Content;
 use crate::mobility::position::Position;
 use crate::transport::payload::Payload;
 
@@ -139,8 +139,8 @@ impl Eq for Exchange {}
 
 #[cfg(test)]
 mod tests {
-    use crate::exchange::message::Message;
     use crate::exchange::Exchange;
+    use crate::exchange::message::Message;
 
     fn basic_cam() -> &'static str {
         r#"

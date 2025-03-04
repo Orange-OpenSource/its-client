@@ -58,11 +58,7 @@ fn compute_map_size(level_of_detail: u16) -> i64 {
 
 fn clip(n: f64, min_value: f64, max_value: f64) -> f64 {
     if n > min_value {
-        if n < max_value {
-            n
-        } else {
-            max_value
-        }
+        if n < max_value { n } else { max_value }
     } else {
         min_value
     }
@@ -117,7 +113,7 @@ fn tile_xy_to_quadkey(tile: TileXY, level_of_detail: u16) -> String {
 mod tests {
     use crate::mobility::quadtree;
     use crate::mobility::quadtree::quadkey::Quadkey;
-    use crate::mobility::quadtree::{contains, Quadtree};
+    use crate::mobility::quadtree::{Quadtree, contains};
     use std::str::FromStr;
 
     use lazy_static::lazy_static;
@@ -200,7 +196,7 @@ mod tests {
     }
 
     macro_rules! test_quadtree_contains {
-        ($test_name:ident, $tree:expr, $key:expr) => {
+        ($test_name:ident, $tree:expr_2021, $key:expr_2021) => {
             #[test]
             fn $test_name() {
                 let contained = contains(&$tree, &$key);
@@ -231,7 +227,7 @@ mod tests {
     );
 
     macro_rules! test_quadtree_does_not_contain {
-        ($test_name:ident, $tree:expr, $key:expr) => {
+        ($test_name:ident, $tree:expr_2021, $key:expr_2021) => {
             #[test]
             fn $test_name() {
                 let contained = contains(&$tree, &$key);

@@ -109,15 +109,15 @@ pub(crate) fn etsi_now() -> u64 {
 #[cfg(test)]
 mod tests {
     use crate::exchange::etsi::{
-        acceleration_from_etsi, acceleration_to_etsi, etsi_now, heading_from_etsi, heading_to_etsi,
-        speed_from_etsi, speed_to_etsi, timestamp_from_etsi, timestamp_to_etsi,
-        ETSI_TIMESTAMP_OFFSET,
+        ETSI_TIMESTAMP_OFFSET, acceleration_from_etsi, acceleration_to_etsi, etsi_now,
+        heading_from_etsi, heading_to_etsi, speed_from_etsi, speed_to_etsi, timestamp_from_etsi,
+        timestamp_to_etsi,
     };
     use crate::now;
     use std::f64::consts::PI;
 
     macro_rules! test_from_etsi {
-        ($func:ident, $test_name:ident, $value:expr, $expected:expr) => {
+        ($func:ident, $test_name:ident, $value:expr_2021, $expected:expr_2021) => {
             #[test]
             fn $test_name() {
                 let epsilon = 1e-11;
@@ -179,7 +179,7 @@ mod tests {
     );
 
     macro_rules! test_to_etsi {
-        ($func:ident, $test_name:ident, $value:expr, $expected:expr) => {
+        ($func:ident, $test_name:ident, $value:expr_2021, $expected:expr_2021) => {
             #[test]
             fn $test_name() {
                 let as_etsi = $func($value);

@@ -27,17 +27,17 @@ use crate::transport::mqtt::configure_transport;
 
 #[cfg(feature = "telemetry")]
 use crate::client::configuration::telemetry_configuration::{
-    TelemetryConfiguration, TELEMETRY_SECTION,
+    TELEMETRY_SECTION, TelemetryConfiguration,
 };
 
 #[cfg(feature = "mobility")]
 use crate::client::configuration::{
     mobility_configuration::{MobilityConfiguration, STATION_SECTION},
-    node_configuration::{NodeConfiguration, NODE_SECTION},
+    node_configuration::{NODE_SECTION, NodeConfiguration},
 };
 
 #[cfg(feature = "geo_routing")]
-use crate::client::configuration::geo_configuration::{GeoConfiguration, GEO_SECTION};
+use crate::client::configuration::geo_configuration::{GEO_SECTION, GeoConfiguration};
 
 pub(crate) mod bootstrap_configuration;
 pub mod configuration_error;
@@ -95,13 +95,10 @@ impl Configuration {
     ) -> Result<T, ConfigurationError> {
         if self.custom_settings.is_some() {
             match get_optional_field(section, key, self.custom_settings.as_ref().unwrap()) {
-                Ok(result) => {
-                    if let Some(value) = result {
-                        Ok(value)
-                    } else {
-                        Err(FieldNotFound(key))
-                    }
-                }
+                Ok(result) => match result {
+                    Some(value) => Ok(value),
+                    _ => Err(FieldNotFound(key)),
+                },
                 Err(e) => Err(e),
             }
         } else {
@@ -272,7 +269,7 @@ impl TryFrom<Ini> for Configuration {
 
 #[cfg(test)]
 mod tests {
-    use crate::client::configuration::{get_optional_field, pick_mandatory_section, Configuration};
+    use crate::client::configuration::{Configuration, get_optional_field, pick_mandatory_section};
     use ini::Ini;
 
     #[cfg(feature = "telemetry")]

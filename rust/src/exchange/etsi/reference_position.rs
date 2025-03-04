@@ -83,8 +83,8 @@ fn altitude_to_etsi(meters: f64) -> i32 {
 #[cfg(test)]
 mod tests {
     use crate::exchange::etsi::reference_position::{
-        altitude_from_etsi, altitude_to_etsi, coordinate_from_etsi, coordinate_to_etsi,
-        ReferencePosition,
+        ReferencePosition, altitude_from_etsi, altitude_to_etsi, coordinate_from_etsi,
+        coordinate_to_etsi,
     };
     use crate::mobility::position::Position;
 

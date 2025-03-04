@@ -16,7 +16,7 @@ use rumqttc::v5::mqttbytes::v5::{Publish, PublishProperties};
 use rumqttc::v5::{Event, Incoming};
 
 use crate::transport::mqtt::topic::Topic;
-use std::any::{type_name, Any};
+use std::any::{Any, type_name};
 use std::str::from_utf8;
 
 pub type BoxedReception = (Box<dyn Any + 'static + Send>, PublishProperties);
@@ -52,8 +52,7 @@ impl MqttRouter {
 
                             trace!(
                                 "Publish received for the packet {:?} on the topic {}",
-                                publish.pkid,
-                                str_topic,
+                                publish.pkid, str_topic,
                             );
 
                             match T::from_str(str_topic) {
@@ -92,8 +91,7 @@ impl MqttRouter {
                 }
                 Incoming::SubAck(suback) => trace!(
                     "Subscription Ack received for the packet {:?}: {:?}",
-                    suback.pkid,
-                    suback.return_codes
+                    suback.pkid, suback.return_codes
                 ),
                 Incoming::UnsubAck(packet) => {
                     trace!("Unsubscription Ack received for the packet {:?}", packet)

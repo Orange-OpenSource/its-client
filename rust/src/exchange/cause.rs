@@ -9,8 +9,8 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use crate::exchange::message::Message;
 use crate::exchange::Exchange;
+use crate::exchange::message::Message;
 use std::fmt::Formatter;
 
 /// Cause is hereby used pass information to the [monitoring function][1] about which message a DENM

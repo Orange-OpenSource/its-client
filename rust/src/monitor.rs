@@ -9,6 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+use crate::exchange::Exchange;
 use crate::exchange::cause::Cause;
 use crate::exchange::etsi::collective_perception_message::CollectivePerceptionMessage;
 use crate::exchange::etsi::cooperative_awareness_message::CooperativeAwarenessMessage;
@@ -16,7 +17,6 @@ use crate::exchange::etsi::decentralized_environmental_notification_message::Dec
 use crate::exchange::etsi::map_extended_message::MAPExtendedMessage;
 use crate::exchange::etsi::signal_phase_and_timing_extended_message::SignalPhaseAndTimingExtendedMessage;
 use crate::exchange::message::Message;
-use crate::exchange::Exchange;
 use crate::now;
 
 pub fn trace_exchange(

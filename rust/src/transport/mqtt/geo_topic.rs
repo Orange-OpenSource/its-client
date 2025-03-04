@@ -18,8 +18,8 @@ use std::fmt::{Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
-use crate::client::configuration::geo_configuration::GeoConfiguration;
 use crate::client::configuration::Configuration;
+use crate::client::configuration::geo_configuration::GeoConfiguration;
 use crate::transport::mqtt::geo_topic::message_type::MessageType;
 use crate::transport::mqtt::geo_topic::queue::Queue;
 use thiserror::Error;
