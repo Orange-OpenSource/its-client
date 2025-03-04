@@ -12,9 +12,6 @@ import logging
 import time
 
 
-DEFAULT_AUTH = {"username": None, "passwod": None}
-
-
 class IQM:
     def __init__(
         self: IQM,
