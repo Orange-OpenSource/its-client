@@ -50,6 +50,8 @@ public class IoT3Mobility {
     private final String context;
     private final int stationId;
 
+    private IoT3RawMessageCallback ioT3RawMessageCallback;
+
     /**
      * Instantiate the IoT3.0 Mobility SDK.
      *
@@ -243,7 +245,17 @@ public class IoT3Mobility {
         RoadSensorManager.init(ioT3RoadSensorCallback);
     }
 
+    /**
+     * Set up the raw message callback to be informed of any message being received.
+     *
+     * @param ioT3RawMessageCallback the callback to be informed upon message reception, before treatment.
+     */
+    public void setRawMessageCallback(IoT3RawMessageCallback ioT3RawMessageCallback) {
+        this.ioT3RawMessageCallback = ioT3RawMessageCallback;
+    }
+
     private void processMessage(String topic, String message) {
+        if(ioT3RawMessageCallback != null) ioT3RawMessageCallback.messageArrived(message);
         if(topic.contains("/cam/")) RoadUserManager.processCam(message);
         else if(topic.contains("/cpm/")) RoadSensorManager.processCpm(message);
         else if(topic.contains("/denm/")) RoadHazardManager.processDenm(message);
