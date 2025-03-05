@@ -10,8 +10,11 @@
  */
 package com.orange.iot3core.clients.lwm2m;
 
+import com.orange.iot3core.clients.lwm2m.model.LocationUpdate;
 import com.orange.iot3core.clients.lwm2m.model.Lwm2mConfig;
 import com.orange.iot3core.clients.lwm2m.model.Lwm2mDevice;
+import com.orange.iot3core.clients.lwm2m.model.Lwm2mLocation;
+import io.reactivex.annotations.Nullable;
 import org.eclipse.leshan.client.californium.LeshanClient;
 import org.eclipse.leshan.client.californium.LeshanClientBuilder;
 import org.eclipse.leshan.client.object.Security;
@@ -21,12 +24,12 @@ import org.eclipse.leshan.core.LwM2mId;
 import org.eclipse.leshan.core.request.BindingMode;
 import org.eclipse.leshan.core.util.Hex;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class Lwm2mClient {
 
     private final LeshanClient client;
     private final Lwm2mConfig lwm2mConfig;
+    private final Lwm2mLocation locationObject;
 
     public Lwm2mClient(
             Lwm2mConfig lwm2mConfig,
@@ -34,11 +37,13 @@ public class Lwm2mClient {
             boolean autoConnect
     ) {
         this.lwm2mConfig = lwm2mConfig;
+        this.locationObject = new Lwm2mLocation();
 
         // create objects
         ObjectsInitializer initializer = getObjectsInitializer(
                 lwm2mConfig,
-                lwm2mDevice
+                lwm2mDevice,
+                locationObject
         );
 
         LeshanClientBuilder builder = new LeshanClientBuilder(lwm2mConfig.getEndpointName());
@@ -76,10 +81,22 @@ public class Lwm2mClient {
         client.start();
     }
 
+    /**
+     * Updates the location object with new location parameters.
+     *
+     * @param update The LocationUpdate object containing the new location parameters
+     */
+    public void updateLocation(LocationUpdate update) {
+        if (locationObject != null) {
+            locationObject.updateLocation(update);
+        }
+    }
+
     @NotNull
     private ObjectsInitializer getObjectsInitializer(
             Lwm2mConfig lwm2mConfig,
-            Lwm2mDevice lwm2mDevice
+            Lwm2mDevice lwm2mDevice,
+            Lwm2mLocation locationObject
     ) {
         ObjectsInitializer initializer = new ObjectsInitializer();
 
@@ -90,6 +107,7 @@ public class Lwm2mClient {
         initializer.setInstancesForObject(LwM2mId.SECURITY, getSecurity(lwm2mConfig));
         initializer.setInstancesForObject(LwM2mId.SERVER, getServer(lwm2mConfig));
         initializer.setInstancesForObject(LwM2mId.DEVICE, lwm2mDevice.getDevice());
+        initializer.setInstancesForObject(LwM2mId.LOCATION, locationObject);
 
         return initializer;
     }
