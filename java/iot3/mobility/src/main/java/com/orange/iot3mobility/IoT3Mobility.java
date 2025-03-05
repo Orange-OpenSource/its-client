@@ -12,6 +12,7 @@ package com.orange.iot3mobility;
 import com.orange.iot3core.IoT3Core;
 import com.orange.iot3core.IoT3CoreCallback;
 import com.orange.iot3core.bootstrap.BootstrapConfig;
+import com.orange.iot3core.clients.lwm2m.model.LocationUpdate;
 import com.orange.iot3core.clients.lwm2m.model.Lwm2mConfig;
 import com.orange.iot3core.clients.lwm2m.model.Lwm2mDevice;
 import com.orange.iot3mobility.its.EtsiUtils;
@@ -295,6 +296,14 @@ public class IoT3Mobility {
         speed = Utils.clamp(speed, 0, 163);
         acceleration = Utils.clamp(acceleration, -16, 16);
         yawRate = Utils.clamp(yawRate, -327, 327);
+
+        LocationUpdate locationUpdate = new LocationUpdate.Builder(
+                (float) position.getLatitude(),
+                (float) position.getLongitude()
+        ).altitude(altitude)
+                .speed(speed)
+                .build();
+        ioT3Core.updateLwm2mLocation(locationUpdate);
 
         // build the CAM
         CAM cam = new CAM.CAMBuilder()

@@ -14,8 +14,10 @@ import com.orange.iot3core.clients.MqttCallback;
 import com.orange.iot3core.clients.MqttClient;
 import com.orange.iot3core.clients.OpenTelemetryClient;
 import com.orange.iot3core.clients.lwm2m.Lwm2mClient;
+import com.orange.iot3core.clients.lwm2m.model.LocationUpdate;
 import com.orange.iot3core.clients.lwm2m.model.Lwm2mConfig;
 import com.orange.iot3core.clients.lwm2m.model.Lwm2mDevice;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
 
@@ -184,6 +186,17 @@ public class IoT3Core {
      */
     public void reconnectLwM2M() {
         if(lwm2mClient != null) lwm2mClient.connect();
+    }
+
+    /**
+     * Updates the location object with new location parameters.
+     *
+     * @param update The LocationUpdate object containing the new location parameters
+     */
+    public void updateLwm2mLocation(LocationUpdate update) {
+        if (lwm2mClient != null) {
+            lwm2mClient.updateLocation(update);
+        }
     }
 
     /**
