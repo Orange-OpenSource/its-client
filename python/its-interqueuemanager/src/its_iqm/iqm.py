@@ -28,13 +28,14 @@ class IQM:
         outqueue = "outQueue"
         interqueue = self.cfg["local"]["interqueue"]
         if prefix is not None:  # can be an empty string for a /-rooted queue
-            inqueue = f"{prefix}/{inqueue}"
-            outqueue = f"{prefix}/{outqueue}"
-            interqueue = f"{prefix}/{interqueue}"
+            prefix = prefix + "/"
+        else:
+            prefix = ""
         if suffix:  # can *not* be an empty string
-            inqueue += f"/{suffix}"
-            outqueue += f"/{suffix}"
-            interqueue += f"/{suffix}"
+            suffix = "/" + suffix
+        inqueue = prefix + inqueue + suffix
+        outqueue = prefix + outqueue + suffix
+        interqueue = prefix + interqueue + suffix
 
         # Neighbours will publish there too, so keep it to avoid recomputing
         # it every time
