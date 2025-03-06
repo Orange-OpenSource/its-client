@@ -9,7 +9,7 @@
 
 [package]
 name = "libits-copycat"
-version = "1.3.0"
+version = "1.3.1"
 authors = ["Frédéric Gardes <frederic.gardes@orange.com>", "Nicolas Buffon <nicolas.buffon@orange.com>"]
 license = "MIT"
 description = "library to provide an example of analyser which copycat 10 seconds later the message received appropriating it"
