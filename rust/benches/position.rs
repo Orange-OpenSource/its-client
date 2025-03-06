@@ -9,7 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use libits::mobility::position::{
     haversine_destination, position_from_degrees, vincenty_destination,
 };

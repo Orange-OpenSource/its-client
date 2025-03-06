@@ -16,14 +16,14 @@ use std::time::Duration;
 use opentelemetry::global::BoxedSpan;
 use opentelemetry::propagation::{Extractor, TextMapPropagator};
 use opentelemetry::trace::{Link, Span, SpanKind, TraceContextExt, Tracer};
-use opentelemetry::{global, Context, KeyValue};
+use opentelemetry::{Context, KeyValue, global};
 use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_sdk::Resource;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::runtime;
 use opentelemetry_sdk::trace::{
     BatchConfigBuilder, BatchSpanProcessor, RandomIdGenerator, Sampler, TracerProvider,
 };
-use opentelemetry_sdk::Resource;
 use reqwest::header;
 use rumqttc::v5::mqttbytes::v5::Publish;
 
@@ -79,7 +79,7 @@ pub fn init_tracer(
     let tracer_provider = TracerProvider::builder()
         .with_span_processor(batch_processor)
         .with_config(
-            opentelemetry_sdk::trace::config()
+            opentelemetry_sdk::trace::Config::default()
                 .with_sampler(Sampler::AlwaysOn)
                 .with_id_generator(RandomIdGenerator::default())
                 .with_max_events_per_span(64)
@@ -212,26 +212,24 @@ pub(crate) fn get_reception_mqtt_span(publish: &Publish) -> BoxedSpan {
 struct ExtractWrapper<'p>(&'p Publish);
 impl Extractor for ExtractWrapper<'_> {
     fn get(&self, key: &str) -> Option<&str> {
-        if let Some(properties) = &self.0.properties {
-            properties
+        match &self.0.properties {
+            Some(properties) => properties
                 .user_properties
                 .iter()
                 .find(|(k, _)| key == k)
-                .map(|(_, value)| value.as_str())
-        } else {
-            None
+                .map(|(_, value)| value.as_str()),
+            _ => None,
         }
     }
 
     fn keys(&self) -> Vec<&str> {
-        if let Some(properties) = &self.0.properties {
-            properties
+        match &self.0.properties {
+            Some(properties) => properties
                 .user_properties
                 .iter()
                 .map(|(key, _)| key.as_str())
-                .collect::<Vec<&str>>()
-        } else {
-            Vec::new()
+                .collect::<Vec<&str>>(),
+            _ => Vec::new(),
         }
     }
 }
