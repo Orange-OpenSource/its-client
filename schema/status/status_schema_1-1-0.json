@@ -31,7 +31,7 @@
     "timestamp": {
       "description": "date the information was generated, in seconds since 1970-01-01 00:00:00 +00:00, with arbitrary sub-second precision",
       "type": "number",
-      "minimum": 0.0
+      "minimum": 0
     },
     "system": {
       "description": "system low-level info",
@@ -49,12 +49,19 @@
         "type": {
           "description": "type of device",
           "type": "string",
-          "enum": [ "obu", "other" ]
+          "enum": [
+            "obu",
+            "other"
+          ]
         },
         "hardware": {
           "description": "type of hardware",
           "type": "string",
-          "examples": [ "vtc6221", "vtc7251", "rpi2" ]
+          "examples": [
+            "vtc6221",
+            "vtc7251",
+            "rpi2"
+          ]
         },
         "os_release": {
           "description": "a key-value representation of the os-release of the running OS",
@@ -62,24 +69,38 @@
           "$comment": "all keys of os-release are optional; see https://www.freedesktop.org/software/systemd/man/os-release.html",
           "additionalProperties": true,
           "properties": {
-            "NAME": { "type": "string" },
-            "VERSION": { "type": "string" },
-            "ID": { "type": "string" },
-            "VERSION_ID": { "type": "string" },
-            "PRETTY_NAME": { "type": "string" }
+            "NAME": {
+              "type": "string"
+            },
+            "VERSION": {
+              "type": "string"
+            },
+            "ID": {
+              "type": "string"
+            },
+            "VERSION_ID": {
+              "type": "string"
+            },
+            "PRETTY_NAME": {
+              "type": "string"
+            }
           }
         },
         "memory": {
           "description": "RAM usage, in bytes, as a 2-tuple: [total_ram, available_ram]",
           "type": "array",
-          "items": { "type": "integer" },
+          "items": {
+            "type": "integer"
+          },
           "minItems": 2,
           "maxItems": 2
         },
         "storage": {
           "description": "writable storage for data, as a 2-tuple: [total_space, free_space]",
           "type": "array",
-          "items": { "type": "integer" },
+          "items": {
+            "type": "integer"
+          },
           "minItems": 2,
           "maxItems": 2
         },
@@ -88,7 +109,7 @@
           "type": "array",
           "items": {
             "type": "number",
-            "minimum": 0.0
+            "minimum": 0
           },
           "minItems": 3,
           "maxItems": 3
@@ -101,9 +122,15 @@
       "items": {
         "type": "object",
         "oneOf": [
-          { "$ref": "#/$defs/ntpTimeSource" },
-          { "$ref": "#/$defs/ppsTimeSource" },
-          { "$ref": "#/$defs/nmeaTimeSource" }
+          {
+            "$ref": "#/$defs/ntpTimeSource"
+          },
+          {
+            "$ref": "#/$defs/ppsTimeSource"
+          },
+          {
+            "$ref": "#/$defs/nmeaTimeSource"
+          }
         ]
       }
     },
@@ -121,17 +148,27 @@
             "description": "hardware information",
             "type": "object",
             "properties": {
-              "vendor": { "type": "string" },
-              "model": { "type": "string" },
-              "revision": { "type": "string" }
+              "vendor": {
+                "type": "string"
+              },
+              "model": {
+                "type": "string"
+              },
+              "revision": {
+                "type": "string"
+              }
             }
           },
           "operator": {
             "description": "cellular operator",
             "type": "object",
             "properties": {
-              "code": { "type": "string" },
-              "name": { "type": "string" }
+              "code": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
             }
           },
           "connection": {
@@ -141,21 +178,42 @@
               "technology": {
                 "type": "string",
                 "examples": [
-                  "gsm", "cdma1x", "evdo", "umts", "lte", "5G"
+                  "gsm",
+                  "cdma1x",
+                  "evdo",
+                  "umts",
+                  "lte",
+                  "5G"
                 ]
               },
               "signal": {
                 "description": "signal quality metrics",
                 "type": "object",
                 "properties": {
-                  "ecio": { "type": "number" },
-                  "io": { "type": "number" },
-                  "rscp": { "type": "number" },
-                  "rsrp": { "type": "number" },
-                  "rsrq": { "type": "number" },
-                  "rssi": { "type": "number" },
-                  "sinr": { "type": "number" },
-                  "snr": { "type": "number" }
+                  "ecio": {
+                    "type": "number"
+                  },
+                  "io": {
+                    "type": "number"
+                  },
+                  "rscp": {
+                    "type": "number"
+                  },
+                  "rsrp": {
+                    "type": "number"
+                  },
+                  "rsrq": {
+                    "type": "number"
+                  },
+                  "rssi": {
+                    "type": "number"
+                  },
+                  "sinr": {
+                    "type": "number"
+                  },
+                  "snr": {
+                    "type": "number"
+                  }
                 }
               }
             }
@@ -187,7 +245,7 @@
           "description": "mesaurement rate {gpsd:DEVICE:cycle}",
           "type": "number",
           "$comment": "seconds with arbitrary sub-second precision",
-          "exclusiveMinimum": 0.0
+          "exclusiveMinimum": 0
         },
         "mode": {
           "description": "FIX mode {gpsd:TPV:mode}",
@@ -237,7 +295,11 @@
         "type": {
           "description": "type of the time source",
           "type": "string",
-          "enum": [ "ntp", "pps", "nmea" ]
+          "enum": [
+            "ntp",
+            "pps",
+            "nmea"
+          ]
         },
         "stratum": {
           "description": "stratum of the clock source",
@@ -247,7 +309,14 @@
         "state": {
           "description": "state of the source",
           "type": "string",
-          "enum": [ "best", "combined", "not_combined", "maybe_error", "unstable", "unusable" ]
+          "enum": [
+            "best",
+            "combined",
+            "not_combined",
+            "maybe_error",
+            "unstable",
+            "unusable"
+          ]
         },
         "offset": {
           "description": "measured offset in seconds, with arbitrary sub-second precision",
@@ -262,13 +331,21 @@
     "ntpTimeSource": {
       "type": "object",
       "allOf": [
-        { "$ref": "#/$defs/genericTimeSource" },
+        {
+          "$ref": "#/$defs/genericTimeSource"
+        },
         {
           "type": "object",
-          "required": [ "host" ],
+          "required": [
+            "host"
+          ],
           "properties": {
-            "type": { "const": "ntp" },
-            "stratum": { "minimum": 1 },
+            "type": {
+              "const": "ntp"
+            },
+            "stratum": {
+              "minimum": 1
+            },
             "host": {
               "description": "IP or hostname of the NTP server",
               "type": "string"
@@ -280,13 +357,21 @@
     "ppsTimeSource": {
       "type": "object",
       "allOf": [
-        { "$ref": "#/$defs/genericTimeSource" },
+        {
+          "$ref": "#/$defs/genericTimeSource"
+        },
         {
           "type": "object",
-          "required": [ "label" ],
+          "required": [
+            "label"
+          ],
           "properties": {
-            "type": { "const": "pps" },
-            "stratum": { "const": 0 },
+            "type": {
+              "const": "pps"
+            },
+            "stratum": {
+              "const": 0
+            },
             "label": {
               "description": "PPS label/name",
               "type": "string"
@@ -298,12 +383,18 @@
     "nmeaTimeSource": {
       "type": "object",
       "allOf": [
-        { "$ref": "#/$defs/genericTimeSource" },
+        {
+          "$ref": "#/$defs/genericTimeSource"
+        },
         {
           "type": "object",
           "properties": {
-            "type": { "const": "nmea" },
-            "stratum": { "const": 0 }
+            "type": {
+              "const": "nmea"
+            },
+            "stratum": {
+              "const": 0
+            }
           }
         }
       ]

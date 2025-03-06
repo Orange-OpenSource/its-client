@@ -4,7 +4,12 @@
   "description": "JSon schema describing a geographic region",
   "type": "object",
   "additionalProperties": false,
-  "required": [ "message_type", "version", "kind", "area" ],
+  "required": [
+    "message_type",
+    "version",
+    "kind",
+    "area"
+  ],
   "properties": {
     "message_type": {
       "description": "The type of schema for this object",
@@ -19,12 +24,17 @@
     "kind": {
       "description": "The kind of region this object carries",
       "type": "string",
-      "enum": ["responsibility", "mobility"]
+      "enum": [
+        "responsibility",
+        "mobility"
+      ]
     },
     "area": {
       "description": "The definition of the area",
       "OneOf": [
-        { "$ref": "#/$defs/quadkey_area" }
+        {
+          "$ref": "#/$defs/quadkey_area"
+        }
       ]
     }
   },
@@ -44,12 +54,18 @@
     "quadkey_area": {
       "type": "object",
       "allOf": [
-        { "$ref": "#/$defs/basic_area" },
+        {
+          "$ref": "#/$defs/basic_area"
+        },
         {
           "type": "object",
-          "required": [ "quadkeys" ],
+          "required": [
+            "quadkeys"
+          ],
           "properties": {
-            "area_type": { "const": "quadkeys" },
+            "area_type": {
+              "const": "quadkeys"
+            },
             "quadkeys": {
               "description": "The list of the quadkeys covering the region",
               "type": "array",
