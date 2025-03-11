@@ -40,6 +40,7 @@ pub struct Exchange {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PathElement {
+    pub mobile_id: u32,
     pub position: Position,
     pub message_type: String,
 }
