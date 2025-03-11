@@ -191,6 +191,10 @@ public class Iot3MobilityBootstrapExample {
             }
         });
 
+        // set the RawMessageCallback to be informed of any message being received by the SDK, before treatment
+        // this callback is intended for users who prefer to process messages themselves
+        ioT3Mobility.setRawMessageCallback(message -> System.out.println("Raw message received: " + message));
+
         // let's set a Region of Interest for each object type (IoT3Mobility will handle the subscriptions)
         LatLng roiPosition = new LatLng(48.625218, 2.243448); // UTAC TEQMO test track coordinates
         setRegionOfInterest(roiPosition);
