@@ -81,19 +81,26 @@ class MqttClient:
         and thus receiving messages from specific topics. If no msg_cb
         is provided, it is not possible to subscribe, and only emitting
         is permitted. msg_cb must be a callable that accepts at least
-        those keyword arguments: data, topic, payload. Ideally, to be
-        future-proof, it should be declared with:
+        those keyword arguments: data, topic, payload, retain. Ideally,
+        to be future-proof, it should be declared with:
             def my_cb(
                 *_args,
-                *,
                 data: Any,
                 topic: str,
                 payload: bytes,
+                retain: bool | int,
                 **_kwargs,
             ) -> None
 
         If msg_cb_data is specified, it is passed as the data keyword
         argument of msg_cb, otherwise None is passed.
+
+        Note: the retain flag will be set to False if the message was
+        not published in retain; it will be set to True if the message
+        was published in retain without a Message Expiry Interval; it
+        will be set to a non-zero integer representing the remaining
+        Message Expiry Interval if the message was published in retain
+        with a non-zero Message Expiry Interval.
         """
 
         self.msg_cb = msg_cb
@@ -171,27 +178,49 @@ class MqttClient:
         self.client.disconnect()
         self.client.loop_stop()
 
-    def publish(self, *, topic: str, payload: bytes | str):
+    def publish(
+        self,
+        *,
+        topic: str,
+        payload: bytes | str,
+        retain: bool | int = False,
+    ):
         """Publish an MQTT message
 
         :param topic: The MQTT topic to post on.
         :param payload: The payload to post.
+        :param retain: Whether the message should be set to retain; can be
+                       either a bool(), in which case the message will not
+                       be retained (False) or retained indefinitely (True),
+                       or a strictly positive int(), in which case the message
+                       will be sent in retain with a Message Expiry Interval
+                       set to the specified value (min: 1, max: 2^32-1).
         """
         with self.span_ctxmgr_cb(
             name="IoT3 Core MQTT Message",
             kind=otel.SpanKind.PRODUCER,
         ) as span:
-            new_traceparent = span.to_traceparent()
-            span.set_attribute(key="iot3.core.mqtt.topic", value=topic)
-            span.set_attribute(key="iot3.core.mqtt.payload_size", value=len(payload))
             properties = paho.mqtt.properties.Properties(
                 paho.mqtt.packettypes.PacketTypes.PUBLISH,
             )
+            new_traceparent = span.to_traceparent()
+            span.set_attribute(key="iot3.core.mqtt.topic", value=topic)
+            span.set_attribute(key="iot3.core.mqtt.payload_size", value=len(payload))
+            if retain:
+                span.set_attribute(key="iot3.core.mqtt.retain", value=True)
+                if isinstance(retain, int):
+                    if retain < 1:
+                        raise ValueError(
+                            f"retain must be strictly positive (not: {retain})"
+                        )
+                    properties.MessageExpiryInterval = retain
+                    retain = True
             if new_traceparent:
                 properties.UserProperty = ("traceparent", new_traceparent)
             msg_info = self.client.publish(
                 topic=topic,
                 payload=payload,
+                retain=retain,
                 properties=properties,
             )
             if msg_info.rc:
@@ -214,7 +243,7 @@ class MqttClient:
         with self.subscriptions_lock:
             sub = topics.difference(self.subscriptions)
             if sub and self.client.is_connected():
-                self.client.subscribe(list(map(lambda t: (t, 0), sub)))
+                self._do_subscribe(topics=sub)
             self.subscriptions.update(topics)
 
     def subscribe_replace(self, *, topics: list[str]):
@@ -242,7 +271,7 @@ class MqttClient:
                 if unsub:
                     self.client.unsubscribe(list(unsub))
                 if sub:
-                    self.client.subscribe(list(map(lambda t: (t, 0), sub)))
+                    self._do_subscribe(topics=sub)
             self.subscriptions.clear()
             self.subscriptions.update(topics)
 
@@ -270,6 +299,19 @@ class MqttClient:
         with self.subscriptions_lock:
             self.unsubscribe(topics=self.subscriptions)
 
+    def _do_subscribe(
+        self,
+        *,
+        topics: list[str],
+    ):
+        opts = paho.mqtt.client.SubscribeOptions(
+            qos=2,
+            retainAsPublished=True,
+        )
+        self.client.subscribe(
+            list(map(lambda t: (t, opts), self.subscriptions)),
+        )
+
     # In theory, we would not need this method, as we could very well
     # have set   self.client.on_message = msg_cb   and be done with
     # that. Having this intermediate __on_message() allows us to do
@@ -285,9 +327,13 @@ class MqttClient:
             "kind": otel.SpanKind.CONSUMER,
         }
         try:
-            properties = dict(message.properties.UserProperty)
-            span_kwargs["span_links"] = [properties["traceparent"]]
-        except Exception:
+            properties = message.properties
+        except TypeError:
+            properties = None
+        try:
+            user_properties = dict(properties.UserProperty)
+            span_kwargs["span_links"] = [user_properties["traceparent"]]
+        except (AttributeError, KeyError):
             # There was ultimately no traceparent in that message, ignore
             pass
         with self.span_ctxmgr_cb(**span_kwargs) as span:
@@ -297,10 +343,22 @@ class MqttClient:
                 key="iot3.core.mqtt.payload_size",
                 value=len(message.payload),
             )
+            if message.retain:
+                span.set_attribute(key="iot3.core.mqtt.retain", value=True)
+                try:
+                    retain = properties.MessageExpiryInterval
+                    if retain < 1:
+                        # Glitch, it should not happen: can't be zero
+                        retain = 1
+                except AttributeError:
+                    retain = True
+            else:
+                retain = False
             self.msg_cb(
                 data=self.msg_cb_data,
                 topic=message.topic,
                 payload=message.payload,
+                retain=retain,
             )
 
     def __on_connect(
@@ -313,6 +371,4 @@ class MqttClient:
     ):
         with self.subscriptions_lock:
             if self.subscriptions:
-                self.client.subscribe(
-                    list(map(lambda t: (t, 0), self.subscriptions)),
-                )
+                self._do_subscribe(topics=self.subscriptions)
