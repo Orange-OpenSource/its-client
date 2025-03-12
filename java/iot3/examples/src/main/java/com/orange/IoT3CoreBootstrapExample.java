@@ -91,6 +91,11 @@ public class IoT3CoreBootstrapExample {
                         if(unsubscribeFailure == null) System.out.println("MQTT unsubscription successful");
                         else System.out.println("MQTT unsubscription failed");
                     }
+
+                    @Override
+                    public void onError(Throwable error) {
+                        System.out.println("IoT3Core error: " + error.getMessage());
+                    }
                 })
                 .build();
     }

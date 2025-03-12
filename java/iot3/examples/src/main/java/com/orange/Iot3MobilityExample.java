@@ -69,6 +69,11 @@ public class Iot3MobilityExample {
                     public void connectComplete(boolean reconnect, String serverURI) {
                         System.out.println("MQTT connection complete: " + serverURI);
                     }
+
+                    @Override
+                    public void onError(Throwable error) {
+                        System.out.println("IoT3Mobility error: " + error.getMessage());
+                    }
                 })
                 .build();
 
