@@ -107,17 +107,22 @@ public class IoT3Mobility {
 
             @Override
             public void mqttMessagePublished(Throwable publishFailure) {
-
+                if(publishFailure != null) ioT3MobilityCallback.onError(publishFailure);
             }
 
             @Override
             public void mqttSubscriptionComplete(Throwable subscribeFailure) {
-
+                if(subscribeFailure != null) ioT3MobilityCallback.onError(subscribeFailure);
             }
 
             @Override
             public void mqttUnsubscriptionComplete(Throwable unsubscribeFailure) {
+                if(unsubscribeFailure != null) ioT3MobilityCallback.onError(unsubscribeFailure);
+            }
 
+            @Override
+            public void onError(Throwable error) {
+                ioT3MobilityCallback.onError(error);
             }
         };
 

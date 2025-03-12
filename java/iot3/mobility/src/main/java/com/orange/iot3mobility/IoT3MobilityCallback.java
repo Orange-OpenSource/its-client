@@ -13,4 +13,6 @@ public interface IoT3MobilityCallback {
 
     void connectComplete(boolean reconnect, String serverURI);
 
+    void onError(Throwable error);
+
 }
