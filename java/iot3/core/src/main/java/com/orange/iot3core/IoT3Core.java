@@ -110,6 +110,11 @@ public class IoT3Core {
                         public void unsubscriptionComplete(Throwable unsubscriptionFailure) {
                             ioT3CoreCallback.mqttUnsubscriptionComplete(unsubscriptionFailure);
                         }
+
+                        @Override
+                        public void onError(Throwable error) {
+                            ioT3CoreCallback.onError(error);
+                        }
                     },
                     openTelemetryClient);
         }

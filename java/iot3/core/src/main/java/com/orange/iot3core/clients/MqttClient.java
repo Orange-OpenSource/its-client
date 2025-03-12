@@ -90,6 +90,7 @@ public class MqttClient {
             mqttClient.disconnect().whenComplete((mqtt5DisconnectResult, throwable) -> {
                 if(throwable != null) {
                     LOGGER.log(Level.WARNING, "Error during disconnection: " + throwable.getMessage());
+                    callback.onError(throwable);
                 } else {
                     LOGGER.log(Level.INFO, "Disconnected");
                 }
@@ -104,6 +105,7 @@ public class MqttClient {
                 .whenComplete((connAck, throwable) -> {
                     if(throwable != null) {
                         LOGGER.log(Level.INFO, "Error during connection to the server: " + throwable.getMessage());
+                        callback.onError(throwable);
                     } else {
                         LOGGER.log(Level.INFO, "Success connecting to the server");
                     }

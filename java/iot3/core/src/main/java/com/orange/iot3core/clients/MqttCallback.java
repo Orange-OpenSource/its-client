@@ -21,4 +21,6 @@ public interface MqttCallback {
 
     void unsubscriptionComplete(Throwable unsubscriptionFailure);
 
+    void onError(Throwable error);
+
 }

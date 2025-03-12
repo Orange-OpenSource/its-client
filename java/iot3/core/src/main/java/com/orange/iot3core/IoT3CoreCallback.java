@@ -21,4 +21,6 @@ public interface IoT3CoreCallback {
 
     void mqttUnsubscriptionComplete(Throwable unsubscriptionFailure);
 
+    void onError(Throwable error);
+
 }
