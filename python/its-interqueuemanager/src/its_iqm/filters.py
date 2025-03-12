@@ -56,7 +56,7 @@ class Filter:
             self._type = filter_type
             self._kind = filter_kind
 
-        if patterns is None:
+        if self._patterns is None:
             raise ValueError(f"Filter '{name}' does not define patterns")
 
         self._drop = "drop" in filter_cfg
