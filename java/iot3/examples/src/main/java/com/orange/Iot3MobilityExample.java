@@ -1,9 +1,6 @@
 package com.orange;
 
-import com.orange.iot3mobility.IoT3Mobility;
-import com.orange.iot3mobility.IoT3MobilityCallback;
-import com.orange.iot3mobility.TrueTime;
-import com.orange.iot3mobility.Utils;
+import com.orange.iot3mobility.*;
 import com.orange.iot3mobility.its.EtsiUtils;
 import com.orange.iot3mobility.its.HazardType;
 import com.orange.iot3mobility.its.StationType;
@@ -171,6 +168,10 @@ public class Iot3MobilityExample {
                 System.out.println("CPM received: " + cpm.getJson());
             }
         });
+
+        // set the RawMessageCallback to be informed of any message being received by the SDK, before treatment
+        // this callback is intended for users who prefer to process messages themselves
+        ioT3Mobility.setRawMessageCallback(message -> System.out.println("Raw message received: " + message));
 
         // let's set a Region of Interest for each object type (IoT3Mobility will handle the subscriptions)
         LatLng roiPosition = new LatLng(48.625218, 2.243448); // UTAC TEQMO test track coordinates
