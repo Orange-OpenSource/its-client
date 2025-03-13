@@ -1,11 +1,12 @@
 /*
- Copyright 2016-2024 Orange
+ Copyright 2016-2025 Orange
 
  This software is distributed under the MIT license, see LICENSE.txt file for more details.
 
 @authors
     Mathieu LEFEBVRE   <mathieu1.lefebvre@orange.com>
     Maciej Ćmiel       <maciej.cmiel@orange.com>
+    Zbigniew Krawczyk  <zbigniew2.krawczyk@orange.com>
 */
 package com.orange.iot3core;
 
@@ -14,10 +15,9 @@ import com.orange.iot3core.clients.MqttCallback;
 import com.orange.iot3core.clients.MqttClient;
 import com.orange.iot3core.clients.OpenTelemetryClient;
 import com.orange.iot3core.clients.lwm2m.Lwm2mClient;
-import com.orange.iot3core.clients.lwm2m.model.LocationUpdate;
 import com.orange.iot3core.clients.lwm2m.model.Lwm2mConfig;
 import com.orange.iot3core.clients.lwm2m.model.Lwm2mDevice;
-import org.jetbrains.annotations.Nullable;
+import com.orange.iot3core.clients.lwm2m.model.Lwm2mInstance;
 
 import java.net.URI;
 
@@ -67,7 +67,8 @@ public class IoT3Core {
                     String telemetryUsername,
                     String telemetryPassword,
                     Lwm2mConfig lwm2mConfig,
-                    Lwm2mDevice lwm2mDevice
+                    Lwm2mDevice lwm2mDevice,
+                    Lwm2mInstance[] lwm2mInstances
     ) {
         // instantiate the OpenTelemetry client if its parameters have been set with the builder
         if(telemetryHost != null) {
@@ -125,7 +126,7 @@ public class IoT3Core {
         }
 
         // instantiate the LwM2M client
-        this.lwm2mClient = new Lwm2mClient(lwm2mConfig, lwm2mDevice);
+        this.lwm2mClient = new Lwm2mClient(lwm2mConfig, lwm2mDevice, lwm2mInstances);
     }
 
     /**
@@ -186,17 +187,6 @@ public class IoT3Core {
      */
     public void reconnectLwM2M() {
         if(lwm2mClient != null) lwm2mClient.connect();
-    }
-
-    /**
-     * Updates the location object with new location parameters.
-     *
-     * @param update The LocationUpdate object containing the new location parameters
-     */
-    public void updateLwm2mLocation(LocationUpdate update) {
-        if (lwm2mClient != null) {
-            lwm2mClient.updateLocation(update);
-        }
     }
 
     /**
@@ -261,6 +251,7 @@ public class IoT3Core {
         private String telemetryPassword;
         private Lwm2mConfig lwm2mConfig;
         private Lwm2mDevice lwm2mDevice;
+        private Lwm2mInstance[] lwm2mInstances;
 
         /**
          * Start building an instance of IoT3Core.
@@ -327,10 +318,15 @@ public class IoT3Core {
          *                    - Use {@link Lwm2mConfig.Lwm2mBootstrapConfig} for bootstrap setup.
          *                    - Use {@link Lwm2mConfig.Lwm2mClassicConfig} for direct PSK setup.
          * @param lwm2mDevice represents the device's details [LwM2M Device (3) object]
+         * @param lwm2mInstances represents additional object's details
          * @return The current IoT3CoreBuilder instance with the updated LwM2M configuration.
          * @throws IllegalArgumentException If the provided {@link Lwm2mConfig} is null or incomplete.
          */
-        public IoT3CoreBuilder lwm2mParams(Lwm2mConfig lwm2mConfig, Lwm2mDevice lwm2mDevice) {
+        public IoT3CoreBuilder lwm2mParams(
+                Lwm2mConfig lwm2mConfig,
+                Lwm2mDevice lwm2mDevice,
+                Lwm2mInstance... lwm2mInstances
+        ) {
             if (lwm2mConfig == null) {
                 throw new IllegalArgumentException("Lwm2mConfig cannot be null.");
             }
@@ -339,6 +335,7 @@ public class IoT3Core {
             }
             this.lwm2mConfig = lwm2mConfig;
             this.lwm2mDevice = lwm2mDevice;
+            this.lwm2mInstances = lwm2mInstances;
 
             return this;
         }
@@ -403,7 +400,8 @@ public class IoT3Core {
                     telemetryUsername,
                     telemetryPassword,
                     lwm2mConfig,
-                    lwm2mDevice
+                    lwm2mDevice,
+                    lwm2mInstances
             );
         }
     }

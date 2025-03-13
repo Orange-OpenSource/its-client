@@ -1,18 +1,15 @@
 /*
- Copyright 2016-2024 Orange
+ Copyright 2016-2025 Orange
 
  This software is distributed under the MIT license, see LICENSE.txt file for more details.
 
  @authors
     Maciej Ćmiel       <maciej.cmiel@orange.com>
+    Zbigniew Krawczyk  <zbigniew2.krawczyk@orange.com>
 */
 package com.orange.iot3core.clients.lwm2m.model;
 
-import org.eclipse.leshan.client.resource.BaseInstanceEnabler;
-import org.eclipse.leshan.client.servers.ServerIdentity;
-import org.eclipse.leshan.core.node.LwM2mResource;
-import org.eclipse.leshan.core.response.ReadResponse;
-import org.eclipse.leshan.core.response.WriteResponse;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
 
@@ -21,79 +18,55 @@ import java.util.Date;
  * This implementation handles location data updates and provides
  * an easy-to-use interface for IoT3 Core users.
  */
-public class Lwm2mLocation extends BaseInstanceEnabler {
-    private Float latitude;
-    private Float longitude;
-    private Float altitude;
-    private Float radius;
+public class Lwm2mLocation extends Lwm2mInstance {
+    // 0 [R] mandatory
+    private double latitude;
+    // 1 [R] mandatory
+    private double longitude;
+    @Nullable // 2 [R] optional, in meters
+    private Double altitude;
+    @Nullable // 3 [R] optional, in meters
+    private Double radius;
+    @Nullable // 3 [R] optional
+    private byte[] velocity;
+    // 5 [R] mandatory
     private Date timestamp;
-    private Float speed;
+    @Nullable // 6 [R] optional, in m/s
+    private Double speed;
 
-    private static final int LATITUDE_RESOURCE_ID = 0;
-    private static final int LONGITUDE_RESOURCE_ID = 1;
-    private static final int ALTITUDE_RESOURCE_ID = 2;
-    private static final int RADIUS_RESOURCE_ID = 3;
-    private static final int TIMESTAMP_RESOURCE_ID = 5;
-    private static final int SPEED_RESOURCE_ID = 6;
+    private static final int LATITUDE_RES_ID = 0;
+    private static final int LONGITUDE_RES_ID = 1;
+    private static final int ALTITUDE_RES_ID = 2;
+    private static final int RADIUS_RES_ID = 3;
+    private static final int VELOCITY_RES_ID = 4;
+    private static final int TIMESTAMP_RES_ID = 5;
+    private static final int SPEED_RES_ID = 6;
 
     public Lwm2mLocation() {
+        super(ObjectId.LOCATION);
         // Initialize with default values
-        this.latitude = 0.0f;
-        this.longitude = 0.0f;
+        this.latitude = 0.0;
+        this.longitude = 0.0;
         this.altitude = null;
         this.radius = null;
+        this.velocity = null;
         this.timestamp = new Date();
         this.speed = null;
     }
 
     @Override
-    public ReadResponse read(ServerIdentity identity, int resourceId) {
-        switch (resourceId) {
-            case LATITUDE_RESOURCE_ID -> {
-                return ReadResponse.success(resourceId, latitude);
-            }
-            case LONGITUDE_RESOURCE_ID -> {
-                return ReadResponse.success(resourceId, longitude);
-            }
-            case ALTITUDE_RESOURCE_ID -> {
-                return this.altitude != null
-                        ? ReadResponse.success(resourceId, altitude)
-                        : ReadResponse.notFound();
-            }
-            case RADIUS_RESOURCE_ID -> {
-                return this.radius != null
-                        ? ReadResponse.success(resourceId, radius)
-                        : ReadResponse.notFound();
-            }
-            case TIMESTAMP_RESOURCE_ID -> {
-                return ReadResponse.success(resourceId, timestamp);
-            }
-            case SPEED_RESOURCE_ID -> {
-                return this.speed != null
-                        ? ReadResponse.success(resourceId, speed)
-                        : ReadResponse.notFound();
-            }
-            default -> {
-                return super.read(identity, resourceId);
-            }
-        }
-    }
-
-    @Override
-    public WriteResponse write(ServerIdentity identity, int resourceId, LwM2mResource value) {
-        switch (resourceId) {
-            case LATITUDE_RESOURCE_ID -> latitude = (Float) value.getValue();
-            case LONGITUDE_RESOURCE_ID -> longitude = (Float) value.getValue();
-            case ALTITUDE_RESOURCE_ID -> altitude = (Float) value.getValue();
-            case RADIUS_RESOURCE_ID -> radius = (Float) value.getValue();
-            case TIMESTAMP_RESOURCE_ID -> timestamp = (Date) value.getValue();
-            case SPEED_RESOURCE_ID -> speed = (Float) value.getValue();
-            default -> {
-                return super.write(identity, resourceId, value);
-            }
-        }
-        fireResourcesChange(resourceId);
-        return WriteResponse.success();
+    @Nullable
+    public ResponseValue read(int resourceId) {
+        return switch (resourceId) {
+            case LATITUDE_RES_ID -> getResponseValue(latitude, true);
+            case LONGITUDE_RES_ID -> getResponseValue(longitude, true);
+            case ALTITUDE_RES_ID -> getResponseValue(altitude);
+            case RADIUS_RES_ID -> getResponseValue(radius);
+            case VELOCITY_RES_ID -> getResponseValue(velocity);
+            case TIMESTAMP_RES_ID -> getResponseValue(timestamp, true);
+            case SPEED_RES_ID -> getResponseValue(speed);
+            default -> null;
+        };
     }
 
     /**
@@ -103,23 +76,28 @@ public class Lwm2mLocation extends BaseInstanceEnabler {
      *
      * @param update The LocationUpdate object containing the new location parameters
      */
-    public void updateLocation(LocationUpdate update) {
+    public void update(LocationUpdate update) {
         this.latitude = update.getLatitude();
         this.longitude = update.getLongitude();
-        this.altitude = update.getAltitude();
-        this.radius = update.getRadius();
-        this.speed = update.getSpeed();
         this.timestamp = update.getTimestamp();
+        onResourcesChange(LATITUDE_RES_ID, LONGITUDE_RES_ID, TIMESTAMP_RES_ID);
 
-        fireResourcesChange(LATITUDE_RESOURCE_ID, LONGITUDE_RESOURCE_ID, TIMESTAMP_RESOURCE_ID);
-        if (update.getAltitude() != null) fireResourcesChange(ALTITUDE_RESOURCE_ID);
-        if (update.getRadius() != null) fireResourcesChange(RADIUS_RESOURCE_ID);
-        if (update.getSpeed() != null) fireResourcesChange(SPEED_RESOURCE_ID);
-    }
-
-    @Override
-    public void onDelete(ServerIdentity identity) {
-        super.onDelete(identity);
+        if (update.getAltitude() != null) {
+            this.altitude = update.getAltitude();
+            onResourcesChange(ALTITUDE_RES_ID);
+        }
+        if (update.getRadius() != null) {
+            this.radius = update.getRadius();
+            onResourcesChange(RADIUS_RES_ID);
+        }
+        if (update.getVelocity() != null) {
+            this.velocity = update.getVelocity();
+            onResourcesChange(VELOCITY_RES_ID);
+        }
+        if (update.getSpeed() != null) {
+            this.speed = update.getSpeed();
+            onResourcesChange(SPEED_RES_ID);
+        }
     }
 
 }
