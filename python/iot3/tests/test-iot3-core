@@ -30,7 +30,7 @@ iot3.core.start(
 iot3.core.subscribe(f"{topic}/+")
 
 iot3.core.publish(f"{topic}/dropped", "dropped")
-time.sleep(1)
+time.sleep(2)
 
 iot3.core.publish(f"{topic}/passed", "passed")
 time.sleep(1)
@@ -52,7 +52,7 @@ iot3.core.start(
 iot3.core.subscribe(f"{topic}/+")
 
 iot3.core.publish(f"{topic}/dropped", "dropped")
-time.sleep(1)
+time.sleep(2)
 
 iot3.core.publish(f"{topic}/passed", "passed")
 time.sleep(1)

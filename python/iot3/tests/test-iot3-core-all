@@ -6,7 +6,7 @@ import random
 import time
 
 
-def recv(data, topic, payload):
+def recv(data, topic, payload, retain):
     print(f"{data}: {topic[:16]}: {payload[:16]}")
 
 
@@ -32,7 +32,7 @@ c.start()
 c.subscribe(topics=[f"{topic}/+"])
 
 c.publish(topic=f'{topic}/dropped', payload="dropped")
-time.sleep(1)
+time.sleep(2)
 
 c.publish(topic=f'{topic}/passed', payload="passed")
 time.sleep(1)
