@@ -309,7 +309,7 @@ class MqttClient:
             retainAsPublished=True,
         )
         self.client.subscribe(
-            list(map(lambda t: (t, opts), self.subscriptions)),
+            list(map(lambda t: (t, opts), topics)),
         )
 
     # In theory, we would not need this method, as we could very well
