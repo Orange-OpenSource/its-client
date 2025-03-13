@@ -25,6 +25,7 @@ import com.orange.iot3mobility.roadobjects.RoadHazard;
 import com.orange.iot3mobility.roadobjects.RoadSensor;
 import com.orange.iot3mobility.roadobjects.RoadUser;
 import com.orange.iot3mobility.roadobjects.SensorObject;
+import com.orange.lwm2m.model.CustomLwm2mConnectivityStatisticsExample;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -70,6 +71,8 @@ public class Iot3MobilityExample {
             EXAMPLE_LWM2M_SERVER
     );
     private static IoT3Mobility ioT3Mobility;
+    private static final CustomLwm2mConnectivityStatisticsExample lwm2mConnectivityStatistics =
+            new CustomLwm2mConnectivityStatisticsExample();
 
     public static void main(String[] args) {
         // instantiate IoT3Mobility and its callback
@@ -87,7 +90,8 @@ public class Iot3MobilityExample {
                         EXAMPLE_OTL_PASSWORD)
                 .lwm2mParams(
                         EXAMPLE_LWM2M_CONFIG,
-                        EXAMPLE_LWM2M_DEVICE
+                        EXAMPLE_LWM2M_DEVICE,
+                        lwm2mConnectivityStatistics
                 )
                 .callback(new IoT3MobilityCallback() {
                     @Override
@@ -225,6 +229,7 @@ public class Iot3MobilityExample {
         messageScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendTestCam, 1, 1, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendTestDenm, 1, 10, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendTestCpm, 1, 1, TimeUnit.SECONDS);
+        messageScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendTestConnStat, 1, 1, TimeUnit.SECONDS);
     }
 
     private static void sendTestCam() {
@@ -312,6 +317,12 @@ public class Iot3MobilityExample {
                 .build();
 
         ioT3Mobility.sendCpm(cpm);
+    }
+
+    private static void sendTestConnStat() {
+        lwm2mConnectivityStatistics.addTx(8L, true);
+        lwm2mConnectivityStatistics.addRx(16L, true);
+        lwm2mConnectivityStatistics.update();
     }
 
 }
