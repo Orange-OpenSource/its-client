@@ -147,6 +147,14 @@ public class IoT3Mobility {
     }
 
     /**
+     * Check that the connection is established.
+     */
+    public boolean isConnected() {
+        if(ioT3Core != null) return ioT3Core.isMqttConnected();
+        else return false;
+    }
+
+    /**
      * Retrieve the IoT3Core instance powering IoT3Mobility.
      */
     public IoT3Core getIoT3Core() {
