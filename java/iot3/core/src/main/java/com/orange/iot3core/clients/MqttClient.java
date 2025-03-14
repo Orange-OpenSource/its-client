@@ -57,6 +57,7 @@ public class MqttClient {
                 .identifier(clientId)
                 .serverHost(serverHost)
                 .serverPort(serverPort)
+                .automaticReconnectWithDefaultConfig()
                 .addDisconnectedListener(context1 -> {
                     LOGGER.log(Level.INFO, "Disconnected from MQTT broker " + serverHost);
                     callback.connectionLost(context1.getCause());
