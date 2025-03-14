@@ -88,7 +88,7 @@ pub async fn run<A, C, T>(
             thread_count = value;
         }
     }
-    info!("Analysis thread count set to: {}", thread_count);
+    info!("analysis thread count set to: {}", thread_count);
 
     let (mut mqtt_client, event_loop) = MqttClient::new(&configuration.mqtt_options);
     mqtt_client_subscribe(subscription_list, &mut mqtt_client).await;
@@ -235,22 +235,25 @@ where
                     .read()
                     .unwrap();
 
-                match node_configuration.gateway_component_name() { Some(gateway_component_name) => {
-                    trace_exchange(
-                        &packet.payload,
-                        cause,
-                        direction.as_str(),
-                        configuration.component_name(None),
-                        format!(
-                            "{}/{}/{}",
-                            gateway_component_name,
-                            packet.topic.as_route(),
-                            packet.payload.source_uuid
-                        ),
-                    );
-                } _ => {
-                    info!("Cannot trace exchange, missing gateway component name in node configuration");
-                }}
+                match node_configuration.gateway_component_name() {
+                    Some(gateway_component_name) => {
+                        trace_exchange(
+                            &packet.payload,
+                            cause,
+                            direction.as_str(),
+                            configuration.component_name(None),
+                            format!(
+                                "{}/{}/{}",
+                                gateway_component_name,
+                                packet.topic.as_route(),
+                                packet.payload.source_uuid
+                            ),
+                        );
+                    }
+                    _ => {
+                        info!("cannot trace exchange, missing gateway component name in node configuration");
+                    }
+                }
             }
         })
         .unwrap();
@@ -261,14 +264,14 @@ where
 fn mqtt_client_listen_thread(
     event_loop: EventLoop,
 ) -> (Receiver<Event>, tokio::task::JoinHandle<()>) {
-    info!("Starting MQTT listening thread...");
+    info!("starting MQTT listening thread...");
     let (event_sender, event_receiver) = unbounded();
     let handle = tokio::task::spawn(async move {
-        trace!("mqtt client listening closure entering...");
+        trace!("MQTT listening closure entering...");
         listen(event_loop, event_sender).await;
-        trace!("mqtt client listening closure finished");
+        trace!("MQTT listening closure finished");
     });
-    info!("MQTT listening thread started!");
+    info!("MQTT listening thread started");
     (event_receiver, handle)
 }
 
@@ -279,7 +282,7 @@ fn reader_configure_thread<T>(
 where
     T: Topic + 'static,
 {
-    info!("Starting configuration reader thread...");
+    info!("starting configuration reader thread...");
     let handle = thread::Builder::new()
         .name("reader-configurator".into())
         .spawn(move || {
@@ -301,22 +304,27 @@ where
             trace!("reader configuration closure finished");
         })
         .unwrap();
-    info!("Configuration reader thread started!");
+    info!("configuration reader thread started");
     handle
 }
 
 async fn mqtt_client_subscribe<T: Topic>(topic_list: &[T], client: &mut MqttClient) {
     info!("mqtt client subscribing starting...");
-    let mut topic_subscription_list = topic_list.iter().map(|t| t.to_string()).collect::<Vec<_>>();
-
-    for topic in topic_subscription_list.iter_mut() {
-        match topic {
-            info_topic if info_topic.contains(Information::TYPE) => {
-                info_topic.push_str("/broker");
-            }
-            topic => topic.push_str("/+/#"),
-        }
-    }
+    let topic_subscription_list: Vec<_> = topic_list
+        .iter()
+        .map(|t| {
+            format!(
+                "{}{}",
+                t,
+                // TODO challenge if we can switch to a standard GeoTopic (adding a uuid as last required part) to simplify the code
+                if t.to_string().contains(Information::TYPE) {
+                    "/#"
+                } else {
+                    "/+/#"
+                }
+            )
+        })
+        .collect();
 
     // NOTE: we share the topic list with the dispatcher
     client.subscribe(&topic_subscription_list).await;
@@ -330,13 +338,13 @@ async fn mqtt_client_publish<T, P>(
     T: Topic,
     P: Payload,
 {
-    info!("Starting MQTT publishing thread...");
+    info!("starting MQTT publishing thread...");
     for item in publish_item_receiver {
-        debug!("Packet to publish...");
+        debug!("packet to publish...");
         client.publish(item).await;
-        debug!("Packet published!");
+        debug!("packet published");
     }
-    info!("MQTT publishing thread stopping");
+    info!("MQTT publishing thread stopped");
 }
 
 fn mqtt_router_dispatch_thread<T>(
@@ -371,6 +379,7 @@ where
             for event in event_receiver {
                 match router.handle_event(event) {
                     Some((topic, (reception, properties))) => {
+                        trace!("topic: {topic}");
                         // TODO use the From Trait
                         if reception.is::<Exchange>() {
                             if let Ok(exchange) = reception.downcast::<Exchange>() {
@@ -395,23 +404,22 @@ where
                                     }
                                 }
                             }
-                        } else {
-                            match reception.downcast::<Information>() {
-                                Ok(information) => {
-                                    match information_sender.send(Packet {
-                                        topic,
-                                        payload: *information,
-                                        properties: PublishProperties::default(),
-                                    }) {
-                                        Ok(()) => trace!("mqtt information sent"),
-                                        Err(error) => {
-                                            error!("stopped to send mqtt information: {}", error);
-                                            break;
-                                        }
+                        } else if reception.is::<Information>() {
+                            if let Ok(information) = reception.downcast::<Information>() {
+                                match information_sender.send(Packet {
+                                    topic,
+                                    payload: *information,
+                                    properties: PublishProperties::default(),
+                                }) {
+                                    Ok(()) => trace!("mqtt information sent"),
+                                    Err(error) => {
+                                        error!("stopped to send mqtt information: {}", error);
+                                        break;
                                     }
                                 }
-                                _ => {}
                             }
+                        } else {
+                            trace!("unknown reception: {:?}", reception);
                         }
                     }
                     None => trace!("no mqtt response to send"),

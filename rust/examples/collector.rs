@@ -8,21 +8,21 @@
  *
  * Authors: see CONTRIBUTORS.md
  */
-
 use std::any::Any;
-use std::fmt::{Display, Formatter};
 use std::path::Path;
-use std::str::FromStr;
 
 use clap::{Arg, Command};
 use ini::Ini;
-use libits::client::configuration::create_stdout_logger;
-use libits::client::configuration::Configuration;
+use libits::client::configuration::{create_stdout_logger, Configuration};
 use libits::transport::mqtt::mqtt_client::MqttClient;
 use libits::transport::mqtt::mqtt_router::MqttRouter;
 use libits::transport::mqtt::topic::Topic;
-use log::{error, info};
+#[cfg(feature = "telemetry")]
+use libits::transport::telemetry::init_tracer;
+use log::{debug, error, info};
 use rumqttc::v5::mqttbytes::v5::{Publish, PublishProperties};
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
 #[derive(Clone, Default, Debug, Hash, PartialEq, Eq)]
 struct StrTopic {
@@ -50,16 +50,16 @@ impl Topic for StrTopic {
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
-    let matches = Command::new("ITS JSON Counter client")
+    let matches = Command::new("ITS Collector client")
         .version("0.1.0")
-        .author("Nicolas Buffon <nicolas.buffon@orange.com>")
-        .about("MQTT example counting message that contain JSON payload")
+        .author("Frederic Gardes <frederic.gardes@orange.com>")
+        .about("Collector example store the messages using exporters")
         .arg(
             Arg::new("config-file-path")
                 .short('c')
                 .long("config")
-                .default_value("examples/config.ini")
                 .value_name("CONFIG_FILE_PATH")
+                .default_value("examples/config.ini")
                 .help("Path to the configuration file"),
         )
         .get_matches();
@@ -103,25 +103,17 @@ async fn main() {
             }
         },
     );
+    #[cfg(feature = "telemetry")]
+    init_tracer(&configuration.telemetry, "copycat").expect("Failed to init telemetry");
 
     client.subscribe(&["#".to_string()]).await;
-
-    let mut total: u128 = 0;
-    let mut json: u128 = 0;
 
     loop {
         match event_loop.poll().await {
             Ok(event) => {
                 if let Some((_, result)) = router.handle_event::<StrTopic>(event) {
-                    let result = result.0.downcast::<Result<(), &'static str>>();
-                    if result.is_ok() {
-                        json += 1;
-                    }
-                }
-                total += 1;
-
-                if total % 1000 == 0 {
-                    println!("Received {} messages including {} as JSON", total, json);
+                    // TODO: Handle the result
+                    debug!("{:?}", result);
                 }
             }
             Err(e) => {
@@ -131,4 +123,9 @@ async fn main() {
             }
         }
     }
+
+    info!("Collector example exited");
 }
+
+#[cfg(test)]
+mod tests {}
