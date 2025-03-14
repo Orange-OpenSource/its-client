@@ -71,7 +71,7 @@ implementation to work relevantly**
 
 [1]: https://github.com/Orange-OpenSource/its-client/actions/workflows/rust.yml
 
-[2]: https://crates.io/crates/its-client
+[2]: https://crates.io/crates/libits-client
 
 [3]: https://mqtt.org/
 
