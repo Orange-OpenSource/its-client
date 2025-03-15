@@ -13,7 +13,6 @@ import Foundation
 
 enum MQTTClientError: Error {
     case connectionFailed
-    case clientNotConnected
     case subscriptionFailed
     case unsubscriptionFailed
     case disconnectionFailed
@@ -25,8 +24,6 @@ extension MQTTClientError {
         switch self {
         case .connectionFailed:
             return "The connection to the server has failed."
-        case .clientNotConnected:
-            return "Unable to perform the operation because the client is not connected."
         case .subscriptionFailed:
             return "The subscription has failed."
         case .unsubscriptionFailed:

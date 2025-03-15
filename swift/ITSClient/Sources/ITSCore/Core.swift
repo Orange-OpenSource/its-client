@@ -16,13 +16,17 @@ import Foundation
 public actor Core {
     private var mqttClient: MQTTClient?
     private var telemetryClient: TelemetryClient?
-    private var continuationsByTopic: [String: AsyncStream<CoreMQTTMessage>.Continuation]
+    private var messageReceivedHandler: (@Sendable (CoreMQTTMessage) -> Void)?
     private let spanName = "IoT3 Core MQTT Message"
     private let traceParentProperty = "traceparent"
 
     /// Initializes a `Core`.
-    public init() {
-        continuationsByTopic = [:]
+    public init() {}
+    
+    /// Sets the message received handler.
+    /// - Parameter messageReceivedHandler: A handler called when a message `CoreMQTTMessage` is received.
+    public func setMessageReceivedHandler(messageReceivedHandler: (@escaping @Sendable (CoreMQTTMessage) -> Void)) {
+        self.messageReceivedHandler = messageReceivedHandler
     }
 
     /// Starts the `Core` with a configuration to connect to a MQTT server and initialize the telemetry client.
@@ -40,9 +44,8 @@ public actor Core {
     /// Subscribes to a MQTT topic.
     /// If the `TelemetryClientConfiguration`is set, a linked span is created.
     /// - Parameter topic: The topic to subscribe.
-    /// - Returns: An async stream to receive the messages of the subscribed topic.
     /// - Throws: A `CoreError` if the MQTT subscription fails or the `Core` is not started.
-    public func subscribe(to topic: String) async throws(CoreError) -> AsyncStream<CoreMQTTMessage> {
+    public func subscribe(to topic: String) async throws(CoreError) {
         guard let mqttClient else {
             throw .notStarted
         }
@@ -52,15 +55,6 @@ public actor Core {
         } catch {
             throw .mqttError(EquatableError(wrappedError: error))
         }
-
-        return AsyncStream { continuation in
-            continuationsByTopic[topic] = continuation
-            continuation.onTermination = { @Sendable _ in
-                Task { [weak self] in
-                    try await self?.unsubscribe(from: topic)
-                }
-            }
-        }
     }
 
     /// Unsubscribes from a MQTT topic.
@@ -69,12 +63,6 @@ public actor Core {
     public func unsubscribe(from topic: String) async throws(CoreError) {
         guard let mqttClient else {
             throw .notStarted
-        }
-
-        defer {
-            let continuation = continuationsByTopic[topic]
-            continuation?.finish()
-            continuationsByTopic.removeValue(forKey: topic)
         }
 
         do {
@@ -116,10 +104,6 @@ public actor Core {
     /// Stops the `Core` disconnecting the MQTT client and stopping the telemetry client.
     /// - Throws: A `CoreError` if the MQTT unsubscriptions or disconnection fails.
     public func stop() async throws(CoreError) {
-        for topic in continuationsByTopic.keys {
-            try await unsubscribe(from: topic)
-        }
-
         do {
             try await mqttClient?.disconnect()
         } catch {
@@ -142,10 +126,9 @@ public actor Core {
                 guard let self else { return }
 
                 let spanID = await startReceivedMessageSpan(message)
+                let message = CoreMQTTMessage(payload: message.payload, topic: message.topic)
+                await messageReceivedHandler?(message)
                 await stopSpan(spanID: spanID)
-
-                let topicContinuation = await continuationsByTopic[message.topic]
-                topicContinuation?.yield(CoreMQTTMessage(payload: message.payload, topic: message.topic))
             }
         })
         self.telemetryClient = telemetryClient
