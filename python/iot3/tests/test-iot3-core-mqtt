@@ -5,7 +5,7 @@ import random
 import time
 
 
-def recv(data, topic, payload):
+def recv(data, topic, payload, retain):
     print(f"{data}: {topic[:16]}: {payload.decode()[:32]}")
 
 
