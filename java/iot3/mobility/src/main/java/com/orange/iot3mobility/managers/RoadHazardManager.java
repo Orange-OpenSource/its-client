@@ -64,6 +64,9 @@ public class RoadHazardManager {
                         if(roadHazard != null) {
                             if(terminate) {
                                 ROAD_HAZARD_MAP.values().remove(roadHazard);
+                                synchronized (ROAD_HAZARDS) {
+                                    ROAD_HAZARDS.remove(roadHazard);
+                                }
                                 ioT3RoadHazardCallback.roadHazardExpired(roadHazard);
                             } else {
                                 roadHazard.updateTimestamp(timestamp);
