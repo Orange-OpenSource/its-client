@@ -9,6 +9,8 @@ package com.orange.iot3core.clients;
 
 import com.hivemq.client.mqtt.MqttGlobalPublishFilter;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
+import com.hivemq.client.mqtt.lifecycle.MqttClientAutoReconnect;
+import com.hivemq.client.mqtt.lifecycle.MqttClientAutoReconnectBuilder;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5ClientBuilder;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
@@ -26,6 +28,7 @@ import io.opentelemetry.context.propagation.TextMapGetter;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,6 +60,10 @@ public class MqttClient {
                 .identifier(clientId)
                 .serverHost(serverHost)
                 .serverPort(serverPort)
+                .automaticReconnect()
+                        .initialDelay(500, TimeUnit.MILLISECONDS)
+                        .maxDelay(5, TimeUnit.SECONDS)
+                        .applyAutomaticReconnect()
                 .addDisconnectedListener(context1 -> {
                     LOGGER.log(Level.INFO, "Disconnected from MQTT broker " + serverHost);
                     callback.connectionLost(context1.getCause());

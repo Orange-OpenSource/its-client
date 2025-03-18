@@ -147,6 +147,14 @@ public class IoT3Mobility {
     }
 
     /**
+     * Check that the connection is established.
+     */
+    public boolean isConnected() {
+        if(ioT3Core != null) return ioT3Core.isMqttConnected();
+        else return false;
+    }
+
+    /**
      * Retrieve the IoT3Core instance powering IoT3Mobility.
      */
     public IoT3Core getIoT3Core() {
@@ -324,8 +332,8 @@ public class IoT3Mobility {
         String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
         String topic = context + "/inQueue/v2x/cam/" + uuid + geoExtension;
 
-        // send the message
-        if(ioT3Core != null) ioT3Core.mqttPublish(topic, cam.getJsonCAM().toString());
+        // send the message only if the client is connected
+        if(isConnected()) ioT3Core.mqttPublish(topic, cam.getJsonCAM().toString());
     }
 
     /**
@@ -392,7 +400,7 @@ public class IoT3Mobility {
         String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
         String topic = context + "/inQueue/v2x/denm/" + uuid + geoExtension;
 
-        // send the message
+        // send the message even if the client is disconnected, so it will be queued
         if(ioT3Core != null) ioT3Core.mqttPublish(topic, denm.getJsonDENM().toString());
     }
 
@@ -410,8 +418,8 @@ public class IoT3Mobility {
         String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
         String topic = context + "/inQueue/v2x/cpm/" + uuid + geoExtension;
 
-        // send the message
-        if(ioT3Core != null) ioT3Core.mqttPublish(topic, cpm.getJson().toString());
+        // send the message only if the client is connected
+        if(isConnected()) ioT3Core.mqttPublish(topic, cpm.getJson().toString());
     }
 
     /**
