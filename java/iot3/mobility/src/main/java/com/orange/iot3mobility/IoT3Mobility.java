@@ -29,8 +29,12 @@ import com.orange.iot3mobility.managers.RoadSensorManager;
 import com.orange.iot3mobility.managers.RoadUserManager;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.quadkey.QuadTileHelper;
+import com.orange.iot3mobility.roadobjects.RoadHazard;
+import com.orange.iot3mobility.roadobjects.RoadSensor;
+import com.orange.iot3mobility.roadobjects.RoadUser;
 
 import java.net.URI;
+import java.util.List;
 
 /**
  * Mobility SDK based on the Orange IoT3.0 platform.
@@ -420,6 +424,33 @@ public class IoT3Mobility {
 
         // send the message only if the client is connected
         if(isConnected()) ioT3Core.mqttPublish(topic, cpm.getJson().toString());
+    }
+
+    /**
+     * Retrieve a read-only list of the Road Users in the vicinity.
+     *
+     * @return the read-only list of {@link com.orange.iot3mobility.roadobjects.RoadUser} objects
+     */
+    public static List<RoadUser> getRoadUsers() {
+        return RoadUserManager.getRoadUsers();
+    }
+
+    /**
+     * Retrieve a read-only list of the Road Hazards in the vicinity.
+     *
+     * @return the read-only list of {@link com.orange.iot3mobility.roadobjects.RoadHazard} objects
+     */
+    public static List<RoadHazard> getRoadHazards() {
+        return RoadHazardManager.getRoadHazards();
+    }
+
+    /**
+     * Retrieve a read-only list of the Road Sensors in the vicinity.
+     *
+     * @return the read-only list of {@link com.orange.iot3mobility.roadobjects.RoadSensor} objects
+     */
+    public static List<RoadSensor> getRoadSensors() {
+        return RoadSensorManager.getRoadSensors();
     }
 
     /**
