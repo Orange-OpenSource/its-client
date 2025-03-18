@@ -9,16 +9,13 @@ package com.orange.iot3mobility.managers;
 
 import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.its.json.cam.CAM;
-import com.orange.iot3mobility.its.json.cpm.CPM;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.roadobjects.RoadUser;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -112,6 +109,15 @@ public class RoadUserManager {
             scheduler.scheduleWithFixedDelay(RoadUserManager::checkAndRemoveExpiredObjects,
                     1, 1, TimeUnit.SECONDS);
         }
+    }
+
+    /**
+     * Retrieve a read-only list of the Road Users in the vicinity.
+     *
+     * @return the read-only list of {@link com.orange.iot3mobility.roadobjects.RoadUser} objects
+     */
+    public static List<RoadUser> getRoadUsers() {
+        return Collections.unmodifiableList(ROAD_USERS);
     }
 
 }
