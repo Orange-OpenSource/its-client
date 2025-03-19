@@ -33,38 +33,44 @@ struct QuadkeyBuilder {
         let tile = tile(from: quadkey)
         let zoomLevel = quadkey.count
         let maxTileValue = Int(pow(2.0, Double(zoomLevel))) - 1
-
+        let westXValue = tile.x > 0 ? tile.x - 1 : maxTileValue
+        let eastXValue = tile.x < maxTileValue ? tile.x + 1 : 0
+        
         // North-west
-        if tile.y > 0 && tile.x > 0 {
-            quadkeys.append(self.quadkey(from: Tile(x: tile.x - 1, y: tile.y - 1), zoomLevel: zoomLevel))
+        if tile.y > 0 {
+            quadkeys.append(self.quadkey(from: Tile(x: westXValue, y: tile.y - 1),
+                                         zoomLevel: zoomLevel))
         }
         // North
         if tile.y > 0 {
-            quadkeys.append(self.quadkey(from: Tile(x: tile.x, y: tile.y - 1), zoomLevel: zoomLevel))
+            quadkeys.append(self.quadkey(from: Tile(x: tile.x, y: tile.y - 1),
+                                         zoomLevel: zoomLevel))
         }
         // North-east
-        if tile.y > 0 && tile.x < maxTileValue {
-            quadkeys.append(self.quadkey(from: Tile(x: tile.x + 1, y: tile.y - 1), zoomLevel: zoomLevel))
+        if tile.y > 0 {
+            quadkeys.append(self.quadkey(from: Tile(x: eastXValue, y: tile.y - 1),
+                                         zoomLevel: zoomLevel))
         }
         // West
-        if tile.x > 0 {
-            quadkeys.append(self.quadkey(from: Tile(x: tile.x - 1, y: tile.y), zoomLevel: zoomLevel))
-        }
+        quadkeys.append(self.quadkey(from: Tile(x: westXValue, y: tile.y),
+                                     zoomLevel: zoomLevel))
         // East
-        if tile.x < maxTileValue {
-            quadkeys.append(self.quadkey(from: Tile(x: tile.x + 1, y: tile.y), zoomLevel: zoomLevel))
-        }
+        quadkeys.append(self.quadkey(from: Tile(x: eastXValue, y: tile.y),
+                                     zoomLevel: zoomLevel))
         // South-west
-        if tile.y < maxTileValue && tile.x > 0 {
-            quadkeys.append(self.quadkey(from: Tile(x: tile.x - 1, y: tile.y + 1), zoomLevel: zoomLevel))
+        if tile.y < maxTileValue {
+            quadkeys.append(self.quadkey(from: Tile(x: westXValue, y: tile.y + 1),
+                                         zoomLevel: zoomLevel))
         }
         // South
         if tile.y < maxTileValue {
-            quadkeys.append(self.quadkey(from: Tile(x: tile.x, y: tile.y + 1), zoomLevel: zoomLevel))
+            quadkeys.append(self.quadkey(from: Tile(x: tile.x, y: tile.y + 1),
+                                         zoomLevel: zoomLevel))
         }
         // South-east
-        if tile.y < maxTileValue && tile.x < maxTileValue {
-            quadkeys.append(self.quadkey(from: Tile(x: tile.x + 1, y: tile.y + 1), zoomLevel: zoomLevel))
+        if tile.y < maxTileValue {
+            quadkeys.append(self.quadkey(from: Tile(x: eastXValue, y: tile.y + 1),
+                                         zoomLevel: zoomLevel))
         }
 
         return quadkeys
