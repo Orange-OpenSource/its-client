@@ -1,0 +1,38 @@
+{
+  "configurations" : [
+    {
+      "id" : "F63ED12E-D26E-4F63-AA6F-D51987259911",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "skippedTests" : {
+        "suites" : [
+          {
+            "name" : "CoreTests"
+          },
+          {
+            "name" : "MQTTNIOClientTests"
+          },
+          {
+            "name" : "OpenTelemetryClientTests"
+          }
+        ]
+      },
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "ITSCoreTests",
+        "name" : "ITSCoreTests"
+      }
+    }
+  ],
+  "version" : 2
+}

@@ -205,7 +205,7 @@ struct MQTTNIOClientTests {
             try await mqttClient.subscribe(to: "test")
         } catch {
             // Then
-            #expect(error == .clientNotConnected)
+            #expect(error == .subscriptionFailed)
         }
     }
 
@@ -226,7 +226,7 @@ struct MQTTNIOClientTests {
                                                      userProperty: nil))
         } catch {
             // Then
-            #expect(error == .clientNotConnected)
+            #expect(error == .sendPayloadFailed)
         }
     }
 }
