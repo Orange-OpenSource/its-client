@@ -16,9 +16,7 @@ import com.orange.iot3mobility.roadobjects.RoadHazard;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -66,6 +64,9 @@ public class RoadHazardManager {
                         if(roadHazard != null) {
                             if(terminate) {
                                 ROAD_HAZARD_MAP.values().remove(roadHazard);
+                                synchronized (ROAD_HAZARDS) {
+                                    ROAD_HAZARDS.remove(roadHazard);
+                                }
                                 ioT3RoadHazardCallback.roadHazardExpired(roadHazard);
                             } else {
                                 roadHazard.updateTimestamp(timestamp);
@@ -119,6 +120,15 @@ public class RoadHazardManager {
             scheduler.scheduleWithFixedDelay(RoadHazardManager::checkAndRemoveExpiredObjects,
                     1, 1, TimeUnit.SECONDS);
         }
+    }
+
+    /**
+     * Retrieve a read-only list of the Road Hazards in the vicinity.
+     *
+     * @return the read-only list of {@link com.orange.iot3mobility.roadobjects.RoadHazard} objects
+     */
+    public static List<RoadHazard> getRoadHazards() {
+        return Collections.unmodifiableList(ROAD_HAZARDS);
     }
 
 }

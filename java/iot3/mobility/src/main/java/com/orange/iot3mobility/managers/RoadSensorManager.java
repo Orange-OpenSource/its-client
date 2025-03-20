@@ -14,9 +14,7 @@ import com.orange.iot3mobility.roadobjects.RoadSensor;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -107,6 +105,15 @@ public class RoadSensorManager {
             scheduler.scheduleWithFixedDelay(RoadSensorManager::checkAndRemoveExpiredObjects,
                     1, 1, TimeUnit.SECONDS);
         }
+    }
+
+    /**
+     * Retrieve a read-only list of the Road Sensors in the vicinity.
+     *
+     * @return the read-only list of {@link com.orange.iot3mobility.roadobjects.RoadSensor} objects
+     */
+    public static List<RoadSensor> getRoadSensors() {
+        return Collections.unmodifiableList(ROAD_SENSORS);
     }
 
 }
