@@ -23,6 +23,7 @@ mypy-extensions==1.0.0
 nh3==0.2.18
 packaging==24.2
 pathspec==0.12.1
+pip==25.0.1
 pkginfo==1.10.0
 platformdirs==4.3.6
 pycparser==2.22
@@ -34,7 +35,7 @@ requests-toolbelt==1.0.0
 rfc3986==2.0.0
 rich==13.9.4
 SecretStorage==3.3.3
-setuptools>=65.5.1
+setuptools==78.0.2
 twine==5.1.1
 urllib3==2.2.3
 zipp==3.21.0
