@@ -40,7 +40,8 @@ let package = Package(
         ),
         .testTarget(
             name: "ITSMobilityTests",
-            dependencies: ["ITSMobility"]
+            dependencies: ["ITSMobility"],
+            resources: [.copy("Data")]
         ),
     ]
 )
