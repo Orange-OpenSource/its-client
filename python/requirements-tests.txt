@@ -9,6 +9,7 @@ charset-normalizer==3.4.0
 click==8.1.7
 cryptography==43.0.3
 docutils==0.21.2
+id==1.5.0
 idna==3.10
 importlib_metadata==8.5.0
 jaraco.classes==3.4.0
@@ -24,7 +25,7 @@ nh3==0.2.18
 packaging==24.2
 pathspec==0.12.1
 pip==25.0.1
-pkginfo==1.10.0
+pkginfo==1.12.1.2
 platformdirs==4.3.6
 pycparser==2.22
 Pygments==2.18.0
@@ -36,6 +37,6 @@ rfc3986==2.0.0
 rich==13.9.4
 SecretStorage==3.3.3
 setuptools==78.0.2
-twine==5.1.1
+twine==6.1.0
 urllib3==2.2.3
 zipp==3.21.0
