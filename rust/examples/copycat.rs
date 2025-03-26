@@ -9,19 +9,15 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use std::fs;
 use std::path::Path;
 use std::sync::mpsc::{Receiver, TryRecvError, channel};
 use std::sync::{Arc, RwLock};
 
 use clap::{Arg, Command};
-use flexi_logger::{
-    Cleanup, Criterion, Duplicate, FileSpec, Logger, Naming, WriteMode, with_thread,
-};
 use ini::Ini;
 use libits::client::application::analyzer::Analyzer;
 use libits::client::application::pipeline;
-use libits::client::configuration::Configuration;
+use libits::client::configuration::{Configuration, create_stdout_logger};
 use libits::exchange::Exchange;
 use libits::exchange::sequence_number::SequenceNumber;
 use libits::now;
@@ -52,7 +48,7 @@ impl Analyzer<GeoTopic, NoContext> for CopyCat {
         Self: Sized,
     {
         let (tx, item_receiver) = channel();
-        let timer = timer::MessageTimer::new(tx);
+        let timer = MessageTimer::new(tx);
         Self {
             configuration,
             item_receiver,
@@ -67,7 +63,7 @@ impl Analyzer<GeoTopic, NoContext> for CopyCat {
         let mut item_to_publish = Vec::new();
         let component_name = self.configuration.component_name(None);
 
-        debug!("item received: {:?}", packet);
+        debug!("Item received: {:?}", packet);
 
         let clone = packet.clone();
         let content = packet.payload.message.as_content();
@@ -75,24 +71,31 @@ impl Analyzer<GeoTopic, NoContext> for CopyCat {
         // 1- delay the storage of the new item
         match content.as_mobile() {
             Ok(mobile_message) => {
-                let speed = mobile_message.speed().unwrap_or_default();
-                if packet.payload.source_uuid == component_name || speed <= 0.5 {
+                if packet.payload.source_uuid == component_name {
                     info!(
-                        "we received an item as itself {} or stopped: we don't copy cat",
+                        "We received an item as itself {} : we don't copy cat",
                         packet.payload.source_uuid
                     );
                 } else {
-                    info!(
-                        "we start to schedule {} from {}",
-                        &mobile_message.id(),
-                        packet.payload.source_uuid
-                    );
+                    let speed = mobile_message.speed().unwrap_or_default();
+                    if speed <= 0.5 {
+                        info!(
+                            "We received an item from {} as stopped: we don't copy cat",
+                            packet.payload.source_uuid
+                        );
+                    } else {
+                        info!(
+                            "We start to schedule from {} ({})",
+                            packet.payload.source_uuid,
+                            &mobile_message.id(),
+                        );
 
-                    let guard = self
-                        .timer
-                        .schedule_with_delay(chrono::Duration::seconds(3), clone);
-                    guard.ignore();
-                    debug!("scheduling done");
+                        let guard = self
+                            .timer
+                            .schedule_with_delay(chrono::Duration::seconds(3), clone);
+                        guard.ignore();
+                        debug!("Scheduling done");
+                    }
                 }
 
                 // 2- create the copy cat items for each removed delayed item
@@ -105,10 +108,10 @@ impl Analyzer<GeoTopic, NoContext> for CopyCat {
                             //assumed clone, we create a new item
                             let mut own_exchange = item.payload.clone();
                             info!(
-                                "we treat the scheduled item {} {} from {}",
+                                "We treat the scheduled item {} from {} ({})",
                                 data_found,
+                                item.payload.source_uuid,
                                 &mobile_message.id(),
-                                item.payload.source_uuid
                             );
                             let timestamp = now();
 
@@ -118,22 +121,25 @@ impl Analyzer<GeoTopic, NoContext> for CopyCat {
                             own_topic.appropriate(&self.configuration);
                             item_to_publish.push(Packet::new(own_topic, own_exchange));
 
-                            debug!("item scheduled published");
+                            debug!("Item scheduled published");
                         }
                         Err(e) => match e {
                             TryRecvError::Empty => {
-                                debug!("delayed channel empty, we stop");
+                                debug!("Delayed channel empty, we stop");
                                 data_found = -1;
                             }
                             TryRecvError::Disconnected => {
-                                warn!("delayed channel disconnected, we stop");
+                                warn!("Delayed channel disconnected, we stop");
                                 data_found = -1;
                             }
                         },
                     }
                 }
             }
-            Err(e) => warn!("{}", e),
+            Err(e) => {
+                warn!("Unable to get the Mobile in the content");
+                debug!("Content error: {e:?}");
+            }
         }
 
         item_to_publish
@@ -156,24 +162,9 @@ async fn main() {
                 .default_value("examples/config.ini")
                 .help("Path to the configuration file"),
         )
-        .arg(
-            Arg::new("mqtt-username")
-                .short('u')
-                .long("username")
-                .value_name("MQTT_USERNAME")
-                .help("Username used to connect to the MQTT broker"),
-        )
-        .arg(
-            Arg::new("mqtt-password")
-                .short('p')
-                .long("password")
-                .required(false)
-                .value_name("MQTT_PASSWORD")
-                .help("Password to use to connect to the MQTT broker"),
-        )
         .get_matches();
 
-    let mut configuration = Configuration::try_from(
+    let configuration = Configuration::try_from(
         Ini::load_from_file(Path::new(
             matches.get_one::<String>("config-file-path").unwrap(),
         ))
@@ -181,60 +172,15 @@ async fn main() {
     )
     .expect("Failed to create Configuration from loaded Ini");
 
-    let log_path = &configuration
-        .get::<String>(Some("log"), "path")
-        .unwrap_or("log".to_string());
-    let log_path = Path::new(log_path);
-    if !log_path.is_dir() {
-        if let Err(error) = fs::create_dir(log_path) {
-            panic!("Unable to create the log directory: {}", error);
-        }
-    }
-    let _logger = match Logger::try_with_env_or_str("info") {
-        Ok(logger) => {
-            match logger
-                .log_to_file(FileSpec::default().directory(log_path).suppress_timestamp())
-                .write_mode(WriteMode::Async)
-                .duplicate_to_stdout(Duplicate::All)
-                .format_for_files(with_thread)
-                .append()
-                .rotate(
-                    Criterion::Size(2_000_000),
-                    Naming::Timestamps,
-                    Cleanup::KeepLogAndCompressedFiles(5, 30),
-                )
-                .print_message()
-                .start()
-            {
-                Ok(logger_handle) => {
-                    info!("logger ready on {}", log_path.to_str().unwrap());
-                    logger_handle
-                }
-                Err(error) => panic!("Logger starting failed with {:?}", error),
-            }
-        }
-        Err(error) => panic!("Logger initialization failed with {:?}", error),
-    };
+    let _logger = create_stdout_logger().expect("Logger initialization failed");
 
     let context = NoContext::default();
     let topics = vec![
         GeoTopic::from("default/outQueue/v2x/cam"),
         GeoTopic::from("default/outQueue/v2x/cpm"),
         GeoTopic::from("default/outQueue/v2x/denm"),
-        GeoTopic::from("default/outQueue/v2x/cam"),
-        GeoTopic::from("default/outQueue/info"),
+        GeoTopic::from("default/outQueue/v2x/info"),
     ];
-
-    if let Some(username) = matches.get_one::<String>("mqtt-username") {
-        let password = matches.get_one::<String>("mqtt-password");
-        if password.is_none() {
-            warn!("MQTT username provided with no password");
-        }
-
-        configuration
-            .mqtt_options
-            .set_credentials(username, password.unwrap_or(&String::new()));
-    }
 
     #[cfg(feature = "telemetry")]
     init_tracer(&configuration.telemetry, "copycat").expect("Failed to init telemetry");
