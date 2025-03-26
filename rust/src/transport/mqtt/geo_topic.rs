@@ -12,7 +12,7 @@
 use crate::mobility::quadtree::quadkey::Quadkey;
 use crate::mobility::quadtree::tile::Tile;
 use crate::transport::mqtt::topic::Topic;
-use log::{error, warn};
+use log::{debug, error, warn};
 use std::fmt;
 use std::fmt::{Debug, Display};
 use std::hash::{Hash, Hasher};
@@ -38,7 +38,7 @@ pub enum GeoTopicError {
     InvalidTile(String),
 }
 
-/// Orange V2X platform implementation of [Topic]
+/// Geo implementation of [Topic]
 ///
 /// FIXME info messages does not contains the `suffix` part and it requires if/else management
 #[derive(Clone, Debug, Default)]
@@ -76,14 +76,10 @@ impl GeoTopic {
 
 impl Topic for GeoTopic {
     fn as_route(&self) -> String {
-        if self.message_type == MessageType::INFO {
-            format!("{}/{}/{}", self.prefix, self.queue, self.message_type)
-        } else {
-            format!(
-                "{}/{}/{}/{}",
-                self.prefix, self.queue, self.suffix, self.message_type
-            )
-        }
+        format!(
+            "{}/{}/{}/{}",
+            self.prefix, self.queue, self.suffix, self.message_type
+        )
     }
 }
 
@@ -145,61 +141,34 @@ impl FromStr for GeoTopic {
     type Err = GeoTopicError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.contains("info") {
-            s.trim_matches('/').split('/').enumerate().try_fold(
-                GeoTopic::default(),
-                |mut topic_struct, (i, element)| {
-                    match i {
-                        // prefix
-                        0 => topic_struct.prefix = element.to_string(),
-                        // queue
-                        1 => topic_struct.queue = Queue::from_str(element)?,
-                        // message type
-                        2 => topic_struct.message_type = MessageType::from_str(element)?,
-                        // uuid
-                        3 => topic_struct.uuid = element.to_string(),
-                        // TODO use geo_extension FromStr trait instead
-                        // geo extension
-                        _n => match Tile::from_str(element) {
-                            Ok(tile) => topic_struct.geo_extension.push(tile),
-                            Err(e) => {
-                                warn!("{}", e);
-                                return Err(GeoTopicError::InvalidTile(element.to_string()));
-                            }
-                        },
-                    }
-                    Ok(topic_struct)
-                },
-            )
-        } else {
-            s.trim_matches('/').split('/').enumerate().try_fold(
-                GeoTopic::default(),
-                |mut topic_struct, (i, element)| {
-                    match i {
-                        // prefix
-                        0 => topic_struct.prefix = element.to_string(),
-                        // queue
-                        1 => topic_struct.queue = Queue::from_str(element)?,
-                        // suffix
-                        2 => topic_struct.suffix = element.to_string(),
-                        // message type
-                        3 => topic_struct.message_type = MessageType::from_str(element)?,
-                        // uuid
-                        4 => topic_struct.uuid = element.to_string(),
-                        // TODO use geo_extension FromStr trait instead
-                        // geo extension
-                        _n => match Tile::from_str(element) {
-                            Ok(tile) => topic_struct.geo_extension.push(tile),
-                            Err(e) => {
-                                warn!("{}", e);
-                                return Err(GeoTopicError::InvalidTile(element.to_string()));
-                            }
-                        },
-                    }
-                    Ok(topic_struct)
-                },
-            )
-        }
+        s.trim_matches('/').split('/').enumerate().try_fold(
+            GeoTopic::default(),
+            |mut topic_struct, (i, element)| {
+                match i {
+                    // prefix
+                    0 => topic_struct.prefix = element.to_string(),
+                    // queue
+                    1 => topic_struct.queue = Queue::from_str(element)?,
+                    // suffix
+                    2 => topic_struct.suffix = element.to_string(),
+                    // message type
+                    3 => topic_struct.message_type = MessageType::from_str(element)?,
+                    // uuid
+                    4 => topic_struct.uuid = element.to_string(),
+                    // TODO use geo_extension FromStr trait instead
+                    // geo extension
+                    _n => match Tile::from_str(element) {
+                        Ok(tile) => topic_struct.geo_extension.push(tile),
+                        Err(e) => {
+                            warn!("Unable to parse the tile {element}");
+                            debug!("Parsing error: {}", e);
+                            return Err(GeoTopicError::InvalidTile(element.to_string()));
+                        }
+                    },
+                }
+                Ok(topic_struct)
+            },
+        )
     }
 }
 
@@ -259,13 +228,13 @@ mod tests {
 
     #[test]
     fn test_info_topic_from_str() {
-        let topic_string = "5GCroCo/outQueue/info/broker";
+        let topic_string = "5GCroCo/outQueue/v2x/info/broker";
 
         match GeoTopic::from_str(topic_string) {
             Ok(topic) => {
                 assert_eq!(topic.prefix, "5GCroCo".to_string());
                 assert_eq!(topic.queue, Queue::Out);
-                assert!(topic.suffix.is_empty());
+                assert_eq!(topic.suffix, "v2x".to_string());
                 assert_eq!(topic.message_type, MessageType::INFO);
                 assert_eq!(topic.uuid, "broker".to_string());
                 assert_eq!(topic.geo_extension.tiles.len(), 0);

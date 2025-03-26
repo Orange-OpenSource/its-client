@@ -131,10 +131,7 @@ fn compute_id(object_id: u8, cpm_station_id: u32) -> u32 {
     match string_id.parse() {
         Ok(id) => id,
         Err(_err) => {
-            trace!(
-                "unable to generate a mobile id with {}, we create a short one",
-                string_id
-            );
+            trace!("Unable to generate a mobile id with {string_id}, we create a short one");
             cpm_station_id + object_id as u32
         }
     }

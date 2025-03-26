@@ -12,19 +12,18 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::path::Path;
-use std::{fs, thread};
+use std::thread;
 
 use clap::{Arg, Command};
-use flexi_logger::{Cleanup, Criterion, FileSpec, Logger, Naming, WriteMode, with_thread};
 use ini::Ini;
+use libits::client::configuration::Configuration;
+use libits::client::configuration::create_stdout_logger;
+use libits::transport::telemetry::{execute_in_span, get_span, init_tracer};
 use log::{info, warn};
 use opentelemetry::propagation::{Extractor, Injector, TextMapPropagator};
 use opentelemetry::trace::{SpanKind, TraceContextExt, mark_span_as_active};
 use opentelemetry::{Context, global};
 use opentelemetry_sdk::propagation::TraceContextPropagator;
-
-use libits::client::configuration::Configuration;
-use libits::transport::telemetry::{execute_in_span, get_span, init_tracer};
 
 const TRACER_NAME: &str = "telemetry/example";
 
@@ -91,40 +90,7 @@ async fn main() {
     )
     .expect("Failed to create Configuration from loaded Ini");
 
-    let log_path = &configuration
-        .get::<String>(Some("log"), "path")
-        .unwrap_or("log".to_string());
-    let log_path = Path::new(log_path);
-    if !log_path.is_dir() {
-        if let Err(error) = fs::create_dir(log_path) {
-            panic!("Unable to create the log directory: {}", error);
-        }
-    }
-    let _logger = match Logger::try_with_env_or_str("info") {
-        Ok(logger) => {
-            match logger
-                .log_to_file(FileSpec::default().directory(log_path).suppress_timestamp())
-                .log_to_stdout()
-                .write_mode(WriteMode::Async)
-                .format_for_files(with_thread)
-                .append()
-                .rotate(
-                    Criterion::Size(2_000_000),
-                    Naming::Timestamps,
-                    Cleanup::KeepLogAndCompressedFiles(5, 30),
-                )
-                .print_message()
-                .start()
-            {
-                Ok(logger_handle) => {
-                    info!("logger ready on {}", log_path.to_str().unwrap());
-                    logger_handle
-                }
-                Err(error) => panic!("Logger starting failed with {:?}", error),
-            }
-        }
-        Err(error) => panic!("Logger initialization failed with {:?}", error),
-    };
+    let _logger = create_stdout_logger().expect("Logger initialization failed");
 
     init_tracer(&configuration.telemetry, "iot3").expect("Failed to configure telemetry");
 

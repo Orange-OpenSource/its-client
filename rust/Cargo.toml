@@ -45,6 +45,9 @@ required-features = ["telemetry"]
 name = "copycat"
 required-features = ["geo_routing"]
 
+[[example]]
+name = "collector"
+
 [dependencies]
 crossbeam-channel = "0.5"
 enum_dispatch = "0.3"
@@ -56,6 +59,7 @@ serde_json = "1.0"
 serde_repr = "0.1"
 thiserror = "2.0"
 threadpool = "1.8"
+flexi_logger = "0.29"
 
 [dependencies.base64]
 version = "0.22"
