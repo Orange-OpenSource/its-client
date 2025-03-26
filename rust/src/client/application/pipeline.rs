@@ -90,7 +90,7 @@ pub async fn run<A, C, T>(
     }
     info!("Analysis thread count set to: {}", thread_count);
 
-    let (mut mqtt_client, event_loop) = MqttClient::new(&configuration.mqtt_options);
+    let (mut mqtt_client, event_loop) = MqttClient::new(&configuration.mqtt);
     mqtt_client_subscribe(subscription_list, &mut mqtt_client).await;
 
     let (event_receiver, mqtt_client_listen_handle) = mqtt_client_listen_thread(event_loop);
@@ -113,21 +113,21 @@ pub async fn run<A, C, T>(
         let context_clone = context.clone();
         let seq_num_clone = sequence_number.clone();
         analysis_pool.execute(move || {
-            info!("starting analyser generation...");
-            trace!("analyser generation closure entering...");
+            info!("Starting analyser generation...");
+            trace!("Analyser generation closure entering...");
             let mut analyser = A::new(configuration_clone, context_clone, seq_num_clone);
             for item in rx {
                 for publish_item in analyser.analyze(item.clone()) {
                     let cause = Cause::from_exchange(&(item.payload));
                     match tx.send((publish_item, cause)) {
-                        Ok(()) => trace!("analyser sent"),
+                        Ok(()) => trace!("Analyser sent"),
                         Err(error) => {
-                            error!("stopped to send analyser: {}", error);
+                            error!("Stopped to send analyser: {}", error);
                             break;
                         }
                     }
                 }
-                trace!("analyser generation closure finished");
+                trace!("Analyser generation closure finished");
             }
         });
     }
@@ -146,22 +146,22 @@ pub async fn run<A, C, T>(
 
     mqtt_client_publish(publish_item_receiver, &mut mqtt_client).await;
 
-    debug!("mqtt_client_listen_handler joining...");
+    debug!("Start mqtt_client_listen_handler joining...");
     mqtt_client_listen_handle.await.unwrap();
-    debug!("mqtt_router_dispatch_handler joining...");
+    debug!("Start mqtt_router_dispatch_handler joining...");
     mqtt_router_dispatch_handle.join().unwrap();
-    debug!("monitor_reception_handle joining...");
+    debug!("Start monitor_reception_handle joining...");
     monitor_reception_handle.join().unwrap();
-    debug!("reader_configure_handler joining...");
+    debug!("Start reader_configure_handler joining...");
     reader_configure_handle.join().unwrap();
-    debug!("analyser_generate_handler joining...");
+    debug!("Start analyser_generate_handler joining...");
     analysis_pool.join();
-    debug!("filter_handle joining...");
+    debug!("Start filter_handle joining...");
     filter_handle.join().unwrap();
-    debug!("monitor_publish_handle joining...");
+    debug!("Start monitor_publish_handle joining...");
     monitor_publish_handle.join().unwrap();
 
-    warn!("loop done");
+    warn!("Loop done");
     tokio::time::sleep(Duration::from_secs(5)).await;
 }
 
@@ -172,13 +172,13 @@ fn filter_thread<T>(
 where
     T: Topic + 'static,
 {
-    info!("starting filtering...");
+    info!("Starting filtering...");
     let (publish_sender, publish_receiver) = unbounded();
     let (monitoring_sender, monitoring_receiver) = unbounded();
     let handle = thread::Builder::new()
         .name("filter".into())
         .spawn(move || {
-            trace!("filter closure entering...");
+            trace!("Filter closure entering...");
             for tuple in exchange_receiver {
                 let item = tuple.0;
                 let cause = tuple.1;
@@ -188,25 +188,25 @@ where
                 // if configuration.is_in_region_of_responsibility(item.topic.geo_extension.clone()) {
                 //assumed clone, we send to 2 channels
                 match publish_sender.send(item.clone()) {
-                    Ok(()) => trace!("publish sent"),
+                    Ok(()) => trace!("Publish sent"),
                     Err(error) => {
-                        error!("stopped to send publish: {}", error);
+                        error!("Stopped to send publish: {}", error);
                         break;
                     }
                 }
                 match monitoring_sender.send((item, cause)) {
-                    Ok(()) => trace!("monitoring sent"),
+                    Ok(()) => trace!("Monitoring sent"),
                     Err(error) => {
-                        error!("stopped to send monitoring: {}", error);
+                        error!("Stopped to send monitoring: {}", error);
                         break;
                     }
                 }
                 // }
-                trace!("filter closure finished");
+                trace!("Filter closure finished");
             }
         })
         .unwrap();
-    info!("filter started");
+    info!("Filter started");
     (publish_receiver, monitoring_receiver, handle)
 }
 
@@ -218,11 +218,11 @@ fn monitor_thread<T>(
 where
     T: Topic + 'static,
 {
-    info!("starting monitor reception thread...");
+    info!("Starting monitor reception thread...");
     let handle = thread::Builder::new()
         .name("monitor-reception".into())
         .spawn(move || {
-            trace!("monitor reception entering...");
+            trace!("Monitor reception entering...");
 
             for tuple in exchange_receiver {
                 let packet = tuple.0;
@@ -235,26 +235,29 @@ where
                     .read()
                     .unwrap();
 
-                match node_configuration.gateway_component_name() { Some(gateway_component_name) => {
-                    trace_exchange(
-                        &packet.payload,
-                        cause,
-                        direction.as_str(),
-                        configuration.component_name(None),
-                        format!(
-                            "{}/{}/{}",
-                            gateway_component_name,
-                            packet.topic.as_route(),
-                            packet.payload.source_uuid
-                        ),
-                    );
-                } _ => {
-                    info!("Cannot trace exchange, missing gateway component name in node configuration");
-                }}
+                match node_configuration.gateway_component_name() {
+                    Some(gateway_component_name) => {
+                        trace_exchange(
+                            &packet.payload,
+                            cause,
+                            direction.as_str(),
+                            configuration.component_name(None),
+                            format!(
+                                "{}/{}/{}",
+                                gateway_component_name,
+                                packet.topic.as_route(),
+                                packet.payload.source_uuid
+                            ),
+                        );
+                    }
+                    _ => {
+                        info!("Cannot trace exchange, missing gateway component name in node configuration");
+                    }
+                }
             }
         })
         .unwrap();
-    info!("monitor reception thread started");
+    info!("Monitor reception thread started");
     handle
 }
 
@@ -264,11 +267,11 @@ fn mqtt_client_listen_thread(
     info!("Starting MQTT listening thread...");
     let (event_sender, event_receiver) = unbounded();
     let handle = tokio::task::spawn(async move {
-        trace!("mqtt client listening closure entering...");
+        trace!("MQTT listening closure entering...");
         listen(event_loop, event_sender).await;
-        trace!("mqtt client listening closure finished");
+        trace!("MQTT listening closure finished");
     });
-    info!("MQTT listening thread started!");
+    info!("MQTT listening thread started");
     (event_receiver, handle)
 }
 
@@ -283,10 +286,10 @@ where
     let handle = thread::Builder::new()
         .name("reader-configurator".into())
         .spawn(move || {
-            trace!("reader configuration closure entering...");
+            trace!("Reader configuration closure entering...");
             for packet in information_receiver {
                 info!(
-                    "we received an information on the topic {}: {:?}",
+                    "We received an information on the topic {}: {:?}",
                     packet.topic, packet.payload
                 );
 
@@ -298,29 +301,34 @@ where
                     .unwrap()
                     .update(packet.payload);
             }
-            trace!("reader configuration closure finished");
+            trace!("Reader configuration closure finished");
         })
         .unwrap();
-    info!("Configuration reader thread started!");
+    info!("Configuration reader thread started");
     handle
 }
 
 async fn mqtt_client_subscribe<T: Topic>(topic_list: &[T], client: &mut MqttClient) {
-    info!("mqtt client subscribing starting...");
-    let mut topic_subscription_list = topic_list.iter().map(|t| t.to_string()).collect::<Vec<_>>();
-
-    for topic in topic_subscription_list.iter_mut() {
-        match topic {
-            info_topic if info_topic.contains(Information::TYPE) => {
-                info_topic.push_str("/broker");
-            }
-            topic => topic.push_str("/+/#"),
-        }
-    }
+    info!("MQTT client subscribing starting...");
+    let topic_subscription_list: Vec<_> = topic_list
+        .iter()
+        .map(|t| {
+            format!(
+                "{}{}",
+                t,
+                // TODO challenge if we can switch to a standard GeoTopic (adding a uuid as last required part) to simplify the code
+                if t.to_string().contains(Information::TYPE) {
+                    "/#"
+                } else {
+                    "/+/#"
+                }
+            )
+        })
+        .collect();
 
     // NOTE: we share the topic list with the dispatcher
     client.subscribe(&topic_subscription_list).await;
-    info!("mqtt client subscribing finished");
+    info!("MQTT client subscribing finished");
 }
 
 async fn mqtt_client_publish<T, P>(
@@ -332,11 +340,11 @@ async fn mqtt_client_publish<T, P>(
 {
     info!("Starting MQTT publishing thread...");
     for item in publish_item_receiver {
-        debug!("Packet to publish...");
+        debug!("Start packet publishing...");
         client.publish(item).await;
-        debug!("Packet published!");
+        debug!("Packet published");
     }
-    info!("MQTT publishing thread stopping");
+    info!("MQTT publishing thread stopped");
 }
 
 fn mqtt_router_dispatch_thread<T>(
@@ -347,7 +355,7 @@ fn mqtt_router_dispatch_thread<T>(
 where
     T: Topic + 'static,
 {
-    info!("starting mqtt router dispatching...");
+    info!("Starting mqtt router dispatching...");
     let (exchange_sender, exchange_receiver) = unbounded();
     let (monitoring_sender, monitoring_receiver) = unbounded();
     let (information_sender, information_receiver) = unbounded();
@@ -355,7 +363,7 @@ where
     let handle = thread::Builder::new()
         .name("mqtt-router-dispatcher".into())
         .spawn(move || {
-            trace!("mqtt router dispatching closure entering...");
+            trace!("MQTT router dispatching closure entering...");
             //initialize the router
             let router = &mut mqtt_router::MqttRouter::default();
 
@@ -371,6 +379,7 @@ where
             for event in event_receiver {
                 match router.handle_event(event) {
                     Some((topic, (reception, properties))) => {
+                        trace!("Topic: {topic}");
                         // TODO use the From Trait
                         if reception.is::<Exchange>() {
                             if let Ok(exchange) = reception.downcast::<Exchange>() {
@@ -381,46 +390,45 @@ where
                                 };
                                 //assumed clone, we send to 2 channels
                                 match monitoring_sender.send((item.clone(), None)) {
-                                    Ok(()) => trace!("mqtt monitoring sent"),
+                                    Ok(()) => trace!("MQTT monitoring sent"),
                                     Err(error) => {
-                                        error!("stopped to send mqtt monitoring: {}", error);
+                                        error!("Stopped to send mqtt monitoring: {}", error);
                                         break;
                                     }
                                 }
                                 match exchange_sender.send(item) {
-                                    Ok(()) => trace!("mqtt exchange sent"),
+                                    Ok(()) => trace!("MQTT exchange sent"),
                                     Err(error) => {
-                                        error!("stopped to send mqtt exchange: {}", error);
+                                        error!("Stopped to send mqtt exchange: {}", error);
+                                        break;
+                                    }
+                                }
+                            }
+                        } else if reception.is::<Information>() {
+                            if let Ok(information) = reception.downcast::<Information>() {
+                                match information_sender.send(Packet {
+                                    topic,
+                                    payload: *information,
+                                    properties: PublishProperties::default(),
+                                }) {
+                                    Ok(()) => trace!("MQTT information sent"),
+                                    Err(error) => {
+                                        error!("Stopped to send mqtt information: {}", error);
                                         break;
                                     }
                                 }
                             }
                         } else {
-                            match reception.downcast::<Information>() {
-                                Ok(information) => {
-                                    match information_sender.send(Packet {
-                                        topic,
-                                        payload: *information,
-                                        properties: PublishProperties::default(),
-                                    }) {
-                                        Ok(()) => trace!("mqtt information sent"),
-                                        Err(error) => {
-                                            error!("stopped to send mqtt information: {}", error);
-                                            break;
-                                        }
-                                    }
-                                }
-                                _ => {}
-                            }
+                            trace!("Unknown reception: {:?}", reception);
                         }
                     }
-                    None => trace!("no mqtt response to send"),
+                    None => trace!("No mqtt response to send"),
                 }
             }
-            trace!("mqtt router dispatching closure finished");
+            trace!("MQTT router dispatching closure finished");
         })
         .unwrap();
-    info!("mqtt router dispatching started");
+    info!("MQTT router dispatching started");
     (
         exchange_receiver,
         monitoring_receiver,
@@ -439,13 +447,13 @@ where
             let message_str = message.as_str();
             match serde_json::from_str::<T>(message_str) {
                 Ok(message) => {
-                    trace!("message parsed");
+                    trace!("Message parsed");
                     return Some((Box::new(message), publish.properties.unwrap_or_default()));
                 }
-                Err(e) => warn!("parse error({}) on: {}", e, message_str),
+                Err(e) => warn!("Parse error({}) on: {}", e, message_str),
             }
         }
-        Err(e) => warn!("format error: {}", e),
+        Err(e) => warn!("Format error: {}", e),
     }
     None
 }
