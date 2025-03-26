@@ -8,40 +8,40 @@ env:
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v2
       - name: Run rustfmt
         run: |
           cd rust
           cargo fmt -- --check
-      - name: Clippy
+      - name: Run Clippy
         run: |
           cd rust
           cargo clippy -- -D clippy::all
 
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v2
       - name: Build
         run: |
           cd rust
           cargo build --verbose
-      - name: Release build
+      - name: Build Release
         run: |
           cd rust
           cargo build --release --verbose
-      - name: mobility feature build
+      - name: Build  mobility feature
         run: |
           cd rust
           cargo build --features mobility --verbose
-      - name: telemetry feature build
+      - name: Build telemetry feature
         run: |
           cd rust
           cargo build --features telemetry --verbose
-      - name: geo_routing feature build
+      - name: Build geo_routing feature
         run: |
           cd rust
           cargo build --features geo_routing --verbose
@@ -49,33 +49,57 @@ jobs:
         run: |
           cd rust
           cargo build --all-features --verbose
-      - name: Release build all features
+      - name: Build all features Release
         run: |
           cd rust
           cargo build --all-features --release --verbose
+      - name: Build json_counter example
+        run: |
+          cd rust
+          cargo build --example json_counter --verbose
+      - name: Build telemetry example
+        run: |
+          cd rust
+          cargo build --example telemetry --features telemetry --verbose
+      - name: Build copycat example
+        run: |
+          cd rust
+          cargo build --example copycat --features geo_routing --verbose
+      - name: Build collector example
+        run: |
+          cd rust
+          cargo build --example copycat --features geo_routing --verbose
+      - name: Build all examples
+        run: |
+          cd rust
+          cargo build --examples --features "telemetry,geo_routing" --verbose
+      - name: Build all examples Release
+        run: |
+          cd rust
+          cargo build --examples --features "telemetry,geo_routing" --release --verbose
 
   test:
     name: Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v2
-      - name: No features
+      - name: Test
         run: |
           cd rust
           cargo test --verbose
-      - name: mobility feature test
+      - name: Test mobility feature
         run: |
           cd rust
           cargo test --features mobility --verbose
-      - name: telemetry feature test
+      - name: Test telemetry feature
         run: |
           cd rust
           cargo test --features telemetry --verbose
-      - name: geo_routing feature test
+      - name: Test geo_routing feature
         run: |
           cd rust
           cargo test --features geo_routing --verbose
-      - name: All feature
+      - name: Test all features
         run: |
           cd rust
           cargo test --all-features --verbose
