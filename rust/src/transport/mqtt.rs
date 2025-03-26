@@ -18,6 +18,7 @@ pub mod topic;
 
 #[cfg(feature = "geo_routing")]
 pub mod geo_topic;
+pub mod str_topic;
 
 pub(crate) fn configure_transport(
     use_tls: bool,
