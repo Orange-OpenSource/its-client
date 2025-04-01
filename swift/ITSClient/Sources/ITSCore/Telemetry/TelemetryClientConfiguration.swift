@@ -13,12 +13,18 @@ import Foundation
 
 /// A structure to configure a telemetry client.
 public struct TelemetryClientConfiguration: Sendable {
-    let url: URL
-    let user: String?
-    let password: String?
-    let serviceName: String
-    let scheduleDelay: TimeInterval
-    let batchSize: Int
+    /// The server url.
+    public let url: URL
+    /// The user name if authentication is enabled on the server.
+    public let user: String?
+    /// The password if authentication is enabled on the server.
+    public let password: String?
+    /// The service name to use.
+    public let serviceName: String
+    /// The delay to send spans (Default: 5 seconds).
+    public let scheduleDelay: TimeInterval
+    /// The maximum of spans to send in a batch (Default: 50).
+    public let batchSize: Int
 
     /// Initializes a `TelemetryClientConfiguration`.
     /// - Parameters:
