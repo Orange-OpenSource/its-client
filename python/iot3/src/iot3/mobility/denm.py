@@ -158,6 +158,18 @@ class DecentralizedEnvironmentalNotificationMessage(etsi.Message):
         )
 
     @property
+    def reference_time(self) -> float:
+        return etsi.ETSI.etsi2unix_time(
+            self._message["message"]["management_container"]["reference_time"]
+        )
+
+    @reference_time.setter
+    def reference_time(self, reference_time: float):
+        self._message["message"]["management_container"]["reference_time"] = (
+            etsi.ETSI.unix2etsi_time(reference_time)
+        )
+
+    @property
     def latitude(self) -> float:
         return etsi.ETSI.etsi2si(
             self._message["message"]["management_container"]["event_position"][
