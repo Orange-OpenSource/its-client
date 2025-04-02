@@ -109,9 +109,10 @@ def start(
                            be set to msg_cb_data, kwarg location will be set
                            to an iot3.mobility.gnss.GNSSReport containing the
                            location of the alert, kwarg cause will be set to
-                           an iot3.mobility.denm.DENM.Cause, kwarg detection_time
-                           will be set to the time of detection of the event; to
-                           be future proof, such a function should be declared as:
+                           a DENM.Cause and kwarg subcause, if avilable, to a
+                           DENM.SubCause.Any, kwarg detection_time will be set
+                           to the time of detection of the event; to be future
+                           proof, such a function should be declared as:
                             def my_alert_callback(
                                 *_args,
                                 data: typing.Any,
@@ -143,6 +144,9 @@ def start(
             # Can't make it a known message, ignore
             return
         if msg.msg_type == "denm":
+            kwargs = dict()
+            if msg.subcause is not None:
+                kwargs["subcause"] = msg.subcause
             alert_callback(
                 data=data,
                 location=GNSSReport(
