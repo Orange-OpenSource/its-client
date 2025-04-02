@@ -108,14 +108,16 @@ def start(
                            when called, keyword argument (kwarg) data will
                            be set to msg_cb_data, kwarg location will be set
                            to an iot3.mobility.gnss.GNSSReport containing the
-                           location of the alert, and kwarg cause will be set
-                           to an iot3.mobility.denm.DENM.Cause; to be future
-                           proof, such a function should be declared as:
+                           location of the alert, kwarg cause will be set to
+                           an iot3.mobility.denm.DENM.Cause, kwarg detection_time
+                           will be set to the time of detection of the event; to
+                           be future proof, such a function should be declared as:
                             def my_alert_callback(
                                 *_args,
                                 data: typing.Any,
                                 location: iot3.mobility.gnss.GNSSReport,
                                 cause: iot3.mobility.denm.DENM.Cause,
+                                detection_time: float,
                                 **_kwargs,
                             ) -> None:
                                 ...
@@ -149,6 +151,8 @@ def start(
                     altitude=msg.altitude,
                 ),
                 cause=msg.cause,
+                detection_time=msg.detection_time,
+                **kwargs,
             )
 
     core.start(
