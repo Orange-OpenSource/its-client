@@ -139,7 +139,6 @@ def start(
             msg = message_from_json(msg_json=payload)
         except Exception as e:
             # Can't make it a known message, ignore
-            print(f"Bummer {e}")
             return
         if msg.msg_type == "denm":
             alert_callback(
