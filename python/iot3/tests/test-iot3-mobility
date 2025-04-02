@@ -5,7 +5,13 @@ import iot3.mobility
 import random
 import time
 
-def recv(*, data, location, cause):
+def recv(
+    *_args,
+    data,
+    location,
+    cause,
+    **_kwargs,
+):
     print(f"{data}: (lat {location.latitude}, lon {location.longitude}): {cause.name}")
 
 config = iot3.mobility.sample_config
