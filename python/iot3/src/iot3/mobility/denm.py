@@ -130,7 +130,7 @@ class DecentralizedEnvironmentalNotificationMessage(etsi.Message):
         if termination is not None:
             self._message["message"]["management_container"][
                 "termination"
-            ] = termination
+            ] = termination.value
         if validity_duration is not None:
             self._message["message"]["management_container"][
                 "validity_duration"
