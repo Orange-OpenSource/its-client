@@ -225,7 +225,9 @@ class DecentralizedEnvironmentalNotificationMessage(etsi.Message):
 
     @cause.setter
     def cause(self, cause: Cause):
-        self._message["message"]["situation_container"]["event_type"]["cause"] = cause
+        self._message["message"]["situation_container"]["event_type"][
+            "cause"
+        ] = cause.value
 
     @property
     def termination(self) -> TerminationType:
