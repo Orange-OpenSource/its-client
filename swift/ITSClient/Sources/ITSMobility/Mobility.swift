@@ -89,6 +89,45 @@ public actor Mobility {
         try await publish(cam, topic: try topic(for: .cam, in: quadkey))
     }
     
+    /// Sends an alert to share it.
+    /// - Parameters:
+    ///   - latitude: The latitude in decimal degrees.
+    ///   - longitude: The longitude in decimal degrees.
+    ///   - altitude: The altitude in meters.
+    ///   - cause: The alert cause.
+    public func sendAlert(
+        latitude: Double,
+        longitude: Double,
+        altitude: Double,
+        cause: CauseType = .dangerousSituation
+    ) async throws(MobilityError) {
+        guard let mobilityConfiguration else { throw MobilityError.notStarted }
+
+        // Build DENM
+        let now = Date().timeIntervalSince1970
+        let actionID = ActionID(originatingStationID: mobilityConfiguration.stationID)
+        let position = Position(latitude: latitude, longitude: longitude, altitude: altitude)
+        let managementContainer = ManagementContainer(actionID: actionID,
+                                                      detectionTime: now,
+                                                      referenceTime: now,
+                                                      eventPosition: position,
+                                                      stationType: mobilityConfiguration.stationType)
+        let situationContainer = SituationContainer(eventType: Cause(cause: cause))
+        let demMessage = DENMMessage(stationID: mobilityConfiguration.stationID,
+                                     managementContainer: managementContainer,
+                                     situationContainer: situationContainer)
+        let denm = DENM(message: demMessage,
+                        sourceUUID: mobilityConfiguration.userIdentifier,
+                        timestamp: now)
+
+        // Publish DENM
+        let quadkey = QuadkeyBuilder().quadkeyFrom(latitude: latitude,
+                                                   longitude: longitude,
+                                                   zoomLevel: mobilityConfiguration.reportZoomLevel,
+                                                   separator: "/")
+        try await publish(denm, topic: try topic(for: .denm, in: quadkey))
+    }
+
     private func publish<T: Codable>(_ payload: T, topic: String) async throws(MobilityError) {
         do {
             let coreMQTTMessage = CoreMQTTMessage(payload: try JSONEncoder().encode(payload),
