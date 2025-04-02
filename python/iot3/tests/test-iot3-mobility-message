@@ -149,10 +149,42 @@ msg = DENM(
     cause=DENM.Cause.trafficCondition,
     sequence_number=seq_num,
 )
+msg.subcause = DENM.SubCause.TrafficCondition.trafficStationary
 assert seq_num == msg.sequence_number
 assert msg.cause == DENM.Cause.trafficCondition
+assert msg.subcause == DENM.SubCause.TrafficCondition.trafficStationary
 # UNIX time: seconds as a float, ETSI time: ms as an int; => delta max = 1ms
 assert math.fabs(detect_time - msg.detection_time) < 10 ** -3
+
+print("DENM update with invalid subcause...")
+try:
+    msg.subcause = DENM.SubCause.WrongWayDriving.wrongDirection
+except ValueError:
+    pass
+else:
+    raise RuntimeError("Invalid subcause should not be allowed")
+
+print("New DENM sith invalid subcause...")
+try:
+    DENM(
+        uuid="test_1234",
+        gnss_report=GNSSReport(
+            latitude=43.635212,
+            longitude=1.374562,
+        ),
+        detection_time=detect_time,
+        cause=DENM.Cause.trafficCondition,
+        subcause=DENM.SubCause.WrongWayDriving.wrongDirection,
+    )
+except ValueError:
+    pass
+else:
+    raise RuntimeError("Invalid subcause should not be allowed")
+
+print("DENM continuation (update without subcause)...")
+msg.subcause = None
+assert msg.subcause == None
+assert "subcause" not in msg["message"]["situation_container"]["event_type"]
 
 print("DENM continuation (termination)...")
 msg = DENM(
