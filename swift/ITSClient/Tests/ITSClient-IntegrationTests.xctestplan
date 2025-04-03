@@ -38,6 +38,9 @@
           },
           {
             "name" : "QuadkeyBuilderTests"
+          },
+          {
+            "name" : "RegionOfInterestCoordinatorTests"
           }
         ]
       },
