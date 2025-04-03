@@ -15,11 +15,13 @@ import Foundation
 /// An object that manages a mobility client using the `Core`.
 public actor Mobility {
     private let core: Core
+    private let regionOfInterestCoordinator: RegionOfInterestCoordinator
     private var mobilityConfiguration: MobilityConfiguration?
     
     /// Initializes a `Mobility`.
     public init() {
         core = Core()
+        regionOfInterestCoordinator = RegionOfInterestCoordinator()
     }
 
     /// Starts the `Mobility` with a configuration to connect to a MQTT server and initialize the telemetry client.
@@ -128,6 +130,25 @@ public actor Mobility {
         try await publish(denm, topic: try topic(for: .denm, in: quadkey))
     }
 
+    /// Updates the road alarm region of interest according the coordinates and the zoom level.
+    /// - Parameters:
+    ///   - latitude: The latitude in decimal degrees.
+    ///   - longitude: The longitude in decimal degrees.
+    ///   - zoomLevel: The zoom level.
+    public func updateRoadAlarmRegionOfInterest(
+        latitude: Double,
+        longitude: Double,
+        zoomLevel: Int) async throws(MobilityError) {
+        guard let mobilityConfiguration else { throw .notStarted }
+
+        let topicUpdateRequest = regionOfInterestCoordinator.updateRoadAlarmRegionOfInterest(
+            latitude: latitude,
+            longitude: longitude,
+            zoomLevel: zoomLevel,
+            namespace: mobilityConfiguration.namespace)
+        await updateSubscriptions(topicUpdateRequest: topicUpdateRequest)
+    }
+
     private func publish<T: Codable>(_ payload: T, topic: String) async throws(MobilityError) {
         do {
             let coreMQTTMessage = CoreMQTTMessage(payload: try JSONEncoder().encode(payload),
@@ -139,7 +160,32 @@ public actor Mobility {
             throw .payloadEncodingFailed
         }
     }
-    
+
+    private func updateSubscriptions(
+        topicUpdateRequest: RegionOfInterestCoordinator.TopicUpdateRequest?
+    ) async {
+        guard let topicUpdateRequest else { return }
+
+        await subscribe(to: topicUpdateRequest.subscriptions)
+        await unsubscribe(from: topicUpdateRequest.unsubscriptions)
+    }
+
+    private func subscribe(to topics: [String]) async {
+        for topic in topics {
+            do {
+                try await core.subscribe(to: topic)
+            } catch {}
+        }
+    }
+
+    private func unsubscribe(from topics: [String]) async {
+        for topic in topics {
+            do {
+                try await core.unsubscribe(from: topic)
+            } catch {}
+        }
+    }
+
     private func topic(
         for messageType: MessageType,
         in quadkey: String
