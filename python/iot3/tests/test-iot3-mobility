@@ -10,9 +10,13 @@ def recv(
     data,
     location,
     cause,
-    **_kwargs,
+    **kwargs,
 ):
-    print(f"{data}: (lat {location.latitude}, lon {location.longitude}): {cause.name}")
+    try:
+        subcause = kwargs["subcause"].name
+    except KeyError:
+        subcause = "not provided"
+    print(f"{data}: (lat {location.latitude}, lon {location.longitude}), cause {cause.name}, subcause: {subcause}")
 
 config = iot3.mobility.sample_config
 config["mqtt"] = {
@@ -56,6 +60,15 @@ denm = iot3.mobility.denm.DENM(
     cause=iot3.mobility.denm.DENM.Cause.trafficCondition,
 )
 topic_template = f"{config['namespace']}/outQueue/v2x/{{msg_type}}/{{source_uuid}}/{{quadkey}}"
+iot3.core.publish(
+    topic=denm.topic(template=topic_template),
+    payload=denm.to_json(),
+)
+time.sleep(1)
+
+print("Sending again with sub-cause 'trafficStationary'...")
+denm.reference_time = time.time()
+denm.subcause = denm.SubCause.TrafficCondition.trafficStationary
 iot3.core.publish(
     topic=denm.topic(template=topic_template),
     payload=denm.to_json(),
