@@ -101,7 +101,7 @@ version = "3.4"
 features = ["json"]
 
 [dependencies.tokio]
-version = "1.23"
+version = "1.38"
 features = ["full", "macros"]
 
 [dev-dependencies]
