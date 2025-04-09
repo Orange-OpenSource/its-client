@@ -149,6 +149,25 @@ public actor Mobility {
         await updateSubscriptions(topicUpdateRequest: topicUpdateRequest)
     }
 
+    /// Updates the road position region of interest according the coordinates and the zoom level.
+    /// - Parameters:
+    ///   - latitude: The latitude in decimal degrees.
+    ///   - longitude: The longitude in decimal degrees.
+    ///   - zoomLevel: The zoom level.
+    public func updateRoadPositionRegionOfInterest(
+        latitude: Double,
+        longitude: Double,
+        zoomLevel: Int) async throws(MobilityError) {
+        guard let mobilityConfiguration else { throw .notStarted }
+
+        let topicUpdateRequest = regionOfInterestCoordinator.updateRoadPositionRegionOfInterest(
+            latitude: latitude,
+            longitude: longitude,
+            zoomLevel: zoomLevel,
+            namespace: mobilityConfiguration.namespace)
+        await updateSubscriptions(topicUpdateRequest: topicUpdateRequest)
+    }
+
     private func publish<T: Codable>(_ payload: T, topic: String) async throws(MobilityError) {
         do {
             let coreMQTTMessage = CoreMQTTMessage(payload: try JSONEncoder().encode(payload),
