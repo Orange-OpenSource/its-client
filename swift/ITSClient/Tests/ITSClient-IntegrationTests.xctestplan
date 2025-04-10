@@ -31,6 +31,9 @@
       "skippedTests" : {
         "suites" : [
           {
+            "name" : "CacheTests"
+          },
+          {
             "name" : "CAMTests"
           },
           {
@@ -41,6 +44,9 @@
           },
           {
             "name" : "RegionOfInterestCoordinatorTests"
+          },
+          {
+            "name" : "RoadAlarmCoordinatorTests"
           }
         ]
       },

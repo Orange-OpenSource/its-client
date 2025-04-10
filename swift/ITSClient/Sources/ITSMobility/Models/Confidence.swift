@@ -12,7 +12,7 @@
 import Foundation
 
 /// The confidence.
-public struct Confidence: Codable {
+public struct Confidence: Codable, Sendable {
     /// The altitude confidence.
     public let altitude: AltitudeConfidence?
     /// The position confidence ellipse.
@@ -30,7 +30,7 @@ public struct Confidence: Codable {
 }
 
 /// The altitude confidence.
-public enum AltitudeConfidence: Int, Codable {
+public enum AltitudeConfidence: Int, Codable, Sendable {
     case alt_000_01 = 0
     case alt_000_02 = 1
     case alt_000_05 = 2
@@ -67,7 +67,7 @@ public enum AltitudeConfidence: Int, Codable {
 }
 
 /// The position confidence ellipse.
-public struct PositionConfidenceEllipse: Codable {
+public struct PositionConfidenceEllipse: Codable, Sendable {
     /// The semi major confidence.
     public let semiMajorConfidence: Int?
     /// The semi minor confidence.

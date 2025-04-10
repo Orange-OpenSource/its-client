@@ -12,7 +12,7 @@
 import Foundation
 
 /// The position with coordinates and altitude.
-public struct Position: Codable {
+public struct Position: Codable, Sendable {
     /// The latitude in 0.1 microdegree.
     public let etsiLatitude: Int
     /// The longitude in 0.1 microdegree.

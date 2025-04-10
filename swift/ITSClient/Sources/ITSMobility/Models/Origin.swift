@@ -12,7 +12,7 @@
 import Foundation
 
 /// The entity responsible for this message.
-public enum Origin: String, Codable {
+public enum Origin: String, Codable, Sendable {
     case globalApplication = "global_application"
     case mecApplication = "mec_application"
     case onBoardApplication = "on_board_application"

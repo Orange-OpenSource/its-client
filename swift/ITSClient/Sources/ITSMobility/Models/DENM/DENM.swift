@@ -11,10 +11,10 @@
 
 import Foundation
 
-typealias DENM = DecentralizedEnvironmentalNotificationMessage
+public typealias DENM = DecentralizedEnvironmentalNotificationMessage
 
 /// The DENM representation.
-public struct DecentralizedEnvironmentalNotificationMessage: Codable {
+public struct DecentralizedEnvironmentalNotificationMessage: Codable, Sendable {
     /// The DENM message.
     public let message: DENMMessage
     /// The entity responsible for this message.
@@ -54,7 +54,7 @@ public struct DecentralizedEnvironmentalNotificationMessage: Codable {
 }
 
 /// The path.
-public struct Path: Codable {
+public struct Path: Codable, Sendable {
     /// The root message type source of the element.
     public let messageType: MessageType
     /// The position.

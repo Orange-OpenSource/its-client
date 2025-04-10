@@ -12,7 +12,7 @@
 import Foundation
 
 /// The location container.
-public struct LocationContainer: Codable {
+public struct LocationContainer: Codable, Sendable {
     /// The traces, 1 or more path history.
     public let traces: [Trace]
     /// The event speed in 0.01 m/s.
@@ -64,7 +64,7 @@ public struct LocationContainer: Codable {
 }
 
 /// The trace.
-public struct Trace: Codable {
+public struct Trace: Codable, Sendable {
     /// The path history, a path with a set of path points
     public let pathHistory: [PathHistory]
 
@@ -80,7 +80,7 @@ public struct Trace: Codable {
 }
 
 /// The road type.
-public enum RoadType: Int, Codable {
+public enum RoadType: Int, Codable, Sendable {
     case urban_NoStructuralSeparationToOppositeLanes = 0
     case urban_WithStructuralSeparationToOppositeLanes = 1
     case nonUrban_NoStructuralSeparationToOppositeLanes = 2
@@ -95,7 +95,7 @@ public enum RoadType: Int, Codable {
 }
 
 /// The location container confidence.
-public struct LocationContainerConfidence: Codable {
+public struct LocationContainerConfidence: Codable, Sendable {
     /// The event speed in  0.01 m/s.
     public let etsiEventSpeed: Int?
     /// The event position heading in 0.1 degrees.

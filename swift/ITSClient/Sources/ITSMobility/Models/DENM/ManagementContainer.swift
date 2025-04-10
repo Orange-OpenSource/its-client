@@ -12,7 +12,7 @@
 import Foundation
 
 /// The management container.
-public struct ManagementContainer: Codable {
+public struct ManagementContainer: Codable, Sendable {
     /// The action identifier.
     public let actionID: ActionID
     /// The time at which the event is detected by the originating ITS-S. For the DENM repetition, this DE shall remain.
@@ -30,7 +30,7 @@ public struct ManagementContainer: Codable {
     /// The relevance traffic direction
     public let relevanceTrafficDirection: RelevanceTrafficDirection?
     /// The validity duration in seconds.
-    public let validityDuration: Int?
+    public let etsiValidityDuration: Int?
     /// The transmission interval in milliseconds.
     public let etsiTransmissionInterval: Int?
     /// The station type.
@@ -44,6 +44,9 @@ public struct ManagementContainer: Codable {
     /// The reference time since Unix Epoch in seconds.
     public var referenceTime: TimeInterval {
         ETSI.etsiMillisecondsToEpochTimestamp(etsiReferenceTime)
+    }
+    public var validityDuration: TimeInterval {
+        etsiValidityDuration.map({ TimeInterval($0) }) ?? Self.defaultValidityDuration
     }
     /// The transmission interval in seconds.
     public var transmissionInterval: TimeInterval? {
@@ -65,7 +68,7 @@ public struct ManagementContainer: Codable {
         case stationType = "station_type"
         case termination
         case etsiTransmissionInterval = "transmission_interval"
-        case validityDuration = "validity_duration"
+        case etsiValidityDuration = "validity_duration"
     }
 
     init(
@@ -88,7 +91,7 @@ public struct ManagementContainer: Codable {
         self.termination = termination
         self.relevanceDistance = relevanceDistance
         self.relevanceTrafficDirection = relevanceTrafficDirection
-        self.validityDuration = validityDuration.map({
+        self.etsiValidityDuration = validityDuration.map({
             Int(clip($0, Self.minValidityDuration, Self.maxValidityDuration))
         })
         self.etsiTransmissionInterval = transmissionInterval.map({ Int($0 * 1000) })
@@ -98,32 +101,36 @@ public struct ManagementContainer: Codable {
 }
 
 /// The action identifier.
-public struct ActionID: Codable {
+public struct ActionID: Codable, Sendable {
     /// The identifier of an its station.
     public let originatingStationID: UInt32
     /// The sequence number is set each time a new DENM is created. It is used to differentiate
     /// from events detected by the same ITS-S.
     public let sequenceNumber: UInt16
 
+    var id: String {
+        "\(originatingStationID)_\(sequenceNumber)"
+    }
+
     enum CodingKeys: String, CodingKey {
         case originatingStationID = "originating_station_id"
         case sequenceNumber = "sequence_number"
     }
 
-    init(originatingStationID: UInt32) {
+    init(originatingStationID: UInt32, sequenceNumber: UInt16 = SequenceNumberGenerator.next()) {
         self.originatingStationID = originatingStationID
-        self.sequenceNumber = SequenceNumberGenerator.next()
+        self.sequenceNumber = sequenceNumber
     }
 }
 
 /// The termination.
-public enum Termination: Int, Codable {
+public enum Termination: Int, Codable, Sendable {
     case isCancellation = 0
     case isNegation = 1
 }
 
 /// The relevance distance.
-public enum RelevanceDistance: Int, Codable {
+public enum RelevanceDistance: Int, Codable, Sendable {
     case lessThan50m = 0
     case lessThan100m = 1
     case lessThan200m = 2
@@ -135,7 +142,7 @@ public enum RelevanceDistance: Int, Codable {
 }
 
 /// The relevance traffic direction.
-public enum RelevanceTrafficDirection: Int, Codable {
+public enum RelevanceTrafficDirection: Int, Codable, Sendable {
     case allTrafficDirections = 0
     case upstreamTraffic = 1
     case downstreamTraffic = 2
