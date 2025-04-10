@@ -12,7 +12,7 @@
 import Foundation
 
 /// The path history.
-public struct PathHistory: Codable {
+public struct PathHistory: Codable, Sendable {
     /// The offset position of a detected event point with regards to the previous detected event point (event_position).
     public let pathPosition: PathPosition
     /// The time travelled by the detecting ITS-S since the previous detected event point (reference_time) in centiseconds.
@@ -34,7 +34,7 @@ public struct PathHistory: Codable {
 }
 
 /// The path position.
-public struct PathPosition: Codable {
+public struct PathPosition: Codable, Sendable {
     /// The delta latitude in 0.1 microdegree.
     public let etsiDeltaLatitude: Int?
     /// The delta longitude in 0.1 microdegree.

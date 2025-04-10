@@ -12,7 +12,7 @@
 import Foundation
 
 /// The situation container.
-public struct SituationContainer: Codable {
+public struct SituationContainer: Codable, Sendable {
     /// The event type.
     public let eventType: Cause
     /// The information quality.
@@ -42,7 +42,7 @@ public struct SituationContainer: Codable {
 }
 
 /// The cause.
-public struct Cause: Codable {
+public struct Cause: Codable, Sendable {
     /// The cause.
     public let cause: CauseType
     /// The subcause

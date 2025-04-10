@@ -11,10 +11,8 @@
 
 import Foundation
 
-/// The message type.
-public enum MessageType: String, Codable, Sendable {
-    case cam = "cam"
-    case cpm = "cpm"
-    case denm = "denm"
-    case po = "po"
+/// A global actor for change observer protocols.
+@globalActor public actor ChangeObserverActor: GlobalActor {
+    /// The shared actor instance.
+    static public let shared = ChangeObserverActor()
 }
