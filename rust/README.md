@@ -10,6 +10,23 @@ on top of this an [ETSI][5] [Intelligent Transport System][6] messages implement
 Examples
 --------
 
+### Common environment
+
+1. Let's be sure to have unrestricted access to _test.mosquitto.org_ (IPv4 and IPv6)
+2. In a terminal, prepare a collector implementing the OpenTelemetry API, on localhost. If you don't have one,
+   you may use an existing one, like using docker:
+    ```shell
+    docker container run \
+        --rm \
+        -p 16686:16686 \
+        -p 4318:4318 \
+        jaegertracing/all-in-one:1.58
+    ```
+   Then open a browser on the Jaegger UI (or that of your own collector if you have one):
+    ```
+    http://localhost:16686/
+    ```
+
 ### json_counter
 
 This example demonstrates how to use the IoT3 message exchange feature.
@@ -39,12 +56,12 @@ This example describes how to send OpenTelemetry traces and how to transmit W3C 
 We don't expose any public OTLP collector (yet?),
 so you either have to use one of your own already available or spawn one:
 
-  ```shell
-  docker run --rm --name jaeger \
-      -p 16686:16686 \
-      -p 4318:4318 \
-  jaegertracing/all-in-one:1.58
-  ```
+```shell
+docker container run --rm --name jaeger \
+   -p 16686:16686 \
+   -p 4318:4318 \
+jaegertracing/all-in-one:1.58
+```
 
 Before running the example, you may edit the `[telemetry]` section of configuration
 with the proper values:
@@ -189,11 +206,14 @@ Logs are redirected to output:
 INFO [libits::client::configuration] Logger ready on stdout
 Transport: standard MQTT; TLS enabled
 INFO [libits::transport::mqtt::mqtt_router] Registered route for topic: #
-INFO [collector] exporter stdout activated, file deactivated and mqtt deactivated
+INFO [collector] Exporter stdout activated
+INFO [collector] Exporter file activated on /data/collector with switch each 10000 lines
+INFO [collector] Exporter mqtt deactivated
+
 ...
 ```
 
-The stdout export print it to the console, with the logs:
+The stdout export prints it to the console, with the logs:
 
 ```
 ...
@@ -206,6 +226,19 @@ The stdout export print it to the console, with the logs:
 {"metrics":[{"alias":2,"datatype":2,"name":"DB6.DBW52","timestamp":1742986438000,"value":22517}],"seq":83,"timestamp":1742986438018}
 value
 ...
+```
+
+The file export saves it to a file, rotating and compressing each 10000 lines:
+
+```shell
+cat /data/collector/*.log | wc -l && ls -lh /data/collector/
+8073
+total 1,3M
+-rw-rw-r-- 1 user group 156K abr.  11 10:41 collector_20250411_104132_771.tar.gz
+-rw-rw-r-- 1 user group 234K abr.  11 10:41 collector_20250411_104136_120.tar.gz
+-rw-rw-r-- 1 user group 241K abr.  11 10:41 collector_20250411_104140_217.tar.gz
+-rw-rw-r-- 1 user group 204K abr.  11 10:41 collector_20250411_104144_181.tar.gz
+-rw-rw-r-- 1 user group 452K abr.  11 10:41 collector_20250411_104148_210.log
 ```
 
 If the `telemetry` features is enabled both message reception and publish are traced;
