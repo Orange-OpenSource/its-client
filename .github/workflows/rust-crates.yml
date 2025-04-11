@@ -1,9 +1,9 @@
-name: Crates
+name: Rust Crates
 
 on:
   push:
     tags:
-      - v*
+      - rust.*
 
 env:
   CARGO_TERM_COLOR: always
@@ -11,7 +11,7 @@ env:
 jobs:
   publish_lib:
     name: Publish the library
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v2
       - name: Publish the ITS library
