@@ -47,6 +47,9 @@
           },
           {
             "name" : "RoadAlarmCoordinatorTests"
+          },
+          {
+            "name" : "RoadUserCoordinatorTests"
           }
         ]
       },

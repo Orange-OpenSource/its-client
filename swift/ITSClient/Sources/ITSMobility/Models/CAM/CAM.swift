@@ -11,10 +11,10 @@
 
 import Foundation
 
-typealias CAM = CooperativeAwarenessMessage
+public typealias CAM = CooperativeAwarenessMessage
 
 /// The CAM representation.
-public struct CooperativeAwarenessMessage: Codable {
+public struct CooperativeAwarenessMessage: Codable, Sendable {
     /// The CAM message.
     public let message: CAMMessage
     /// The entity responsible for this message.

@@ -18,12 +18,14 @@ public actor Mobility {
     private let regionOfInterestCoordinator: RegionOfInterestCoordinator
     private var mobilityConfiguration: MobilityConfiguration?
     private let roadAlarmCoordinator: RoadAlarmCoordinator
+    private let roadUserCoordinator: RoadUserCoordinator
 
     /// Initializes a `Mobility`.
     public init() {
         core = Core()
         regionOfInterestCoordinator = RegionOfInterestCoordinator()
         roadAlarmCoordinator = RoadAlarmCoordinator()
+        roadUserCoordinator = RoadUserCoordinator()
     }
 
     /// Starts the `Mobility` with a configuration to connect to a MQTT server and initialize the telemetry client.
@@ -57,6 +59,12 @@ public actor Mobility {
     /// - Parameter observer: The `RoadAlarmChangeObserver` to set.
     public func setRoadAlarmObserver(_ observer: RoadAlarmChangeObserver) async {
         await roadAlarmCoordinator.setObserver(observer)
+    }
+
+    /// Sets an observer to observe changes on road users.
+    /// - Parameter observer: The `RoadUserChangeObserver` to set.
+    public func setRoadUserObserver(_ observer: RoadUserChangeObserver) async {
+        await roadUserCoordinator.setObserver(observer)
     }
 
     /// Sends a position to share it.
@@ -221,6 +229,8 @@ public actor Mobility {
     private func processIncomingMessage(_ message: CoreMQTTMessage) async {
         if message.topic.contains(MessageType.denm.rawValue) {
             await roadAlarmCoordinator.handleRoadAlarm(withPayload: message.payload)
+        } else if message.topic.contains(MessageType.cam.rawValue) {
+            await roadUserCoordinator.handleRoadUser(withPayload: message.payload)
         }
     }
 

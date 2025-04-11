@@ -12,7 +12,7 @@
 import Foundation
 
 /// The basic container.
-public struct BasicContainer: Codable {
+public struct BasicContainer: Codable, Sendable {
     public let confidence: Confidence?
     public let referencePosition: Position
     public let stationType: StationType?
