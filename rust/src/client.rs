@@ -16,3 +16,4 @@
 pub mod application;
 pub mod bootstrap;
 pub mod configuration;
+pub mod logger;

@@ -17,7 +17,7 @@ use std::thread;
 use clap::{Arg, Command};
 use ini::Ini;
 use libits::client::configuration::Configuration;
-use libits::client::configuration::create_stdout_logger;
+use libits::client::logger::create_stdout_logger;
 use libits::transport::telemetry::{execute_in_span, get_span, init_tracer};
 use log::{info, warn};
 use opentelemetry::propagation::{Extractor, Injector, TextMapPropagator};

@@ -16,14 +16,15 @@ use std::str::FromStr;
 use chrono::Local;
 use clap::{Arg, Command};
 use ini::Ini;
+use libits::client::configuration::Configuration;
 use libits::client::configuration::configuration_error::ConfigurationError;
-use libits::client::configuration::{Configuration, create_stdout_logger};
+use libits::client::logger::create_stdout_logger;
 use libits::transport::mqtt::mqtt_client::MqttClient;
 use libits::transport::mqtt::mqtt_router::MqttRouter;
 use libits::transport::mqtt::str_topic::StrTopic;
 #[cfg(feature = "telemetry")]
 use libits::transport::telemetry::init_tracer;
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use rumqttc::v5::mqttbytes::v5::{Publish, PublishProperties};
 use std::fs::{File, OpenOptions, create_dir_all};
 use std::io::Write;
@@ -78,7 +79,7 @@ async fn main() {
 
     info!(
         "Exporter stdout {}",
-        if exporter.stdout.enabled {
+        if exporter.stdout.is_some() {
             "activated"
         } else {
             "deactivated"
@@ -86,10 +87,10 @@ async fn main() {
     );
     info!(
         "Exporter file {}",
-        if exporter.file.enabled {
+        if let Some(file_exporter) = &exporter.file {
             format!(
                 "activated on {} with switch each {} lines",
-                exporter.file.directory, exporter.file.max_line_count
+                file_exporter.directory, file_exporter.max_line_count
             )
         } else {
             "deactivated".to_string()
@@ -97,7 +98,7 @@ async fn main() {
     );
     info!(
         "Exporter mqtt {}",
-        if exporter.mqtt.enabled {
+        if exporter.mqtt.is_some() {
             "activated"
         } else {
             "deactivated"
@@ -110,10 +111,8 @@ async fn main() {
     // Subscribe to all topics
     client.subscribe(&["#".to_string()]).await;
 
-    let mut log_file = match exporter.file.enabled {
-        true => Some(LogFile::new(&exporter)),
-        false => None,
-    };
+    // manger the log file
+    let mut log_file = exporter.file.as_ref().map(LogFile::new);
 
     // Event loop to process incoming MQTT events
     loop {
@@ -123,25 +122,25 @@ async fn main() {
                     debug!("Event on {topic}");
                     match result.0.downcast_ref::<String>() {
                         Some(payload) => {
-                            if exporter.stdout.enabled {
+                            if exporter.stdout.is_some() {
                                 println!("{}", payload);
                             }
-                            if exporter.file.enabled {
+                            if let Some(file_exporter) = &exporter.file {
                                 if let Some(ref mut current_log_file) = log_file {
                                     // Write the payload to the file
                                     current_log_file.write(payload);
                                     // Check if the file has reached the maximum number of lines
                                     if current_log_file.inserted_line_number
-                                        >= exporter.file.max_line_count
+                                        >= file_exporter.max_line_count
                                     {
                                         // Compress the file
                                         current_log_file.compress();
                                         // Create a new one
-                                        log_file = Some(LogFile::new(&exporter));
+                                        log_file = Some(LogFile::new(file_exporter));
                                     }
                                 }
                             }
-                            if exporter.mqtt.enabled {
+                            if exporter.mqtt.is_some() {
                                 unimplemented!("mqtt exporter not implemented")
                             }
                         }
@@ -169,8 +168,8 @@ struct LogFile {
 
 impl LogFile {
     /// Creates a new log file and returns a `LogFile` instance.
-    fn new(exporter: &ExporterConfiguration) -> Self {
-        let file_dir = PathBuf::from(&exporter.file.directory);
+    fn new(exporter_file: &FileExporterConfiguration) -> Self {
+        let file_dir = PathBuf::from(&exporter_file.directory);
         create_dir_all(&file_dir).expect("Failed to create log directory");
         let timestamp = Local::now().format("%Y%m%d_%H%M%S_%3f");
         let file_path = file_dir.join(format!("collector_{}.log", timestamp));
@@ -228,23 +227,18 @@ const EXPORTER_SECTION: &str = "exporter";
 #[derive(Clone, Debug, Default)]
 pub struct ExporterConfiguration {
     /// Stdout exporter configuration
-    pub stdout: StdoutExporterConfiguration,
+    pub stdout: Option<StdoutExporterConfiguration>,
     /// File exporter configuration
-    pub file: FileExporterConfiguration,
+    pub file: Option<FileExporterConfiguration>,
     /// MQTT exporter configuration
-    pub mqtt: MQTTExporterConfiguration,
+    pub mqtt: Option<MQTTExporterConfiguration>,
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct StdoutExporterConfiguration {
-    /// Activate the exporter
-    pub enabled: bool,
-}
+pub struct StdoutExporterConfiguration {}
 
 #[derive(Clone, Debug, Default)]
 pub struct FileExporterConfiguration {
-    /// Activate the exporter
-    pub enabled: bool,
     /// Output directory where the generated file will be available
     pub directory: String,
     /// Maximum number of lines written before to compress the file
@@ -252,10 +246,7 @@ pub struct FileExporterConfiguration {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct MQTTExporterConfiguration {
-    /// Activate the exporter
-    pub enabled: bool,
-}
+pub struct MQTTExporterConfiguration {}
 
 impl TryFrom<&Configuration> for ExporterConfiguration {
     type Error = ConfigurationError;
@@ -271,26 +262,36 @@ impl TryFrom<&Configuration> for ExporterConfiguration {
     /// A result containing the `ExporterConfiguration` or an error.
     fn try_from(configuration: &Configuration) -> Result<Self, Self::Error> {
         Ok(ExporterConfiguration {
-            stdout: StdoutExporterConfiguration {
-                enabled: configuration
-                    .get::<bool>(Some(EXPORTER_SECTION), "stdout")
-                    .unwrap_or(false),
+            stdout: match configuration.get::<bool>(Some(EXPORTER_SECTION), "stdout") {
+                Ok(true) => Some(StdoutExporterConfiguration {}),
+                Ok(false) => None,
+                Err(e) => {
+                    warn!(" Exporter stdout not configured: {}", e);
+                    None
+                }
             },
-            file: FileExporterConfiguration {
-                enabled: configuration
-                    .get::<bool>(Some(EXPORTER_SECTION), "file")
-                    .unwrap_or(false),
-                directory: configuration
-                    .get::<String>(Some(EXPORTER_SECTION), "file_directory")
-                    .unwrap_or("/data/collector".to_string()),
-                max_line_count: configuration
-                    .get::<u16>(Some(EXPORTER_SECTION), "file_nb_line")
-                    .unwrap_or(10000),
+            file: match configuration.get::<bool>(Some(EXPORTER_SECTION), "file") {
+                Ok(true) => Some(FileExporterConfiguration {
+                    directory: configuration
+                        .get::<String>(Some(EXPORTER_SECTION), "file_directory")
+                        .unwrap_or("/data/collector".to_string()),
+                    max_line_count: configuration
+                        .get::<u16>(Some(EXPORTER_SECTION), "file_nb_line")
+                        .unwrap_or(10000),
+                }),
+                Ok(false) => None,
+                Err(e) => {
+                    warn!(" Exporter file not configured: {}", e);
+                    None
+                }
             },
-            mqtt: MQTTExporterConfiguration {
-                enabled: configuration
-                    .get::<bool>(Some(EXPORTER_SECTION), "mqtt")
-                    .unwrap_or(false),
+            mqtt: match configuration.get::<bool>(Some(EXPORTER_SECTION), "mqtt") {
+                Ok(true) => Some(MQTTExporterConfiguration {}),
+                Ok(false) => None,
+                Err(e) => {
+                    warn!(" Exporter mqtt not configured: {}", e);
+                    None
+                }
             },
         })
     }
@@ -403,10 +404,10 @@ mod tests {
             .set("port", "1883");
         let configuration =
             Configuration::try_from(ini).expect("Failed to create empty configuration");
-        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap_or_default();
-        assert!(!exporter_config.stdout.enabled);
-        assert!(!exporter_config.file.enabled);
-        assert!(!exporter_config.mqtt.enabled);
+        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap();
+        assert!(!exporter_config.stdout.is_some());
+        assert!(!exporter_config.file.is_some());
+        assert!(!exporter_config.mqtt.is_some());
     }
 
     #[test]
@@ -421,10 +422,10 @@ mod tests {
         configuration.set(Some(EXPORTER_SECTION), "stdout", "true");
         configuration.set(Some(EXPORTER_SECTION), "file", "true");
         configuration.set(Some(EXPORTER_SECTION), "mqtt", "true");
-        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap_or_default();
-        assert!(exporter_config.stdout.enabled);
-        assert!(exporter_config.file.enabled);
-        assert!(exporter_config.mqtt.enabled);
+        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap();
+        assert!(exporter_config.stdout.is_some());
+        assert!(exporter_config.file.is_some());
+        assert!(exporter_config.mqtt.is_some());
     }
 
     #[test]
@@ -439,10 +440,10 @@ mod tests {
         configuration.set(Some(EXPORTER_SECTION), "stdout", "invalid");
         configuration.set(Some(EXPORTER_SECTION), "file", "invalid");
         configuration.set(Some(EXPORTER_SECTION), "mqtt", "invalid");
-        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap_or_default();
-        assert!(!exporter_config.stdout.enabled);
-        assert!(!exporter_config.file.enabled);
-        assert!(!exporter_config.mqtt.enabled);
+        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap();
+        assert!(!exporter_config.stdout.is_some());
+        assert!(!exporter_config.file.is_some());
+        assert!(!exporter_config.mqtt.is_some());
     }
     #[test]
     fn get_exporter_configuration_with_missing_section() {
@@ -452,10 +453,10 @@ mod tests {
             .set("client_id", "client-id")
             .set("port", "1883");
         let configuration = Configuration::try_from(ini).expect("Failed to create configuration");
-        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap_or_default();
-        assert!(!exporter_config.stdout.enabled);
-        assert!(!exporter_config.file.enabled);
-        assert!(!exporter_config.mqtt.enabled);
+        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap();
+        assert!(!exporter_config.stdout.is_some());
+        assert!(!exporter_config.file.is_some());
+        assert!(!exporter_config.mqtt.is_some());
     }
 
     #[test]
@@ -468,10 +469,10 @@ mod tests {
         ini.with_section(Some(EXPORTER_SECTION))
             .set("stdout", "true");
         let configuration = Configuration::try_from(ini).expect("Failed to create configuration");
-        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap_or_default();
-        assert!(exporter_config.stdout.enabled);
-        assert!(!exporter_config.file.enabled);
-        assert!(!exporter_config.mqtt.enabled);
+        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap();
+        assert!(exporter_config.stdout.is_some());
+        assert!(!exporter_config.file.is_some());
+        assert!(!exporter_config.mqtt.is_some());
     }
 
     #[test]
@@ -483,9 +484,10 @@ mod tests {
             .set("port", "1883");
         ini.with_section(Some(EXPORTER_SECTION)).set("file", "true");
         let configuration = Configuration::try_from(ini).expect("Failed to create configuration");
-        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap_or_default();
-        assert_eq!(exporter_config.file.directory, "/data/collector");
-        assert_eq!(exporter_config.file.max_line_count, 10000);
+        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap();
+        let file_exporter = exporter_config.file.unwrap();
+        assert_eq!(file_exporter.directory, "/data/collector");
+        assert_eq!(file_exporter.max_line_count, 10000);
     }
 
     #[test]
@@ -500,8 +502,9 @@ mod tests {
             .set("file_directory", "/custom/path")
             .set("file_nb_line", "5000");
         let configuration = Configuration::try_from(ini).expect("Failed to create configuration");
-        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap_or_default();
-        assert_eq!(exporter_config.file.directory, "/custom/path");
-        assert_eq!(exporter_config.file.max_line_count, 5000);
+        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap();
+        let file_exporter = exporter_config.file.unwrap();
+        assert_eq!(file_exporter.directory, "/custom/path");
+        assert_eq!(file_exporter.max_line_count, 5000);
     }
 }
