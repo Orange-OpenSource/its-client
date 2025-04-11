@@ -49,9 +49,9 @@ impl MqttClient {
             )
             .await
         {
-            Ok(()) => debug!("sent subscriptions"),
+            Ok(()) => debug!("Sent subscriptions"),
             Err(e) => error!(
-                "failed to send subscriptions, is the connection close? \nError: {:?}",
+                "Failed to send subscriptions, is the connection close? \nError: {:?}",
                 e
             ),
         };
@@ -98,7 +98,7 @@ impl MqttClient {
             .await
         {
             Ok(()) => {
-                trace!("sent publish");
+                trace!("Sent publish");
             }
             Err(e) => error!(
                 "Failed to send publish, is the connection close? \nError: {:?}",
@@ -109,22 +109,22 @@ impl MqttClient {
 }
 
 pub async fn listen(mut event_loop: EventLoop, sender: Sender<Event>) {
-    info!("listening started");
+    info!("Listening started");
     let mut listening = true;
     while listening {
         match event_loop.poll().await {
             Ok(event) => match sender.send(event) {
-                Ok(()) => trace!("item sent"),
+                Ok(()) => trace!("Item sent"),
                 Err(error) => {
-                    error!("stopped to send item: {}", error);
+                    error!("Stopped to send item: {}", error);
                     listening = false;
                 }
             },
             Err(error) => {
-                error!("stopped to receive event: {:?}", error);
+                error!("Stopped to receive event: {:?}", error);
                 listening = false;
             }
         }
     }
-    warn!("listening done");
+    warn!("Listening done");
 }

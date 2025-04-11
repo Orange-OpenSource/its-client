@@ -11,19 +11,16 @@
 
 use crate::client::configuration::configuration_error::ConfigurationError;
 use ini::{Ini, Properties};
-use rumqttc::v5::MqttOptions;
 use std::any::type_name;
 
-use std::ops::Deref;
+use crate::client::configuration::configuration_error::ConfigurationError::{
+    FieldNotFound, MissingMandatoryField, MissingMandatorySection, NoCustomSettings, TypeError,
+};
+use flexi_logger::Logger;
+use log::info;
 use std::str::FromStr;
 #[cfg(feature = "mobility")]
 use std::sync::RwLock;
-
-use crate::client::configuration::configuration_error::ConfigurationError::{
-    FieldNotFound, MissingMandatoryField, MissingMandatorySection, NoCustomSettings, NoPassword,
-    TypeError,
-};
-use crate::transport::mqtt::configure_transport;
 
 #[cfg(feature = "telemetry")]
 use crate::client::configuration::telemetry_configuration::{
@@ -38,22 +35,24 @@ use crate::client::configuration::{
 
 #[cfg(feature = "geo_routing")]
 use crate::client::configuration::geo_configuration::{GEO_SECTION, GeoConfiguration};
+use crate::client::configuration::mqtt_configuration::MqttConfiguration;
 
 pub(crate) mod bootstrap_configuration;
 pub mod configuration_error;
 #[cfg(feature = "geo_routing")]
-pub mod geo_configuration;
+pub(crate) mod geo_configuration;
 #[cfg(feature = "mobility")]
-pub mod mobility_configuration;
+pub(crate) mod mobility_configuration;
+pub(crate) mod mqtt_configuration;
 #[cfg(feature = "mobility")]
-pub mod node_configuration;
+pub(crate) mod node_configuration;
 #[cfg(feature = "telemetry")]
-pub mod telemetry_configuration;
+pub(crate) mod telemetry_configuration;
 
 const MQTT_SECTION: &str = "mqtt";
 
 pub struct Configuration {
-    pub mqtt_options: MqttOptions,
+    pub mqtt: MqttConfiguration,
     #[cfg(feature = "geo_routing")]
     pub geo: GeoConfiguration,
     #[cfg(feature = "telemetry")]
@@ -76,7 +75,7 @@ impl Configuration {
                 .to_string(),
             None => self.mobility.station_id.clone(),
         };
-        format!("{}_{}", self.mqtt_options.client_id(), station_id)
+        format!("{}_{}", self.mqtt.mqtt_options.client_id(), station_id)
     }
 
     #[cfg(feature = "mobility")]
@@ -85,7 +84,7 @@ impl Configuration {
     }
 
     pub fn set_mqtt_credentials(&mut self, username: &str, password: &str) {
-        self.mqtt_options.set_credentials(username, password);
+        self.mqtt.mqtt_options.set_credentials(username, password);
     }
 
     pub fn get<T: FromStr>(
@@ -115,48 +114,6 @@ impl Configuration {
             .unwrap()
             .with_section(section)
             .set(key, value);
-    }
-}
-
-// FIXME maybe move this into a dedicated .rs file
-pub(crate) struct MqttOptionWrapper(MqttOptions);
-impl TryFrom<&Properties> for MqttOptionWrapper {
-    type Error = ConfigurationError;
-
-    fn try_from(properties: &Properties) -> Result<Self, Self::Error> {
-        let section = (MQTT_SECTION, properties);
-        let mut mqtt_options = MqttOptions::new(
-            get_mandatory_from_section::<String>("client_id", section)?,
-            get_mandatory_from_section::<String>("host", section)?,
-            get_mandatory_from_section::<u16>("port", section)?,
-        );
-
-        if let Ok(Some(username)) = get_optional_from_section::<String>("username", section.1) {
-            if let Ok(Some(password)) = get_optional_from_section::<String>("password", section.1) {
-                mqtt_options.set_credentials(username, password);
-            } else {
-                return Err(NoPassword);
-            }
-        }
-
-        // TODO manage other optional
-
-        let use_tls = get_optional_from_section::<bool>("use_tls", properties)
-            .unwrap_or_default()
-            .unwrap_or_default();
-        let use_websocket = get_optional_from_section::<bool>("use_websocket", properties)
-            .unwrap_or_default()
-            .unwrap_or_default();
-
-        configure_transport(use_tls, use_websocket, &mut mqtt_options);
-
-        Ok(MqttOptionWrapper(mqtt_options))
-    }
-}
-impl Deref for MqttOptionWrapper {
-    type Target = MqttOptions;
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }
 
@@ -236,12 +193,10 @@ impl TryFrom<Ini> for Configuration {
         let mut ini_config = ini_config;
 
         Ok(Configuration {
-            mqtt_options: MqttOptionWrapper::try_from(&pick_mandatory_section(
+            mqtt: MqttConfiguration::try_from(&pick_mandatory_section(
                 MQTT_SECTION,
                 &mut ini_config,
-            )?)?
-            .deref()
-            .clone(),
+            )?)?,
             #[cfg(feature = "geo_routing")]
             geo: GeoConfiguration::try_from(&pick_mandatory_section(
                 GEO_SECTION,
@@ -265,6 +220,47 @@ impl TryFrom<Ini> for Configuration {
             custom_settings: Some(ini_config),
         })
     }
+}
+
+/// Creates a logger that outputs to stdout.
+///
+/// This function initializes a logger using the `flexi_logger` crate, which logs messages to the standard output (stdout).
+/// The logger's log level is set based on the environment variable or defaults to "info".
+///
+/// # Returns
+///
+/// A `Result` containing a `flexi_logger::LoggerHandle` if the logger is successfully initialized, or a boxed `dyn std::error::Error` if an error occurs.
+///
+/// # Errors
+///
+/// This function will return an error if the logger fails to initialize.
+///
+/// # Examples
+///
+/// ```rust
+/// use libits::client::configuration::create_stdout_logger;
+/// let _logger = create_stdout_logger().expect("Logger initialization failed");
+/// ```
+///
+/// # Dependencies
+///
+/// This function requires the `flexi_logger` and `log` crates.
+///
+/// # Notes
+///
+/// The logger is configured to print messages to stdout and includes a message indicating that the logger is ready.
+///
+/// # See Also
+///
+/// - `flexi_logger::Logger`
+/// - `log::info`
+pub fn create_stdout_logger() -> Result<flexi_logger::LoggerHandle, Box<dyn std::error::Error>> {
+    let logger = Logger::try_with_env_or_str("info")?
+        .log_to_stdout()
+        .print_message()
+        .start()?;
+    info!("Logger ready on stdout");
+    Ok(logger)
 }
 
 #[cfg(test)]

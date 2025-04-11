@@ -8,7 +8,6 @@
  *
  * Authors: see CONTRIBUTORS.md
  */
-
 use crate::client::configuration::Configuration;
 use crate::exchange::PathElement;
 use crate::exchange::etsi::cooperative_awareness_message::{

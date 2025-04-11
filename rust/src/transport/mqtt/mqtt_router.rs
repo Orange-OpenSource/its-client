@@ -56,16 +56,29 @@ impl MqttRouter {
                             );
 
                             match T::from_str(str_topic) {
-                                Ok(topic) => match self.route_map.get(&topic.as_route()) {
-                                    Some(callback) => {
-                                        if let Some(reception) = callback(publish) {
-                                            return Some((topic, reception));
+                                Ok(topic) => {
+                                    let route_topic = topic.as_route();
+                                    match (
+                                        self.route_map.get(&route_topic),
+                                        self.route_map.get("#"),
+                                    ) {
+                                        (Some(callback), _) => {
+                                            // standard route found into the map
+                                            if let Some(reception) = callback(publish) {
+                                                return Some((topic, reception));
+                                            }
+                                        }
+                                        (None, Some(callback)) => {
+                                            // wild card route found into the map
+                                            if let Some(reception) = callback(publish) {
+                                                return Some((topic, reception));
+                                            }
+                                        }
+                                        (None, None) => {
+                                            warn!("No route found for topic '{}'", topic)
                                         }
                                     }
-                                    None => {
-                                        warn!("No route found for topic '{}'", topic);
-                                    }
-                                },
+                                }
                                 // FIXME how to print this error ?
                                 Err(_error) => {
                                     error!("Failed to create {} from string", type_name::<T>(),)
@@ -119,7 +132,7 @@ impl MqttRouter {
                     info!("Disconnect received: {:?}", packet)
                 }
             },
-            Event::Outgoing(outgoing) => trace!("outgoing: {:?}", outgoing),
+            Event::Outgoing(outgoing) => trace!("Outgoing: {:?}", outgoing),
         }
         None
     }

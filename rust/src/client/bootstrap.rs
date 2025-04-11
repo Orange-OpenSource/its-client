@@ -14,9 +14,10 @@ use crate::client::configuration::bootstrap_configuration::BootstrapConfiguratio
 use crate::client::configuration::configuration_error::ConfigurationError;
 #[cfg(feature = "geo_routing")]
 use crate::client::configuration::geo_configuration::GeoConfiguration;
+use crate::client::configuration::mqtt_configuration::MqttConfiguration;
 #[cfg(feature = "telemetry")]
 use crate::client::configuration::telemetry_configuration::TelemetryConfiguration;
-use crate::client::configuration::{Configuration, MqttOptionWrapper, get_optional_from_section};
+use crate::client::configuration::{Configuration, get_optional_from_section};
 #[cfg(feature = "mobility")]
 use {
     crate::client::configuration::{
@@ -36,10 +37,8 @@ use crate::client::configuration::configuration_error::ConfigurationError::{
 use ini::{Ini, Properties};
 use log::{debug, error, info, trace, warn};
 use reqwest::Url;
-use rumqttc::v5::MqttOptions;
 use serde_json::{Value, json};
 use std::collections::HashMap;
-use std::ops::Deref;
 
 mod bootstrap_error;
 
@@ -101,11 +100,11 @@ pub async fn bootstrap(mut ini: Ini) -> Result<Configuration, ConfigurationError
 
     match do_bootstrap(bootstrap_configuration).await {
         Ok(b) => {
-            info!("Bootstrap call successful !");
-            debug!("{:?}", &b);
+            info!("Bootstrap call successful");
+            debug!("Bootstrap received: {b:?}");
 
             Ok(Configuration {
-                mqtt_options: mqtt_configuration_from_bootstrap(
+                mqtt: mqtt_configuration_from_bootstrap(
                     &b,
                     ini.delete(Some("mqtt")).unwrap_or_default(),
                 )?,
@@ -142,7 +141,7 @@ pub async fn bootstrap(mut ini: Ini) -> Result<Configuration, ConfigurationError
 fn mqtt_configuration_from_bootstrap(
     bootstrap: &Bootstrap,
     mut mqtt_section: Properties,
-) -> Result<MqttOptions, ConfigurationError> {
+) -> Result<MqttConfiguration, ConfigurationError> {
     let tls = get_optional_from_section("use_tls", &mqtt_section)?.unwrap_or_default();
     let ws = get_optional_from_section("use_websocket", &mqtt_section)?.unwrap_or_default();
 
@@ -196,10 +195,7 @@ fn mqtt_configuration_from_bootstrap(
     mqtt_section.insert("username", &bootstrap.username);
     mqtt_section.insert("password", &bootstrap.password);
 
-    match MqttOptionWrapper::try_from(&mqtt_section) {
-        Ok(wrapper) => Ok(wrapper.deref().clone()),
-        Err(e) => Err(e),
-    }
+    MqttConfiguration::try_from(&mqtt_section)
 }
 
 #[cfg(feature = "telemetry")]
@@ -278,7 +274,8 @@ async fn do_bootstrap(
                 match serde_json::from_str::<Value>(body.as_str()) {
                     Ok(json_value) => Bootstrap::try_from(json_value),
                     Err(e) => {
-                        warn!("Error: {:?}", e);
+                        warn!("Unable to parse the JSon {body}");
+                        debug!("Parsing error: {e:?}");
                         Err(InvalidResponse("Failed to parse response as JSON"))
                     }
                 }
@@ -345,7 +342,7 @@ mod tests {
     }
 
     macro_rules! try_from_invalid_response_returns_error {
-        ($test_name:ident, $response:expr_2021) => {
+        ($test_name:ident, $response:expr) => {
             #[test]
             fn $test_name() {
                 let response = serde_json::from_str::<Value>($response)
