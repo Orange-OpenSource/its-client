@@ -12,7 +12,7 @@
 import Foundation
 
 /// The high frequency container.
-public struct HighFrequencyContainer: Codable {
+public struct HighFrequencyContainer: Codable, Sendable {
     /// The heading in 0.1 degree.
     public let etsiHeading: Int?
     /// The  speed in 0.01 m/s.
@@ -183,14 +183,14 @@ public struct HighFrequencyContainer: Codable {
 }
 
 /// The drive direction.
-public enum DriveDirection: Int, Codable {
+public enum DriveDirection: Int, Codable, Sendable {
     case forward = 0
     case backward = 1
     case unavailable
 }
 
 /// The curvature calculation mode.
-public enum CurvatureCalculationMode: Int, Codable {
+public enum CurvatureCalculationMode: Int, Codable, Sendable {
     case yawRateUsed = 0
     case yawRateNotUsed = 1
     case unavailable = 2
@@ -214,7 +214,7 @@ public struct AccelerationControl: OptionSet, Sendable {
 }
 
 /// The lane position.
-public enum LanePosition: Int, Codable {
+public enum LanePosition: Int, Codable, Sendable {
     case offTheRoad = -1
     case innerHardShoulder = 0
     case innermostDrivingLane = 1
@@ -223,7 +223,7 @@ public enum LanePosition: Int, Codable {
 }
 
 /// The high frequency confidence.
-public struct HighFrequencyContainerConfidence: Codable {
+public struct HighFrequencyContainerConfidence: Codable, Sendable {
     /// The heading in 0.1 degree.
     public let etsiHeading: Int?
     /// The  speed in 0.01 m/s.
@@ -324,7 +324,7 @@ public struct HighFrequencyContainerConfidence: Codable {
 }
 
 /// The vehicule length confidence.
-public enum VehiculeLengthConfidence: Int, Codable {
+public enum VehiculeLengthConfidence: Int, Codable, Sendable {
     case noTrailerPresent = 0
     case trailerPresentWithKnownLength = 1
     case trailerPresentWithUnknownLength = 2
@@ -333,7 +333,7 @@ public enum VehiculeLengthConfidence: Int, Codable {
 }
 
 /// The yaw rate confidence.
-public enum YawRateConfidence: Int, Codable {
+public enum YawRateConfidence: Int, Codable, Sendable {
     case degSec_000_01 = 0
     case degSec_000_05 = 1
     case degSec_000_10 = 2
@@ -357,7 +357,7 @@ public enum YawRateConfidence: Int, Codable {
 }
 
 /// The curvature confidence.
-public enum CurvatureConfidence: Int, Codable {
+public enum CurvatureConfidence: Int, Codable, Sendable {
     case onePerMeter_0_0002 = 0
     case onePerMeter_0_0001 = 1
     case onePerMeter_0_0005 = 2
