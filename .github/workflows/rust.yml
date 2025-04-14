@@ -65,14 +65,22 @@ jobs:
         run: |
           cd rust
           cargo build --example copycat --features geo_routing --verbose
+      - name: Build copycat example with telemetry
+        run: |
+          cd rust
+          cargo build --example copycat --features geo_routing,telemetry --verbose
       - name: Build collector example
         run: |
           cd rust
-          cargo build --example copycat --features geo_routing --verbose
+          cargo build --example collector --verbose
+      - name: Build collector example with telemetry
+        run: |
+          cd rust
+          cargo build --example collector --features telemetry --verbose
       - name: Build all examples
         run: |
           cd rust
-          cargo build --examples --features "telemetry,geo_routing" --verbose
+          cargo build --examples --features telemetry,geo_routing --verbose
       - name: Build all examples Release
         run: |
           cd rust
@@ -103,3 +111,7 @@ jobs:
         run: |
           cd rust
           cargo test --all-features --verbose
+      - name: Test all examples
+        run: |
+          cd rust
+          cargo test --examples --verbose
