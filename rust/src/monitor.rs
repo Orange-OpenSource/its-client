@@ -23,7 +23,7 @@ pub fn trace_exchange(
     exchange: &Exchange,
     cause: Option<Cause>,
     direction: &str,
-    component: String,
+    component: &str,
     partner: String,
 ) {
     let message_part = match &exchange.message {
