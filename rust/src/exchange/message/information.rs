@@ -15,7 +15,6 @@ use crate::mobility::mobile::Mobile;
 use std::any::type_name;
 use std::ops::Deref;
 
-use crate::client::configuration::Configuration;
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::message::content_error::ContentError::{NotAMobile, NotAMortal};
 use crate::transport::payload::Payload;
@@ -33,36 +32,36 @@ use serde::{Deserialize, Serialize};
 #[serde_with::skip_serializing_none]
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Information {
-    #[serde(rename = "type")]
-    pub type_field: String,
+    pub message_type: String,
+    pub source_uuid: String,
+    pub timestamp: u64,
     pub version: String,
     pub instance_id: String,
     pub instance_type: String,
     pub central_instance_id: Option<String>,
     pub running: bool,
-    pub timestamp: u64,
     pub validity_duration: u32,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    public_ip_address: Vec<String>,
+    pub public_ip_address: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    mqtt_ip: Vec<String>,
+    pub mqtt_ip: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    mqtt_tls_ip: Vec<String>,
+    pub mqtt_tls_ip: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    http_proxy: Vec<String>,
+    pub http_proxy: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    ntp_servers: Vec<String>,
+    pub ntp_servers: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    domain_name_servers: Vec<String>,
+    pub domain_name_servers: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    gelf_loggers: Vec<String>,
+    pub gelf_loggers: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    udp_loggers: Vec<String>,
+    pub udp_loggers: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    fbeat_loggers: Vec<String>,
+    pub fbeat_loggers: Vec<String>,
     pub service_area: Option<ServiceArea>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    cells_id: Vec<u32>,
+    pub cells_id: Vec<u32>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -88,6 +87,10 @@ pub struct Vertex {
 
 impl Information {
     pub const TYPE: &'static str = "info";
+
+    pub fn replace(&mut self, new_info: Information) {
+        *self = new_info;
+    }
 }
 
 impl Content for Information {
@@ -95,10 +98,9 @@ impl Content for Information {
         Self::TYPE
     }
 
-    fn appropriate(&mut self, _configuration: &Configuration, _timestamp: u64) {
-        todo!()
+    fn appropriate(&mut self, _timestamp: u64, _new_station_id: u32) {
+        unimplemented!("No appropriation available")
     }
-
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
         Err(NotAMobile(type_name::<Information>()))
     }
@@ -139,10 +141,9 @@ impl Content for BoxedInformation {
         (*self).deref().get_type()
     }
 
-    fn appropriate(&mut self, _configuration: &Configuration, _timestamp: u64) {
-        todo!()
+    fn appropriate(&mut self, _timestamp: u64, _new_station_id: u32) {
+        unimplemented!("No appropriation available")
     }
-
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
         (*self).deref().as_mobile()
     }

@@ -9,7 +9,6 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use crate::client::configuration::Configuration;
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::message::content_error::ContentError::{NotAMobile, NotAMortal};
@@ -51,8 +50,8 @@ impl Content for SignalPhaseAndTimingExtendedMessage {
     }
 
     /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
-    fn appropriate(&mut self, _configuration: &Configuration, _timestamp: u64) {
-        todo!()
+    fn appropriate(&mut self, _timestamp: u64, _new_station_id: u32) {
+        unimplemented!("No appropriation available")
     }
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
