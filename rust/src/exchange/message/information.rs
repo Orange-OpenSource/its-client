@@ -115,7 +115,7 @@ impl Default for Information {
             ntp_servers: Vec::new(),
             domain_name_servers: Vec::new(),
             service_area: None,
-            cells_id: Vec::new(),
+            pub cells_id: Vec::new(),
         }
     }
 }
