@@ -298,7 +298,7 @@ mod tests {
                         "altitude": {
                             "value": 20000,
                             "confidence": 3
-                        }, 
+                        },
                         "confidence": {
                             "semi_major_confidence": 100,
                             "semi_minor_confidence": 50,
@@ -489,7 +489,7 @@ mod tests {
                 }],
                 "perceived_object_container": [{
                     "object_id": 0,
-                    "time_of_measurement": 50,                    
+                    "time_of_measurement": 50,
                     "x_distance": 40,
                     "y_distance": 10,
                     "x_speed": 140,
@@ -577,7 +577,7 @@ mod tests {
                 }],
                 "perceived_object_container": [{
                     "object_id": 0,
-                    "time_of_measurement": 50,                    
+                    "time_of_measurement": 50,
                     "x_distance": 400,
                     "y_distance": 100,
                     "z_distance": 50,
