@@ -237,6 +237,7 @@ fn telemetry_configuration_from_bootstrap(
 
 async fn do_bootstrap(
     bootstrap_configuration: BootstrapConfiguration,
+    id: &str,
 ) -> Result<Bootstrap, BootstrapError> {
     info!(
         "Calling bootstrap on '{}'...",
@@ -248,7 +249,7 @@ async fn do_bootstrap(
         .expect("Failed to create telemetry HTTP client");
 
     let body = json!({
-        "ue_id": bootstrap_configuration.station_id,
+        "ue_id": id,
         "psk_login": bootstrap_configuration.username,
         "psk_password": bootstrap_configuration.password,
         "role": bootstrap_configuration.role
