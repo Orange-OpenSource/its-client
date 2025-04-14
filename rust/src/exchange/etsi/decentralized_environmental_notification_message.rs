@@ -11,7 +11,6 @@
 
 use std::hash;
 
-use crate::client::configuration::Configuration;
 use crate::exchange::etsi::decentralized_environmental_notification_message::RelevanceDistance::{
     LessThan5Km, LessThan10Km, LessThan50m, LessThan100m, LessThan200m, LessThan500m,
     LessThan1000m, Over10Km,
@@ -392,8 +391,8 @@ impl Content for DecentralizedEnvironmentalNotificationMessage {
     }
 
     /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
-    fn appropriate(&mut self, _configuration: &Configuration, _timestamp: u64) {
-        todo!()
+    fn appropriate(&mut self, _timestamp: u64, _new_station_id: u32) {
+        unimplemented!("No appropriation available")
     }
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
