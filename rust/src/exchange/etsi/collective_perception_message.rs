@@ -9,7 +9,6 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use crate::client::configuration::Configuration;
 use crate::exchange::etsi::mobile_perceived_object::MobilePerceivedObject;
 use crate::exchange::etsi::perceived_object::PerceivedObject;
 use crate::exchange::etsi::reference_position::ReferencePosition;
@@ -273,8 +272,8 @@ impl Content for CollectivePerceptionMessage {
     }
 
     /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
-    fn appropriate(&mut self, _configuration: &Configuration, _timestamp: u64) {
-        todo!()
+    fn appropriate(&mut self, _timestamp: u64, _new_station_id: u32) {
+        unimplemented!("No appropriation available")
     }
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {

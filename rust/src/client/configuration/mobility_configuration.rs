@@ -14,14 +14,19 @@ use ini::Properties;
 use crate::client::configuration::configuration_error::ConfigurationError;
 use crate::client::configuration::get_mandatory_from_section;
 
-pub(crate) const STATION_SECTION: &str = "station";
+pub(crate) const MOBILITY_SECTION: &str = "mobility";
 
-const STATION_ID_FIELD: &str = "id";
-const STATION_TYPE_FIELD: &str = "type";
+const STATION_ID_FIELD: &str = "station_id";
+const SOURCE_UUID_FIELD: &str = "source_uuid";
+const USE_RESPONSIBILITY_FIELD: &str = "use_responsibility";
+
+const THREAD_COUNT_FIELD: &str = "thread_count";
 
 pub struct MobilityConfiguration {
-    pub station_id: String,
-    pub station_type: String,
+    pub source_uuid: String,
+    pub station_id: u32,
+    pub use_responsibility: bool,
+    pub thread_count: usize,
 }
 
 impl TryFrom<&Properties> for MobilityConfiguration {
@@ -29,16 +34,23 @@ impl TryFrom<&Properties> for MobilityConfiguration {
 
     fn try_from(properties: &Properties) -> Result<Self, Self::Error> {
         let s = MobilityConfiguration {
+            source_uuid: get_mandatory_from_section(
+                SOURCE_UUID_FIELD,
+                (MOBILITY_SECTION, properties),
+            )?,
             station_id: get_mandatory_from_section(
                 STATION_ID_FIELD,
-                (STATION_SECTION, properties),
+                (MOBILITY_SECTION, properties),
             )?,
-            station_type: get_mandatory_from_section(
-                STATION_TYPE_FIELD,
-                (STATION_SECTION, properties),
+            use_responsibility: get_mandatory_from_section(
+                USE_RESPONSIBILITY_FIELD,
+                (MOBILITY_SECTION, properties),
+            )?,
+            thread_count: get_mandatory_from_section(
+                THREAD_COUNT_FIELD,
+                (MOBILITY_SECTION, properties),
             )?,
         };
-
         Ok(s)
     }
 }
