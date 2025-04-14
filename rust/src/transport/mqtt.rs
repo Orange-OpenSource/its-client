@@ -8,7 +8,7 @@
  *
  * Authors: see CONTRIBUTORS.md
  */
-
+use log::info;
 use rumqttc::v5::MqttOptions;
 use rumqttc::{TlsConfiguration, Transport};
 
@@ -27,17 +27,17 @@ pub(crate) fn configure_transport(
 ) {
     match (use_tls, use_websocket) {
         (true, true) => {
-            println!("Transport: MQTT over WebSocket; TLS enabled");
+            info!("Transport: MQTT over WebSocket; TLS enabled");
             mqtt_options.set_transport(Transport::Wss(TlsConfiguration::default()));
         }
         (true, false) => {
-            println!("Transport: standard MQTT; TLS enabled");
+            info!("Transport: standard MQTT; TLS enabled");
             mqtt_options.set_transport(Transport::Tls(TlsConfiguration::default()));
         }
         (false, true) => {
-            println!("Transport: MQTT over WebSocket; TLS disabled");
+            info!("Transport: MQTT over WebSocket; TLS disabled");
             mqtt_options.set_transport(Transport::Ws);
         }
-        (false, false) => println!("Transport: standard MQTT; TLS disabled"),
+        (false, false) => info!("Transport: standard MQTT; TLS disabled"),
     }
 }
