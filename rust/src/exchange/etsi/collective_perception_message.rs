@@ -1750,7 +1750,7 @@ mod tests {
                         "altitude": {
                             "value": 3000,
                             "confidence": 3
-                        }                    
+                        }
                     }
                 },
                 "station_data_container": {
