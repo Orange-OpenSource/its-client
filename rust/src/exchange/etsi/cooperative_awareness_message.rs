@@ -115,7 +115,7 @@ impl Content for CooperativeAwarenessMessage {
     /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
     fn appropriate(&mut self, timestamp: u64, new_station_id: u32) {
         self.station_id = new_station_id;
-        self.generation_delta_time = timestamp_to_generation_delta_time(timestamp)
+        self.generation_delta_time = timestamp_to_generation_delta_time(timestamp);
     }
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
