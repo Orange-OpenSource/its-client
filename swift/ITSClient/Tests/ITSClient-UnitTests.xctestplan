@@ -32,6 +32,13 @@
         "identifier" : "ITSCoreTests",
         "name" : "ITSCoreTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "ITSMobilityTests",
+        "name" : "ITSMobilityTests"
+      }
     }
   ],
   "version" : 2
