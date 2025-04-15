@@ -223,7 +223,7 @@ where
             for tuple in exchange_receiver {
                 let packet = tuple.0;
                 let cause = tuple.1;
-                let information_source_uuid = &information.read().unwrap().source_uuid;
+                let information_instance_id = &information.read().unwrap().instance_id;
                 trace_exchange(
                     &packet.payload,
                     cause,
@@ -231,7 +231,7 @@ where
                     source_uuid.as_str(),
                     format!(
                         "{}/{}/{}",
-                        information_source_uuid,
+                        information_instance_id,
                         packet.topic.as_route(),
                         packet.payload.source_uuid
                     ),
