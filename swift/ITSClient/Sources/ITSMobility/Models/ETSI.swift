@@ -14,6 +14,8 @@ import Foundation
 /// A structure to make conversion for ESTI units.
 struct ETSI {
     private static let deciMicroDegreesFactor: Double = 10_000_000
+    /// The ETSI reference date is the 2004-01-01 00:00:00 UTC.
+    /// This value is the number of seconds between the 1970-01-01T00:00:00Z and 2004-01-01T00:00:00Z.
     private static let etsiUnixEpochDifference = 1072915200
     private static let centiSecondsFactor: Double = 100
     private static let centimetersFactor: Double = 100
