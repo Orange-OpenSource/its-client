@@ -390,9 +390,13 @@ impl Content for DecentralizedEnvironmentalNotificationMessage {
         "denm"
     }
 
-    /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
-    fn appropriate(&mut self, _timestamp: u64, _new_station_id: u32) {
-        unimplemented!("No appropriation available")
+    fn appropriate(&mut self, timestamp: u64, new_station_id: u32) {
+        self.station_id = new_station_id;
+        // we keep the action_id: originating_station_id and sequence_number remain unchanged
+        // detection_time updated because values changed in the payload (anything else has been updated)
+        self.management_container.detection_time = timestamp;
+        // reference_time different for each message
+        self.management_container.reference_time = timestamp;
     }
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
