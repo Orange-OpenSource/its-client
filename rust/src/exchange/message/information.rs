@@ -9,14 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use crate::exchange::message::content::Content;
 use crate::exchange::mortal::Mortal;
-use crate::mobility::mobile::Mobile;
-use std::any::type_name;
-use std::ops::Deref;
-
-use crate::exchange::message::content_error::ContentError;
-use crate::exchange::message::content_error::ContentError::{NotAMobile, NotAMortal};
 use crate::transport::payload::Payload;
 use serde::{Deserialize, Serialize};
 
@@ -93,23 +86,6 @@ impl Information {
     }
 }
 
-impl Content for Information {
-    fn get_type(&self) -> &str {
-        Self::TYPE
-    }
-
-    fn appropriate(&mut self, _timestamp: u64, _new_station_id: u32) {
-        unimplemented!("No appropriation available")
-    }
-    fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
-        Err(NotAMobile(type_name::<Information>()))
-    }
-
-    fn as_mortal(&self) -> Result<&dyn Mortal, ContentError> {
-        Err(NotAMortal(type_name::<Information>()))
-    }
-}
-
 impl Mortal for Information {
     fn timeout(&self) -> u64 {
         self.timestamp + u64::from(self.validity_duration) * 1000_u64
@@ -136,22 +112,6 @@ impl Payload for Information {}
 /// [1]: crate::exchange::message::Message
 /// [2]: https://rust-lang.github.io/rust-clippy/master/index.html#/large_enum_variant
 pub type BoxedInformation = Box<Information>;
-impl Content for BoxedInformation {
-    fn get_type(&self) -> &str {
-        (*self).deref().get_type()
-    }
-
-    fn appropriate(&mut self, _timestamp: u64, _new_station_id: u32) {
-        unimplemented!("No appropriation available")
-    }
-    fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
-        (*self).deref().as_mobile()
-    }
-
-    fn as_mortal(&self) -> Result<&dyn Mortal, ContentError> {
-        (*self).deref().as_mortal()
-    }
-}
 
 #[cfg(test)]
 mod tests {
