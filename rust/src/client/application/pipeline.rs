@@ -75,6 +75,9 @@ pub async fn run<A, C, T>(
     T: Topic + 'static,
     C: Send + Sync + 'static,
 {
+    let thread_count = configuration.mobility.thread_count;
+    info!("Analysis thread count set to: {}", thread_count);
+
     let information = Arc::new(RwLock::new(Information {
         ..Default::default()
     }));
@@ -96,8 +99,6 @@ pub async fn run<A, C, T>(
             monitoring_receiver,
         );
 
-        let thread_count = configuration.mobility.thread_count;
-        info!("Analysis thread count set to: {}", thread_count);
         let analysis_pool = threadpool::ThreadPool::with_name("Analysis".to_string(), thread_count);
 
         let (analyser_sender, analyser_receiver) = unbounded();
@@ -116,20 +117,16 @@ pub async fn run<A, C, T>(
                         Ok(item) => {
                             for publish_item in analyser.analyze(item.clone()) {
                                 let cause = Cause::from_exchange(&(item.payload));
-                                match tx.send((publish_item, cause)) {
-                                    Ok(()) => trace!("Analyser sent"),
-                                    Err(error) => {
-                                        error!("Stopped to send analyser: {}", error);
-                                        break;
-                                    }
+                                if let Err(error) = tx.send((publish_item, cause)) {
+                                    error!("Stopped to send analyser: {}", error);
+                                    return; // Exit the thread on unrecoverable error
                                 }
                             }
                             trace!("Analyser generation closure finished");
-                            break;
                         }
                         Err(recv_error) => {
                             info!("Exiting analysis thread: {}", recv_error);
-                            break;
+                            return; // Exit the thread when the channel is closed
                         }
                     }
                 }
@@ -199,26 +196,20 @@ where
                         //assumed clone, we just send the GeoExtension
                         // if configuration.is_in_region_of_responsibility(item.topic.geo_extension.clone()) {
                         //assumed clone, we send to 2 channels
-                        match publish_sender.send(item.clone()) {
-                            Ok(()) => trace!("Publish sent"),
-                            Err(error) => {
-                                error!("Stopped to send publish: {}", error);
-                                break;
-                            }
+                        if let Err(error) = publish_sender.send(item.clone()) {
+                            error!("Stopped to send publish: {}", error);
+                            return; // Exit the thread on unrecoverable error
                         }
-                        match monitoring_sender.send((item, cause)) {
-                            Ok(()) => trace!("Monitoring sent"),
-                            Err(error) => {
-                                error!("Stopped to send monitoring: {}", error);
-                                break;
-                            }
+                        if let Err(error) = monitoring_sender.send((item, cause)) {
+                            error!("Stopped to send monitoring: {}", error);
+                            return; // Exit the thread on unrecoverable error
                         }
                         // }
                         trace!("Filter closure finished");
                     }
                     Err(recv_error) => {
                         info!("Exiting filter thread: {}", recv_error);
-                        break;
+                        return; // Exit the thread when the channel is closed
                     }
                 }
             }
@@ -245,7 +236,7 @@ where
             for tuple in exchange_receiver {
                 let packet = tuple.0;
                 let cause = tuple.1;
-                let information_source_uuid = &information.read().unwrap().source_uuid;
+                let information_instance_id = &information.read().unwrap().instance_id;
                 trace_exchange(
                     &packet.payload,
                     cause,
@@ -253,7 +244,7 @@ where
                     source_uuid.as_str(),
                     format!(
                         "{}/{}/{}",
-                        information_source_uuid,
+                        information_instance_id,
                         packet.topic.as_route(),
                         packet.payload.source_uuid
                     ),
