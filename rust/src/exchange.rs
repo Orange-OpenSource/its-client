@@ -20,6 +20,7 @@ use crate::exchange::message::content::Content;
 use crate::mobility::position::Position;
 use crate::transport::payload::Payload;
 
+use crate::exchange::etsi::{PathPosition, PositionConfidenceEllipse};
 use serde::{Deserialize, Serialize};
 
 #[serde_with::skip_serializing_none]
@@ -53,25 +54,9 @@ pub struct PositionConfidence {
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PositionConfidenceEllipse {
-    pub semi_major_confidence: Option<u16>,
-    pub semi_minor_confidence: Option<u16>,
-    pub semi_major_orientation: Option<u16>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PathHistory {
     pub path_position: PathPosition,
     pub path_delta_time: Option<u16>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PathPosition {
-    pub delta_latitude: Option<i32>,
-    pub delta_longitude: Option<i32>,
-    pub delta_altitude: Option<i32>,
 }
 
 impl Exchange {
@@ -1077,7 +1062,7 @@ mod tests {
     }
 
     #[test]
-    fn spat_exchange_deserialization() {
+    fn it_can_deserialize_a_standard_spatem() {
         let spat_str = r#"{
             "origin": "remoteSender",
             "source_uuid": "uuid_3101",
@@ -1085,7 +1070,7 @@ mod tests {
             "message": {
                 "sendingStationId": 2327711328,
                 "protocolVersion": 1,
-                "id": 1654,
+                "stationId": 1654,
                 "region": 751,
                 "timestamp": 1665994085248,
                 "revision": 1,
@@ -1480,7 +1465,7 @@ mod tests {
                 assert_eq!(exchange.type_field, "spat");
             }
             Err(e) => {
-                assert_eq!(e.to_string(), "");
+                panic!("no spatem parsed: {e}");
             }
         }
     }

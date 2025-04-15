@@ -14,6 +14,7 @@ use crate::exchange::etsi::perceived_object::PerceivedObject;
 use crate::exchange::etsi::reference_position::ReferencePosition;
 use crate::exchange::etsi::{
     PositionConfidence, acceleration_from_etsi, heading_from_etsi, speed_from_etsi,
+    timestamp_to_generation_delta_time,
 };
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
@@ -31,7 +32,6 @@ use std::any::type_name;
 pub struct CollectivePerceptionMessage {
     pub protocol_version: u8,
     pub station_id: u32,
-    // pub message_id: u8,
     pub generation_delta_time: u16,
     pub management_container: ManagementContainer,
     pub station_data_container: Option<StationDataContainer>,
@@ -211,7 +211,7 @@ impl CollectivePerceptionMessage {
             .iter()
             .map(|perceived_object| {
                 MobilePerceivedObject::new(
-                    //assumed clone : we store a copy into the MobilePerceivedObject container
+                    // assumed clone : we store a copy into the MobilePerceivedObject container
                     // TODO use a lifetime to propage the lifecycle between PerceivedObject and MobilePerceivedObject instead of clone
                     perceived_object.clone(),
                     self,
@@ -271,9 +271,9 @@ impl Content for CollectivePerceptionMessage {
         "cpm"
     }
 
-    /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
-    fn appropriate(&mut self, _timestamp: u64, _new_station_id: u32) {
-        unimplemented!("No appropriation available")
+    fn appropriate(&mut self, timestamp: u64, new_station_id: u32) {
+        self.station_id = new_station_id;
+        self.generation_delta_time = timestamp_to_generation_delta_time(timestamp);
     }
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
@@ -309,7 +309,7 @@ mod tests {
     use crate::exchange::etsi::speed_from_etsi;
 
     macro_rules! assert_float_eq {
-        ($a:expr_2021, $b:expr_2021, $e:expr_2021) => {
+        ($a:expr, $b:expr, $e:expr) => {
             let delta = ($a - $b).abs();
             assert!(delta <= $e, "Actual:   {}\nExpected: {}", $a, $b)
         };
