@@ -417,7 +417,7 @@ mod tests {
         r#"{
           "type": "cpm",
           "origin": "self",
-          "version": "1.1.3",
+          "version": "2.1.0",
           "source_uuid": "uuid1",
           "timestamp": 1574778515425,
           "message": {
@@ -430,14 +430,6 @@ mod tests {
                 "latitude": 426263556,
                 "longitude": -82492123,
                 "altitude": 800001
-              },
-              "confidence": {
-                "position_confidence_ellipse": {
-                  "semi_major_confidence": 4095,
-                  "semi_minor_confidence": 4095,
-                  "semi_major_orientation": 3601
-                },
-                "altitude": 15
               }
             }
           }
@@ -460,15 +452,15 @@ mod tests {
                     "reference_position": {
                         "latitude": 426263556,
                         "longitude": -82492123,
-                        "altitude": 800001
-                    },
-                    "confidence": {
+                        "altitude": {
+                          "value": 20000,
+                          "confidence": 3
+                        },
                         "position_confidence_ellipse": {
                             "semi_major_confidence": 100,
                             "semi_minor_confidence": 50,
                             "semi_major_orientation": 180
-                        },
-                        "altitude": 3
+                        }
                     }
                 },
                 "station_data_container": {
@@ -533,15 +525,15 @@ mod tests {
                     "reference_position": {
                         "latitude": 426263556,
                         "longitude": -82492123,
-                        "altitude": 800001
-                    },
-                    "confidence": {
-                        "position_confidence_ellipse": {
-                            "semi_major_confidence": 4095,
-                            "semi_minor_confidence": 4095,
-                            "semi_major_orientation": 3601
+                        "altitude": {
+                          "value": 40000,
+                         "confidence": 10
                         },
-                        "altitude": 15
+                        "position_confidence_ellipse": {
+                            "semi_major_confidence": 200,
+                            "semi_minor_confidence": 70,
+                            "semi_major_orientation": 140
+                        }
                     }
                 },
                 "station_data_container": {

@@ -11,7 +11,7 @@
 use crate::client::configuration::Configuration;
 use crate::exchange::PathElement;
 use crate::exchange::etsi::cooperative_awareness_message::{
-    BasicContainer, CooperativeAwarenessMessage, HighFrequencyContainer,
+    BasicContainer, CooperativeAwarenessMessage, HighFrequencyContainer, ReferencePosition113,
 };
 use crate::exchange::etsi::decentralized_environmental_notification_message::{
     DecentralizedEnvironmentalNotificationMessage, RelevanceDistance, RelevanceTrafficDirection,
@@ -45,7 +45,7 @@ pub fn create_cam(
         station_id,
         basic_container: BasicContainer {
             station_type: Some(station_type),
-            reference_position: ReferencePosition::from(position),
+            reference_position: ReferencePosition113::from(position),
             ..Default::default()
         },
         high_frequency_container: HighFrequencyContainer {
