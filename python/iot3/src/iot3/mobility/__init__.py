@@ -105,20 +105,25 @@ def start(
 
     :param config: The SDK configuration
     :param alert_callback: The function to call upon reception of a message;
-                           when called, keyword argument (kwarg) data will
-                           be set to msg_cb_data, kwarg location will be set
-                           to an iot3.mobility.gnss.GNSSReport containing the
-                           location of the alert, and kwarg cause will be set
-                           to an iot3.mobility.denm.DENM.Cause; to be future
-                           proof, such a function should be declared as:
-                            def my_alert_callback(
-                                *_args,
-                                data: typing.Any,
-                                location: iot3.mobility.gnss.GNSSReport,
-                                cause: iot3.mobility.denm.DENM.Cause,
-                                **_kwargs,
-                            ) -> None:
-                                ...
+        that function should only expect and accept keyword arguments (kwargs).
+        To be future proof, such a function should be declared as:
+            def my_alert_callback(
+                *,
+                data: typing.Any,
+                location: iot3.mobility.gnss.GNSSReport,
+                detection_time: float,
+                cause: iot3.mobility.denm.DENM.Cause,
+                **kwargs,
+            ) -> None:
+                ...
+        Currently defined kwargs that are always present are:
+          - data: the value passed as msg_cb_data (below)
+          - location: contains the location of the alert
+          - detection_time: the time of detection of the event
+          - cause: the cause for the DENM
+        Additional kwargs may be present if conditions are met:
+          - subcause: a DENM.SubCause.Any, the sub-cause for the DENM, if
+            available in the received message
     :param cb_data: The data to use when calling alert_callback(), above.
     """
     global _mobility
@@ -139,9 +144,11 @@ def start(
             msg = message_from_json(msg_json=payload)
         except Exception as e:
             # Can't make it a known message, ignore
-            print(f"Bummer {e}")
             return
         if msg.msg_type == "denm":
+            kwargs = dict()
+            if msg.subcause is not None:
+                kwargs["subcause"] = msg.subcause
             alert_callback(
                 data=data,
                 location=GNSSReport(
@@ -150,6 +157,8 @@ def start(
                     altitude=msg.altitude,
                 ),
                 cause=msg.cause,
+                detection_time=msg.detection_time,
+                **kwargs,
             )
 
     core.start(

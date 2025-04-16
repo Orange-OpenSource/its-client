@@ -70,7 +70,7 @@ class ETSI(abc.ABC):
         value: float | None,
         scale: float,
         undef: Optional[int] = None,
-        range: Optional[dict] = None,
+        validity_range: Optional[dict] = None,
         out_of_range: Optional[int] = None,
     ) -> int:
         """SI to ETSI unit conversions
@@ -115,11 +115,15 @@ class ETSI(abc.ABC):
                 )
             return undef
         etsi_value = int(round(value / scale))
-        if range is not None:
-            if etsi_value < range["min"]:
-                etsi_value = out_of_range if out_of_range is not None else range["min"]
-            if etsi_value > range["max"]:
-                etsi_value = out_of_range if out_of_range is not None else range["max"]
+        if validity_range is not None:
+            if etsi_value < validity_range["min"]:
+                etsi_value = (
+                    out_of_range if out_of_range is not None else validity_range["min"]
+                )
+            if etsi_value > validity_range["max"]:
+                etsi_value = (
+                    out_of_range if out_of_range is not None else validity_range["max"]
+                )
         return etsi_value
 
     @staticmethod

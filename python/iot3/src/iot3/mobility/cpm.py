@@ -181,7 +181,7 @@ class CollectivePerceptionMessage(etsi.Message):
                     perceived_object.object_age,
                     etsi.ETSI.MILLI_SECOND,
                     # Unusual: "1500" means "1500 or more"
-                    range={"min": 0, "max": 1500},
+                    validity_range={"min": 0, "max": 1500},
                 ),
                 "x_distance": etsi.ETSI.si2etsi(
                     perceived_object.x_distance,
