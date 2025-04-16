@@ -9,14 +9,14 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use crate::exchange::etsi::reference_position::ReferencePosition;
+use crate::exchange::etsi::reference_position::{altitude_from_etsi, coordinate_from_etsi};
 use crate::exchange::etsi::{
     PathHistory, PositionConfidence, acceleration_from_etsi, heading_from_etsi, speed_from_etsi,
+    timestamp_to_generation_delta_time,
 };
 use crate::mobility::mobile::Mobile;
 use std::any::type_name;
 
-use crate::client::configuration::Configuration;
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::message::content_error::ContentError::NotAMortal;
@@ -39,8 +39,44 @@ pub struct CooperativeAwarenessMessage {
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BasicContainer {
     pub station_type: Option<u8>,
-    pub reference_position: ReferencePosition,
+    pub reference_position: ReferencePosition113,
     pub confidence: Option<PositionConfidence>,
+}
+
+#[derive(Clone, Default, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
+pub struct ReferencePosition113 {
+    #[serde(default = "default_latitude")]
+    pub latitude: i32, // -900000000..900000001
+    #[serde(default = "default_longitude")]
+    pub longitude: i32, // -1800000000..1800000001
+    #[serde(default = "default_altitude")]
+    pub altitude: i32, // -100000..800001
+}
+
+impl From<Position> for ReferencePosition113 {
+    fn from(position: Position) -> Self {
+        ReferencePosition113 {
+            latitude: crate::exchange::etsi::reference_position::coordinate_to_etsi(
+                position.latitude,
+            ),
+            longitude: crate::exchange::etsi::reference_position::coordinate_to_etsi(
+                position.longitude,
+            ),
+            altitude: crate::exchange::etsi::reference_position::altitude_to_etsi(
+                position.altitude,
+            ),
+        }
+    }
+}
+
+fn default_latitude() -> i32 {
+    900000001
+}
+fn default_longitude() -> i32 {
+    1800000001
+}
+fn default_altitude() -> i32 {
+    800001
 }
 
 #[serde_with::skip_serializing_none]
@@ -83,6 +119,16 @@ pub struct HighFrequencyConfidence {
     pub vertical_acceleration: Option<u8>,
 }
 
+impl ReferencePosition113 {
+    pub fn as_position(&self) -> Position {
+        Position {
+            latitude: coordinate_from_etsi(self.latitude),
+            longitude: coordinate_from_etsi(self.longitude),
+            altitude: altitude_from_etsi(self.altitude),
+        }
+    }
+}
+
 impl Mobile for CooperativeAwarenessMessage {
     fn id(&self) -> u32 {
         self.station_id
@@ -113,16 +159,9 @@ impl Content for CooperativeAwarenessMessage {
     }
 
     /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
-    fn appropriate(&mut self, configuration: &Configuration, _timestamp: u64) {
-        let station_id = configuration
-            .node
-            .as_ref()
-            .unwrap()
-            .read()
-            .unwrap()
-            .station_id(Some(self.station_id));
-        self.station_id = station_id;
-        // TODO update the generation delta time
+    fn appropriate(&mut self, timestamp: u64, new_station_id: u32) {
+        self.station_id = new_station_id;
+        self.generation_delta_time = timestamp_to_generation_delta_time(timestamp);
     }
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {

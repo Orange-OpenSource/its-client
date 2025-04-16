@@ -1,26 +1,33 @@
 **Changes:**
 
 * IoT3 SDK:
-    * core: ...
-    * mobility: ...
+    * core: nothing
+    * mobility: nothing
 * applications:
-    * iqm: ...
-    * ...
+    * info: nothing
+    * interqueuemanager: nothing
+    * quadkeys: nothing
+    * status: nothing
+    * vehicle: nothing
 
 Closes: #
 
 ---
 **How to test:**
 
-_**Note:** in the following, lines starting with `$` are to be executed on your machine, as a non-root user; lines starting with `(docker)$` are to be executed in the Docker container; lines starting with `(docker)🐍 $` are to be executed in the Docker container, in the python venv._
+_**Note:** in the following, lines starting with `$` are to be executed on your machine, as a non-root user; lines
+starting with `(docker)$` are to be executed in the Docker container; lines starting with `(docker)🐍 $` are to be
+executed in the Docker container, in the python venv._
 
 1. Prepare a test environment:
     1. be sure to have unrestricted access to _test.mosquitto.org_ (IPv4 and IPv6)
-    2. be sure to have an MQTT broker that listens locally on port 1883, with no credentials and no ACL; if not, run your own:
+    2. be sure to have an MQTT broker that listens locally on port 1883, with no credentials and no ACL; if not, run
+       your own:
         ```sh
         $ mosquitto
         ```
-    3. in another terminal, prepare a collector implementing the OpenTelemetry API, on localhost. If you don;t have one, you may use an existing one, like:
+    3. in another terminal, prepare a collector implementing the OpenTelemetry API, on localhost. If you don't have one,
+       you may use an existing one, like:
         ```
         $ docker container run \
             --rm \
@@ -28,7 +35,7 @@ _**Note:** in the following, lines starting with `$` are to be executed on your 
             -p 4318:4318 \
             jaegertracing/all-in-one:1.58
         ```
-        then open a browser on the Jaegger UI (or that of your own collector if you have one):
+       then open a browser on the Jaegger UI (or that of your own collector if you have one):
         ```
         http://localhost:16686/
         ```
@@ -59,7 +66,8 @@ _**Note:** in the following, lines starting with `$` are to be executed on your 
 
         $ docker container attach iot3
         ```
-       _**Note:**_ the socat command exposes the MQTT broker listening on `localhost:1883` (see 1.2., above), inside the container listening on the UNIX socket `/tmp/mqtt.socket`.
+       _**Note:**_ the socat command exposes the MQTT broker listening on `localhost:1883` (see 1.2., above), inside the
+       container listening on the UNIX socket `/tmp/mqtt.socket`.
     6. prepare a Python 3.11 environment, with tests dependencies and packages' dependencies:
         ```sh
         (docker)$ python3.11 -m venv /tmp/venv
@@ -70,7 +78,9 @@ _**Note:** in the following, lines starting with `$` are to be executed on your 
                           python/*/pyproject.toml
                          )
         ```
-       _**Note:**_ we install the packages dependencies manually, and do not rely on _pip_ to do so, because our Python packages depend one on the others by git hash, as they are not published on PyPi yet, so installing one of our packages may overwrite another.
+       _**Note:**_ we install the packages dependencies manually, and do not rely on _pip_ to do so, because our Python
+       packages depend one on the others by git hash, as they are not published on PyPi yet, so installing one of our
+       packages may overwrite another.
 2. Build the Python packages:
     ```sh
     (docker)🐍 $ for pkg in python/*/; do
