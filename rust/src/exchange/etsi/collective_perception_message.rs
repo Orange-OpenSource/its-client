@@ -325,6 +325,7 @@ mod tests {
                     latitude: 488417860,
                     longitude: 23678940,
                     altitude: 900,
+                    confidence: None,
                 },
                 confidence: Default::default(),
             },
