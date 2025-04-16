@@ -9,9 +9,9 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use crate::exchange::etsi::reference_position::ReferencePosition;
+use crate::exchange::etsi::reference_position::ReferencePosition113;
 use crate::exchange::etsi::{
-    PathHistory, PositionConfidence, acceleration_from_etsi, heading_from_etsi, speed_from_etsi,
+    PathPoint, PositionConfidence, acceleration_from_etsi, heading_from_etsi, speed_from_etsi,
     timestamp_to_generation_delta_time,
 };
 use crate::mobility::mobile::Mobile;
@@ -39,7 +39,7 @@ pub struct CooperativeAwarenessMessage {
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BasicContainer {
     pub station_type: Option<u8>,
-    pub reference_position: ReferencePosition,
+    pub reference_position: ReferencePosition113,
     pub confidence: Option<PositionConfidence>,
 }
 
@@ -67,7 +67,7 @@ pub struct HighFrequencyContainer {
 pub struct LowFrequencyContainer {
     pub vehicle_role: Option<u8>,
     pub exterior_lights: String,
-    pub path_history: Vec<PathHistory>,
+    pub path_history: Vec<PathPoint>,
 }
 
 #[serde_with::skip_serializing_none]
