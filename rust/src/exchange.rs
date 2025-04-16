@@ -20,7 +20,7 @@ use crate::exchange::message::content::Content;
 use crate::mobility::position::Position;
 use crate::transport::payload::Payload;
 
-use crate::exchange::etsi::{PathPosition, PositionConfidenceEllipse};
+use crate::exchange::etsi::PositionConfidenceEllipse;
 use serde::{Deserialize, Serialize};
 
 #[serde_with::skip_serializing_none]
@@ -50,13 +50,6 @@ pub struct PathElement {
 pub struct PositionConfidence {
     pub position_confidence_ellipse: Option<PositionConfidenceEllipse>,
     pub altitude: Option<u8>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PathHistory {
-    pub path_position: PathPosition,
-    pub path_delta_time: Option<u16>,
 }
 
 impl Exchange {
@@ -259,11 +252,11 @@ mod tests {
 {
   "type": "denm",
   "origin": "self",
-  "version": "1.0.0",
+  "version": "2.1.1",
   "source_uuid": "uuid14",
   "timestamp": 1574778515425,
   "message": {
-    "protocol_version": 1,
+    "protocol_version": 2,
     "station_id": 42,
     "management_container": {
       "action_id": {
@@ -274,8 +267,7 @@ mod tests {
       "reference_time": 503253331050,
       "event_position": {
         "latitude": 486263556,
-        "longitude": 224921234,
-        "altitude": 20000
+        "longitude": 224921234
       }
     }
   }
@@ -287,7 +279,7 @@ mod tests {
         r#"{
             "type": "denm",
             "origin": "self",
-            "version": "2.1.0",
+            "version": "2.1.1",
             "source_uuid": "uuid14",
             "timestamp": 1574778515425,
             "message": {
@@ -303,7 +295,10 @@ mod tests {
                     "event_position": {
                         "latitude": 486263556,
                         "longitude": 224921234,
-                        "altitude": 20000,
+                        "altitude": {
+                            "value": 20000,
+                            "confidence": 3
+                        }, 
                         "confidence": {
                             "semi_major_confidence": 100,
                             "semi_minor_confidence": 50,
@@ -322,11 +317,7 @@ mod tests {
                 "location_container": {
                     "event_speed": 289,
                     "event_position_heading": 1806,
-                    "traces": [
-                        {
-                            "path_history": []
-                        }
-                    ]
+                    "detection_zones_to_event_position": []
                 }
             }
         }"#
@@ -337,7 +328,7 @@ mod tests {
     {
         "type": "denm",
         "origin": "self",
-        "version": "2.1.0",
+        "version": "2.1.1",
         "source_uuid": "uuid14",
         "timestamp": 1574778515425,
         "message": {
@@ -354,18 +345,22 @@ mod tests {
                 "event_position": {
                     "latitude": 486263556,
                     "longitude": 224921234,
-                    "altitude": 20000,
-                    "confidence": {
-                        "semi_major_confidence": 100,
-                        "semi_minor_confidence": 50,
-                        "semi_major_orientation": 180
+                    "altitude": {
+                        "value": 20000,
+                        "confidence": 3
                     }
                 },
                 "awareness_distance": 3,
                 "relevance_traffic_direction": 2,
                 "validity_duration": 300,
                 "transmission_interval": 500,
-                "station_type": 5
+                "station_type": 5,
+                "confidence": {
+                    "semi_major_confidence": 100,
+                    "semi_minor_confidence": 50,
+                    "semi_major_orientation": 180
+
+                }
             },
             "situation_container": {
                 "information_quality": 3,
@@ -381,9 +376,9 @@ mod tests {
             "location_container": {
                 "event_speed": 289,
                 "event_position_heading": 1806,
-                "traces": [
+                "detection_zones_to_event_position": [
                     {
-                        "path_history": [
+                        "path": [
                             {
                                 "path_position": {
                                     "delta_latitude": 102,
@@ -417,11 +412,11 @@ mod tests {
         r#"{
           "type": "cpm",
           "origin": "self",
-          "version": "1.1.3",
+          "version": "2.1.0",
           "source_uuid": "uuid1",
           "timestamp": 1574778515425,
           "message": {
-            "protocol_version": 1,
+            "protocol_version": 2,
             "station_id": 12345,
             "generation_delta_time": 65535,
             "management_container": {
@@ -429,15 +424,10 @@ mod tests {
               "reference_position": {
                 "latitude": 426263556,
                 "longitude": -82492123,
-                "altitude": 800001
-              },
-              "confidence": {
-                "position_confidence_ellipse": {
-                  "semi_major_confidence": 4095,
-                  "semi_minor_confidence": 4095,
-                  "semi_major_orientation": 3601
-                },
-                "altitude": 15
+                "altitude": {
+                    "value": 30000,
+                    "confidence": 3
+                }
               }
             }
           }
@@ -448,11 +438,11 @@ mod tests {
         r#"{
             "type": "cpm",
             "origin": "self",
-            "version": "1.1.3",
+            "version": "2.1.0",
             "source_uuid": "uuid1",
             "timestamp": 1574778515425,
             "message": {
-                "protocol_version": 1,
+                "protocol_version": 2,
                 "station_id": 12345,
                 "generation_delta_time": 65535,
                 "management_container": {
@@ -460,15 +450,15 @@ mod tests {
                     "reference_position": {
                         "latitude": 426263556,
                         "longitude": -82492123,
-                        "altitude": 800001
-                    },
-                    "confidence": {
-                        "position_confidence_ellipse": {
+                        "altitude": {
+                          "value": 20000,
+                          "confidence": 3
+                        },
+                        "confidence": {
                             "semi_major_confidence": 100,
                             "semi_minor_confidence": 50,
                             "semi_major_orientation": 180
-                        },
-                        "altitude": 3
+                        }
                     }
                 },
                 "station_data_container": {
@@ -499,19 +489,19 @@ mod tests {
                 }],
                 "perceived_object_container": [{
                     "object_id": 0,
-                    "time_of_measurement": 50,
+                    "time_of_measurement": 50,                    
+                    "x_distance": 40,
+                    "y_distance": 10,
+                    "x_speed": 140,
+                    "y_speed": 50,
+                    "object_age": 150,
                     "confidence": {
                         "x_distance": 4,
                         "y_distance": 4,
                         "x_speed": 3,
                         "y_speed": 3,
                         "object": 70
-                    },
-                    "x_distance": 40,
-                    "y_distance": 10,
-                    "x_speed": 140,
-                    "y_speed": 50,
-                    "object_age": 150
+                    }
                 }]
             }
         }"#
@@ -521,7 +511,7 @@ mod tests {
         r#"{
             "type": "cpm",
             "origin": "self",
-            "version": "1.1.3",
+            "version": "2.1.0",
             "source_uuid": "uuid1",
             "timestamp": 1574778515425,
             "message": {
@@ -533,15 +523,15 @@ mod tests {
                     "reference_position": {
                         "latitude": 426263556,
                         "longitude": -82492123,
-                        "altitude": 800001
-                    },
-                    "confidence": {
-                        "position_confidence_ellipse": {
-                            "semi_major_confidence": 4095,
-                            "semi_minor_confidence": 4095,
-                            "semi_major_orientation": 3601
+                        "altitude": {
+                          "value": 40000,
+                         "confidence": 10
                         },
-                        "altitude": 15
+                        "confidence": {
+                            "semi_major_confidence": 200,
+                            "semi_minor_confidence": 70,
+                            "semi_major_orientation": 140
+                        }
                     }
                 },
                 "station_data_container": {
@@ -587,14 +577,7 @@ mod tests {
                 }],
                 "perceived_object_container": [{
                     "object_id": 0,
-                    "time_of_measurement": 50,
-                    "confidence": {
-                        "x_distance": 102,
-                        "y_distance": 102,
-                        "x_speed": 7,
-                        "y_speed": 7,
-                        "object": 10
-                    },
+                    "time_of_measurement": 50,                    
                     "x_distance": 400,
                     "y_distance": 100,
                     "z_distance": 50,
@@ -602,6 +585,13 @@ mod tests {
                     "y_speed": 500,
                     "z_speed": 0,
                     "object_age": 1500,
+                    "confidence": {
+                        "x_distance": 102,
+                        "y_distance": 102,
+                        "x_speed": 7,
+                        "y_speed": 7,
+                        "object": 10
+                    },
                     "object_ref_point": 8,
                     "x_acceleration": -160,
                     "y_acceleration": 0,
@@ -695,11 +685,11 @@ mod tests {
 {
   "type": "denm",
   "origin": "self",
-  "version": "1.0.0",
+  "version": "2.1.1",
   "source_uuid": "uuid14",
   "timestamp": "1574778515425",
   "message": {
-    "protocol_version": 1,
+    "protocol_version": 2,
     "station_id": 42,
     "management_container": {
       "action_id": {
@@ -710,8 +700,7 @@ mod tests {
       "reference_time": 503253330000,
       "event_position": {
         "latitude": 486263556,
-        "longitude": 224921234,
-        "altitude": 20000
+        "longitude": 224921234
       }
     }
   }
@@ -724,7 +713,7 @@ mod tests {
 {
   "type": "denm",
   "origin": "self",
-  "version": "1.0.0",
+  "version": "2.1.1",
   "source_uuid": "uuid14",
   "timestamp": 1574778515425,
   "message": {
@@ -739,8 +728,7 @@ mod tests {
       "reference_time": 503253330000,
       "event_position": {
         "latitude": 486263556,
-        "longitude": 224921234,
-        "altitude": 20000
+        "longitude": 224921234
       }
     }
   }
