@@ -9,6 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+use crate::exchange::etsi::reference_position::DeltaReferencePosition;
 use crate::now;
 use serde::{Deserialize, Serialize};
 
@@ -40,17 +41,9 @@ pub struct PositionConfidenceEllipse {
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PathHistory {
-    pub path_position: PathPosition,
+pub struct PathPoint {
+    pub path_position: DeltaReferencePosition,
     pub path_delta_time: Option<u16>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PathPosition {
-    pub delta_latitude: Option<i32>,
-    pub delta_longitude: Option<i32>,
-    pub delta_altitude: Option<i32>,
 }
 
 /// Converts heading from decidegrees to radians
@@ -121,7 +114,7 @@ mod tests {
     use std::f64::consts::PI;
 
     macro_rules! test_from_etsi {
-        ($func:ident, $test_name:ident, $value:expr_2021, $expected:expr_2021) => {
+        ($func:ident, $test_name:ident, $value:expr, $expected:expr) => {
             #[test]
             fn $test_name() {
                 let epsilon = 1e-11;
@@ -183,7 +176,7 @@ mod tests {
     );
 
     macro_rules! test_to_etsi {
-        ($func:ident, $test_name:ident, $value:expr_2021, $expected:expr_2021) => {
+        ($func:ident, $test_name:ident, $value:expr, $expected:expr) => {
             #[test]
             fn $test_name() {
                 let as_etsi = $func($value);

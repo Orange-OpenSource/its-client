@@ -15,8 +15,8 @@ use crate::exchange::etsi::decentralized_environmental_notification_message::Rel
     LessThan5Km, LessThan10Km, LessThan50m, LessThan100m, LessThan200m, LessThan500m,
     LessThan1000m, Over10Km,
 };
-use crate::exchange::etsi::reference_position::ReferencePosition;
-use crate::exchange::etsi::{PathHistory, etsi_now, heading_from_etsi, speed_from_etsi};
+use crate::exchange::etsi::reference_position::{PositionConfidence, ReferencePosition};
+use crate::exchange::etsi::{PathPoint, etsi_now, heading_from_etsi, speed_from_etsi};
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::mortal::Mortal;
@@ -76,6 +76,8 @@ pub struct ManagementContainer {
     pub transmission_interval: Option<u16>, // 1..10000
     #[serde(skip_serializing_if = "Option::is_none")]
     pub station_type: Option<u8>, // 0..255, default 0
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub confidence: Option<PositionConfidence>,
 }
 
 /// Contains situation information about the detected event
@@ -132,7 +134,7 @@ pub struct LocationContainer {
     pub event_position_heading: Option<u16>,
     /// List of traces leading to the event position
     #[serde(default)]
-    pub traces: Vec<Trace>,
+    pub detection_zones_to_event_position: Vec<Trace>,
     /// Type of road where the event occurred
     pub road_type: Option<u8>,
 }
@@ -160,8 +162,7 @@ pub struct EventType {
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Trace {
-    #[serde(rename = "path_history")]
-    pub path_history: Vec<PathHistory>,
+    pub path: Vec<PathPoint>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -519,6 +520,7 @@ impl Default for ManagementContainer {
             validity_duration: Some(600),
             transmission_interval: Default::default(),
             station_type: Default::default(),
+            confidence: Default::default(),
         }
     }
 }
@@ -541,7 +543,7 @@ mod tests {
         ActionId, AlacarteContainer, DecentralizedEnvironmentalNotificationMessage, EventType,
         LocationContainer, ManagementContainer, SituationContainer,
     };
-    use crate::exchange::etsi::reference_position::ReferencePosition;
+    use crate::exchange::etsi::reference_position::{PositionConfidence, ReferencePosition};
     use crate::exchange::etsi::{etsi_now, timestamp_to_etsi};
     use crate::exchange::mortal::Mortal;
     use crate::now;
@@ -634,6 +636,7 @@ mod tests {
                 relevance_traffic_direction: None,
                 transmission_interval: None,
                 station_type: None,
+                confidence: None,
             },
             situation_container: None,
             location_container: None,
@@ -665,6 +668,11 @@ mod tests {
                 relevance_traffic_direction: Some(0),
                 transmission_interval: Some(1000),
                 station_type: Some(5),
+                confidence: Some(PositionConfidence {
+                    semi_major_confidence: 100,
+                    semi_minor_confidence: 100,
+                    semi_major_orientation: 0,
+                }),
             },
             situation_container: Some(SituationContainer {
                 information_quality: Some(7),
@@ -677,7 +685,7 @@ mod tests {
             location_container: Some(LocationContainer {
                 event_speed: Some(100),
                 event_position_heading: Some(900),
-                traces: vec![],
+                detection_zones_to_event_position: vec![],
                 road_type: Some(0),
             }),
             alacarte_container: Some(AlacarteContainer {
@@ -707,7 +715,10 @@ mod tests {
                 "event_position": {
                     "latitude": 0,
                     "longitude": 0,
-                    "altitude": 0
+                    "altitude": {
+                        "value": 0,
+                        "confidence": 0
+                    }
                 },
                 "validity_duration": 600
             }
