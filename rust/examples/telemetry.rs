@@ -17,7 +17,7 @@ use std::thread;
 use clap::{Arg, Command};
 use ini::Ini;
 use libits::client::configuration::Configuration;
-use libits::client::configuration::create_stdout_logger;
+use libits::client::logger::create_stdout_logger;
 use libits::transport::telemetry::{execute_in_span, get_span, init_tracer};
 use log::{info, warn};
 use opentelemetry::propagation::{Extractor, Injector, TextMapPropagator};
@@ -92,6 +92,13 @@ async fn main() {
 
     let _logger = create_stdout_logger().expect("Logger initialization failed");
 
+    #[cfg(feature = "mobility")]
+    init_tracer(
+        &configuration.telemetry,
+        Box::<str>::leak(configuration.mobility.station_id.into_boxed_str()),
+    )
+    .expect("Failed to configure telemetry");
+    #[cfg(not(feature = "mobility"))]
     init_tracer(&configuration.telemetry, "iot3").expect("Failed to configure telemetry");
 
     info!("Send a trace with a single span 'ping' root span");

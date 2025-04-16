@@ -17,17 +17,17 @@ use clap::{Arg, Command};
 use ini::Ini;
 use libits::client::application::analyzer::Analyzer;
 use libits::client::application::pipeline;
-use libits::client::configuration::{Configuration, create_stdout_logger};
+use libits::client::configuration::Configuration;
+use libits::client::logger::create_stdout_logger;
 use libits::exchange::Exchange;
 use libits::exchange::sequence_number::SequenceNumber;
 use libits::now;
 use libits::transport::mqtt::geo_topic::GeoTopic;
 use libits::transport::packet::Packet;
-use log::{debug, info, warn};
-use timer::MessageTimer;
-
 #[cfg(feature = "telemetry")]
 use libits::transport::telemetry::init_tracer;
+use log::{debug, info, warn};
+use timer::MessageTimer;
 
 pub struct CopyCat {
     configuration: Arc<Configuration>,
