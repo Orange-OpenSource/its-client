@@ -299,3 +299,40 @@ mod tests {
         );
     }
 }
+
+#[derive(Clone, Default, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
+pub struct ReferencePosition113 {
+    #[serde(default = "default_latitude")]
+    pub latitude: i32, // -900000000..900000001
+    #[serde(default = "default_longitude")]
+    pub longitude: i32, // -1800000000..1800000001
+    #[serde(default = "default_altitude")]
+    pub altitude: i32, // -100000..800001
+}
+impl From<Position> for ReferencePosition113 {
+    fn from(position: Position) -> Self {
+        ReferencePosition113 {
+            latitude: coordinate_to_etsi(position.latitude),
+            longitude: coordinate_to_etsi(position.longitude),
+            altitude: altitude_to_etsi(position.altitude),
+        }
+    }
+}
+
+impl ReferencePosition113 {
+    pub fn as_position(&self) -> Position {
+        Position {
+            latitude: coordinate_from_etsi(self.latitude),
+            longitude: coordinate_from_etsi(self.longitude),
+            altitude: altitude_from_etsi(self.altitude),
+        }
+    }
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DeltaReferencePosition {
+    pub delta_latitude: i32,
+    pub delta_longitude: i32,
+    pub delta_altitude: i32,
+}
