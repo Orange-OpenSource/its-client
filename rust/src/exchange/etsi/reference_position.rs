@@ -17,14 +17,48 @@ use serde::{Deserialize, Serialize};
 const COORDINATE_SIGNIFICANT_DIGIT: u8 = 7;
 const ALTITUDE_SIGNIFICANT_DIGIT: u8 = 2;
 
+/// Represents a reference position with confidence information
 #[derive(Clone, Default, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct ReferencePosition {
-    /// Latitude in tenths of microdegree
-    pub latitude: i32,
-    /// Longitude in tenths of microdegree
-    pub longitude: i32,
-    /// Altitude in centimeters
-    pub altitude: i32,
+    #[serde(default = "default_latitude")]
+    pub latitude: i32, // -900000000..900000001
+    #[serde(default = "default_longitude")]
+    pub longitude: i32, // -1800000000..1800000001
+    #[serde(default = "default_altitude")]
+    pub altitude: i32, // -100000..800001
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub confidence: Option<PositionConfidence>,
+}
+
+fn default_latitude() -> i32 {
+    900000001
+}
+fn default_longitude() -> i32 {
+    1800000001
+}
+fn default_altitude() -> i32 {
+    800001
+}
+
+/// Represents the position confidence in a reference position
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct PositionConfidence {
+    #[serde(default = "default_semi_major_confidence")]
+    pub semi_major_confidence: u16, // 0..4095, default 4095
+    #[serde(default = "default_semi_minor_confidence")]
+    pub semi_minor_confidence: u16, // 0..4095, default 4095
+    #[serde(default = "default_semi_major_orientation")]
+    pub semi_major_orientation: u16, // 0..3601, default 3601
+}
+
+fn default_semi_major_confidence() -> u16 {
+    4095
+}
+fn default_semi_minor_confidence() -> u16 {
+    4095
+}
+fn default_semi_major_orientation() -> u16 {
+    3601
 }
 
 impl ReferencePosition {
@@ -43,6 +77,7 @@ impl From<Position> for ReferencePosition {
             latitude: coordinate_to_etsi(position.latitude),
             longitude: coordinate_to_etsi(position.longitude),
             altitude: altitude_to_etsi(position.altitude),
+            confidence: None,
         }
     }
 }
@@ -51,8 +86,8 @@ impl fmt::Display for ReferencePosition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "(lat: {} / lon: {} / alt: {})",
-            self.latitude, self.longitude, self.altitude,
+            "(lat: {} / lon: {} / alt: {} / conf: {:?})",
+            self.latitude, self.longitude, self.altitude, self.confidence
         )
     }
 }
@@ -147,6 +182,7 @@ mod tests {
             latitude: 488417860,
             longitude: 23678940,
             altitude: 16880,
+            confidence: None,
         };
         let expected_position = Position {
             latitude: 48.8417860_f64.to_radians(),
@@ -187,6 +223,7 @@ mod tests {
             latitude: 488417860,
             longitude: 23678940,
             altitude: 16880,
+            confidence: None,
         };
 
         let reference_position = ReferencePosition::from(position);
