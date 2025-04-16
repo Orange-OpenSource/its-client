@@ -26,6 +26,26 @@
         "identifier" : "ITSCoreTests",
         "name" : "ITSCoreTests"
       }
+    },
+    {
+      "skippedTests" : {
+        "suites" : [
+          {
+            "name" : "CAMTests"
+          },
+          {
+            "name" : "DENMTests"
+          },
+          {
+            "name" : "QuadkeyBuilderTests"
+          }
+        ]
+      },
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "ITSMobilityTests",
+        "name" : "ITSMobilityTests"
+      }
     }
   ],
   "version" : 2

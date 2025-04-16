@@ -11,13 +11,20 @@
 
 /// A structure to configure a MQTT client.
 public struct MQTTClientConfiguration: Sendable {
-    let host: String
-    let port: Int
-    let clientIdentifier: String
-    let userName: String?
-    let password: String?
-    let useSSL: Bool
-    let useWebSockets: Bool
+    /// The MQTT server host.
+    public let host: String
+    /// The MQTT server port.
+    public let port: Int
+    /// The MQTT client identifier.
+    public let clientIdentifier: String
+    /// The MQTT user name if authentication is enabled on the server.
+    public let userName: String?
+    /// The MQTT password if authentication is enabled on the server.
+    public let password: String?
+    /// `true` if an encrypted connection to the server is used.
+    public let useSSL: Bool
+    /// `true` if a websocket connection to the server is used.
+    public let useWebSockets: Bool
 
     /// Initializes a `MQTTClientConfiguration`.
     /// - Parameters:

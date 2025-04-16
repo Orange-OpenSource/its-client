@@ -11,8 +11,10 @@
 
 /// A structure to configure the core.
 public struct CoreConfiguration: Sendable {
-    let mqttClientConfiguration: MQTTClientConfiguration
-    let telemetryClientConfiguration: TelemetryClientConfiguration?
+    /// The MQTT client configuration.
+    public let mqttClientConfiguration: MQTTClientConfiguration
+    /// The telemetry client configuration.
+    public let telemetryClientConfiguration: TelemetryClientConfiguration?
 
     /// Initializes a `CoreConfiguration`.
     /// - Parameters:

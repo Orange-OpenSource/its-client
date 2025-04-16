@@ -55,7 +55,7 @@ public struct Cause: Codable {
 }
 
 /// The cause type
-public enum CauseType: Int8, Codable {
+public enum CauseType: Int8, Codable, Sendable {
     case reserved = 0
     case trafficCondition = 1
     case accident = 2

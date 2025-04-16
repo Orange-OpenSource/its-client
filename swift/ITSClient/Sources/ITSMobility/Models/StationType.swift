@@ -12,7 +12,7 @@
 import Foundation
 
 /// The station type.
-public enum StationType: Int, Codable {
+public enum StationType: Int, Codable, Sendable {
     case unknown = 0
     case pedestrian = 1
     case cyclist = 2
