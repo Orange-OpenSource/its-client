@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["create_stdout_logger"],"mod":["configuration_error"],"struct":["Configuration"]};
