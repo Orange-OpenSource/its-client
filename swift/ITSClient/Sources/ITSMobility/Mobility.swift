@@ -21,7 +21,7 @@ public actor Mobility {
     public init() {
         core = Core()
     }
-    
+
     /// Starts the `Mobility` with a configuration to connect to a MQTT server and initialize the telemetry client.
     /// - Parameter mobilityConfiguration: The configuration used to start the mobility including `CoreConfiguration`.
     /// - Throws: A `MobilityError` if the MQTT connection fails.
@@ -113,10 +113,10 @@ public actor Mobility {
                                                       eventPosition: position,
                                                       stationType: mobilityConfiguration.stationType)
         let situationContainer = SituationContainer(eventType: Cause(cause: cause))
-        let demMessage = DENMMessage(stationID: mobilityConfiguration.stationID,
+        let denmMessage = DENMMessage(stationID: mobilityConfiguration.stationID,
                                      managementContainer: managementContainer,
                                      situationContainer: situationContainer)
-        let denm = DENM(message: demMessage,
+        let denm = DENM(message: denmMessage,
                         sourceUUID: mobilityConfiguration.userIdentifier,
                         timestamp: now)
 
