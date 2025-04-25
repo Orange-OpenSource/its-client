@@ -116,21 +116,32 @@ pub async fn run<A, C, T>(
             info!("Starting analyser generation...");
             trace!("Analyser generation closure entering...");
             let mut analyser = A::new(configuration_clone, context_clone, seq_num_clone);
-            for item in rx {
-                for publish_item in analyser.analyze(item.clone()) {
-                    let cause = Cause::from_exchange(&(item.payload));
-                    match tx.send((publish_item, cause)) {
-                        Ok(()) => trace!("Analyser sent"),
-                        Err(error) => {
-                            error!("Stopped to send analyser: {}", error);
-                            break;
+            loop {
+                match rx.recv() {
+                    Ok(item) => {
+                        for publish_item in analyser.analyze(item.clone()) {
+                            let cause = Cause::from_exchange(&(item.payload));
+                            match tx.send((publish_item, cause)) {
+                                Ok(()) => trace!("Analyser sent"),
+                                Err(error) => {
+                                    error!("Stopped to send analyser: {}", error);
+                                    break;
+                                }
+                            }
                         }
+                        trace!("Analyser generation closure finished");
+                        break;
+                    }
+                    Err(recv_error) => {
+                        info!("Exiting analysis thread: {}", recv_error);
+                        break;
                     }
                 }
-                trace!("Analyser generation closure finished");
             }
         });
     }
+    // Drop the original sender as only clones in threads remains
+    drop(analyser_sender);
 
     let (publish_item_receiver, publish_monitoring_receiver, filter_handle) =
         filter_thread::<T>(configuration.clone(), analyser_receiver);
@@ -179,30 +190,38 @@ where
         .name("filter".into())
         .spawn(move || {
             trace!("Filter closure entering...");
-            for tuple in exchange_receiver {
-                let item = tuple.0;
-                let cause = tuple.1;
+            loop {
+                match exchange_receiver.recv() {
+                    Ok(tuple) => {
+                        let item = tuple.0;
+                        let cause = tuple.1;
 
-                // FIXME Topic does not hold geo_extension anymore
-                //assumed clone, we just send the GeoExtension
-                // if configuration.is_in_region_of_responsibility(item.topic.geo_extension.clone()) {
-                //assumed clone, we send to 2 channels
-                match publish_sender.send(item.clone()) {
-                    Ok(()) => trace!("Publish sent"),
-                    Err(error) => {
-                        error!("Stopped to send publish: {}", error);
+                        // FIXME Topic does not hold geo_extension anymore
+                        //assumed clone, we just send the GeoExtension
+                        // if configuration.is_in_region_of_responsibility(item.topic.geo_extension.clone()) {
+                        //assumed clone, we send to 2 channels
+                        match publish_sender.send(item.clone()) {
+                            Ok(()) => trace!("Publish sent"),
+                            Err(error) => {
+                                error!("Stopped to send publish: {}", error);
+                                break;
+                            }
+                        }
+                        match monitoring_sender.send((item, cause)) {
+                            Ok(()) => trace!("Monitoring sent"),
+                            Err(error) => {
+                                error!("Stopped to send monitoring: {}", error);
+                                break;
+                            }
+                        }
+                        // }
+                        trace!("Filter closure finished");
+                    }
+                    Err(recv_error) => {
+                        info!("Exiting filter thread: {}", recv_error);
                         break;
                     }
                 }
-                match monitoring_sender.send((item, cause)) {
-                    Ok(()) => trace!("Monitoring sent"),
-                    Err(error) => {
-                        error!("Stopped to send monitoring: {}", error);
-                        break;
-                    }
-                }
-                // }
-                trace!("Filter closure finished");
             }
         })
         .unwrap();
@@ -339,11 +358,21 @@ async fn mqtt_client_publish<T, P>(
     P: Payload,
 {
     info!("Starting MQTT publishing thread...");
-    for item in publish_item_receiver {
-        debug!("Start packet publishing...");
-        client.publish(item).await;
-        debug!("Packet published");
+
+    loop {
+        match publish_item_receiver.recv() {
+            Ok(packet) => {
+                debug!("Start packet publishing...");
+                client.publish(packet).await;
+                debug!("Packet published");
+            }
+            Err(recv_err) => {
+                info!("Exiting MQTT publish thread: {}", recv_err);
+                break;
+            }
+        }
     }
+
     info!("MQTT publishing thread stopped");
 }
 
@@ -376,53 +405,67 @@ where
                 }
             }
 
-            for event in event_receiver {
-                match router.handle_event(event) {
-                    Some((topic, (reception, properties))) => {
-                        trace!("Topic: {topic}");
-                        // TODO use the From Trait
-                        if reception.is::<Exchange>() {
-                            if let Ok(exchange) = reception.downcast::<Exchange>() {
-                                let item = Packet {
-                                    topic,
-                                    payload: *exchange,
-                                    properties,
-                                };
-                                //assumed clone, we send to 2 channels
-                                match monitoring_sender.send((item.clone(), None)) {
-                                    Ok(()) => trace!("MQTT monitoring sent"),
-                                    Err(error) => {
-                                        error!("Stopped to send mqtt monitoring: {}", error);
-                                        break;
+            loop {
+                match event_receiver.recv() {
+                    Ok(event) => {
+                        match router.handle_event(event) {
+                            Some((topic, (reception, properties))) => {
+                                trace!("Topic: {topic}");
+                                // TODO use the From Trait
+                                if reception.is::<Exchange>() {
+                                    if let Ok(exchange) = reception.downcast::<Exchange>() {
+                                        let item = Packet {
+                                            topic,
+                                            payload: *exchange,
+                                            properties,
+                                        };
+                                        //assumed clone, we send to 2 channels
+                                        match monitoring_sender.send((item.clone(), None)) {
+                                            Ok(()) => trace!("MQTT monitoring sent"),
+                                            Err(error) => {
+                                                error!(
+                                                    "Stopped to send mqtt monitoring: {}",
+                                                    error
+                                                );
+                                                break;
+                                            }
+                                        }
+                                        match exchange_sender.send(item) {
+                                            Ok(()) => trace!("MQTT exchange sent"),
+                                            Err(error) => {
+                                                error!("Stopped to send mqtt exchange: {}", error);
+                                                break;
+                                            }
+                                        }
                                     }
-                                }
-                                match exchange_sender.send(item) {
-                                    Ok(()) => trace!("MQTT exchange sent"),
-                                    Err(error) => {
-                                        error!("Stopped to send mqtt exchange: {}", error);
-                                        break;
+                                } else if reception.is::<Information>() {
+                                    if let Ok(information) = reception.downcast::<Information>() {
+                                        match information_sender.send(Packet {
+                                            topic,
+                                            payload: *information,
+                                            properties: PublishProperties::default(),
+                                        }) {
+                                            Ok(()) => trace!("MQTT information sent"),
+                                            Err(error) => {
+                                                error!(
+                                                    "Stopped to send mqtt information: {}",
+                                                    error
+                                                );
+                                                break;
+                                            }
+                                        }
                                     }
+                                } else {
+                                    trace!("Unknown reception: {:?}", reception);
                                 }
                             }
-                        } else if reception.is::<Information>() {
-                            if let Ok(information) = reception.downcast::<Information>() {
-                                match information_sender.send(Packet {
-                                    topic,
-                                    payload: *information,
-                                    properties: PublishProperties::default(),
-                                }) {
-                                    Ok(()) => trace!("MQTT information sent"),
-                                    Err(error) => {
-                                        error!("Stopped to send mqtt information: {}", error);
-                                        break;
-                                    }
-                                }
-                            }
-                        } else {
-                            trace!("Unknown reception: {:?}", reception);
+                            None => trace!("No mqtt response to send"),
                         }
                     }
-                    None => trace!("No mqtt response to send"),
+                    Err(recv_err) => {
+                        info!("Exiting MQTT routing thread: {}", recv_err);
+                        break;
+                    }
                 }
             }
             trace!("MQTT router dispatching closure finished");
