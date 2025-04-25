@@ -90,90 +90,93 @@ pub async fn run<A, C, T>(
     }
     info!("Analysis thread count set to: {}", thread_count);
 
-    let (mut mqtt_client, event_loop) = MqttClient::new(&configuration.mqtt);
-    mqtt_client_subscribe(subscription_list, &mut mqtt_client).await;
+    loop {
+        let configuration = configuration.clone();
+        let (mut mqtt_client, event_loop) = MqttClient::new(&configuration.mqtt);
+        mqtt_client_subscribe(subscription_list, &mut mqtt_client).await;
 
-    let (event_receiver, mqtt_client_listen_handle) = mqtt_client_listen_thread(event_loop);
-    let (item_receiver, monitoring_receiver, information_receiver, mqtt_router_dispatch_handle) =
-        mqtt_router_dispatch_thread(subscription_list.to_vec(), event_receiver);
+        let (event_receiver, mqtt_client_listen_handle) = mqtt_client_listen_thread(event_loop);
+        let (item_receiver, monitoring_receiver, information_receiver, mqtt_router_dispatch_handle) =
+            mqtt_router_dispatch_thread(subscription_list.to_vec(), event_receiver);
 
-    let monitor_reception_handle = monitor_thread(
-        "received_on".to_string(),
-        configuration.clone(),
-        monitoring_receiver,
-    );
+        let monitor_reception_handle = monitor_thread(
+            "received_on".to_string(),
+            configuration.clone(),
+            monitoring_receiver,
+        );
 
-    let analysis_pool = threadpool::ThreadPool::with_name("Analysis".to_string(), thread_count);
+        let analysis_pool = threadpool::ThreadPool::with_name("Analysis".to_string(), thread_count);
 
-    let (analyser_sender, analyser_receiver) = unbounded();
-    for _ in 0..thread_count {
-        let rx = item_receiver.clone();
-        let tx = analyser_sender.clone();
-        let configuration_clone = configuration.clone();
-        let context_clone = context.clone();
-        let seq_num_clone = sequence_number.clone();
-        analysis_pool.execute(move || {
-            info!("Starting analyser generation...");
-            trace!("Analyser generation closure entering...");
-            let mut analyser = A::new(configuration_clone, context_clone, seq_num_clone);
-            loop {
-                match rx.recv() {
-                    Ok(item) => {
-                        for publish_item in analyser.analyze(item.clone()) {
-                            let cause = Cause::from_exchange(&(item.payload));
-                            match tx.send((publish_item, cause)) {
-                                Ok(()) => trace!("Analyser sent"),
-                                Err(error) => {
-                                    error!("Stopped to send analyser: {}", error);
-                                    break;
+        let (analyser_sender, analyser_receiver) = unbounded();
+        for _ in 0..thread_count {
+            let rx = item_receiver.clone();
+            let tx = analyser_sender.clone();
+            let configuration_clone = configuration.clone();
+            let context_clone = context.clone();
+            let seq_num_clone = sequence_number.clone();
+            analysis_pool.execute(move || {
+                info!("Starting analyser generation...");
+                trace!("Analyser generation closure entering...");
+                let mut analyser = A::new(configuration_clone, context_clone, seq_num_clone);
+                loop {
+                    match rx.recv() {
+                        Ok(item) => {
+                            for publish_item in analyser.analyze(item.clone()) {
+                                let cause = Cause::from_exchange(&(item.payload));
+                                match tx.send((publish_item, cause)) {
+                                    Ok(()) => trace!("Analyser sent"),
+                                    Err(error) => {
+                                        error!("Stopped to send analyser: {}", error);
+                                        break;
+                                    }
                                 }
                             }
+                            trace!("Analyser generation closure finished");
+                            break;
                         }
-                        trace!("Analyser generation closure finished");
-                        break;
-                    }
-                    Err(recv_error) => {
-                        info!("Exiting analysis thread: {}", recv_error);
-                        break;
+                        Err(recv_error) => {
+                            info!("Exiting analysis thread: {}", recv_error);
+                            break;
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+        // Drop the original sender as only clones in threads remains
+        drop(analyser_sender);
+
+        let (publish_item_receiver, publish_monitoring_receiver, filter_handle) =
+            filter_thread::<T>(configuration.clone(), analyser_receiver);
+
+        let reader_configure_handle =
+            reader_configure_thread(configuration.clone(), information_receiver);
+
+        let monitor_publish_handle = monitor_thread(
+            "sent_on".to_string(),
+            configuration,
+            publish_monitoring_receiver,
+        );
+
+        mqtt_client_publish(publish_item_receiver, &mut mqtt_client).await;
+
+        debug!("Start mqtt_client_listen_handler joining...");
+        mqtt_client_listen_handle.await.unwrap();
+        debug!("Start mqtt_router_dispatch_handler joining...");
+        mqtt_router_dispatch_handle.join().unwrap();
+        debug!("Start monitor_reception_handle joining...");
+        monitor_reception_handle.join().unwrap();
+        debug!("Start reader_configure_handler joining...");
+        reader_configure_handle.join().unwrap();
+        debug!("Start analyser_generate_handler joining...");
+        analysis_pool.join();
+        debug!("Start filter_handle joining...");
+        filter_handle.join().unwrap();
+        debug!("Start monitor_publish_handle joining...");
+        monitor_publish_handle.join().unwrap();
+
+        warn!("Loop done");
+        tokio::time::sleep(Duration::from_secs(5)).await;
     }
-    // Drop the original sender as only clones in threads remains
-    drop(analyser_sender);
-
-    let (publish_item_receiver, publish_monitoring_receiver, filter_handle) =
-        filter_thread::<T>(configuration.clone(), analyser_receiver);
-
-    let reader_configure_handle =
-        reader_configure_thread(configuration.clone(), information_receiver);
-
-    let monitor_publish_handle = monitor_thread(
-        "sent_on".to_string(),
-        configuration,
-        publish_monitoring_receiver,
-    );
-
-    mqtt_client_publish(publish_item_receiver, &mut mqtt_client).await;
-
-    debug!("Start mqtt_client_listen_handler joining...");
-    mqtt_client_listen_handle.await.unwrap();
-    debug!("Start mqtt_router_dispatch_handler joining...");
-    mqtt_router_dispatch_handle.join().unwrap();
-    debug!("Start monitor_reception_handle joining...");
-    monitor_reception_handle.join().unwrap();
-    debug!("Start reader_configure_handler joining...");
-    reader_configure_handle.join().unwrap();
-    debug!("Start analyser_generate_handler joining...");
-    analysis_pool.join();
-    debug!("Start filter_handle joining...");
-    filter_handle.join().unwrap();
-    debug!("Start monitor_publish_handle joining...");
-    monitor_publish_handle.join().unwrap();
-
-    warn!("Loop done");
-    tokio::time::sleep(Duration::from_secs(5)).await;
 }
 
 fn filter_thread<T>(
