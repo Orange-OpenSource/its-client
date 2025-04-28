@@ -38,6 +38,7 @@ pub(crate) const DEFAULT_PATH: &str = "v1/traces";
 pub struct TelemetryConfiguration {
     pub host: String,
     pub port: u16,
+    pub use_tls: bool,
     pub path: String,
     pub batch_size: usize,
     username: Option<String>,
@@ -62,14 +63,13 @@ impl TryFrom<&Properties> for TelemetryConfiguration {
     fn try_from(properties: &Properties) -> Result<Self, Self::Error> {
         let section = ("telemetry", properties);
 
+        // optionals
         let path = match get_optional_from_section::<String>("path", properties) {
             Ok(value) => value.unwrap_or(DEFAULT_PATH.to_string()),
             Err(e) => {
                 warn!(
-                    "OLTP collector path could not be read from configuration: {}",
-                    e
+                    "Defaulting OLTP collector path to '{DEFAULT_PATH}' as it cannot be read from configuration: {e}"
                 );
-                warn!("Defaulting to '{}'", DEFAULT_PATH);
                 DEFAULT_PATH.to_string()
             }
         };
@@ -96,12 +96,12 @@ impl TryFrom<&Properties> for TelemetryConfiguration {
         let s = TelemetryConfiguration {
             host: get_mandatory_from_section::<String>("host", section)?,
             port: get_mandatory_from_section::<u16>("port", section)?,
+            use_tls: get_mandatory_from_section::<bool>("use_tls", section)?,
             path,
             batch_size,
             username,
             password,
         };
-
         Ok(s)
     }
 }
@@ -115,14 +115,18 @@ mod test {
 [telemetry]
 host="tel.emetry.com"
 port=1234
+use_tls=false
 path="unusual/v1/traces"
 batch_size=4096
+username=username
+password=password
 "#;
 
     const MINIMAL_TELEMETRY_CONF: &str = r#"
 [telemetry]
-host="tel.emetry.com"
-port=1234
+host="tele.metry.com"
+port=443
+use_tls=true
 "#;
 
     #[test]
@@ -137,8 +141,11 @@ port=1234
             telemetry_conf.expect("Failed to create TelemetryConfiguration from config");
         assert_eq!("tel.emetry.com", telemetry_conf.host);
         assert_eq!(1234, telemetry_conf.port);
+        assert!(!telemetry_conf.use_tls);
         assert_eq!("unusual/v1/traces", telemetry_conf.path);
         assert_eq!(4096, telemetry_conf.batch_size);
+        assert_eq!(Some("username".to_string()), telemetry_conf.username);
+        assert_eq!(Some("password".to_string()), telemetry_conf.password);
     }
 
     #[test]
@@ -150,7 +157,12 @@ port=1234
 
         let telemetry_conf =
             telemetry_conf.expect("Failed to create TelemetryConfiguration from config");
+        assert_eq!("tele.metry.com", telemetry_conf.host);
+        assert_eq!(443, telemetry_conf.port);
+        assert!(telemetry_conf.use_tls);
         assert_eq!("v1/traces", telemetry_conf.path);
         assert_eq!(2048, telemetry_conf.batch_size);
+        assert_eq!(None, telemetry_conf.username);
+        assert_eq!(None, telemetry_conf.password);
     }
 }
