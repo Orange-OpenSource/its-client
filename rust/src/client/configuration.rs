@@ -184,6 +184,7 @@ no_section = noitceson
 host = localhost
 port = 1883
 use_tls = false
+use_websocket = false
 client_id = com_myapplication
 username = username
 password = password
@@ -195,9 +196,7 @@ suffix = v2x
 [mobility]
 source_uuid = com_myapplication-1
 station_id = 1
-# true to enable the responsibility
 use_responsibility = true
-# the number of threads to use
 thread_count = 4
 
 [telemetry]
@@ -205,6 +204,9 @@ host = otlp.domain.com
 port = 5418
 use_tls = false
 path = /custom/v1/traces
+max_batch_size = 10
+username = username
+password = password
 
 [custom]
 test = success
@@ -214,6 +216,8 @@ test = success
 [mqtt]
 host = localhost
 port = 1883
+use_tls = false
+use_websocket = false
 client_id = com_myapplication
 "#;
 
@@ -223,14 +227,13 @@ client_id = com_myapplication
 host = localhost
 port = 1883
 use_tls = false
+use_websocket = false
 client_id = com_myapplication
 
 [mobility]
 source_uuid = com_myapplication-1
 station_id = 1
-# true to enable the responsibility
 use_responsibility = false
-# the number of threads to use
 thread_count = 4
 "#;
 
@@ -240,15 +243,8 @@ thread_count = 4
 host = localhost
 port=1883
 use_tls = false
+use_websocket = false
 client_id= com_myapplication
-
-[mobility]
-source_uuid = com_myapplication-1
-station_id = 1
-# true to enable the responsibility
-use_responsibility = true
-# the number of threads to use
-thread_count = 4
 
 [geo]
 prefix = sandbox
@@ -261,6 +257,7 @@ suffix = v2x
 host = localhost
 port = 1883
 use_tls = false
+use_websocket = false
 client_id = com_myapplication
 
 [telemetry]

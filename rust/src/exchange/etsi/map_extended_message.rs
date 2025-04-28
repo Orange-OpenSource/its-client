@@ -52,7 +52,7 @@ impl Content for MAPExtendedMessage {
     }
 
     fn appropriate(&mut self, timestamp: u64, new_station_id: u32) {
-        self.id = new_station_id.into();
+        self.station_id = new_station_id;
         self.timestamp = Some(timestamp);
     }
 
@@ -189,14 +189,84 @@ impl MAPExtendedMessage {
     }
 }
 
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RoadSegment {
+    pub id: u16,
+
+    pub region: Option<u16>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Intersection {
+    pub id: u16,
+
+    pub region: Option<u16>,
+}
+
 #[cfg(test)]
 mod test {
     use crate::exchange::etsi::map_extended_message::{Action, MAPExtendedMessage};
 
-    #[test]
-    fn test_complete_deserialization() {
-        let data = r#"
-        {
+    fn standard_mapem() -> &'static str {
+        r#"{
+            "protocolVersion": 1,
+            "stationId": 10,
+            "msgIssueRevision": 127,
+            "lanes":
+            [
+                {
+                    "id": 14,
+                    "signalId": 15,
+                    "left": true,
+                    "straight": true,
+                    "right": false,
+                    "speedLimit": 50,
+                    "ingress": false,
+                    "egress": false,
+                    "geom":
+                    [
+                        [11.1, 2.2],
+                        [33.3, 4.4],
+                        [55.5, 6.6]
+                    ],
+                    "connections":
+                    [
+                        {
+                            "intersectionId": 17,
+                            "laneId": 18,
+                            "action": 0
+                        },
+                        {
+                            "intersectionId": 20,
+                            "laneId": 21,
+                            "action": 1
+                        }
+                    ]
+                },
+                {
+                    "id": 22,
+                    "signalId": 23,
+                    "left": true,
+                    "straight": true,
+                    "right": false,
+                    "speedLimit": 50,
+                    "ingress": false,
+                    "egress": false,
+                    "geom":
+                    [
+                        [11.1, 2.2],
+                        [33.3, 4.4],
+                        [55.5, 6.6]
+                    ]
+                }
+            ]
+        }"#
+    }
+
+    fn full_mapem() -> &'static str {
+        r#"{
             "protocolVersion": 1,
             "stationId": 10,
             "timestamp": 123456789,
@@ -243,8 +313,12 @@ mod test {
                     ]
                 }
             ]
-        }
-        "#;
+        }"#
+    }
+
+    #[test]
+    fn test_complete_deserialization() {
+        let data = full_mapem();
 
         match serde_json::from_str::<MAPExtendedMessage>(data) {
             Ok(map) => {
@@ -297,61 +371,7 @@ mod test {
 
     #[test]
     fn test_optional_fields() {
-        let data = r#"
-        {
-            "protocolVersion": 1,
-            "stationId": 10,
-            "msgIssueRevision": 127,
-            "lanes":
-            [
-                {
-                    "id": 14,
-                    "signalId": 15,
-                    "left": true,
-                    "straight": true,
-                    "right": false,
-                    "speedLimit": 50,
-                    "ingress": false,
-                    "egress": false,
-                    "geom":
-                    [
-                        [11.1, 2.2],
-                        [33.3, 4.4],
-                        [55.5, 6.6]
-                    ],
-                    "connections":
-                    [
-                        {
-                            "intersectionId": 17,
-                            "laneId": 18,
-                            "action": 0
-                        },
-                        {
-                            "intersectionId": 20,
-                            "laneId": 21,
-                            "action": 1
-                        }
-                    ]
-                },
-                {
-                    "id": 22,
-                    "signalId": 23,
-                    "left": true,
-                    "straight": true,
-                    "right": false,
-                    "speedLimit": 50,
-                    "ingress": false,
-                    "egress": false,
-                    "geom":
-                    [
-                        [11.1, 2.2],
-                        [33.3, 4.4],
-                        [55.5, 6.6]
-                    ]
-                }
-            ]
-        }
-        "#;
+        let data = standard_mapem();
 
         match serde_json::from_str::<MAPExtendedMessage>(data) {
             Ok(map) => {

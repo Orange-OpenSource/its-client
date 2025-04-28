@@ -11,131 +11,107 @@
 
 use std::hash;
 
-use crate::exchange::etsi::decentralized_environmental_notification_message::RelevanceDistance::{
-    LessThan5Km, LessThan10Km, LessThan50m, LessThan100m, LessThan200m, LessThan500m,
-    LessThan1000m, Over10Km,
+use crate::exchange::etsi::reference_position::{
+    DeltaReferencePosition, PathPoint, ReferencePosition,
 };
-use crate::exchange::etsi::reference_position::{PositionConfidence, ReferencePosition};
-use crate::exchange::etsi::{PathPoint, etsi_now, heading_from_etsi, speed_from_etsi};
+use crate::exchange::etsi::{etsi_now, heading_from_etsi, speed_from_etsi, timestamp_to_etsi};
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::mortal::Mortal;
 use crate::mobility::mobile::Mobile;
 use crate::mobility::position::Position;
 
+use crate::exchange::etsi::cause_code::CauseCode;
+use crate::exchange::etsi::heading::Heading;
+use crate::exchange::etsi::speed::Speed;
 use serde::{Deserialize, Serialize};
 
-/// Represents a Decentralized Environmental Notification Message (DENM) according to ETSI standard.
+/// Represents a Decentralized Environmental Notification Message (DENM) according to an ETSI standard.
 ///
 /// This message is used to describe detected road hazards and traffic conditions.
-/// The structure follows the JSON schema version 2.1.0 specification.
+/// It implements the schema defined in the DENM file version 2.2.0.
 ///
 /// # Fields
 ///
-/// * `protocol_version` - The version of the protocol used (default: 2)
-/// * `station_id` - Unique identifier for the ITS station (0..4294967295)
-/// * `management_container` - Contains basic information about the DENM
-/// * `situation_container` - Optional container with details about the event type
-/// * `location_container` - Optional container with position-related information
-/// * `alacarte_container` - Optional container with additional specific information
+/// * `protocol_version` - The version of the protocol used
+/// * `station_id` - Unique identifier for the ITS station
+/// * `management` - Contains basic information about the DENM
+/// * `situation` - Container with details about the event type
+/// * `location` - Container with position-related information
+/// * `alacarte` - Container with additional specific information
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct DecentralizedEnvironmentalNotificationMessage {
-    #[serde(default = "default_protocol_version")]
-    pub protocol_version: u8, // 0..255
-    pub station_id: u32, // 0..4294967295
-    pub management_container: ManagementContainer,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub situation_container: Option<SituationContainer>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub location_container: Option<LocationContainer>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub alacarte_container: Option<AlacarteContainer>,
-}
+    /// Protocol version (mandatory).
+    pub protocol_version: u8,
+    /// Unique identifier for the station (mandatory).
+    pub station_id: u32,
+    /// Container with management information about the notification (mandatory)
+    pub management: ManagementContainer,
 
-fn default_protocol_version() -> u8 {
-    2
+    /// Contains situation information about the detected event (optional)
+    pub situation: Option<SituationContainer>,
+    /// Contains location-related information about the event (optional)
+    pub location: Option<LocationContainer>,
+    /// Contains additional specific information (optional)
+    pub alacarte: Option<AlacarteContainer>,
 }
 
 /// Contains management information for the DENM
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ManagementContainer {
     pub action_id: ActionId,
-    pub detection_time: u64, // 0..4398046511103
-    pub reference_time: u64, // 0..4398046511103
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub termination: Option<u8>, // 0..1
+    pub detection_time: u64,
+    pub reference_time: u64,
     pub event_position: ReferencePosition,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub awareness_distance: Option<u8>, // 0..7
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub relevance_traffic_direction: Option<u8>, // 0..3
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)] // This will use Default::default() which returns None
-    pub validity_duration: Option<u32>, // 0..86400, default 600
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub transmission_interval: Option<u16>, // 1..10000
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub station_type: Option<u8>, // 0..255, default 0
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub confidence: Option<PositionConfidence>,
+    pub station_type: u8,
+
+    pub termination: Option<u8>,
+    pub awareness_distance: Option<Distance>,
+    pub traffic_direction: Option<TrafficDirection>,
+    pub validity_duration: Option<u32>,
+    pub transmission_interval: Option<u16>,
 }
 
 /// Contains situation information about the detected event
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SituationContainer {
-    /// Quality of the information (0..7)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(
-        deserialize_with = "deserialize_information_quality",
-        serialize_with = "serialize_information_quality"
-    )]
-    pub information_quality: Option<u8>,
-    pub event_type: EventType,
-    pub linked_cause: Option<EventType>,
+    pub information_quality: u8,
+    pub event_type: CauseCode,
+
+    pub linked_cause: Option<CauseCode>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub event_zone: Vec<EventPoint>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub linked_denms: Vec<ActionId>,
+    pub event_end: Option<i16>,
 }
 
-fn deserialize_information_quality<'de, D>(deserializer: D) -> Result<Option<u8>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    use serde::de::Error;
-    let value = Option::<u8>::deserialize(deserializer)?;
-    if let Some(quality) = value {
-        if quality > 7 {
-            return Err(Error::custom("information_quality must be between 0 and 7"));
-        }
-    }
-    Ok(value)
-}
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct EventPoint {
+    pub event_position: DeltaReferencePosition,
+    // TODO: implements an InformationQuality enum
+    pub information_quality: u8,
 
-fn serialize_information_quality<S>(value: &Option<u8>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    use serde::ser::Error;
-    if let Some(quality) = value {
-        if *quality > 7 {
-            return Err(Error::custom("information_quality must be between 0 and 7"));
-        }
-        serializer.serialize_some(quality)
-    } else {
-        serializer.serialize_none()
-    }
+    pub event_delta_time: Option<u16>,
 }
 
 /// Contains location-related information about the event
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct LocationContainer {
-    /// Speed at the event location in 0.01 m/s
-    pub event_speed: Option<u16>,
+    /// Speed at the event location in cm/s
+    pub event_speed: Option<Speed>,
     /// Heading at the event location in 0.1 degrees
-    pub event_position_heading: Option<u16>,
-    /// List of traces leading to the event position
-    #[serde(default)]
+    pub event_position_heading: Option<Heading>,
+    /// List of traces leading to the event position (optional, even mandatory into the specification)
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub detection_zones_to_event_position: Vec<Trace>,
     /// Type of road where the event occurred
+    // TODO: implements a RoadType enum
     pub road_type: Option<u8>,
 }
 
@@ -143,21 +119,15 @@ pub struct LocationContainer {
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct AlacarteContainer {
     pub lane_position: Option<i8>,
+    // TODO: implements a PositioningSolution enum
     pub positioning_solution: Option<u8>,
 }
 
 /// Represents an action identifier
 #[derive(Clone, Debug, Default, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ActionId {
-    pub originating_station_id: u32, // 0..4294967295
-    pub sequence_number: u16,        // 0..65535
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct EventType {
-    pub cause: u8,
-    pub subcause: Option<u8>,
+    pub originating_station_id: u32,
+    pub sequence_number: u16,
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
@@ -165,55 +135,28 @@ pub struct Trace {
     pub path: Vec<PathPoint>,
 }
 
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct LocationContainerConfidence {
-    pub speed: Option<u8>,
-    pub heading: Option<u8>,
-}
-
-#[repr(u8)]
-pub enum RelevanceTrafficDirection {
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(from = "u8", into = "u8")]
+pub enum TrafficDirection {
+    #[default]
     AllTrafficDirection = 0,
-    UpstreamTraffic,
-    DownstreamTraffic,
-    OppositeTraffic,
-}
-impl From<RelevanceTrafficDirection> for u8 {
-    fn from(val: RelevanceTrafficDirection) -> Self {
-        val as u8
-    }
+    UpstreamTraffic = 1,
+    DownstreamTraffic = 2,
+    OppositeTraffic = 3,
 }
 
-#[repr(u8)]
-pub enum RelevanceDistance {
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(from = "u8", into = "u8")]
+pub enum Distance {
+    #[default]
     LessThan50m = 0,
-    LessThan100m,
-    LessThan200m,
-    LessThan500m,
-    LessThan1000m,
-    LessThan5Km,
-    LessThan10Km,
-    Over10Km,
-}
-impl From<RelevanceDistance> for u8 {
-    fn from(val: RelevanceDistance) -> Self {
-        val as u8
-    }
-}
-impl From<f64> for RelevanceDistance {
-    fn from(value: f64) -> Self {
-        match value {
-            _ if value < 50. => LessThan50m,
-            _ if value < 100. => LessThan100m,
-            _ if value < 200. => LessThan200m,
-            _ if value < 500. => LessThan500m,
-            _ if value < 1000. => LessThan1000m,
-            _ if value < 5_000. => LessThan5Km,
-            _ if value < 10_000. => LessThan10Km,
-            _ => Over10Km,
-        }
-    }
+    LessThan100m = 1,
+    LessThan200m = 2,
+    LessThan500m = 3,
+    LessThan1000m = 4,
+    LessThan5Km = 5,
+    LessThan10Km = 6,
+    Over10Km = 7,
 }
 
 impl DecentralizedEnvironmentalNotificationMessage {
@@ -223,7 +166,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
         event_position: ReferencePosition,
         sequence_number: u16,
         etsi_timestamp: u64,
-        event_position_heading: Option<u16>,
+        event_position_heading: Option<Heading>,
     ) -> Self {
         Self::new(
             station_id,
@@ -235,7 +178,10 @@ impl DecentralizedEnvironmentalNotificationMessage {
             Some(0),
             None,
             None,
-            Some(0),
+            Some(Speed {
+                value: 0,
+                ..Default::default()
+            }),
             event_position_heading,
             Some(10),
             Some(200),
@@ -250,10 +196,10 @@ impl DecentralizedEnvironmentalNotificationMessage {
         sequence_number: u16,
         etsi_timestamp: u64,
         subcause: Option<u8>,
-        awareness_distance: Option<u8>,
-        relevance_traffic_direction: Option<u8>,
-        event_speed: Option<u16>,
-        event_position_heading: Option<u16>,
+        awareness_distance: Option<Distance>,
+        traffic_direction: Option<TrafficDirection>,
+        event_speed: Option<Speed>,
+        event_position_heading: Option<Heading>,
     ) -> Self {
         Self::new(
             station_id,
@@ -264,7 +210,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
             1,
             subcause,
             awareness_distance,
-            relevance_traffic_direction,
+            traffic_direction,
             event_speed,
             event_position_heading,
             Some(10),
@@ -280,10 +226,10 @@ impl DecentralizedEnvironmentalNotificationMessage {
         sequence_number: u16,
         etsi_timestamp: u64,
         subcause: Option<u8>,
-        awareness_distance: Option<u8>,
-        relevance_traffic_direction: Option<u8>,
-        event_speed: Option<u16>,
-        event_position_heading: Option<u16>,
+        awareness_distance: Option<Distance>,
+        traffic_direction: Option<TrafficDirection>,
+        event_speed: Option<Speed>,
+        event_position_heading: Option<Heading>,
     ) -> Self {
         // collisionRisk
         Self::new(
@@ -295,7 +241,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
             97,
             subcause,
             awareness_distance,
-            relevance_traffic_direction,
+            traffic_direction,
             event_speed,
             event_position_heading,
             Some(2),
@@ -307,18 +253,19 @@ impl DecentralizedEnvironmentalNotificationMessage {
         mut denm: Self,
         event_position: ReferencePosition,
         etsi_timestamp: u64,
-        awareness_distance: Option<u8>,
-        relevance_traffic_direction: Option<u8>,
-        event_speed: Option<u16>,
-        event_position_heading: Option<u16>,
+        awareness_distance: Option<Distance>,
+        traffic_direction: Option<TrafficDirection>,
+        event_speed: Option<Speed>,
+        event_position_heading: Option<Heading>,
     ) -> Self {
         // collisionRisk
-        denm.management_container.event_position = event_position;
-        denm.management_container.reference_time = etsi_timestamp;
-        denm.management_container.awareness_distance = awareness_distance;
-        denm.management_container.relevance_traffic_direction = relevance_traffic_direction;
+        denm.management.event_position = event_position;
+        denm.management.reference_time = etsi_timestamp;
+        denm.management.awareness_distance = awareness_distance;
+        denm.management.traffic_direction = traffic_direction;
+
         if event_speed.is_some() || event_position_heading.is_some() {
-            denm.location_container = Option::from(LocationContainer {
+            denm.location = Option::from(LocationContainer {
                 event_speed,
                 event_position_heading,
                 ..Default::default()
@@ -336,17 +283,17 @@ impl DecentralizedEnvironmentalNotificationMessage {
         etsi_timestamp: u64,
         cause: u8,
         subcause: Option<u8>,
-        awareness_distance: Option<u8>,
-        relevance_traffic_direction: Option<u8>,
-        event_speed: Option<u16>,
-        event_position_heading: Option<u16>,
+        awareness_distance: Option<Distance>,
+        traffic_direction: Option<TrafficDirection>,
+        event_speed: Option<Speed>,
+        event_position_heading: Option<Heading>,
         validity_duration: Option<u32>,
         transmission_interval: Option<u16>,
     ) -> Self {
         Self {
             protocol_version: 2,
             station_id,
-            management_container: ManagementContainer {
+            management: ManagementContainer {
                 action_id: ActionId {
                     originating_station_id,
                     sequence_number,
@@ -356,16 +303,16 @@ impl DecentralizedEnvironmentalNotificationMessage {
                 event_position,
                 validity_duration,
                 transmission_interval,
-                station_type: Some(5),
+                station_type: 5,
                 awareness_distance,
-                relevance_traffic_direction,
+                traffic_direction,
                 ..Default::default()
             },
-            situation_container: Option::from(SituationContainer {
-                event_type: EventType { cause, subcause },
+            situation: Option::from(SituationContainer {
+                event_type: CauseCode { cause, subcause },
                 ..Default::default()
             }),
-            location_container: Option::from(LocationContainer {
+            location: Option::from(LocationContainer {
                 event_speed,
                 event_position_heading,
                 ..Default::default()
@@ -374,16 +321,31 @@ impl DecentralizedEnvironmentalNotificationMessage {
         }
     }
 
+    /// Creates an updated copy of the provided DENM
+    pub fn update_denm(
+        detection_time: u64,
+        denm: &DecentralizedEnvironmentalNotificationMessage,
+        mobile: &dyn Mobile,
+    ) -> DecentralizedEnvironmentalNotificationMessage {
+        let mut copy = denm.clone();
+
+        copy.management.detection_time = timestamp_to_etsi(detection_time);
+        copy.management.reference_time = etsi_now();
+        copy.management.event_position = ReferencePosition::from(mobile.position());
+
+        copy
+    }
+
     pub fn update_information_quality(&mut self, information_quality: u8) {
-        let situation_container = self.situation_container.clone();
-        match situation_container {
-            Some(mut situation_container) => {
-                situation_container.information_quality = Some(information_quality);
-                self.situation_container = Some(situation_container);
+        let situation = self.situation.clone();
+        match situation {
+            Some(mut situation) => {
+                situation.information_quality = information_quality;
+                self.situation = Some(situation);
             }
             None => {
-                self.situation_container = Option::from(SituationContainer {
-                    information_quality: Some(information_quality),
+                self.situation = Option::from(SituationContainer {
+                    information_quality,
                     ..Default::default()
                 })
             }
@@ -391,24 +353,21 @@ impl DecentralizedEnvironmentalNotificationMessage {
     }
 
     pub fn is_stationary_vehicle(&self) -> bool {
-        self.situation_container.is_some()
-            && 94 == self.situation_container.as_ref().unwrap().event_type.cause
+        self.situation.is_some() && 94 == self.situation.as_ref().unwrap().event_type.cause
     }
 
     pub fn is_traffic_condition(&self) -> bool {
-        self.situation_container.is_some()
-            && 1 == self.situation_container.as_ref().unwrap().event_type.cause
+        self.situation.is_some() && 1 == self.situation.as_ref().unwrap().event_type.cause
     }
 
     pub fn is_collision_risk(&self) -> bool {
-        self.situation_container.is_some()
-            && 97 == self.situation_container.as_ref().unwrap().event_type.cause
+        self.situation.is_some() && 97 == self.situation.as_ref().unwrap().event_type.cause
     }
 }
 
 impl hash::Hash for DecentralizedEnvironmentalNotificationMessage {
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.management_container.hash(state);
+        self.management.hash(state);
     }
 }
 
@@ -416,7 +375,7 @@ impl Eq for DecentralizedEnvironmentalNotificationMessage {}
 
 impl PartialEq for DecentralizedEnvironmentalNotificationMessage {
     fn eq(&self, other: &Self) -> bool {
-        self.management_container == other.management_container
+        self.management == other.management
     }
 }
 
@@ -426,24 +385,26 @@ impl Mobile for DecentralizedEnvironmentalNotificationMessage {
     }
 
     fn position(&self) -> Position {
-        self.management_container.event_position.as_position()
+        self.management.event_position.as_position()
     }
 
     fn speed(&self) -> Option<f64> {
-        if let Some(location_container) = &self.location_container {
-            location_container.event_speed.map(speed_from_etsi)
-        } else {
-            None
+        match &self.location {
+            Some(location) => location
+                .event_speed
+                .as_ref()
+                .map(|event_speed| speed_from_etsi(event_speed.value)),
+            None => None,
         }
     }
 
     fn heading(&self) -> Option<f64> {
-        if let Some(location_container) = &self.location_container {
-            location_container
+        match &self.location {
+            Some(location) => location
                 .event_position_heading
-                .map(heading_from_etsi)
-        } else {
-            None
+                .as_ref()
+                .map(|event_position_heading| heading_from_etsi(event_position_heading.value)),
+            None => None,
         }
     }
 
@@ -461,9 +422,9 @@ impl Content for DecentralizedEnvironmentalNotificationMessage {
         self.station_id = new_station_id;
         // we keep the action_id: originating_station_id and sequence_number remain unchanged
         // detection_time updated because values changed in the payload (anything else has been updated)
-        self.management_container.detection_time = timestamp;
+        self.management.detection_time = timestamp;
         // reference_time different for each message
-        self.management_container.reference_time = timestamp;
+        self.management.reference_time = timestamp;
     }
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
@@ -477,24 +438,19 @@ impl Content for DecentralizedEnvironmentalNotificationMessage {
 
 impl Mortal for DecentralizedEnvironmentalNotificationMessage {
     fn timeout(&self) -> u64 {
-        self.management_container.reference_time
-            + u64::from(
-                self.management_container
-                    .validity_duration
-                    .unwrap_or_default()
-                    * 1000,
-            )
+        self.management.reference_time
+            + u64::from(self.management.validity_duration.unwrap_or_default() * 1000)
     }
 
     fn terminate(&mut self) {
-        self.management_container.termination = Some(0);
-        self.management_container.detection_time = etsi_now();
-        self.management_container.reference_time = etsi_now();
-        self.management_container.validity_duration = Some(10);
+        self.management.termination = Some(0);
+        self.management.detection_time = etsi_now();
+        self.management.reference_time = etsi_now();
+        self.management.validity_duration = Some(10);
     }
 
     fn terminated(&self) -> bool {
-        self.management_container.termination.is_some()
+        self.management.termination.is_some()
     }
 
     fn remaining_time(&self) -> u64 {
@@ -516,11 +472,10 @@ impl Default for ManagementContainer {
             termination: Default::default(),
             event_position: Default::default(),
             awareness_distance: Default::default(),
-            relevance_traffic_direction: Default::default(),
+            traffic_direction: Default::default(),
             validity_duration: Some(600),
             transmission_interval: Default::default(),
             station_type: Default::default(),
-            confidence: Default::default(),
         }
     }
 }
@@ -537,17 +492,616 @@ impl hash::Hash for ManagementContainer {
     }
 }
 
+impl From<TrafficDirection> for u8 {
+    fn from(val: TrafficDirection) -> Self {
+        val as u8
+    }
+}
+
+impl From<u8> for TrafficDirection {
+    fn from(val: u8) -> Self {
+        match val {
+            0 => TrafficDirection::AllTrafficDirection,
+            1 => TrafficDirection::UpstreamTraffic,
+            2 => TrafficDirection::DownstreamTraffic,
+            3 => TrafficDirection::OppositeTraffic,
+            _ => TrafficDirection::default(), // Default case
+        }
+    }
+}
+
+impl From<Distance> for u8 {
+    fn from(val: Distance) -> Self {
+        val as u8
+    }
+}
+
+impl From<u8> for Distance {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => Distance::LessThan50m,
+            1 => Distance::LessThan100m,
+            2 => Distance::LessThan200m,
+            3 => Distance::LessThan500m,
+            4 => Distance::LessThan1000m,
+            5 => Distance::LessThan5Km,
+            6 => Distance::LessThan10Km,
+            7 => Distance::Over10Km,
+            _ => Distance::default(),
+        }
+    }
+}
+
+impl From<f64> for Distance {
+    fn from(value: f64) -> Self {
+        match value {
+            _ if value < 50. => Distance::LessThan50m,
+            _ if value < 100. => Distance::LessThan100m,
+            _ if value < 200. => Distance::LessThan200m,
+            _ if value < 500. => Distance::LessThan500m,
+            _ if value < 1000. => Distance::LessThan1000m,
+            _ if value < 5_000. => Distance::LessThan5Km,
+            _ if value < 10_000. => Distance::LessThan10Km,
+            _ => Distance::default(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::exchange::etsi::decentralized_environmental_notification_message::{
-        ActionId, AlacarteContainer, DecentralizedEnvironmentalNotificationMessage, EventType,
-        LocationContainer, ManagementContainer, SituationContainer,
+        ActionId, AlacarteContainer, CauseCode, DecentralizedEnvironmentalNotificationMessage,
+        Distance, EventPoint, LocationContainer, ManagementContainer, SituationContainer, Trace,
+        TrafficDirection,
     };
-    use crate::exchange::etsi::reference_position::{PositionConfidence, ReferencePosition};
+    use crate::exchange::etsi::heading::Heading;
+    use crate::exchange::etsi::reference_position::{
+        Altitude, DeltaReferencePosition, PathPoint, PositionConfidenceEllipse, ReferencePosition,
+    };
+    use crate::exchange::etsi::speed::Speed;
     use crate::exchange::etsi::{etsi_now, timestamp_to_etsi};
     use crate::exchange::mortal::Mortal;
     use crate::now;
-    use serde_json::json;
+
+    fn minimal_denm() -> &'static str {
+        r#"{
+            "protocol_version": 255,
+            "station_id": 4294967295,
+            "management": {
+                 "action_id": {
+                    "originating_station_id": 4294967295,
+                    "sequence_number": 65535
+                },
+                "detection_time": 4398046511103,
+                "reference_time": 4398046511103,
+                "event_position": {
+                    "latitude": 900000001,
+                    "longitude": 1800000001,
+                    "altitude": {
+                        "value": 800001,
+                        "confidence": 15
+                    },
+                    "position_confidence_ellipse": {
+                        "semi_major": 4095,
+                        "semi_minor": 0,
+                        "semi_major_orientation": 3601
+                    }
+                },
+                "station_type": 15                
+            }
+        }"#
+    }
+
+    fn standard_denm() -> &'static str {
+        r#"{
+            "protocol_version": 255,
+            "station_id": 4294967295,
+            "management": {
+                 "action_id": {
+                    "originating_station_id": 4294967295,
+                    "sequence_number": 65535
+                },
+                "detection_time": 4398046511103,
+                "reference_time": 4398046511103,
+                "event_position": {
+                    "latitude": 900000001,
+                    "longitude": 1800000001,
+                    "altitude": {
+                        "value": 800001,
+                        "confidence": 15
+                    },
+                    "position_confidence_ellipse": {
+                        "semi_major": 4095,
+                        "semi_minor": 0,
+                        "semi_major_orientation": 3601
+                    }
+                },
+                "station_type": 15,
+                "validity_duration": 86400
+            },
+            "situation": {
+                "information_quality": 7,
+                "event_type": {
+                    "cause": 94,
+                    "subcause": 2
+                }
+            }
+        }"#
+    }
+
+    fn full_denm() -> &'static str {
+        r#"{
+            "protocol_version": 255,
+            "station_id": 4294967295,
+            "management": {
+                 "action_id": {
+                    "originating_station_id": 4294967295,
+                    "sequence_number": 65535
+                },
+                "detection_time": 4398046511103,
+                "reference_time": 4398046511103,
+                "event_position": {
+                    "latitude": 900000001,
+                    "longitude": 1800000001,
+                    "altitude": {
+                        "value": 800001,
+                        "confidence": 15
+                    },
+                    "position_confidence_ellipse": {
+                        "semi_major": 4095,
+                        "semi_minor": 0,
+                        "semi_major_orientation": 3601
+                    }
+                },
+                "station_type": 15,
+                "termination": 1,
+                "awareness_distance": 7,
+                "traffic_direction": 3,
+                "validity_duration": 86400,
+                "transmission_interval": 10000
+            },
+            "situation": {
+                "information_quality": 7,
+                "event_type": {
+                    "cause": 94,
+                    "subcause": 2
+                },
+                "linked_cause": {
+                    "cause": 95,
+                    "subcause": 3
+                },
+                "event_zone": [
+                    {
+                        "event_position": {
+                            "delta_latitude": 131072,
+                            "delta_longitude": -131071,
+                            "delta_altitude": 12800
+                        },
+                        "information_quality": 7,
+                        "event_delta_time": 65535
+                    },
+                    {
+                        "event_position": {
+                            "delta_latitude": -131071,
+                            "delta_longitude": 131072,
+                            "delta_altitude": -12700
+                        },
+                        "information_quality": 0,
+                        "event_delta_time": 0
+                    }
+                ],
+                "linked_denms": [
+                    {
+                        "originating_station_id": 4294967295,
+                        "sequence_number": 65535
+                    },
+                    {
+                        "originating_station_id": 0,
+                        "sequence_number": 0
+                    }
+                ],
+                "event_end": 8191
+            },
+            "location": {
+                "event_speed": {
+                    "value": 16383,
+                    "confidence": 127
+                },
+                "event_position_heading": {
+                    "value": 3601,
+                    "confidence": 127
+                },
+                "detection_zones_to_event_position": [
+                    {
+                        "path": [
+                            {
+                                "path_position": {
+                                    "delta_latitude": 131072,
+                                    "delta_longitude": -131071,
+                                    "delta_altitude": 12800
+                                },
+                                "path_delta_time": 65535
+                            },
+                            {
+                                "path_position": {
+                                    "delta_latitude": -131071,
+                                    "delta_longitude": 131072,
+                                    "delta_altitude": -12700
+                                },
+                                "path_delta_time": 0
+                            }
+                        ]
+                    },
+                    {
+                        "path": [
+                            {
+                                "path_position": {
+                                    "delta_latitude": 65036,
+                                    "delta_longitude": 65036,
+                                    "delta_altitude": 6400
+                                },
+                                "path_delta_time": 32518
+                            },
+                            {
+                                "path_position": {
+                                    "delta_latitude": 32518,
+                                    "delta_longitude": 32518,
+                                    "delta_altitude": 3200
+                                },
+                                "path_delta_time": 16259
+                            }
+                        ]
+                    }
+                ],
+                "road_type": 3
+            },
+            "alacarte": {
+                "lane_position": 14,
+                "positioning_solution": 6
+            }
+        }"#
+    }
+
+    #[test]
+    fn test_deserialize_minimal_denm() {
+        let data = minimal_denm();
+
+        let denm =
+            serde_json::from_str::<DecentralizedEnvironmentalNotificationMessage>(data).unwrap();
+
+        // minimal
+        assert_eq!(denm.protocol_version, 255);
+        assert_eq!(denm.station_id, 4294967295);
+        assert_eq!(denm.management.action_id.originating_station_id, 4294967295);
+        assert_eq!(denm.management.action_id.sequence_number, 65535);
+        assert_eq!(denm.management.detection_time, 4398046511103);
+        assert_eq!(denm.management.reference_time, 4398046511103);
+        assert_eq!(denm.management.event_position.latitude, 900000001);
+        assert_eq!(denm.management.event_position.longitude, 1800000001);
+        assert_eq!(denm.management.event_position.altitude.value, 800001);
+        assert_eq!(denm.management.event_position.altitude.confidence, 15);
+        assert_eq!(
+            denm.management
+                .event_position
+                .position_confidence_ellipse
+                .semi_major,
+            4095
+        );
+        assert_eq!(
+            denm.management
+                .event_position
+                .position_confidence_ellipse
+                .semi_minor,
+            0
+        );
+        assert_eq!(
+            denm.management
+                .event_position
+                .position_confidence_ellipse
+                .semi_major_orientation,
+            3601
+        );
+        assert_eq!(denm.management.station_type, 15);
+
+        // no situation, location or alacarte
+        assert!(denm.situation.is_none());
+        assert!(denm.location.is_none());
+        assert!(denm.alacarte.is_none());
+    }
+
+    #[test]
+    fn test_deserialize_standard_denm() {
+        let data = standard_denm();
+
+        let denm =
+            serde_json::from_str::<DecentralizedEnvironmentalNotificationMessage>(data).unwrap();
+
+        // minimal
+        assert_eq!(denm.protocol_version, 255);
+        assert_eq!(denm.station_id, 4294967295);
+        assert_eq!(denm.management.action_id.originating_station_id, 4294967295);
+        assert_eq!(denm.management.action_id.sequence_number, 65535);
+        assert_eq!(denm.management.detection_time, 4398046511103);
+        assert_eq!(denm.management.reference_time, 4398046511103);
+        assert_eq!(denm.management.event_position.latitude, 900000001);
+        assert_eq!(denm.management.event_position.longitude, 1800000001);
+        assert_eq!(denm.management.event_position.altitude.value, 800001);
+        assert_eq!(denm.management.event_position.altitude.confidence, 15);
+        assert_eq!(
+            denm.management
+                .event_position
+                .position_confidence_ellipse
+                .semi_major,
+            4095
+        );
+        assert_eq!(
+            denm.management
+                .event_position
+                .position_confidence_ellipse
+                .semi_minor,
+            0
+        );
+        assert_eq!(
+            denm.management
+                .event_position
+                .position_confidence_ellipse
+                .semi_major_orientation,
+            3601
+        );
+        assert_eq!(denm.management.station_type, 15);
+
+        //standard
+        assert_eq!(denm.management.validity_duration, Some(86400));
+        assert!(denm.situation.is_some());
+        let situation = denm.situation.as_ref().unwrap();
+        assert_eq!(situation.information_quality, 7);
+        assert_eq!(situation.event_type.cause, 94);
+        assert_eq!(situation.event_type.subcause, Some(2));
+
+        // no situation details
+        assert!(situation.linked_cause.is_none());
+        assert!(situation.event_zone.is_empty());
+        assert!(situation.linked_denms.is_empty());
+        assert!(situation.event_end.is_none());
+
+        // no location or alacarte
+        assert!(denm.location.is_none());
+        assert!(denm.alacarte.is_none());
+    }
+
+    #[test]
+    fn test_deserialize_full_denm() {
+        let data = full_denm();
+
+        let denm =
+            serde_json::from_str::<DecentralizedEnvironmentalNotificationMessage>(data).unwrap();
+
+        // minimal
+        assert_eq!(denm.protocol_version, 255);
+        assert_eq!(denm.station_id, 4294967295);
+        assert_eq!(denm.management.action_id.originating_station_id, 4294967295);
+        assert_eq!(denm.management.action_id.sequence_number, 65535);
+        assert_eq!(denm.management.detection_time, 4398046511103);
+        assert_eq!(denm.management.reference_time, 4398046511103);
+        assert_eq!(denm.management.event_position.latitude, 900000001);
+        assert_eq!(denm.management.event_position.longitude, 1800000001);
+        assert_eq!(denm.management.event_position.altitude.value, 800001);
+        assert_eq!(denm.management.event_position.altitude.confidence, 15);
+        assert_eq!(
+            denm.management
+                .event_position
+                .position_confidence_ellipse
+                .semi_major,
+            4095
+        );
+        assert_eq!(
+            denm.management
+                .event_position
+                .position_confidence_ellipse
+                .semi_minor,
+            0
+        );
+        assert_eq!(
+            denm.management
+                .event_position
+                .position_confidence_ellipse
+                .semi_major_orientation,
+            3601
+        );
+        assert_eq!(denm.management.station_type, 15);
+
+        //standard
+        assert_eq!(denm.management.validity_duration, Some(86400));
+        assert!(denm.situation.is_some());
+        let situation = denm.situation.as_ref().unwrap();
+        assert_eq!(situation.information_quality, 7);
+        assert_eq!(situation.event_type.cause, 94);
+        assert_eq!(situation.event_type.subcause, Some(2));
+
+        // full
+        assert!(situation.linked_cause.is_some());
+        let situation_linked_cause = situation.linked_cause.as_ref().unwrap();
+        assert_eq!(situation_linked_cause.cause, 95);
+        assert_eq!(situation_linked_cause.subcause, Some(3));
+        assert_eq!(situation.event_zone.len(), 2);
+        assert_eq!(
+            situation.event_zone[0].event_position.delta_latitude,
+            131072
+        );
+        assert_eq!(
+            situation.event_zone[0].event_position.delta_longitude,
+            -131071
+        );
+        assert_eq!(situation.event_zone[0].event_position.delta_altitude, 12800);
+        assert_eq!(situation.event_zone[0].information_quality, 7);
+        assert_eq!(situation.event_zone[0].event_delta_time, Some(65535));
+        assert_eq!(
+            situation.event_zone[1].event_position.delta_latitude,
+            -131071
+        );
+        assert_eq!(
+            situation.event_zone[1].event_position.delta_longitude,
+            131072
+        );
+        assert_eq!(
+            situation.event_zone[1].event_position.delta_altitude,
+            -12700
+        );
+        assert_eq!(situation.event_zone[1].information_quality, 0);
+        assert_eq!(situation.event_zone[1].event_delta_time, Some(0));
+
+        assert_eq!(situation.linked_denms.len(), 2);
+        assert_eq!(situation.linked_denms[0].originating_station_id, 4294967295);
+        assert_eq!(situation.linked_denms[0].sequence_number, 65535);
+        assert_eq!(situation.linked_denms[1].originating_station_id, 0);
+        assert_eq!(situation.linked_denms[1].sequence_number, 0);
+        assert_eq!(situation.event_end, Some(8191));
+        assert!(denm.location.is_some());
+        let location = denm.location.as_ref().unwrap();
+        assert!(location.event_speed.is_some());
+        let location_event_speed = location.event_speed.as_ref().unwrap();
+        assert_eq!(location_event_speed.value, 16383);
+        assert_eq!(location_event_speed.confidence, 127);
+        assert!(location.event_position_heading.is_some());
+        let location_event_position_heading = location.event_position_heading.as_ref().unwrap();
+        assert_eq!(location_event_position_heading.value, 3601);
+        assert_eq!(location_event_position_heading.confidence, 127);
+        assert_eq!(location.detection_zones_to_event_position.len(), 2);
+        assert_eq!(location.detection_zones_to_event_position[0].path.len(), 2);
+        assert_eq!(
+            location.detection_zones_to_event_position[0].path[0]
+                .path_position
+                .delta_latitude,
+            131072
+        );
+        assert_eq!(
+            location.detection_zones_to_event_position[0].path[0]
+                .path_position
+                .delta_longitude,
+            -131071
+        );
+        assert_eq!(
+            location.detection_zones_to_event_position[0].path[0]
+                .path_position
+                .delta_altitude,
+            12800
+        );
+        assert_eq!(
+            location.detection_zones_to_event_position[0].path[0].path_delta_time,
+            Some(65535)
+        );
+        assert_eq!(
+            location.detection_zones_to_event_position[0].path[1]
+                .path_position
+                .delta_latitude,
+            -131071
+        );
+        assert_eq!(
+            location.detection_zones_to_event_position[0].path[1]
+                .path_position
+                .delta_longitude,
+            131072
+        );
+        assert_eq!(
+            location.detection_zones_to_event_position[0].path[1]
+                .path_position
+                .delta_altitude,
+            -12700
+        );
+        assert_eq!(
+            location.detection_zones_to_event_position[0].path[1].path_delta_time,
+            Some(0)
+        );
+        assert_eq!(location.detection_zones_to_event_position[1].path.len(), 2);
+        assert_eq!(
+            location.detection_zones_to_event_position[1].path[0]
+                .path_position
+                .delta_latitude,
+            65036
+        );
+        assert_eq!(
+            location.detection_zones_to_event_position[1].path[0]
+                .path_position
+                .delta_longitude,
+            65036
+        );
+        assert_eq!(
+            location.detection_zones_to_event_position[1].path[0]
+                .path_position
+                .delta_altitude,
+            6400
+        );
+        assert_eq!(
+            location.detection_zones_to_event_position[1].path[0].path_delta_time,
+            Some(32518)
+        );
+        assert_eq!(
+            location.detection_zones_to_event_position[1].path[1]
+                .path_position
+                .delta_latitude,
+            32518
+        );
+        assert_eq!(
+            location.detection_zones_to_event_position[1].path[1]
+                .path_position
+                .delta_longitude,
+            32518
+        );
+        assert_eq!(
+            location.detection_zones_to_event_position[1].path[1]
+                .path_position
+                .delta_altitude,
+            3200
+        );
+        assert_eq!(
+            location.detection_zones_to_event_position[1].path[1].path_delta_time,
+            Some(16259)
+        );
+        assert_eq!(location.road_type, Some(3));
+        assert!(denm.alacarte.is_some());
+        let alacarte = denm.alacarte.as_ref().unwrap();
+        assert_eq!(alacarte.lane_position, Some(14));
+        assert_eq!(alacarte.positioning_solution, Some(6));
+    }
+
+    #[test]
+    fn test_reserialize_minimal_denm() {
+        let data = minimal_denm();
+
+        let denm =
+            serde_json::from_str::<DecentralizedEnvironmentalNotificationMessage>(data).unwrap();
+        let serialized = serde_json::to_string(&denm).unwrap();
+        assert_eq!(
+            serialized,
+            data.replace("\n", "").replace(" ", "").replace("\t", "")
+        );
+    }
+
+    #[test]
+    fn test_reserialize_standard_denm() {
+        let data = standard_denm();
+
+        let denm =
+            serde_json::from_str::<DecentralizedEnvironmentalNotificationMessage>(data).unwrap();
+        let serialized = serde_json::to_string(&denm).unwrap();
+        assert_eq!(
+            serialized,
+            data.replace("\n", "").replace(" ", "").replace("\t", "")
+        );
+    }
+
+    #[test]
+    fn test_reserialize_full_denm() {
+        let data = full_denm();
+
+        let denm =
+            serde_json::from_str::<DecentralizedEnvironmentalNotificationMessage>(data).unwrap();
+        let serialized = serde_json::to_string(&denm).unwrap();
+        assert_eq!(
+            serialized,
+            data.replace("\n", "").replace(" ", "").replace("\t", "")
+        );
+    }
 
     #[test]
     fn create_new_stationary_vehicle() {
@@ -556,7 +1110,10 @@ mod tests {
         let event_position = ReferencePosition::default();
         let sequence_number = 10;
         let detection_time = etsi_now();
-        let event_position_heading = Some(3000);
+        let event_position_heading = Some(Heading {
+            value: 3000,
+            ..Default::default()
+        });
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         let denm = DecentralizedEnvironmentalNotificationMessage::new_stationary_vehicle(
@@ -570,38 +1127,33 @@ mod tests {
         );
         assert_eq!(denm.station_id, station_id);
         assert_eq!(
-            denm.management_container.action_id.originating_station_id,
+            denm.management.action_id.originating_station_id,
             originating_station_id
         );
-        assert_eq!(denm.management_container.event_position, event_position);
-        assert_eq!(
-            denm.management_container.action_id.sequence_number,
-            sequence_number
-        );
+        assert_eq!(denm.management.event_position, event_position);
+        assert_eq!(denm.management.action_id.sequence_number, sequence_number);
 
-        assert_eq!(denm.management_container.detection_time, detection_time);
-        assert!(
-            denm.management_container.detection_time <= denm.management_container.reference_time
-        );
+        assert_eq!(denm.management.detection_time, detection_time);
+        assert!(denm.management.detection_time <= denm.management.reference_time);
     }
 
     #[test]
     fn information_quality_update() {
         let mut denm = DecentralizedEnvironmentalNotificationMessage::default();
 
-        assert!(denm.situation_container.is_none());
+        assert!(denm.situation.is_none());
 
         denm.update_information_quality(5);
-        assert!(denm.situation_container.is_some());
-        let situation_container = denm.situation_container.unwrap();
-        assert_eq!(situation_container.information_quality, Some(5));
+        assert!(denm.situation.is_some());
+        let situation = denm.situation.unwrap();
+        assert_eq!(situation.information_quality, 5);
     }
 
     #[test]
     fn correct_timeout() {
         let now = now();
         let denm = DecentralizedEnvironmentalNotificationMessage {
-            management_container: ManagementContainer {
+            management: ManagementContainer {
                 reference_time: timestamp_to_etsi(now) + 500,
                 detection_time: timestamp_to_etsi(now),
                 validity_duration: Some(10),
@@ -611,10 +1163,7 @@ mod tests {
         };
 
         assert!(denm.remaining_time() <= 10);
-        assert_eq!(
-            denm.timeout() - denm.management_container.reference_time,
-            10_000
-        );
+        assert_eq!(denm.timeout() - denm.management.reference_time, 10_000);
     }
 
     #[test]
@@ -622,31 +1171,36 @@ mod tests {
         let denm = DecentralizedEnvironmentalNotificationMessage {
             protocol_version: 2,
             station_id: 12345,
-            management_container: ManagementContainer {
+            management: ManagementContainer {
                 action_id: ActionId {
                     originating_station_id: 54321,
                     sequence_number: 1,
                 },
                 detection_time: 1000,
                 reference_time: 1000,
-                event_position: ReferencePosition::default(),
-                validity_duration: Some(600),
-                termination: None,
-                awareness_distance: None,
-                relevance_traffic_direction: None,
-                transmission_interval: None,
-                station_type: None,
-                confidence: None,
+                event_position: ReferencePosition {
+                    latitude: 900000001,
+                    longitude: 1800000001,
+                    altitude: Altitude {
+                        value: 800001,
+                        confidence: 15,
+                    },
+                    position_confidence_ellipse: PositionConfidenceEllipse {
+                        semi_major: 4095,
+                        semi_minor: 0,
+                        semi_major_orientation: 3601,
+                    },
+                },
+                station_type: 5,
+                ..Default::default()
             },
-            situation_container: None,
-            location_container: None,
-            alacarte_container: None,
+            ..Default::default()
         };
 
         let json = serde_json::to_value(&denm).unwrap();
         assert_eq!(json["protocol_version"], 2);
         assert_eq!(json["station_id"], 12345);
-        assert!(json.get("situation_container").is_none());
+        assert!(json.get("situation").is_none());
     }
 
     #[test]
@@ -654,41 +1208,77 @@ mod tests {
         let denm = DecentralizedEnvironmentalNotificationMessage {
             protocol_version: 2,
             station_id: 12345,
-            management_container: ManagementContainer {
+            management: ManagementContainer {
                 action_id: ActionId {
                     originating_station_id: 54321,
                     sequence_number: 1,
                 },
                 detection_time: 1000,
                 reference_time: 1000,
-                event_position: ReferencePosition::default(),
+                event_position: ReferencePosition {
+                    latitude: 900000001,
+                    longitude: 1800000001,
+                    altitude: Altitude {
+                        value: 800001,
+                        confidence: 15,
+                    },
+                    position_confidence_ellipse: PositionConfidenceEllipse {
+                        semi_major: 4095,
+                        semi_minor: 0,
+                        semi_major_orientation: 3601,
+                    },
+                },
+                station_type: 5,
                 validity_duration: Some(600),
                 termination: Some(0),
-                awareness_distance: Some(5),
-                relevance_traffic_direction: Some(0),
+                awareness_distance: Some(Distance::LessThan5Km),
+                traffic_direction: Some(TrafficDirection::AllTrafficDirection),
                 transmission_interval: Some(1000),
-                station_type: Some(5),
-                confidence: Some(PositionConfidence {
-                    semi_major_confidence: 100,
-                    semi_minor_confidence: 100,
-                    semi_major_orientation: 0,
-                }),
             },
-            situation_container: Some(SituationContainer {
-                information_quality: Some(7),
-                event_type: EventType {
+            situation: Some(SituationContainer {
+                information_quality: 7,
+                event_type: CauseCode {
                     cause: 94,
                     subcause: Some(2),
                 },
                 linked_cause: None,
+                event_zone: vec![EventPoint {
+                    event_position: DeltaReferencePosition {
+                        delta_latitude: 0,
+                        delta_longitude: 0,
+                        delta_altitude: 0,
+                    },
+                    information_quality: 5,
+                    event_delta_time: Some(100),
+                }],
+                linked_denms: vec![ActionId {
+                    originating_station_id: 54321,
+                    sequence_number: 1,
+                }],
+                event_end: Some(10),
             }),
-            location_container: Some(LocationContainer {
-                event_speed: Some(100),
-                event_position_heading: Some(900),
-                detection_zones_to_event_position: vec![],
+            location: Some(LocationContainer {
+                event_speed: Some(Speed {
+                    value: 100,
+                    confidence: 5,
+                }),
+                event_position_heading: Some(Heading {
+                    value: 900,
+                    confidence: 3,
+                }),
+                detection_zones_to_event_position: vec![Trace {
+                    path: vec![PathPoint {
+                        path_position: DeltaReferencePosition {
+                            delta_latitude: 0,
+                            delta_longitude: 0,
+                            delta_altitude: 0,
+                        },
+                        path_delta_time: Some(100),
+                    }],
+                }],
                 road_type: Some(0),
             }),
-            alacarte_container: Some(AlacarteContainer {
+            alacarte: Some(AlacarteContainer {
                 lane_position: Some(1),
                 positioning_solution: Some(1),
             }),
@@ -696,56 +1286,7 @@ mod tests {
 
         let json = serde_json::to_value(&denm).unwrap();
         assert_eq!(json["protocol_version"], 2);
-        assert_eq!(json["situation_container"]["information_quality"], 7);
-        assert_eq!(json["location_container"]["event_speed"], 100);
-    }
-
-    #[test]
-    fn deserialize_denm() {
-        let json = json!({
-            "protocol_version": 2,
-            "station_id": 12345,
-            "management_container": {
-                "action_id": {
-                    "originating_station_id": 54321,
-                    "sequence_number": 1
-                },
-                "detection_time": 1000,
-                "reference_time": 1000,
-                "event_position": {
-                    "latitude": 0,
-                    "longitude": 0,
-                    "altitude": {
-                        "value": 0,
-                        "confidence": 0
-                    }
-                },
-                "validity_duration": 600
-            }
-        });
-
-        let denm: DecentralizedEnvironmentalNotificationMessage =
-            serde_json::from_value(json).unwrap();
-        assert_eq!(denm.protocol_version, 2);
-        assert_eq!(denm.station_id, 12345);
-        assert_eq!(denm.management_container.validity_duration, Some(600));
-    }
-
-    #[test]
-    fn validate_information_quality_bounds() {
-        let denm = DecentralizedEnvironmentalNotificationMessage {
-            situation_container: Some(SituationContainer {
-                information_quality: Some(8), // Invalid value
-                event_type: EventType {
-                    cause: 94,
-                    subcause: None,
-                },
-                linked_cause: None,
-            }),
-            ..Default::default()
-        };
-
-        let result = serde_json::to_string(&denm);
-        assert!(result.is_err());
+        assert_eq!(json["situation"]["information_quality"], 7);
+        assert_eq!(json["location"]["event_speed"]["value"], 100);
     }
 }
