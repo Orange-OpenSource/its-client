@@ -209,7 +209,6 @@ INFO [libits::transport::mqtt::mqtt_router] Registered route for topic: #
 INFO [collector] Exporter stdout activated
 INFO [collector] Exporter file activated on /data/collector with switch each 10000 lines
 INFO [collector] Exporter mqtt deactivated
-
 ...
 ```
 
