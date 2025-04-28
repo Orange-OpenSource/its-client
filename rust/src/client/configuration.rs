@@ -196,8 +196,7 @@ suffix = v2x
 source_uuid = com_myapplication-1
 station_id = 1
 # true to enable the responsibility
-use_responsibility = true
-# the number of threads to use
+use_responsibility = true# the number of threads to use
 thread_count = 4
 
 [telemetry]
