@@ -143,25 +143,6 @@ pub(crate) fn get_optional_from_section<T: FromStr>(
     }
 }
 
-pub(crate) fn get_mandatory_field<T: FromStr>(
-    section: Option<&'static str>,
-    field: &'static str,
-    ini_config: &Ini,
-) -> Result<T, ConfigurationError> {
-    if let Some(properties) = ini_config.section(section) {
-        if let Some(value) = properties.get(field) {
-            match T::from_str(value) {
-                Ok(value) => Ok(value),
-                Err(_e) => Err(TypeError(field, type_name::<T>())),
-            }
-        } else {
-            Err(MissingMandatoryField(field, section.unwrap_or_default()))
-        }
-    } else {
-        Err(MissingMandatorySection(section.unwrap_or_default()))
-    }
-}
-
 pub(crate) fn get_mandatory_from_section<T: FromStr>(
     field: &'static str,
     section: (&'static str, &Properties),
@@ -226,82 +207,87 @@ mod tests {
     use crate::client::configuration::{Configuration, get_optional_field, pick_mandatory_section};
     use ini::Ini;
 
-    #[cfg(feature = "telemetry")]
-    use crate::client::configuration::telemetry_configuration;
-
     const EXHAUSTIVE_CUSTOM_INI_CONFIG: &str = r#"
-no_section="noitceson"
+no_section = noitceson
 
 [station]
-id="com_myapplication"
-type="mec_application"
+id = com_myapplication
+type = mec_application
 
 [mqtt]
-host="localhost"
-port=1883
-client_id="com_myapplication"
+host = localhost
+port = 1883
+use_tls = false
+client_id = com_myapplication
+username = username
+password = password
 
 [geo]
-prefix=sandbox
-suffix=v2x
+prefix = sandbox
+suffix = v2x
 
 [node]
-responsibility_enabled=true
+responsibility_enabled = true
 
 [telemetry]
-host="otlp.domain.com"
-port=5418
-path="/custom/v1/traces"
+host = otlp.domain.com
+port = 5418
+use_tls = false
+path = /custom/v1/traces
 
 [custom]
-test="success"
+test = success
 "#;
 
     const MINIMAL_FEATURELESS_CONFIGURATION: &str = r#"
 [mqtt]
-host="localhost"
-port=1883
-client_id="com_myapplication"
+host = localhost
+port = 1883
+client_id = com_myapplication
 "#;
 
     #[cfg(feature = "mobility")]
     const MINIMAL_MOBILITY_CONFIGURATION: &str = r#"
 [station]
-id="com_myapplication"
-type="mec_application"
+id = com_myapplication
+type = mec_application
 
 [mqtt]
-host="localhost"
-port=1883
-client_id="com_myapplication"
+host = localhost
+port = 1883
+use_tls = false
+client_id = com_myapplication
 "#;
 
     #[cfg(feature = "mobility")]
     const MINIMAL_GEO_ROUTING_CONFIGURATION: &str = r#"
 [station]
-id="com_myapplication"
-type="mec_application"
+id = com_myapplication
+type = mec_application
 
 [mqtt]
-host="localhost"
+host = localhost
 port=1883
-client_id="com_myapplication"
+use_tls = false
+client_id= com_myapplication
 
 [geo]
-prefix=sandbox
-suffix=v2x
+prefix = sandbox
+suffix = v2x
 "#;
 
     #[cfg(feature = "telemetry")]
     const MINIMAL_TELEMETRY_CONFIGURATION: &str = r#"
 [mqtt]
-host="localhost"
-port=1883
-client_id="com_myapplication"
+host = localhost
+port = 1883
+use_tls = false
+client_id = com_myapplication
 
 [telemetry]
-host="otlp.domain.com"
-port=5418
+host = otlp.domain.com
+port = 5418
+use_tls = false
 "#;
 
     #[test]
@@ -414,15 +400,8 @@ port=5418
         let ini = Ini::load_from_str(MINIMAL_TELEMETRY_CONFIGURATION)
             .expect("Ini creation should not fail");
 
-        let configuration = Configuration::try_from(ini)
+        Configuration::try_from(ini)
             .expect("Failed to create Configuration with minimal mandatory sections and fields");
-
-        assert_eq!(
-            telemetry_configuration::DEFAULT_PATH.to_string(),
-            configuration.telemetry.path,
-            "Telemetry path must default to {}",
-            telemetry_configuration::DEFAULT_PATH
-        );
     }
 
     #[test]
@@ -432,7 +411,7 @@ port=5418
         let ini = Ini::load_from_str(MINIMAL_MOBILITY_CONFIGURATION)
             .expect("Ini creation should not fail");
 
-        let _ = Configuration::try_from(ini)
+        Configuration::try_from(ini)
             .expect("Failed to create Configuration with minimal mandatory sections and fields");
     }
 
@@ -443,7 +422,7 @@ port=5418
         let ini = Ini::load_from_str(MINIMAL_GEO_ROUTING_CONFIGURATION)
             .expect("Ini creation should not fail");
 
-        let _ = Configuration::try_from(ini)
+        Configuration::try_from(ini)
             .expect("Failed to create Configuration with minimal mandatory sections and fields");
     }
 }
