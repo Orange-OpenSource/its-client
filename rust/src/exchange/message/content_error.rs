@@ -17,8 +17,6 @@ pub enum ContentError {
     NotAMobile(&'static str),
     #[error("Struct {0} does not implement Mortal trait")]
     NotAMortal(&'static str),
-    #[error("Missing station data container for {0} type message")]
-    MissingStationDataContainer(&'static str),
-    #[error("{0} type message has been sent by a RSU station")]
-    RsuOriginatingMessage(&'static str),
+    #[error("{0} type message hasn't been sent by a vehicle")]
+    NotOriginatingVehicle(&'static str),
 }

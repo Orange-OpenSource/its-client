@@ -36,6 +36,7 @@ pub struct SignalPhaseAndTimingExtendedMessage {
     pub station_id: u32,
 
     /// Reference time of the signal state timing present in the message
+    // FIXME check if it's realy a "minute_of_the_year". If yes...fix this code.
     pub timestamp: Option<u64>,
     pub sending_station_id: Option<u64>,
     pub region: Option<u64>,
@@ -50,7 +51,7 @@ impl Content for SignalPhaseAndTimingExtendedMessage {
     }
 
     fn appropriate(&mut self, timestamp: u64, new_station_id: u32) {
-        self.id = new_station_id.into();
+        self.station_id = new_station_id.into();
         self.timestamp = Some(timestamp);
     }
 

@@ -184,7 +184,7 @@ fn compute_heading_from_rsu(perceived_object: &PerceivedObject) -> f64 {
 #[cfg(test)]
 mod tests {
     use crate::exchange::etsi::collective_perception_message::{
-        CollectivePerceptionMessage, ManagementContainer, OriginatingVehicleContainer,
+        CollectivePerceptionMessage, Heading, ManagementContainer, OriginatingVehicleContainer,
         StationDataContainer,
     };
     use crate::exchange::etsi::mobile_perceived_object::{
@@ -341,11 +341,13 @@ mod tests {
                         }),
                         ..Default::default()
                     },
-                    ..Default::default()
                 },
                 station_data_container: Some(StationDataContainer {
                     originating_vehicle_container: Some(OriginatingVehicleContainer {
-                        heading: 1800,
+                        heading: Heading {
+                            value: 1800,
+                            ..Default::default()
+                        },
                         ..Default::default()
                     }),
                     originating_rsu_container: None,
@@ -417,7 +419,6 @@ mod tests {
                         }),
                         ..Default::default()
                     },
-                    ..Default::default()
                 },
                 ..Default::default()
             },
