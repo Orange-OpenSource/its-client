@@ -42,8 +42,11 @@ pub fn init_tracer(
 
     // FIXME manage HTTPS
     let endpoint = format!(
-        "http://{}:{}/{}",
-        configuration.host, configuration.port, path
+        "http{}://{}:{}/{}",
+        if configuration.use_tls { "s" } else { "" },
+        configuration.host,
+        configuration.port,
+        path
     );
 
     let http_client = match configuration.basic_auth_header() {
