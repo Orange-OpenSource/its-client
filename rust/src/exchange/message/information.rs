@@ -21,6 +21,36 @@ use serde::{Deserialize, Serialize};
 /// - A client sending messages (e.g., OBU/RSU).
 ///
 /// The corresponding JSON schema for this struct can be found in the schema directory of the project.
+
+/// Represents a client or server information message.
+///
+/// This message carries information about an instance involved in V2X message exchanges.
+/// It can represent either:
+/// - A server hosting a broker and/or applications that consume/produce messages.
+/// - A client sending messages (e.g., OBU/RSU).
+/// It implements the schema defined in the Information file version 2.1.0.
+///
+/// # Fields
+///
+/// * `message_type` - Type of the message, defaults to "information"
+/// * `version` - Version of the message format
+/// * `source_uuid` - Unique identifier of the source
+/// * `timestamp` - Generation timestamp in milliseconds since UNIX epoch
+/// * `instance_id` - Unique identifier of the instance
+/// * `instance_type` - Type of instance (Local, Edge, or Central)
+/// * `central_instance_id` - Optional identifier of the central instance
+/// * `running` - Running status of the instance, defaults to false
+/// * `validity_duration` - Validity period in seconds
+/// * `public_ip_address` - List of public IP addresses
+/// * `mqtt_ip` - List of MQTT endpoints without TLS
+/// * `mqtt_tls_ip` - List of MQTT endpoints with TLS
+/// * `http_ip` - List of HTTP endpoints without TLS
+/// * `http_tls_ip` - List of HTTP endpoints with TLS
+/// * `http_proxy` - List of HTTP proxy endpoints
+/// * `ntp_servers` - List of NTP server endpoints
+/// * `domain_name_servers` - List of DNS server endpoints
+/// * `service_area` - Optional service area definition
+/// * `cells_id` - List of cell identifiers
 #[serde_with::skip_serializing_none]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Information {

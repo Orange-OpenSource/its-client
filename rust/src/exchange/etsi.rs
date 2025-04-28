@@ -9,42 +9,28 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use crate::exchange::etsi::reference_position::DeltaReferencePosition;
 use crate::now;
-use serde::{Deserialize, Serialize};
 
+mod acceleration;
+mod angle;
 pub mod collective_perception_message;
 pub mod cooperative_awareness_message;
+pub(crate) mod cooperative_awareness_message_113;
+mod curvature;
 pub mod decentralized_environmental_notification_message;
+pub(crate) mod heading;
 pub mod map_extended_message;
 pub mod mobile_perceived_object;
 pub mod perceived_object;
 pub mod reference_position;
+mod reference_position113;
 pub mod signal_phase_and_timing_extended_message;
+pub(crate) mod speed;
+mod steering_wheel_angle;
+mod vehicle_length;
+mod yaw_rate;
 
 const ETSI_TIMESTAMP_OFFSET: u64 = 1072915200000;
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PositionConfidence {
-    pub position_confidence_ellipse: Option<PositionConfidenceEllipse>,
-    pub altitude: Option<u8>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PositionConfidenceEllipse {
-    pub semi_major_confidence: Option<u16>,
-    pub semi_minor_confidence: Option<u16>,
-    pub semi_major_orientation: Option<u16>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PathPoint {
-    pub path_position: DeltaReferencePosition,
-    pub path_delta_time: Option<u16>,
-}
 
 /// Converts heading from decidegrees to radians
 pub(crate) fn heading_from_etsi(decidegrees: u16) -> f64 {

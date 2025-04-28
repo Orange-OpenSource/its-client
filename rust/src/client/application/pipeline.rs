@@ -99,6 +99,8 @@ pub async fn run<A, C, T>(
             monitoring_receiver,
         );
 
+        let thread_count = configuration.mobility.thread_count;
+        info!("Analysis thread count set to: {}", thread_count);
         let analysis_pool = threadpool::ThreadPool::with_name("Analysis".to_string(), thread_count);
 
         let (analyser_sender, analyser_receiver) = unbounded();

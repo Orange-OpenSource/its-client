@@ -15,6 +15,7 @@ pub mod information;
 
 use crate::exchange::etsi::collective_perception_message::CollectivePerceptionMessage;
 use crate::exchange::etsi::cooperative_awareness_message::CooperativeAwarenessMessage;
+use crate::exchange::etsi::cooperative_awareness_message_113::CooperativeAwarenessMessage113;
 use crate::exchange::etsi::decentralized_environmental_notification_message::DecentralizedEnvironmentalNotificationMessage;
 use crate::exchange::etsi::map_extended_message::MAPExtendedMessage;
 use crate::exchange::etsi::signal_phase_and_timing_extended_message::SignalPhaseAndTimingExtendedMessage;
@@ -35,6 +36,8 @@ pub enum Message {
     DENM(DecentralizedEnvironmentalNotificationMessage),
     MAPEM(MAPExtendedMessage),
     SPATEM(SignalPhaseAndTimingExtendedMessage),
+
+    CAM113(CooperativeAwarenessMessage113),
 }
 
 impl Message {
@@ -45,6 +48,7 @@ impl Message {
             Self::DENM(v) => v,
             Self::MAPEM(v) => v,
             Self::SPATEM(v) => v,
+            Self::CAM113(v) => v,
         }
     }
 }
