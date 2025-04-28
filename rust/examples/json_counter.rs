@@ -16,7 +16,7 @@ use std::str::FromStr;
 use clap::{Arg, Command};
 use ini::Ini;
 use libits::client::configuration::Configuration;
-use libits::client::configuration::create_stdout_logger;
+use libits::client::logger::create_stdout_logger;
 use libits::transport::mqtt::mqtt_client::MqttClient;
 use libits::transport::mqtt::mqtt_router::MqttRouter;
 use libits::transport::mqtt::str_topic::StrTopic;
