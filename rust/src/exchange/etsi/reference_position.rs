@@ -17,18 +17,25 @@ use serde::{Deserialize, Serialize};
 const COORDINATE_SIGNIFICANT_DIGIT: u8 = 7;
 const ALTITUDE_SIGNIFICANT_DIGIT: u8 = 2;
 
-/// Represents a reference position with confidence information
+/// Represents a Reference Position according to ETSI standard.
+///
+/// This message is used to describe a position.
+/// It implements the schema defined in the DENM version 2.3.0.
+///
+/// # Fields
+///
+/// - `latitude`: Latitude in tenths of microdegrees (i32).
+/// - `longitude`: Longitude in tenths of microdegrees (i32).
+/// - `position_confidence_ellipse`: Confidence ellipse for the position.
+/// - `altitude`: Altitude in centimeters, with a default value of 800001 (i32).
 #[derive(Clone, Default, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct ReferencePosition {
     #[serde(default = "default_latitude")]
-    pub latitude: i32, // -900000000..900000001
+    pub latitude: i32,
     #[serde(default = "default_longitude")]
-    pub longitude: i32, // -1800000000..1800000001
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub altitude: Option<Altitude>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub confidence: Option<PositionConfidence>,
+    pub longitude: i32,
+    pub position_confidence_ellipse: PositionConfidenceEllipse,
+    pub altitude: Altitude,
 }
 
 fn default_latitude() -> i32 {
@@ -41,18 +48,22 @@ fn default_longitude() -> i32 {
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Altitude {
     #[serde(default = "default_altitude")]
-    pub value: i32, // -100000..800001
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub confidence: Option<u8>, // 0..15
+    pub value: i32,
+    #[serde(default = "default_confidence")]
+    pub confidence: u8,
 }
 
 fn default_altitude() -> i32 {
     800001
 }
 
+fn default_confidence() -> u8 {
+    15
+}
+
 /// Represents the position confidence in a reference position
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct PositionConfidence {
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct PositionConfidenceEllipse {
     #[serde(default = "default_semi_major_confidence")]
     pub semi_major_confidence: u16, // 0..4095, default 4095
     #[serde(default = "default_semi_minor_confidence")]
@@ -76,7 +87,7 @@ impl ReferencePosition {
         Position {
             latitude: coordinate_from_etsi(self.latitude),
             longitude: coordinate_from_etsi(self.longitude),
-            altitude: altitude_from_etsi(self.altitude.as_ref().map(|a| a.value).unwrap_or(0)),
+            altitude: altitude_from_etsi(self.altitude.value),
         }
     }
 }
@@ -86,10 +97,10 @@ impl From<Position> for ReferencePosition {
         ReferencePosition {
             latitude: coordinate_to_etsi(position.latitude),
             longitude: coordinate_to_etsi(position.longitude),
-            altitude: Some(Altitude {
+            altitude: Altitude {
                 value: altitude_to_etsi(position.altitude),
                 ..Default::default()
-            }),
+            },
             ..Default::default()
         }
     }
@@ -97,11 +108,14 @@ impl From<Position> for ReferencePosition {
 
 impl fmt::Display for ReferencePosition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let altitude = self.altitude.as_ref().unwrap();
         write!(
             f,
             "(lat: {} / lon: {} / alt: {}(prec. {:?}) / conf: {:?})",
-            self.latitude, self.longitude, altitude.value, altitude.confidence, self.confidence
+            self.latitude,
+            self.longitude,
+            self.altitude.value,
+            self.altitude.confidence,
+            self.position_confidence_ellipse
         )
     }
 }
@@ -232,10 +246,10 @@ mod tests {
         let reference_position = ReferencePosition {
             latitude: 488417860,
             longitude: 23678940,
-            altitude: Some(Altitude {
+            altitude: Altitude {
                 value: 16880,
                 ..Default::default()
-            }),
+            },
             ..Default::default()
         };
         let expected_position = Position {
@@ -276,10 +290,10 @@ mod tests {
         let expected_reference_position = ReferencePosition {
             latitude: 488417860,
             longitude: 23678940,
-            altitude: Some(Altitude {
+            altitude: Altitude {
                 value: 16880,
                 ..Default::default()
-            }),
+            },
             ..Default::default()
         };
 
@@ -298,41 +312,4 @@ mod tests {
             expected_reference_position.altitude
         );
     }
-}
-
-#[derive(Clone, Default, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
-pub struct ReferencePosition113 {
-    #[serde(default = "default_latitude")]
-    pub latitude: i32, // -900000000..900000001
-    #[serde(default = "default_longitude")]
-    pub longitude: i32, // -1800000000..1800000001
-    #[serde(default = "default_altitude")]
-    pub altitude: i32, // -100000..800001
-}
-impl From<Position> for ReferencePosition113 {
-    fn from(position: Position) -> Self {
-        ReferencePosition113 {
-            latitude: coordinate_to_etsi(position.latitude),
-            longitude: coordinate_to_etsi(position.longitude),
-            altitude: altitude_to_etsi(position.altitude),
-        }
-    }
-}
-
-impl ReferencePosition113 {
-    pub fn as_position(&self) -> Position {
-        Position {
-            latitude: coordinate_from_etsi(self.latitude),
-            longitude: coordinate_from_etsi(self.longitude),
-            altitude: altitude_from_etsi(self.altitude),
-        }
-    }
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct DeltaReferencePosition {
-    pub delta_latitude: i32,
-    pub delta_longitude: i32,
-    pub delta_altitude: i32,
 }

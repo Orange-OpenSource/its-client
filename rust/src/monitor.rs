@@ -36,7 +36,7 @@ pub fn trace_exchange(
     println!(
         "{} {} {} {} {} at {}",
         component,
-        exchange.type_field,
+        exchange.message_type,
         direction,
         partner,
         message_part,

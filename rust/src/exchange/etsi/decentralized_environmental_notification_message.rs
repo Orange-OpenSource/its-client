@@ -11,12 +11,10 @@
 
 use std::hash;
 
-use crate::exchange::etsi::decentralized_environmental_notification_message::RelevanceDistance::{
-    LessThan5Km, LessThan10Km, LessThan50m, LessThan100m, LessThan200m, LessThan500m,
-    LessThan1000m, Over10Km,
+use crate::exchange::etsi::reference_position::ReferencePosition;
+use crate::exchange::etsi::{
+    Heading, PathPoint, Speed, etsi_now, heading_from_etsi, speed_from_etsi,
 };
-use crate::exchange::etsi::reference_position::{PositionConfidence, ReferencePosition};
-use crate::exchange::etsi::{PathPoint, etsi_now, heading_from_etsi, speed_from_etsi};
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::mortal::Mortal;
@@ -28,7 +26,7 @@ use serde::{Deserialize, Serialize};
 /// Represents a Decentralized Environmental Notification Message (DENM) according to ETSI standard.
 ///
 /// This message is used to describe detected road hazards and traffic conditions.
-/// The structure follows the JSON schema version 2.1.0 specification.
+/// It implements the schema defined in the DENM version 2.3.0.
 ///
 /// # Fields
 ///
@@ -41,13 +39,20 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct DecentralizedEnvironmentalNotificationMessage {
     #[serde(default = "default_protocol_version")]
-    pub protocol_version: u8, // 0..255
-    pub station_id: u32, // 0..4294967295
+    /// The version of the ITS message (Mandatory field)
+    pub protocol_version: u8,
+    /// The identifier for an ITS-S (Mandatory field)
+    pub station_id: u32,
+    /// Contains management information for the DENM (Mandatory field)
     pub management_container: ManagementContainer,
+
+    /// Contains situation information about the detected event (Optional field)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub situation_container: Option<SituationContainer>,
+    /// Contains location-related information about the event (Optional field)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub location_container: Option<LocationContainer>,
+    /// Contains additional specific information (Optional field)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub alacarte_container: Option<AlacarteContainer>,
 }
@@ -60,80 +65,47 @@ fn default_protocol_version() -> u8 {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ManagementContainer {
     pub action_id: ActionId,
-    pub detection_time: u64, // 0..4398046511103
-    pub reference_time: u64, // 0..4398046511103
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub termination: Option<u8>, // 0..1
+    pub detection_time: u64,
+    pub reference_time: u64,
     pub event_position: ReferencePosition,
+    pub station_type: u8,
+
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub awareness_distance: Option<u8>, // 0..7
+    pub termination: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub relevance_traffic_direction: Option<u8>, // 0..3
+    pub awareness_distance: Option<Distance>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub traffic_direction: Option<TrafficDirection>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)] // This will use Default::default() which returns None
-    pub validity_duration: Option<u32>, // 0..86400, default 600
+    pub validity_duration: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub transmission_interval: Option<u16>, // 1..10000
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub station_type: Option<u8>, // 0..255, default 0
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub confidence: Option<PositionConfidence>,
+    pub transmission_interval: Option<u16>,
 }
 
 /// Contains situation information about the detected event
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SituationContainer {
-    /// Quality of the information (0..7)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(
-        deserialize_with = "deserialize_information_quality",
-        serialize_with = "serialize_information_quality"
-    )]
-    pub information_quality: Option<u8>,
+    pub information_quality: u8,
     pub event_type: EventType,
+
     pub linked_cause: Option<EventType>,
-}
-
-fn deserialize_information_quality<'de, D>(deserializer: D) -> Result<Option<u8>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    use serde::de::Error;
-    let value = Option::<u8>::deserialize(deserializer)?;
-    if let Some(quality) = value {
-        if quality > 7 {
-            return Err(Error::custom("information_quality must be between 0 and 7"));
-        }
-    }
-    Ok(value)
-}
-
-fn serialize_information_quality<S>(value: &Option<u8>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    use serde::ser::Error;
-    if let Some(quality) = value {
-        if *quality > 7 {
-            return Err(Error::custom("information_quality must be between 0 and 7"));
-        }
-        serializer.serialize_some(quality)
-    } else {
-        serializer.serialize_none()
-    }
+    // todo: implements event_zone
+    // todo: implements linked_denms
+    // todo: implements event_end
 }
 
 /// Contains location-related information about the event
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct LocationContainer {
-    /// Speed at the event location in 0.01 m/s
-    pub event_speed: Option<u16>,
+    /// Speed at the event location in cm/s
+    pub event_speed: Option<Speed>,
     /// Heading at the event location in 0.1 degrees
-    pub event_position_heading: Option<u16>,
-    /// List of traces leading to the event position
-    #[serde(default)]
+    pub event_position_heading: Option<Heading>,
+    /// List of traces leading to the event position (optional even mandatory into the specification)
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub detection_zones_to_event_position: Vec<Trace>,
     /// Type of road where the event occurred
     pub road_type: Option<u8>,
@@ -165,28 +137,23 @@ pub struct Trace {
     pub path: Vec<PathPoint>,
 }
 
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct LocationContainerConfidence {
-    pub speed: Option<u8>,
-    pub heading: Option<u8>,
-}
-
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[repr(u8)]
-pub enum RelevanceTrafficDirection {
+pub enum TrafficDirection {
     AllTrafficDirection = 0,
-    UpstreamTraffic,
-    DownstreamTraffic,
-    OppositeTraffic,
+    UpstreamTraffic = 1,
+    DownstreamTraffic = 2,
+    OppositeTraffic = 3,
 }
-impl From<RelevanceTrafficDirection> for u8 {
-    fn from(val: RelevanceTrafficDirection) -> Self {
+impl From<TrafficDirection> for u8 {
+    fn from(val: TrafficDirection) -> Self {
         val as u8
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[repr(u8)]
-pub enum RelevanceDistance {
+pub enum Distance {
     LessThan50m = 0,
     LessThan100m,
     LessThan200m,
@@ -196,22 +163,22 @@ pub enum RelevanceDistance {
     LessThan10Km,
     Over10Km,
 }
-impl From<RelevanceDistance> for u8 {
-    fn from(val: RelevanceDistance) -> Self {
+impl From<Distance> for u8 {
+    fn from(val: Distance) -> Self {
         val as u8
     }
 }
-impl From<f64> for RelevanceDistance {
+impl From<f64> for Distance {
     fn from(value: f64) -> Self {
         match value {
-            _ if value < 50. => LessThan50m,
-            _ if value < 100. => LessThan100m,
-            _ if value < 200. => LessThan200m,
-            _ if value < 500. => LessThan500m,
-            _ if value < 1000. => LessThan1000m,
-            _ if value < 5_000. => LessThan5Km,
-            _ if value < 10_000. => LessThan10Km,
-            _ => Over10Km,
+            _ if value < 50. => Distance::LessThan50m,
+            _ if value < 100. => Distance::LessThan100m,
+            _ if value < 200. => Distance::LessThan200m,
+            _ if value < 500. => Distance::LessThan500m,
+            _ if value < 1000. => Distance::LessThan1000m,
+            _ if value < 5_000. => Distance::LessThan5Km,
+            _ if value < 10_000. => Distance::LessThan10Km,
+            _ => Distance::Over10Km,
         }
     }
 }
@@ -223,7 +190,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
         event_position: ReferencePosition,
         sequence_number: u16,
         etsi_timestamp: u64,
-        event_position_heading: Option<u16>,
+        event_position_heading: Option<Heading>,
     ) -> Self {
         Self::new(
             station_id,
@@ -235,7 +202,10 @@ impl DecentralizedEnvironmentalNotificationMessage {
             Some(0),
             None,
             None,
-            Some(0),
+            Some(Speed {
+                value: 0,
+                confidence: None,
+            }),
             event_position_heading,
             Some(10),
             Some(200),
@@ -250,10 +220,10 @@ impl DecentralizedEnvironmentalNotificationMessage {
         sequence_number: u16,
         etsi_timestamp: u64,
         subcause: Option<u8>,
-        awareness_distance: Option<u8>,
-        relevance_traffic_direction: Option<u8>,
-        event_speed: Option<u16>,
-        event_position_heading: Option<u16>,
+        awareness_distance: Option<Distance>,
+        traffic_direction: Option<TrafficDirection>,
+        event_speed: Option<Speed>,
+        event_position_heading: Option<Heading>,
     ) -> Self {
         Self::new(
             station_id,
@@ -264,7 +234,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
             1,
             subcause,
             awareness_distance,
-            relevance_traffic_direction,
+            traffic_direction,
             event_speed,
             event_position_heading,
             Some(10),
@@ -280,10 +250,10 @@ impl DecentralizedEnvironmentalNotificationMessage {
         sequence_number: u16,
         etsi_timestamp: u64,
         subcause: Option<u8>,
-        awareness_distance: Option<u8>,
-        relevance_traffic_direction: Option<u8>,
-        event_speed: Option<u16>,
-        event_position_heading: Option<u16>,
+        awareness_distance: Option<Distance>,
+        traffic_direction: Option<TrafficDirection>,
+        event_speed: Option<Speed>,
+        event_position_heading: Option<Heading>,
     ) -> Self {
         // collisionRisk
         Self::new(
@@ -295,7 +265,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
             97,
             subcause,
             awareness_distance,
-            relevance_traffic_direction,
+            traffic_direction,
             event_speed,
             event_position_heading,
             Some(2),
@@ -307,16 +277,17 @@ impl DecentralizedEnvironmentalNotificationMessage {
         mut denm: Self,
         event_position: ReferencePosition,
         etsi_timestamp: u64,
-        awareness_distance: Option<u8>,
-        relevance_traffic_direction: Option<u8>,
-        event_speed: Option<u16>,
-        event_position_heading: Option<u16>,
+        awareness_distance: Option<Distance>,
+        traffic_direction: Option<TrafficDirection>,
+        event_speed: Option<Speed>,
+        event_position_heading: Option<Heading>,
     ) -> Self {
         // collisionRisk
         denm.management_container.event_position = event_position;
         denm.management_container.reference_time = etsi_timestamp;
         denm.management_container.awareness_distance = awareness_distance;
-        denm.management_container.relevance_traffic_direction = relevance_traffic_direction;
+        denm.management_container.traffic_direction = traffic_direction;
+
         if event_speed.is_some() || event_position_heading.is_some() {
             denm.location_container = Option::from(LocationContainer {
                 event_speed,
@@ -336,10 +307,10 @@ impl DecentralizedEnvironmentalNotificationMessage {
         etsi_timestamp: u64,
         cause: u8,
         subcause: Option<u8>,
-        awareness_distance: Option<u8>,
-        relevance_traffic_direction: Option<u8>,
-        event_speed: Option<u16>,
-        event_position_heading: Option<u16>,
+        awareness_distance: Option<Distance>,
+        traffic_direction: Option<TrafficDirection>,
+        event_speed: Option<Speed>,
+        event_position_heading: Option<Heading>,
         validity_duration: Option<u32>,
         transmission_interval: Option<u16>,
     ) -> Self {
@@ -356,9 +327,9 @@ impl DecentralizedEnvironmentalNotificationMessage {
                 event_position,
                 validity_duration,
                 transmission_interval,
-                station_type: Some(5),
+                station_type: 5,
                 awareness_distance,
-                relevance_traffic_direction,
+                traffic_direction,
                 ..Default::default()
             },
             situation_container: Option::from(SituationContainer {
@@ -378,12 +349,12 @@ impl DecentralizedEnvironmentalNotificationMessage {
         let situation_container = self.situation_container.clone();
         match situation_container {
             Some(mut situation_container) => {
-                situation_container.information_quality = Some(information_quality);
+                situation_container.information_quality = information_quality;
                 self.situation_container = Some(situation_container);
             }
             None => {
                 self.situation_container = Option::from(SituationContainer {
-                    information_quality: Some(information_quality),
+                    information_quality,
                     ..Default::default()
                 })
             }
@@ -430,20 +401,22 @@ impl Mobile for DecentralizedEnvironmentalNotificationMessage {
     }
 
     fn speed(&self) -> Option<f64> {
-        if let Some(location_container) = &self.location_container {
-            location_container.event_speed.map(speed_from_etsi)
-        } else {
-            None
+        match &self.location_container {
+            Some(location_container) => location_container
+                .event_speed
+                .as_ref()
+                .map(|event_speed| speed_from_etsi(event_speed.value)),
+            None => None,
         }
     }
 
     fn heading(&self) -> Option<f64> {
-        if let Some(location_container) = &self.location_container {
-            location_container
+        match &self.location_container {
+            Some(location_container) => location_container
                 .event_position_heading
-                .map(heading_from_etsi)
-        } else {
-            None
+                .as_ref()
+                .map(|event_position_heading| heading_from_etsi(event_position_heading.value)),
+            None => None,
         }
     }
 
@@ -516,11 +489,10 @@ impl Default for ManagementContainer {
             termination: Default::default(),
             event_position: Default::default(),
             awareness_distance: Default::default(),
-            relevance_traffic_direction: Default::default(),
+            traffic_direction: Default::default(),
             validity_duration: Some(600),
             transmission_interval: Default::default(),
             station_type: Default::default(),
-            confidence: Default::default(),
         }
     }
 }
@@ -540,11 +512,11 @@ impl hash::Hash for ManagementContainer {
 #[cfg(test)]
 mod tests {
     use crate::exchange::etsi::decentralized_environmental_notification_message::{
-        ActionId, AlacarteContainer, DecentralizedEnvironmentalNotificationMessage, EventType,
-        LocationContainer, ManagementContainer, SituationContainer,
+        ActionId, AlacarteContainer, DecentralizedEnvironmentalNotificationMessage, Distance,
+        EventType, LocationContainer, ManagementContainer, SituationContainer, TrafficDirection,
     };
-    use crate::exchange::etsi::reference_position::{PositionConfidence, ReferencePosition};
-    use crate::exchange::etsi::{etsi_now, timestamp_to_etsi};
+    use crate::exchange::etsi::reference_position::ReferencePosition;
+    use crate::exchange::etsi::{Heading, Speed, etsi_now, timestamp_to_etsi};
     use crate::exchange::mortal::Mortal;
     use crate::now;
     use serde_json::json;
@@ -556,7 +528,10 @@ mod tests {
         let event_position = ReferencePosition::default();
         let sequence_number = 10;
         let detection_time = etsi_now();
-        let event_position_heading = Some(3000);
+        let event_position_heading = Some(Heading {
+            value: 3000,
+            confidence: None,
+        });
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         let denm = DecentralizedEnvironmentalNotificationMessage::new_stationary_vehicle(
@@ -594,7 +569,7 @@ mod tests {
         denm.update_information_quality(5);
         assert!(denm.situation_container.is_some());
         let situation_container = denm.situation_container.unwrap();
-        assert_eq!(situation_container.information_quality, Some(5));
+        assert_eq!(situation_container.information_quality, 5);
     }
 
     #[test]
@@ -633,10 +608,9 @@ mod tests {
                 validity_duration: Some(600),
                 termination: None,
                 awareness_distance: None,
-                relevance_traffic_direction: None,
+                traffic_direction: None,
                 transmission_interval: None,
-                station_type: None,
-                confidence: None,
+                station_type: 5,
             },
             situation_container: None,
             location_container: None,
@@ -664,18 +638,13 @@ mod tests {
                 event_position: ReferencePosition::default(),
                 validity_duration: Some(600),
                 termination: Some(0),
-                awareness_distance: Some(5),
-                relevance_traffic_direction: Some(0),
+                awareness_distance: Some(Distance::LessThan5Km),
+                traffic_direction: Some(TrafficDirection::AllTrafficDirection),
                 transmission_interval: Some(1000),
-                station_type: Some(5),
-                confidence: Some(PositionConfidence {
-                    semi_major_confidence: 100,
-                    semi_minor_confidence: 100,
-                    semi_major_orientation: 0,
-                }),
+                station_type: 5,
             },
             situation_container: Some(SituationContainer {
-                information_quality: Some(7),
+                information_quality: 7,
                 event_type: EventType {
                     cause: 94,
                     subcause: Some(2),
@@ -683,8 +652,14 @@ mod tests {
                 linked_cause: None,
             }),
             location_container: Some(LocationContainer {
-                event_speed: Some(100),
-                event_position_heading: Some(900),
+                event_speed: Some(Speed {
+                    value: 100,
+                    confidence: None,
+                }),
+                event_position_heading: Some(Heading {
+                    value: 900,
+                    confidence: None,
+                }),
                 detection_zones_to_event_position: vec![],
                 road_type: Some(0),
             }),
@@ -697,7 +672,7 @@ mod tests {
         let json = serde_json::to_value(&denm).unwrap();
         assert_eq!(json["protocol_version"], 2);
         assert_eq!(json["situation_container"]["information_quality"], 7);
-        assert_eq!(json["location_container"]["event_speed"], 100);
+        assert_eq!(json["location_container"]["event_speed"]["value"], 100);
     }
 
     #[test]
@@ -729,23 +704,5 @@ mod tests {
         assert_eq!(denm.protocol_version, 2);
         assert_eq!(denm.station_id, 12345);
         assert_eq!(denm.management_container.validity_duration, Some(600));
-    }
-
-    #[test]
-    fn validate_information_quality_bounds() {
-        let denm = DecentralizedEnvironmentalNotificationMessage {
-            situation_container: Some(SituationContainer {
-                information_quality: Some(8), // Invalid value
-                event_type: EventType {
-                    cause: 94,
-                    subcause: None,
-                },
-                linked_cause: None,
-            }),
-            ..Default::default()
-        };
-
-        let result = serde_json::to_string(&denm);
-        assert!(result.is_err());
     }
 }
