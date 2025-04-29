@@ -265,3 +265,25 @@ mod tests {
         assert_eq!(result, ((u64::MAX - ETSI_TIMESTAMP_OFFSET) % 65536) as u16);
     }
 }
+
+/// Represents the speed of a vehicle.
+/// Includes the speed value and its confidence level.
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Speed {
+    /// Speed value in decimeters per second (mandatory).
+    pub value: u16,
+    /// Confidence level for the speed (optional).
+    pub confidence: Option<u8>,
+}
+
+/// Represents the heading of a vehicle.
+/// Includes the heading value and its confidence level.
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Heading {
+    /// Heading value in centidegrees (mandatory).
+    pub value: u16,
+    /// Confidence level for the heading (optional).
+    pub confidence: Option<u8>,
+}

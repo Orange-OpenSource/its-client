@@ -24,19 +24,19 @@ pub struct PerceivedObject {
     pub x_distance: i32,
     /// Y distance from the reference point in decimeters (mandatory).
     pub y_distance: i32,
-    /// Z distance from the reference point in decimeters (optional).
-    pub z_distance: Option<i32>,
     /// X speed in decimeters per second (mandatory).
     pub x_speed: i16,
     /// Y speed in decimeters per second (mandatory).
     pub y_speed: i16,
-    /// Z speed in decimeters per second (optional).
-    pub z_speed: Option<i16>,
     /// Age of the object in milliseconds, indicating how long it has been observed (mandatory).
     pub object_age: u16,
     /// Confidence levels for various attributes of the object (mandatory).
-    pub confidence: ObjectConfidence,
+    pub confidence: Confidence,
 
+    /// Z distance from the reference point in decimeters (optional).
+    pub z_distance: Option<i32>,
+    /// Z speed in decimeters per second (optional).
+    pub z_speed: Option<i16>,
     /// Reference point of the object (optional).
     pub object_ref_point: Option<u8>,
     /// X acceleration in decimeters per second squared (optional).
@@ -88,22 +88,29 @@ pub struct PerceivedObject {
 /// Each field indicates the confidence in the corresponding measurement or property.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ObjectConfidence {
+pub struct Confidence {
     /// Confidence in the x-distance measurement.
-    /// Range: 0 to 65535
     pub x_distance: u16,
     /// Confidence in the y-distance measurement.
-    /// Range: 0 to 65535
     pub y_distance: u16,
     /// Confidence in the x-speed measurement.
-    /// Range: 0 to 255
     pub x_speed: u8,
     /// Confidence in the y-speed measurement.
-    /// Range: 0 to 255
     pub y_speed: u8,
-    /// Confidence in the overall object detection (optional).
-    /// Range: 0 to 255
-    pub object: Option<u8>,
+    /// Confidence in the overall object detection.
+    pub object: u8,
+    //TODO fill in the rest of the fields
+    /// Confidence in the z-distance measurement.
+    pub z_distance: Option<u16>,
+    /// Confidence in the y-speed measurement.
+    pub z_speed: Option<u8>,
+    /// Confidence in the x-acceleration measurement.
+    pub x_acceleration: Option<u8>,
+    /// Confidence in the y-acceleration measurement.
+    pub y_acceleration: Option<u8>,
+    /// Confidence in the z-acceleration measurement.
+    pub z_acceleration: Option<u8>,
+    //TODO fill in the rest of the fields
 }
 
 /// Represents the classification of a detected object.
@@ -156,11 +163,12 @@ pub enum SingleVruClass {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct VruGroupClass {
-    /// The size of the group, indicating the number of VRUs in the group.
-    pub group_size: u8,
-    /// The type of the group, specifying the categories of VRUs present (e.g., pedestrians, bicyclists).
+    /// The type of the group, specifying the categories of VRUs present (e.g., pedestrians, bicyclists)  (mandatory).
     pub group_type: VruGroupType,
-    /// An optional identifier for the cluster to which the group belongs.
+    /// The size of the group, indicating the number of VRUs in the group  (mandatory).
+    pub group_size: u8,
+
+    /// An optional identifier for the cluster to which the group belongs (optional).
     pub cluster_id: Option<u8>,
 }
 
@@ -185,10 +193,10 @@ pub struct VruGroupType {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MatchedPosition {
-    /// The identifier of the lane where the object is located.
-    pub lane_id: u8,
-    /// The longitudinal position of the object within the lane, measured in decimeters.
-    pub longitudinal_lane_position: u16,
+    /// The identifier of the lane where the object is located  (optional).
+    pub lane_id: Option<u8>,
+    /// The longitudinal position of the object within the lane, measured in decimeters  (optional).
+    pub longitudinal_lane_position: Option<u16>,
 }
 
 impl PerceivedObject {
@@ -212,50 +220,68 @@ impl PerceivedObject {
 mod test {
     use crate::exchange::etsi::perceived_object::PerceivedObject;
 
-    #[test]
-    fn test_deserialize() {
-        let data = r#"{
-                "object_id": 5,
-                "time_of_measurement": 2,
-                "x_distance": 804,
-                "y_distance": 400,
-                "x_speed": 401,
-                "y_speed": 401,
-                "object_age": 1500,
-                "object_ref_point": 0,
-                "dynamic_status": 0,
-                "classification": [
-                  {
+    fn minimal_po() -> &'static str {
+        r#"{
+            "object_id": 255,
+            "time_of_measurement": 1500,
+            "x_distance": 132767,
+            "y_distance": -132768,
+            "x_speed": 16383,
+            "y_speed": -16383,
+            "object_age": 1500,
+            "confidence": {
+                "x_distance": 4095,
+                "y_distance": 0,
+                "x_speed": 7,
+                "y_speed": 0,
+                "object": 15
+            }
+        }"#
+    }
+
+    fn standard_po() -> &'static str {
+        r#"{
+            "object_id": 5,
+            "time_of_measurement": 2,
+            "x_distance": 804,
+            "y_distance": 400,
+            "z_distance": 132767,
+            "x_speed": 401,
+            "y_speed": 401,
+            "z_speed": 0,
+            "x_acceleration": 161,
+            "y_acceleration": -160,
+            "z_acceleration": 0,
+            "object_age": 365,
+            "object_ref_point": 8,
+            "dynamic_status": 0,
+            "classification": [
+                {
                     "object_class": {
                       "single_vru": {
                         "pedestrian": 1
                       }
                     },
-                    "confidence": 40
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
+                    "confidence": 89
                 }
-              }"#;
-
-        match serde_json::from_str::<PerceivedObject>(data) {
-            Ok(po) => {
-                assert_eq!(5, po.object_id);
+            ],
+            "confidence": {
+                "x_distance": 4095,
+                "y_distance": 0,
+                "z_distance": 2047,
+                "x_speed": 7,
+                "y_speed": 0,
+                "z_speed": 3,
+                "x_acceleration": 102,
+                "y_acceleration": 0,
+                "z_acceleration": 51,
+                "object": 10
             }
-            Err(e) => {
-                panic!("Failed to deserialize PO: '{}'", e);
-            }
-        }
+        }"#
     }
 
-    #[test]
-    fn test_deserialize_full_po() {
-        let data = r#"{
+    fn full_po() -> &'static str {
+        r#"{
             "object_id": 0,
             "time_of_measurement": 50,
             "x_distance": 400,
@@ -285,35 +311,11 @@ mod test {
             "planar_object_dimension_2": 1023,
             "vertical_object_dimension": 1023,
             "object_ref_point": 8,
-            "confidence": {
-                "x_distance": 102,
-                "y_distance": 102,
-                "z_distance": 102,
-                "x_speed": 7,
-                "y_speed": 7,
-                "z_speed": 7,
-                "x_acceleration": 102,
-                "y_acceleration": 102,
-                "z_acceleration": 102,
-                "roll_angle": 127,
-                "pitch_angle": 127,
-                "yaw_angle": 127,
-                "roll_rate": 8,
-                "pitch_rate": 8,
-                "yaw_rate": 8,
-                "roll_acceleration": 8,
-                "pitch_acceleration": 8,
-                "yaw_acceleration": 8,
-                "planar_object_dimension_1": 102,
-                "planar_object_dimension_2": 102,
-                "vertical_object_dimension": 102,
-                "longitudinal_lane_position": 102,
-                "object": 10
-            },
             "object_age": 1500,
             "sensor_id_list": [1, 2, 10, 100, 255],
             "dynamic_status": 2,
-            "classification": [{
+            "classification": [
+                {
                     "object_class": {
                         "vehicle": 10
                     },
@@ -352,17 +354,58 @@ mod test {
             "matched_position": {
                 "lane_id": 255,
                 "longitudinal_lane_position": 32767
+            },
+            "confidence": {
+                "x_distance": 102,
+                "y_distance": 102,
+                "z_distance": 102,
+                "x_speed": 7,
+                "y_speed": 7,
+                "z_speed": 7,
+                "x_acceleration": 102,
+                "y_acceleration": 102,
+                "z_acceleration": 102,
+                "roll_angle": 127,
+                "pitch_angle": 127,
+                "yaw_angle": 127,
+                "roll_rate": 8,
+                "pitch_rate": 8,
+                "yaw_rate": 8,
+                "roll_acceleration": 8,
+                "pitch_acceleration": 8,
+                "yaw_acceleration": 8,
+                "planar_object_dimension_1": 102,
+                "planar_object_dimension_2": 102,
+                "vertical_object_dimension": 102,
+                "longitudinal_lane_position": 102,
+                "object": 10
             }
-        }"#;
+        }"#
+    }
 
+    fn parse_and_verify_po(data: &str, expected_id: u8) {
         match serde_json::from_str::<PerceivedObject>(data) {
             Ok(po) => {
-                assert_eq!(0, po.object_id);
+                assert_eq!(expected_id, po.object_id);
             }
             Err(e) => {
                 panic!("Failed to deserialize PO: '{}'", e);
             }
         }
     }
+
+    #[test]
+    fn test_deserialize_minimal_po() {
+        parse_and_verify_po(minimal_po(), 255);
+    }
+
+    #[test]
+    fn test_deserialize_standard_po() {
+        parse_and_verify_po(standard_po(), 5);
+    }
+
+    #[test]
+    fn test_deserialize_full_po() {
+        parse_and_verify_po(full_po(), 0);
+    }
 }
-mod tests {}

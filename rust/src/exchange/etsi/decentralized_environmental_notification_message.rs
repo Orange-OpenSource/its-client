@@ -16,7 +16,9 @@ use crate::exchange::etsi::decentralized_environmental_notification_message::Rel
     LessThan1000m, Over10Km,
 };
 use crate::exchange::etsi::reference_position::{PositionConfidence, ReferencePosition};
-use crate::exchange::etsi::{PathPoint, etsi_now, heading_from_etsi, speed_from_etsi};
+use crate::exchange::etsi::{
+    Heading, PathPoint, Speed, etsi_now, heading_from_etsi, speed_from_etsi,
+};
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::mortal::Mortal;
@@ -85,55 +87,21 @@ pub struct ManagementContainer {
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SituationContainer {
     /// Quality of the information (0..7)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(
-        deserialize_with = "deserialize_information_quality",
-        serialize_with = "serialize_information_quality"
-    )]
-    pub information_quality: Option<u8>,
+    pub information_quality: u8,
     pub event_type: EventType,
+
     pub linked_cause: Option<EventType>,
-}
-
-fn deserialize_information_quality<'de, D>(deserializer: D) -> Result<Option<u8>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    use serde::de::Error;
-    let value = Option::<u8>::deserialize(deserializer)?;
-    if let Some(quality) = value {
-        if quality > 7 {
-            return Err(Error::custom("information_quality must be between 0 and 7"));
-        }
-    }
-    Ok(value)
-}
-
-fn serialize_information_quality<S>(value: &Option<u8>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    use serde::ser::Error;
-    if let Some(quality) = value {
-        if *quality > 7 {
-            return Err(Error::custom("information_quality must be between 0 and 7"));
-        }
-        serializer.serialize_some(quality)
-    } else {
-        serializer.serialize_none()
-    }
 }
 
 /// Contains location-related information about the event
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct LocationContainer {
-    /// Speed at the event location in 0.01 m/s
-    pub event_speed: Option<u16>,
+    pub event_speed: Option<Speed>,
     /// Heading at the event location in 0.1 degrees
-    pub event_position_heading: Option<u16>,
-    /// List of traces leading to the event position
-    #[serde(default)]
+    pub event_position_heading: Option<Heading>,
+    /// List of traces leading to the event position (optional even mandatory into the specification)
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub detection_zones_to_event_position: Vec<Trace>,
     /// Type of road where the event occurred
     pub road_type: Option<u8>,
@@ -223,7 +191,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
         event_position: ReferencePosition,
         sequence_number: u16,
         etsi_timestamp: u64,
-        event_position_heading: Option<u16>,
+        event_position_heading: Option<Heading>,
     ) -> Self {
         Self::new(
             station_id,
@@ -235,7 +203,10 @@ impl DecentralizedEnvironmentalNotificationMessage {
             Some(0),
             None,
             None,
-            Some(0),
+            Some(Speed {
+                value: 0,
+                confidence: None,
+            }),
             event_position_heading,
             Some(10),
             Some(200),
@@ -252,8 +223,8 @@ impl DecentralizedEnvironmentalNotificationMessage {
         subcause: Option<u8>,
         awareness_distance: Option<u8>,
         relevance_traffic_direction: Option<u8>,
-        event_speed: Option<u16>,
-        event_position_heading: Option<u16>,
+        event_speed: Option<Speed>,
+        event_position_heading: Option<Heading>,
     ) -> Self {
         Self::new(
             station_id,
@@ -282,8 +253,8 @@ impl DecentralizedEnvironmentalNotificationMessage {
         subcause: Option<u8>,
         awareness_distance: Option<u8>,
         relevance_traffic_direction: Option<u8>,
-        event_speed: Option<u16>,
-        event_position_heading: Option<u16>,
+        event_speed: Option<Speed>,
+        event_position_heading: Option<Heading>,
     ) -> Self {
         // collisionRisk
         Self::new(
@@ -309,14 +280,15 @@ impl DecentralizedEnvironmentalNotificationMessage {
         etsi_timestamp: u64,
         awareness_distance: Option<u8>,
         relevance_traffic_direction: Option<u8>,
-        event_speed: Option<u16>,
-        event_position_heading: Option<u16>,
+        event_speed: Option<Speed>,
+        event_position_heading: Option<Heading>,
     ) -> Self {
         // collisionRisk
         denm.management_container.event_position = event_position;
         denm.management_container.reference_time = etsi_timestamp;
         denm.management_container.awareness_distance = awareness_distance;
         denm.management_container.relevance_traffic_direction = relevance_traffic_direction;
+
         if event_speed.is_some() || event_position_heading.is_some() {
             denm.location_container = Option::from(LocationContainer {
                 event_speed,
@@ -338,8 +310,8 @@ impl DecentralizedEnvironmentalNotificationMessage {
         subcause: Option<u8>,
         awareness_distance: Option<u8>,
         relevance_traffic_direction: Option<u8>,
-        event_speed: Option<u16>,
-        event_position_heading: Option<u16>,
+        event_speed: Option<Speed>,
+        event_position_heading: Option<Heading>,
         validity_duration: Option<u32>,
         transmission_interval: Option<u16>,
     ) -> Self {
@@ -378,12 +350,12 @@ impl DecentralizedEnvironmentalNotificationMessage {
         let situation_container = self.situation_container.clone();
         match situation_container {
             Some(mut situation_container) => {
-                situation_container.information_quality = Some(information_quality);
+                situation_container.information_quality = information_quality;
                 self.situation_container = Some(situation_container);
             }
             None => {
                 self.situation_container = Option::from(SituationContainer {
-                    information_quality: Some(information_quality),
+                    information_quality,
                     ..Default::default()
                 })
             }
@@ -430,20 +402,22 @@ impl Mobile for DecentralizedEnvironmentalNotificationMessage {
     }
 
     fn speed(&self) -> Option<f64> {
-        if let Some(location_container) = &self.location_container {
-            location_container.event_speed.map(speed_from_etsi)
-        } else {
-            None
+        match &self.location_container {
+            Some(location_container) => location_container
+                .event_speed
+                .as_ref()
+                .map(|event_speed| speed_from_etsi(event_speed.value)),
+            None => None,
         }
     }
 
     fn heading(&self) -> Option<f64> {
-        if let Some(location_container) = &self.location_container {
-            location_container
+        match &self.location_container {
+            Some(location_container) => location_container
                 .event_position_heading
-                .map(heading_from_etsi)
-        } else {
-            None
+                .as_ref()
+                .map(|event_position_heading| heading_from_etsi(event_position_heading.value)),
+            None => None,
         }
     }
 
@@ -544,7 +518,7 @@ mod tests {
         LocationContainer, ManagementContainer, SituationContainer,
     };
     use crate::exchange::etsi::reference_position::{PositionConfidence, ReferencePosition};
-    use crate::exchange::etsi::{etsi_now, timestamp_to_etsi};
+    use crate::exchange::etsi::{Heading, Speed, etsi_now, timestamp_to_etsi};
     use crate::exchange::mortal::Mortal;
     use crate::now;
     use serde_json::json;
@@ -556,7 +530,10 @@ mod tests {
         let event_position = ReferencePosition::default();
         let sequence_number = 10;
         let detection_time = etsi_now();
-        let event_position_heading = Some(3000);
+        let event_position_heading = Some(Heading {
+            value: 3000,
+            confidence: None,
+        });
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         let denm = DecentralizedEnvironmentalNotificationMessage::new_stationary_vehicle(
@@ -594,7 +571,7 @@ mod tests {
         denm.update_information_quality(5);
         assert!(denm.situation_container.is_some());
         let situation_container = denm.situation_container.unwrap();
-        assert_eq!(situation_container.information_quality, Some(5));
+        assert_eq!(situation_container.information_quality, 5);
     }
 
     #[test]
@@ -675,7 +652,7 @@ mod tests {
                 }),
             },
             situation_container: Some(SituationContainer {
-                information_quality: Some(7),
+                information_quality: 7,
                 event_type: EventType {
                     cause: 94,
                     subcause: Some(2),
@@ -683,8 +660,14 @@ mod tests {
                 linked_cause: None,
             }),
             location_container: Some(LocationContainer {
-                event_speed: Some(100),
-                event_position_heading: Some(900),
+                event_speed: Some(Speed {
+                    value: 100,
+                    confidence: None,
+                }),
+                event_position_heading: Some(Heading {
+                    value: 900,
+                    confidence: None,
+                }),
                 detection_zones_to_event_position: vec![],
                 road_type: Some(0),
             }),
@@ -697,7 +680,7 @@ mod tests {
         let json = serde_json::to_value(&denm).unwrap();
         assert_eq!(json["protocol_version"], 2);
         assert_eq!(json["situation_container"]["information_quality"], 7);
-        assert_eq!(json["location_container"]["event_speed"], 100);
+        assert_eq!(json["location_container"]["event_speed"]["value"], 100);
     }
 
     #[test]
@@ -729,23 +712,5 @@ mod tests {
         assert_eq!(denm.protocol_version, 2);
         assert_eq!(denm.station_id, 12345);
         assert_eq!(denm.management_container.validity_duration, Some(600));
-    }
-
-    #[test]
-    fn validate_information_quality_bounds() {
-        let denm = DecentralizedEnvironmentalNotificationMessage {
-            situation_container: Some(SituationContainer {
-                information_quality: Some(8), // Invalid value
-                event_type: EventType {
-                    cause: 94,
-                    subcause: None,
-                },
-                linked_cause: None,
-            }),
-            ..Default::default()
-        };
-
-        let result = serde_json::to_string(&denm);
-        assert!(result.is_err());
     }
 }

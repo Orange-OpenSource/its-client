@@ -17,7 +17,9 @@ use crate::exchange::etsi::decentralized_environmental_notification_message::{
     DecentralizedEnvironmentalNotificationMessage, RelevanceDistance, RelevanceTrafficDirection,
 };
 use crate::exchange::etsi::reference_position::{ReferencePosition, ReferencePosition113};
-use crate::exchange::etsi::{etsi_now, heading_to_etsi, speed_to_etsi, timestamp_to_etsi};
+use crate::exchange::etsi::{
+    Heading, Speed, etsi_now, heading_to_etsi, speed_to_etsi, timestamp_to_etsi,
+};
 use crate::exchange::sequence_number::SequenceNumber;
 use crate::mobility::mobile::Mobile;
 use crate::mobility::position::Position;
@@ -67,17 +69,22 @@ pub fn create_denm(
     mobile: &dyn Mobile,
     path: Vec<PathElement>,
 ) -> DecentralizedEnvironmentalNotificationMessage {
-    let (relevance_distance, relevance_traffic_direction, event_speed, event_heading) =
+    let (relevance_distance, relevance_traffic_direction, event_speed, event_position_heading) =
         match path.len() {
             len if len <= 1 => {
-                let event_speed = mobile.speed().map(speed_to_etsi);
-                let event_heading = mobile.heading().map(heading_to_etsi);
-
+                let event_speed = mobile.speed().map(|speed| Speed {
+                    value: speed_to_etsi(speed),
+                    confidence: None,
+                });
+                let event_position_heading = mobile.heading().map(|heading| Heading {
+                    value: heading_to_etsi(heading),
+                    confidence: None,
+                });
                 (
                     Some(RelevanceDistance::LessThan50m.into()),
                     Some(RelevanceTrafficDirection::UpstreamTraffic.into()),
                     event_speed,
-                    event_heading,
+                    event_position_heading,
                 )
             }
             _ => {
@@ -96,7 +103,7 @@ pub fn create_denm(
         relevance_distance,
         relevance_traffic_direction,
         event_speed,
-        event_heading,
+        event_position_heading,
         Some(10),
         Some(200),
     )
