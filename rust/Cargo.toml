@@ -125,3 +125,6 @@ features = ["async", "compress"]
 name = "position"
 harness = false
 required-features = ["mobility"]
+
+[profile.dev]
+incremental = true

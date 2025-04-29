@@ -413,7 +413,7 @@ mod tests {
           "type": "cpm",
           "origin": "self",
           "version": "2.1.0",
-          "source_uuid": "uuid1",
+          "source_uuid": "com_application_12345",
           "timestamp": 1574778515425,
           "message": {
             "protocol_version": 2,
@@ -423,11 +423,7 @@ mod tests {
               "station_type": 5,
               "reference_position": {
                 "latitude": 426263556,
-                "longitude": -82492123,
-                "altitude": {
-                    "value": 30000,
-                    "confidence": 3
-                }
+                "longitude": -82492123
               }
             }
           }
@@ -439,12 +435,12 @@ mod tests {
             "type": "cpm",
             "origin": "self",
             "version": "2.1.0",
-            "source_uuid": "uuid1",
-            "timestamp": 1574778515425,
+            "source_uuid": "com_application_23456",
+            "timestamp": 1574778515435,
             "message": {
                 "protocol_version": 2,
-                "station_id": 12345,
-                "generation_delta_time": 65535,
+                "station_id": 23456,
+                "generation_delta_time": 61535,
                 "management_container": {
                     "station_type": 5,
                     "reference_position": {
@@ -454,55 +450,78 @@ mod tests {
                           "value": 20000,
                           "confidence": 3
                         },
-                        "confidence": {
+                        "position_confidence_ellipse": {
                             "semi_major_confidence": 100,
                             "semi_minor_confidence": 50,
                             "semi_major_orientation": 180
                         }
                     }
                 },
-                "station_data_container": {
-                    "originating_vehicle_container": {
-                        "heading": 180,
-                        "speed": 200,
+                "sensor_information_container": [
+                    {
+                        "sensor_id": 255,
+                        "type": 3,
+                        "detection_area": {
+                            "vehicle_sensor": {
+                                "ref_point_id": 0,
+                                "x_sensor_offset": -20,
+                                "y_sensor_offset": 20,
+                                "stationary_sensor_polygon": [
+                                    {
+                                        "x": -32768,
+                                        "y": -32768,
+                                        "z": -30
+                                    },
+                                    {
+                                        "x": -32768,
+                                        "y": 32767,
+                                        "z": -15
+                                    },
+                                    {
+                                        "x": 32767,
+                                        "y": 32767,
+                                        "z": 30
+                                    },
+                                    {
+                                        "x": 32767,
+                                        "y": -32768,
+                                        "z": 15
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ],
+                "perceived_object_container": [
+                    {
+                        "object_id": 0,
+                        "time_of_measurement": 50,
+                        "x_distance": 40,
+                        "y_distance": 10,
+                        "x_speed": 140,
+                        "y_speed": 50,
+                        "object_age": 150,
                         "confidence": {
-                            "heading": 2,
-                            "speed": 3
-                        }
+                            "x_distance": 4,
+                            "y_distance": 3,
+                            "x_speed": 3,
+                            "y_speed": 3,
+                            "object": 14,
+                            "z_distance": 1,
+                            "z_speed": 1
+                        },
+                        "z_distance": 5,
+                        "z_speed": 2,
+                        "classification": [
+                            {
+                                "object_class": {
+                                    "vehicle": 1
+                                },
+                                "confidence": 99
+                            }
+                        ]                        
                     }
-                },
-                "sensor_information_container": [{
-                    "sensor_id": 1,
-                    "type": 3,
-                    "detection_area": {
-                        "vehicle_sensor": {
-                            "ref_point_id": 0,
-                            "x_sensor_offset": -20,
-                            "y_sensor_offset": 20,
-                            "vehicle_sensor_property_list": [{
-                                "range": 150,
-                                "horizontal_opening_angle_start": 30,
-                                "horizontal_opening_angle_end": 30
-                            }]
-                        }
-                    }
-                }],
-                "perceived_object_container": [{
-                    "object_id": 0,
-                    "time_of_measurement": 50,
-                    "x_distance": 40,
-                    "y_distance": 10,
-                    "x_speed": 140,
-                    "y_speed": 50,
-                    "object_age": 150,
-                    "confidence": {
-                        "x_distance": 4,
-                        "y_distance": 4,
-                        "x_speed": 3,
-                        "y_speed": 3,
-                        "object": 70
-                    }
-                }]
+                ]
             }
         }"#
     }
@@ -512,22 +531,22 @@ mod tests {
             "type": "cpm",
             "origin": "self",
             "version": "2.1.0",
-            "source_uuid": "uuid1",
-            "timestamp": 1574778515425,
+            "source_uuid": "com_application_4294967295",
+            "timestamp": 1574778515405,
             "message": {
                 "protocol_version": 255,
                 "station_id": 4294967295,
-                "generation_delta_time": 65535,
+                "generation_delta_time": 4535,
                 "management_container": {
-                    "station_type": 254,
+                    "station_type": 5,
                     "reference_position": {
                         "latitude": 426263556,
                         "longitude": -82492123,
                         "altitude": {
-                          "value": 40000,
-                         "confidence": 10
+                            "value": 40000,
+                            "confidence": 10
                         },
-                        "confidence": {
+                        "position_confidence_ellipse": {
                             "semi_major_confidence": 200,
                             "semi_minor_confidence": 70,
                             "semi_major_orientation": 140
@@ -536,41 +555,49 @@ mod tests {
                 },
                 "station_data_container": {
                     "originating_vehicle_container": {
-                        "heading": 180,
-                        "speed": 1600,
+                        "heading": {
+                            "value": 180,
+                            "confidence": 2
+                        },
+                        "speed": {
+                            "value": 1600,
+                            "confidence": 3
+                        },
                         "drive_direction": 0,
-                        "vehicle_length": 31,
+                        "vehicle_length": {
+                            "value": 40,
+                            "confidence": 1
+                        },
                         "vehicle_width": 18,
-                        "longitudinal_acceleration": -160,
-                        "yaw_rate": -32766,
-                        "lateral_acceleration": -2,
-                        "vertical_acceleration": -1,
-                        "confidence": {
-                            "heading": 127,
-                            "speed": 127,
-                            "vehicle_length": 3,
-                            "yaw_rate": 2,
-                            "longitudinal_acceleration": 12,
-                            "lateral_acceleration": 13,
-                            "vertical_acceleration": 14
-                        }
+                        "longitudinal_acceleration": {
+                            "value": 2,
+                            "confidence": 1
+                        },
+                        "lateral_acceleration": {
+                            "value": 1,
+                            "confidence": 2
+                        },
+                        "vertical_acceleration": {
+                            "value": 1,
+                            "confidence": 2
+                        }                        
                     }
                 },
                 "sensor_information_container": [{
-                    "sensor_id": 1,
-                    "type": 3,
+                    "sensor_id": 255,
+                    "type": 2,
                     "detection_area": {
                         "vehicle_sensor": {
                             "ref_point_id": 255,
                             "x_sensor_offset": -3094,
-                            "y_sensor_offset": -1000,
-                            "z_sensor_offset": 1000,
+                            "y_sensor_offset": 1000,
+                            "z_sensor_offset": 500,
                             "vehicle_sensor_property_list": [{
                                 "range": 10000,
-                                "horizontal_opening_angle_start": 3601,
+                                "horizontal_opening_angle_start": 0,
                                 "horizontal_opening_angle_end": 3601,
-                                "vertical_opening_angle_start": 3601,
-                                "vertical_opening_angle_end": 3601
+                                "vertical_opening_angle_start": 1000,
+                                "vertical_opening_angle_end": 1500
                             }]
                         }
                     }
@@ -584,15 +611,6 @@ mod tests {
                     "x_speed": 1400,
                     "y_speed": 500,
                     "z_speed": 0,
-                    "object_age": 1500,
-                    "confidence": {
-                        "x_distance": 102,
-                        "y_distance": 102,
-                        "x_speed": 7,
-                        "y_speed": 7,
-                        "object": 10
-                    },
-                    "object_ref_point": 8,
                     "x_acceleration": -160,
                     "y_acceleration": 0,
                     "z_acceleration": 161,
@@ -609,49 +627,167 @@ mod tests {
                         [-100, -99, -98],
                         [0, 1, 2],
                         [98, 99, 100]
-                    ],
+                    ],                                                            
                     "planar_object_dimension_1": 1023,
                     "planar_object_dimension_2": 1023,
                     "vertical_object_dimension": 1023,
-                    "sensor_id_list": [1, 2, 10, 100, 255],
+                    "object_ref_point": 8,                    
+                    "object_age": 1500,
+                    "sensor_id_list": [0, 2, 10, 100, 255],
                     "dynamic_status": 2,
-                    "classification": [{
-                        "object_class": {
-                            "vehicle": 10
+                    "classification": [
+                        {
+                            "object_class": {
+                                "vehicle": 8
+                            },
+                            "confidence": 99
                         },
-                        "confidence": 101
-                    }, {
-                        "object_class": {
-                            "single_vru": {
-                                "pedestrian": 2
-                            }
+                        {
+                            "object_class": {
+                                "single_vru": {
+                                    "pedestrian": 2
+                                }
+                            },
+                            "confidence": 25
                         },
-                        "confidence": 25
-                    }, {
-                        "object_class": {
-                            "vru_group": {
-                                "group_size": 12,
-                                "group_type": {
-                                    "pedestrian": true,
-                                    "bicyclist": false,
-                                    "motorcyclist": false,
-                                    "animal": true
-                                },
-                                "cluster_id": 255
-                            }
+                        {
+                            "object_class": {
+                                "vru_group": {
+                                    "group_size": 12,
+                                    "group_type": {
+                                        "pedestrian": true,
+                                        "bicyclist": false,
+                                        "motorcyclist": false,
+                                        "animal": true
+                                    },
+                                    "cluster_id": 255
+                                }
+                            },
+                            "confidence": 64
                         },
-                        "confidence": 64
-                    }, {
-                        "object_class": {
-                            "other": 1
-                        },
-                        "confidence": 0
-                    }],
+                        {
+                            "object_class": {
+                                "other": 1
+                            },
+                            "confidence": 0
+                        }
+                    ],
                     "matched_position": {
                         "lane_id": 255,
                         "longitudinal_lane_position": 32767
+                    },
+                    "confidence": {
+                        "x_distance": 0,
+                        "y_distance": 4095,
+                        "z_distance": 102,
+                        "x_speed": 0,
+                        "y_speed": 7,
+                        "z_speed": 3,
+                        "x_speed": 0,
+                        "x_acceleration": 0,
+                        "y_acceleration": 102,
+                        "z_acceleration": 50,
+                        "roll_angle": 1,
+                        "pitch_angle": 127,
+                        "yaw_angle": 50,
+                        "roll_rate": 8,
+                        "pitch_rate": 0,
+                        "yaw_rate": 4,
+                        "roll_acceleration": 0,
+                        "pitch_acceleration": 4,
+                        "yaw_acceleration": 8,
+                        "planar_object_dimension_1": 0,
+                        "planar_object_dimension_2": 102,
+                        "vertical_object_dimension": 50,
+                        "longitudinal_lane_position": 1,
+                        "object": 50
                     }
-                }]
+                }],
+                "free_space_addendum_container": [
+                    {
+                        "free_space_area": {
+                            "free_space_polygon": [
+                                {
+                                    "x": 3276,
+                                    "y": 3276,
+                                    "z": 0
+                                },
+                                {
+                                    "x": -3276,
+                                    "y": 3276,
+                                    "z": 0
+                                },
+                                {
+                                    "x": -3276,
+                                    "y": -3276,
+                                    "z": 0
+                                },
+                                {
+                                    "x": 3276,
+                                    "y": -3276,
+                                    "z": 0
+                                }
+                            ]
+                        },
+                        "free_space_confidence": 0,
+                        "sensor_id_list": [2, 10, 100],
+                        "shadowing_applies": true
+                    },
+                    {
+                        "free_space_area": {
+                            "free_space_circular": [
+                                {
+                                    "node_center_point": {
+                                        "x": 3276,
+                                        "y": 3276,
+                                        "z": 0
+                                    },
+                                    "radius": 1
+                            ]
+                        },
+                        "free_space_confidence": 101,
+                        "sensor_id_list": [0],
+                        "shadowing_applies": false
+                    },
+                    {
+                        "free_space_area": {
+                            "free_space_ellipse": [
+                                {
+                                    "node_center_point": {
+                                        "x": 276,
+                                        "y": 276,
+                                        "z": 100
+                                    },
+                                    "semi_major_range_length": 0,
+                                    "semi_minor_range_length": 10000,
+                                    "semi_major_orientation": 3601,
+                                    "semi_height": 100
+                            ]
+                        },
+                        "free_space_confidence": 101,
+                        "sensor_id_list": [0],
+                        "shadowing_applies": true
+                    },
+                    {
+                        "free_space_area": {
+                            "free_space_rectangle": [
+                                {
+                                    "node_center_point": {
+                                        "x": 276,
+                                        "y": 276,
+                                        "z": 100
+                                    },
+                                    "semi_major_range_length": 0,
+                                    "semi_minor_range_length": 10000,
+                                    "semi_major_orientation": 3601,
+                                    "semi_height": 100
+                            ]
+                        },
+                        "free_space_confidence": 101,
+                        "sensor_id_list": [255],
+                        "shadowing_applies": false
+                    }
+                ]
             }
         }"#
     }
@@ -920,26 +1056,10 @@ mod tests {
     fn it_can_deserialize_then_serialize_a_standard_cpm() {
         let json = standard_cpm();
         let cpm: Exchange = serde_json::from_str(json).unwrap();
-        assert_eq!(cpm.timestamp, 1574778515425);
-        if let Message::CPM(message) = &cpm.message {
-            assert_eq!(
-                message
-                    .station_data_container
-                    .as_ref()
-                    .unwrap()
-                    .originating_vehicle_container
-                    .as_ref()
-                    .unwrap()
-                    .speed,
-                200
-            );
-            assert_eq!(
-                serde_json::to_string(&cpm).unwrap(),
-                remove_whitespace(json)
-            );
-        } else {
-            panic!("no cpm deserialized");
-        };
+        assert_eq!(
+            serde_json::to_string(&cpm).unwrap(),
+            remove_whitespace(json)
+        );
     }
 
     #[test]
@@ -956,7 +1076,8 @@ mod tests {
                     .originating_vehicle_container
                     .as_ref()
                     .unwrap()
-                    .speed,
+                    .speed
+                    .value,
                 1600
             );
             assert_eq!(

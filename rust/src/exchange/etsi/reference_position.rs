@@ -28,7 +28,7 @@ pub struct ReferencePosition {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub altitude: Option<Altitude>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub confidence: Option<PositionConfidence>,
+    pub position_confidence_ellipse: Option<PositionConfidence>,
 }
 
 fn default_latitude() -> i32 {
@@ -101,7 +101,11 @@ impl fmt::Display for ReferencePosition {
         write!(
             f,
             "(lat: {} / lon: {} / alt: {}(prec. {:?}) / conf: {:?})",
-            self.latitude, self.longitude, altitude.value, altitude.confidence, self.confidence
+            self.latitude,
+            self.longitude,
+            altitude.value,
+            altitude.confidence,
+            self.position_confidence_ellipse
         )
     }
 }
