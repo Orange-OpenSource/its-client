@@ -12,6 +12,7 @@
 import Foundation
 import MQTTNIO
 import NIOCore
+import NIOTransportServices
 
 actor MQTTNIOClient: MQTTClient {
     private let client: MQTTNIO.MQTTClient
@@ -33,7 +34,7 @@ actor MQTTNIOClient: MQTTClient {
             host: configuration.host,
             port: configuration.port,
             identifier: configuration.clientIdentifier,
-            eventLoopGroupProvider: .createNew,
+            eventLoopGroupProvider: .shared(NIOTSEventLoopGroup()),
             configuration: .init(version: .v5_0,
                                  userName: configuration.userName,
                                  password: configuration.password,
