@@ -229,4 +229,27 @@ struct MQTTNIOClientTests {
             #expect(error == .sendPayloadFailed)
         }
     }
+
+    @Test(.bug("https://github.com/Orange-OpenSource/its-client/issues/372",
+               "MQTTNIOClient should not have memory leaks"))
+    func mqttnioclient_should_not_have_memory_leaks() async throws {
+        // Given
+        let mqttClientConfiguration = MQTTClientConfiguration(host: "test.mosquitto.org",
+                                                              port: 1883,
+                                                              clientIdentifier: clientIdentifier,
+                                                              useSSL: false)
+        weak var weakMQTTClient: MQTTClient?
+        var mqttClient: MQTTClient? = MQTTNIOClient(configuration: mqttClientConfiguration)
+
+        // When
+        try await mqttClient?.connect()
+        weakMQTTClient = mqttClient
+        try await mqttClient?.disconnect()
+        #expect(weakMQTTClient != nil)
+        mqttClient = nil
+
+        // Then
+        try await Task.sleep(for: .seconds(0.5))
+        #expect(weakMQTTClient == nil, "Memory leak detected in MQTTNIOClient")
+    }
 }

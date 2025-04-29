@@ -42,7 +42,9 @@ actor MQTTNIOClient: MQTTClient {
                                  useWebSockets: configuration.useWebSockets)
         )
         networkMonitor = NetworkMonitor()
-        client.addPublishListener(named: listenerName) { result in
+        client.addPublishListener(named: listenerName) { [weak self] result in
+            guard let self else { return }
+
             switch result {
             case .success(let publishInfo):
                 let receivedData = Data(buffer: publishInfo.payload)
@@ -57,20 +59,22 @@ actor MQTTNIOClient: MQTTClient {
                 let message = MQTTMessage(payload: receivedData,
                                           topic: publishInfo.topicName,
                                           userProperty: userProperty)
-                Task { [weak self] in
-                    await self?.messageReceivedHandler?(message)
+                Task {
+                    await messageReceivedHandler?(message)
                 }
             default:
                 break
             }
         }
-        client.addCloseListener(named: listenerName) { _ in
-            Task { [weak self] in
+        client.addCloseListener(named: listenerName) { [weak self] _ in
+            guard let self else { return }
+
+            Task {
                 // For now, there's no disconnect reason to check if it's an event triggered
                 // by a disconnect or a lost connection with the server.
                 // https://github.com/swift-server-community/mqtt-nio/issues/163
                 // Use of `isDisconnectedFromUser` to workaround this.
-                guard let self, await !isDisconnectedFromUser else { return }
+                guard await !isDisconnectedFromUser else { return }
 
                 await startReconnectionTask()
             }
@@ -215,11 +219,13 @@ actor MQTTNIOClient: MQTTClient {
     private func startNetworkMonitoring() {
         guard networkMonitoringTask == nil else { return }
 
-        networkMonitoringTask = Task {
+        networkMonitoringTask = Task { [weak self] in
+            guard let self else { return }
+
             var previousNetworkStatus: NetworkStatus?
             for await networkStatus in networkMonitor.start() {
-                if networkStatus != previousNetworkStatus &&
-                    networkStatus == .disconnected && isConnected {
+                if await isConnected && networkStatus != previousNetworkStatus &&
+                    networkStatus == .disconnected {
                     // Disconnect to close connection early when the network is disconnected
                     try? await client.v5.disconnect()
                 }
