@@ -24,19 +24,19 @@ pub struct PerceivedObject {
     pub x_distance: i32,
     /// Y distance from the reference point in decimeters (mandatory).
     pub y_distance: i32,
-    /// Z distance from the reference point in decimeters (optional).
-    pub z_distance: Option<i32>,
     /// X speed in decimeters per second (mandatory).
     pub x_speed: i16,
     /// Y speed in decimeters per second (mandatory).
     pub y_speed: i16,
-    /// Z speed in decimeters per second (optional).
-    pub z_speed: Option<i16>,
     /// Age of the object in milliseconds, indicating how long it has been observed (mandatory).
     pub object_age: u16,
     /// Confidence levels for various attributes of the object (mandatory).
     pub confidence: ObjectConfidence,
 
+    /// Z distance from the reference point in decimeters (optional).
+    pub z_distance: Option<i32>,
+    /// Z speed in decimeters per second (optional).
+    pub z_speed: Option<i16>,
     /// Reference point of the object (optional).
     pub object_ref_point: Option<u8>,
     /// X acceleration in decimeters per second squared (optional).
@@ -90,20 +90,28 @@ pub struct PerceivedObject {
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ObjectConfidence {
     /// Confidence in the x-distance measurement.
-    /// Range: 0 to 65535
     pub x_distance: u16,
     /// Confidence in the y-distance measurement.
-    /// Range: 0 to 65535
     pub y_distance: u16,
     /// Confidence in the x-speed measurement.
-    /// Range: 0 to 255
     pub x_speed: u8,
     /// Confidence in the y-speed measurement.
-    /// Range: 0 to 255
     pub y_speed: u8,
+    /// Confidence in the x-acceleration measurement.
+    pub x_acceleration: u8,
+    /// Confidence in the y-acceleration measurement.
+    pub y_acceleration: u8,
+    //TODO fill in the rest of the fields
     /// Confidence in the overall object detection (optional).
-    /// Range: 0 to 255
     pub object: Option<u8>,
+
+    /// Confidence in the z-distance measurement.
+    pub z_distance: Option<u16>,
+    /// Confidence in the y-speed measurement.
+    pub z_speed: Option<u8>,
+    /// Confidence in the z-acceleration measurement.
+    pub z_acceleration: Option<u8>,
+    //TODO fill in the rest of the fields
 }
 
 /// Represents the classification of a detected object.
@@ -156,11 +164,12 @@ pub enum SingleVruClass {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct VruGroupClass {
-    /// The size of the group, indicating the number of VRUs in the group.
-    pub group_size: u8,
-    /// The type of the group, specifying the categories of VRUs present (e.g., pedestrians, bicyclists).
+    /// The type of the group, specifying the categories of VRUs present (e.g., pedestrians, bicyclists)  (mandatory).
     pub group_type: VruGroupType,
-    /// An optional identifier for the cluster to which the group belongs.
+    /// The size of the group, indicating the number of VRUs in the group  (mandatory).
+    pub group_size: u8,
+
+    /// An optional identifier for the cluster to which the group belongs (optional).
     pub cluster_id: Option<u8>,
 }
 
@@ -185,10 +194,10 @@ pub struct VruGroupType {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MatchedPosition {
-    /// The identifier of the lane where the object is located.
-    pub lane_id: u8,
-    /// The longitudinal position of the object within the lane, measured in decimeters.
-    pub longitudinal_lane_position: u16,
+    /// The identifier of the lane where the object is located  (optional).
+    pub lane_id: Option<u8>,
+    /// The longitudinal position of the object within the lane, measured in decimeters  (optional).
+    pub longitudinal_lane_position: Option<u16>,
 }
 
 impl PerceivedObject {
@@ -213,7 +222,7 @@ mod test {
     use crate::exchange::etsi::perceived_object::PerceivedObject;
 
     #[test]
-    fn test_deserialize() {
+    fn test_deserialize_standard_po() {
         let data = r#"{
                 "object_id": 5,
                 "time_of_measurement": 2,

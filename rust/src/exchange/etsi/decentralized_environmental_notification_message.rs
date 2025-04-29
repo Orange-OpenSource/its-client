@@ -132,8 +132,8 @@ pub struct LocationContainer {
     pub event_speed: Option<u16>,
     /// Heading at the event location in 0.1 degrees
     pub event_position_heading: Option<u16>,
-    /// List of traces leading to the event position
-    #[serde(default)]
+    /// List of traces leading to the event position (optional evenmandatory into the specification)
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub detection_zones_to_event_position: Vec<Trace>,
     /// Type of road where the event occurred
     pub road_type: Option<u8>,
