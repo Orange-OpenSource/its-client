@@ -121,10 +121,10 @@ public actor Core {
         }
 
         self.mqttClient = mqttClient
-        await mqttClient.setMessageReceivedHandler(messageReceivedHandler: { message in
-            Task { [weak self] in
-                guard let self else { return }
-
+        await mqttClient.setMessageReceivedHandler(messageReceivedHandler: { [weak self] message in
+            guard let self else { return }
+            
+            Task {
                 let spanID = await startReceivedMessageSpan(message)
                 let message = CoreMQTTMessage(payload: message.payload, topic: message.topic)
                 await messageReceivedHandler?(message)
