@@ -125,8 +125,10 @@ public class IoT3Core {
             );
         }
 
-        // instantiate the LwM2M client
-        this.lwm2mClient = new Lwm2mClient(lwm2mConfig, lwm2mDevice, lwm2mInstances);
+        // instantiate the LwM2M client if its parameters have been set with the builder
+        if(lwm2mConfig != null && lwm2mDevice != null) {
+            this.lwm2mClient = new Lwm2mClient(lwm2mConfig, lwm2mDevice, lwm2mInstances);
+        }
     }
 
     /**
