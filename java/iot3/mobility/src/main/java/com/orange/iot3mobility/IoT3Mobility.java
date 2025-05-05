@@ -137,11 +137,15 @@ public class IoT3Mobility {
                         mqttPassword,
                         uuid,
                         mqttUseTls)
-                .lwm2mParams(
-                        lwm2mConfig,
-                        lwm2mDevice,
-                        initLwm2mInstances(lwm2mInstances))
                 .callback(ioT3CoreCallback);
+
+        if (lwm2mConfig != null && lwm2mDevice != null){
+             ioT3CoreBuilder.lwm2mParams(
+                    lwm2mConfig,
+                    lwm2mDevice,
+                    initLwm2mInstances(lwm2mInstances)
+            );
+        }
 
         if(telemetryHost != null) {
             ioT3CoreBuilder.telemetryParams(telemetryScheme,
@@ -160,7 +164,11 @@ public class IoT3Mobility {
     }
 
     private Lwm2mInstance[] initLwm2mInstances(Lwm2mInstance[] lwm2mInstances) {
-        ArrayList<Lwm2mInstance> lwm2mInstancesMutable = new ArrayList<>(Arrays.asList(lwm2mInstances));
+        ArrayList<Lwm2mInstance> lwm2mInstancesMutable = new ArrayList<>();
+
+        if (lwm2mInstances !=null){
+            lwm2mInstancesMutable.addAll(Arrays.asList(lwm2mInstances));
+        }
 
         // init lwm2mLocation
         Lwm2mInstance lwm2mLocationInstance = lwm2mInstancesMutable.stream()

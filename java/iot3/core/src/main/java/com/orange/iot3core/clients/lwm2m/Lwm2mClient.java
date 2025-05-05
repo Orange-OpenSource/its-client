@@ -96,10 +96,12 @@ public class Lwm2mClient {
         initializer.setInstancesForObject(LwM2mId.SECURITY, getSecurity(lwm2mConfig));
         initializer.setInstancesForObject(LwM2mId.SERVER, getServer(lwm2mConfig));
         initializer.setInstancesForObject(LwM2mId.DEVICE, lwm2mDevice.getDevice());
-        for (Lwm2mInstance lwm2mInstance : lwm2mInstances) {
-            BaseInstanceEnablerFactory factory = lwm2mInstance.getInstanceEnablerFactory();
-            initializer.setInstancesForObject(lwm2mInstance.getObjectId(), factory.create());
-            initializer.setFactoryForObject(lwm2mInstance.getObjectId(), factory);
+        if (lwm2mInstances != null) {
+            for (Lwm2mInstance lwm2mInstance : lwm2mInstances) {
+                BaseInstanceEnablerFactory factory = lwm2mInstance.getInstanceEnablerFactory();
+                initializer.setInstancesForObject(lwm2mInstance.getObjectId(), factory.create());
+                initializer.setFactoryForObject(lwm2mInstance.getObjectId(), factory);
+            }
         }
         return initializer;
     }
