@@ -17,11 +17,15 @@ public actor Mobility {
     private let core: Core
     private let regionOfInterestCoordinator: RegionOfInterestCoordinator
     private var mobilityConfiguration: MobilityConfiguration?
-    
+    private let roadAlarmCoordinator: RoadAlarmCoordinator
+    private let roadUserCoordinator: RoadUserCoordinator
+
     /// Initializes a `Mobility`.
     public init() {
         core = Core()
         regionOfInterestCoordinator = RegionOfInterestCoordinator()
+        roadAlarmCoordinator = RoadAlarmCoordinator()
+        roadUserCoordinator = RoadUserCoordinator()
     }
 
     /// Starts the `Mobility` with a configuration to connect to a MQTT server and initialize the telemetry client.
@@ -31,6 +35,11 @@ public actor Mobility {
         self.mobilityConfiguration = mobilityConfiguration
         do {
             try await core.start(coreConfiguration: mobilityConfiguration.coreConfiguration)
+            await core.setMessageReceivedHandler { [weak self] message in
+                Task {
+                    await self?.processIncomingMessage(message)
+                }
+            }
         } catch {
             throw .startFailed(error)
         }
@@ -45,7 +54,19 @@ public actor Mobility {
             throw .stopFailed(error)
         }
     }
-    
+
+    /// Sets an observer to observe changes on road alarms.
+    /// - Parameter observer: The `RoadAlarmChangeObserver` to set.
+    public func setRoadAlarmObserver(_ observer: RoadAlarmChangeObserver) async {
+        await roadAlarmCoordinator.setObserver(observer)
+    }
+
+    /// Sets an observer to observe changes on road users.
+    /// - Parameter observer: The `RoadUserChangeObserver` to set.
+    public func setRoadUserObserver(_ observer: RoadUserChangeObserver) async {
+        await roadUserCoordinator.setObserver(observer)
+    }
+
     /// Sends a position to share it.
     /// - Parameters:
     ///   - latitude: The latitude in decimal degrees.
@@ -202,6 +223,14 @@ public actor Mobility {
             do {
                 try await core.unsubscribe(from: topic)
             } catch {}
+        }
+    }
+
+    private func processIncomingMessage(_ message: CoreMQTTMessage) async {
+        if message.topic.contains(MessageType.denm.rawValue) {
+            await roadAlarmCoordinator.handleRoadAlarm(withPayload: message.payload)
+        } else if message.topic.contains(MessageType.cam.rawValue) {
+            await roadUserCoordinator.handleRoadUser(withPayload: message.payload)
         }
     }
 

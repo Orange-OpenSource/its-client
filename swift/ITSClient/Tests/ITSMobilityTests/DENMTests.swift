@@ -20,7 +20,7 @@ struct DENMTests {
     private let altitude = 46.0
     private let relevanceDistance = RelevanceDistance.lessThan50m
     private let relevanceTrafficDirection = RelevanceTrafficDirection.upstreamTraffic
-    private let validityDuration = 10
+    private let validityDuration = 10.0
     private let transmissionInterval = 0.2
     private let stationType = StationType.passengerCar
     private let stationID: UInt32 = 654321
@@ -64,7 +64,7 @@ struct DENMTests {
                                                       eventPosition: position,
                                                       relevanceDistance: relevanceDistance,
                                                       relevanceTrafficDirection: relevanceTrafficDirection,
-                                                      validityDuration: TimeInterval(validityDuration),
+                                                      validityDuration: validityDuration,
                                                       transmissionInterval: transmissionInterval,
                                                       stationType: stationType)
         let situationContainer = SituationContainer(eventType: Cause(cause: causeType, subcause: 0))
