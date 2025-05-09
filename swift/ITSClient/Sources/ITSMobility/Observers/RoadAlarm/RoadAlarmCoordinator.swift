@@ -38,7 +38,7 @@ actor RoadAlarmCoordinator {
         await observer.didReceiveDENM(denm)
 
         let id = denm.message.managementContainer.actionID.id
-        let cause = denm.message.situationContainer?.eventType.cause
+        let cause = denm.message.situationContainer?.eventType
         let latitude = denm.message.managementContainer.eventPosition.latitude
         let longitude = denm.message.managementContainer.eventPosition.longitude
         let lifetime = denm.message.managementContainer.validityDuration
