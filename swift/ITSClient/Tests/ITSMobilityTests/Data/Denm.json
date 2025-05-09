@@ -28,7 +28,6 @@
         "situation_container": {
             "event_type": {
                 "cause": 26,
-                "subcause": 0
             }
         },
         "location_container": {
