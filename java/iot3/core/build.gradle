@@ -9,6 +9,7 @@
 plugins {
     // Apply the java-library plugin for API and implementation separation.
     id 'java-library'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.0'
 }
 
 group 'com.orange.iot3core'
@@ -29,11 +30,27 @@ dependencies {
     implementation 'io.opentelemetry:opentelemetry-context:1.40.0'
     implementation 'org.json:json:20240303'
 
+    implementation 'org.eclipse.leshan:leshan-client-cf:1.5.0'
+    implementation 'org.eclipse.leshan:leshan-core:1.5.0'
+
+    implementation 'org.slf4j:slf4j-simple:1.7.30'
+
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 }
 
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+}
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "17"
+    }
 }
