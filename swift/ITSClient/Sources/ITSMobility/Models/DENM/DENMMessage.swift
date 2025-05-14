@@ -12,7 +12,7 @@
 import Foundation
 
 /// The DENM message.
-public struct DENMMessage: Codable {
+public struct DENMMessage: Codable, Sendable {
     /// The version of the ITS message and/or communication protocol.
     public let protocolVersion: UInt8
     /// The identifier for an ITS-S.

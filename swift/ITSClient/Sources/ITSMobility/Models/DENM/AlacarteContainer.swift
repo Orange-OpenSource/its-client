@@ -12,7 +12,7 @@
 import Foundation
 
 /// The "à la carte" container.
-public struct AlacarteContainer: Codable {
+public struct AlacarteContainer: Codable, Sendable {
     /// The lane position.
     public let lanePosition: Int8?
     /// The positioning solution.
@@ -35,7 +35,7 @@ public struct AlacarteContainer: Codable {
 }
 
 /// The positioning solution.
-public enum PositioningSolution: Int, Codable {
+public enum PositioningSolution: Int, Codable, Sendable {
     case noPositioningSolution = 0
     case sGNSS = 1
     case dGNSS = 2

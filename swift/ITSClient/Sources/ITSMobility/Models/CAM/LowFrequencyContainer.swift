@@ -12,7 +12,7 @@
 import Foundation
 
 /// The low frequency container.
-public struct LowFrequencyContainer: Codable {
+public struct LowFrequencyContainer: Codable, Sendable {
     /// The vehicule role.
     public let vehicleRole: VehiculeRole?
     /// The exterior lights status with a bit representation in a string.
@@ -40,7 +40,7 @@ public struct LowFrequencyContainer: Codable {
 }
 
 /// The vehicule role
-public enum VehiculeRole: Int, Codable {
+public enum VehiculeRole: Int, Codable, Sendable {
     case `default` = 0
     case publicTransport = 1
     case specialTransport = 2

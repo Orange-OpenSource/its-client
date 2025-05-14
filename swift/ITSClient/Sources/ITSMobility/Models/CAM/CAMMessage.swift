@@ -12,7 +12,7 @@
 import Foundation
 
 /// The CAM message.
-public struct CAMMessage: Codable {
+public struct CAMMessage: Codable, Sendable {
     /// The version of the ITS message and/or communication protocol.
     public let protocolVersion: UInt8
     /// The identifier for an ITS-S.
