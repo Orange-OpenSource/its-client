@@ -139,7 +139,7 @@ struct RoadAlarmCoordinatorTests {
                                                       termination: termination,
                                                       validityDuration: validationDuration,
                                                       stationType: .passengerCar)
-        let situationContainer = SituationContainer(eventType: Cause(cause: .accident))
+        let situationContainer = SituationContainer(eventType: Cause.accident())
         let demMessage = DENMMessage(stationID: 654321,
                                      managementContainer: managementContainer,
                                      situationContainer: situationContainer)

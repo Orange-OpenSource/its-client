@@ -122,7 +122,7 @@ public actor Mobility {
         latitude: Double,
         longitude: Double,
         altitude: Double,
-        cause: CauseType = .dangerousSituation
+        cause: Cause = .dangerousSituation()
     ) async throws(MobilityError) {
         guard let mobilityConfiguration else { throw MobilityError.notStarted }
 
@@ -135,10 +135,10 @@ public actor Mobility {
                                                       referenceTime: now,
                                                       eventPosition: position,
                                                       stationType: mobilityConfiguration.stationType)
-        let situationContainer = SituationContainer(eventType: Cause(cause: cause))
+        let situationContainer = SituationContainer(eventType: cause)
         let denmMessage = DENMMessage(stationID: mobilityConfiguration.stationID,
-                                     managementContainer: managementContainer,
-                                     situationContainer: situationContainer)
+                                      managementContainer: managementContainer,
+                                      situationContainer: situationContainer)
         let denm = DENM(message: denmMessage,
                         sourceUUID: mobilityConfiguration.userIdentifier,
                         timestamp: now)
