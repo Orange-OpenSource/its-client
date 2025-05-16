@@ -18,8 +18,6 @@ use crate::client::configuration::configuration_error::ConfigurationError::{
 };
 
 use std::str::FromStr;
-#[cfg(feature = "mobility")]
-use std::sync::RwLock;
 
 #[cfg(feature = "telemetry")]
 use crate::client::configuration::telemetry_configuration::{
@@ -27,9 +25,8 @@ use crate::client::configuration::telemetry_configuration::{
 };
 
 #[cfg(feature = "mobility")]
-use crate::client::configuration::{
-    mobility_configuration::{MobilityConfiguration, STATION_SECTION},
-    node_configuration::{NODE_SECTION, NodeConfiguration},
+use crate::client::configuration::mobility_configuration::{
+    MOBILITY_SECTION, MobilityConfiguration,
 };
 
 #[cfg(feature = "geo_routing")]
@@ -43,8 +40,6 @@ pub(crate) mod geo_configuration;
 #[cfg(feature = "mobility")]
 pub(crate) mod mobility_configuration;
 pub(crate) mod mqtt_configuration;
-#[cfg(feature = "mobility")]
-pub(crate) mod node_configuration;
 #[cfg(feature = "telemetry")]
 pub(crate) mod telemetry_configuration;
 
@@ -58,30 +53,10 @@ pub struct Configuration {
     pub telemetry: TelemetryConfiguration,
     #[cfg(feature = "mobility")]
     pub mobility: MobilityConfiguration,
-    #[cfg(feature = "mobility")]
-    pub node: Option<RwLock<NodeConfiguration>>,
     pub(crate) custom_settings: Option<Ini>,
 }
 
 impl Configuration {
-    #[cfg(feature = "mobility")]
-    pub fn component_name(&self, modifier: Option<u32>) -> String {
-        let station_id: String = match &self.node {
-            Some(node_configuration) => node_configuration
-                .read()
-                .unwrap()
-                .station_id(modifier)
-                .to_string(),
-            None => self.mobility.station_id.clone(),
-        };
-        format!("{}_{}", self.mqtt.mqtt_options.client_id(), station_id)
-    }
-
-    #[cfg(feature = "mobility")]
-    pub fn set_node_configuration(&mut self, node_configuration: NodeConfiguration) {
-        self.node = Some(RwLock::new(node_configuration));
-    }
-
     pub fn set_mqtt_credentials(&mut self, username: &str, password: &str) {
         self.mqtt.mqtt_options.set_credentials(username, password);
     }
@@ -143,25 +118,6 @@ pub(crate) fn get_optional_from_section<T: FromStr>(
     }
 }
 
-pub(crate) fn get_mandatory_field<T: FromStr>(
-    section: Option<&'static str>,
-    field: &'static str,
-    ini_config: &Ini,
-) -> Result<T, ConfigurationError> {
-    if let Some(properties) = ini_config.section(section) {
-        if let Some(value) = properties.get(field) {
-            match T::from_str(value) {
-                Ok(value) => Ok(value),
-                Err(_e) => Err(TypeError(field, type_name::<T>())),
-            }
-        } else {
-            Err(MissingMandatoryField(field, section.unwrap_or_default()))
-        }
-    } else {
-        Err(MissingMandatorySection(section.unwrap_or_default()))
-    }
-}
-
 pub(crate) fn get_mandatory_from_section<T: FromStr>(
     field: &'static str,
     section: (&'static str, &Properties),
@@ -208,14 +164,9 @@ impl TryFrom<Ini> for Configuration {
             )?)?,
             #[cfg(feature = "mobility")]
             mobility: MobilityConfiguration::try_from(&pick_mandatory_section(
-                STATION_SECTION,
+                MOBILITY_SECTION,
                 &mut ini_config,
             )?)?,
-            #[cfg(feature = "mobility")]
-            node: match ini_config.section(Some(NODE_SECTION)) {
-                Some(properties) => Some(RwLock::new(NodeConfiguration::try_from(properties)?)),
-                None => None,
-            },
             custom_settings: Some(ini_config),
         })
     }
@@ -226,82 +177,96 @@ mod tests {
     use crate::client::configuration::{Configuration, get_optional_field, pick_mandatory_section};
     use ini::Ini;
 
-    #[cfg(feature = "telemetry")]
-    use crate::client::configuration::telemetry_configuration;
-
     const EXHAUSTIVE_CUSTOM_INI_CONFIG: &str = r#"
-no_section="noitceson"
-
-[station]
-id="com_myapplication"
-type="mec_application"
+no_section = noitceson
 
 [mqtt]
-host="localhost"
-port=1883
-client_id="com_myapplication"
+host = localhost
+port = 1883
+use_tls = false
+client_id = com_myapplication
+username = username
+password = password
 
 [geo]
-prefix=sandbox
-suffix=v2x
+prefix = sandbox
+suffix = v2x
 
-[node]
-responsibility_enabled=true
+[mobility]
+source_uuid = com_myapplication-1
+station_id = 1
+# true to enable the responsibility
+use_responsibility = true
+# the number of threads to use
+thread_count = 4
 
 [telemetry]
-host="otlp.domain.com"
-port=5418
-path="/custom/v1/traces"
+host = otlp.domain.com
+port = 5418
+use_tls = false
+path = /custom/v1/traces
 
 [custom]
-test="success"
+test = success
 "#;
 
     const MINIMAL_FEATURELESS_CONFIGURATION: &str = r#"
 [mqtt]
-host="localhost"
-port=1883
-client_id="com_myapplication"
+host = localhost
+port = 1883
+client_id = com_myapplication
 "#;
 
     #[cfg(feature = "mobility")]
     const MINIMAL_MOBILITY_CONFIGURATION: &str = r#"
-[station]
-id="com_myapplication"
-type="mec_application"
-
 [mqtt]
-host="localhost"
-port=1883
-client_id="com_myapplication"
+host = localhost
+port = 1883
+use_tls = false
+client_id = com_myapplication
+
+[mobility]
+source_uuid = com_myapplication-1
+station_id = 1
+# true to enable the responsibility
+use_responsibility = false
+# the number of threads to use
+thread_count = 4
 "#;
 
     #[cfg(feature = "mobility")]
     const MINIMAL_GEO_ROUTING_CONFIGURATION: &str = r#"
-[station]
-id="com_myapplication"
-type="mec_application"
-
 [mqtt]
-host="localhost"
+host = localhost
 port=1883
-client_id="com_myapplication"
+use_tls = false
+client_id= com_myapplication
+
+[mobility]
+source_uuid = com_myapplication-1
+station_id = 1
+# true to enable the responsibility
+use_responsibility = true
+# the number of threads to use
+thread_count = 4
 
 [geo]
-prefix=sandbox
-suffix=v2x
+prefix = sandbox
+suffix = v2x
 "#;
 
     #[cfg(feature = "telemetry")]
     const MINIMAL_TELEMETRY_CONFIGURATION: &str = r#"
 [mqtt]
-host="localhost"
-port=1883
-client_id="com_myapplication"
+host = localhost
+port = 1883
+use_tls = false
+client_id = com_myapplication
 
 [telemetry]
-host="otlp.domain.com"
-port=5418
+host = otlp.domain.com
+port = 5418
+use_tls = false
 "#;
 
     #[test]
@@ -414,15 +379,8 @@ port=5418
         let ini = Ini::load_from_str(MINIMAL_TELEMETRY_CONFIGURATION)
             .expect("Ini creation should not fail");
 
-        let configuration = Configuration::try_from(ini)
+        Configuration::try_from(ini)
             .expect("Failed to create Configuration with minimal mandatory sections and fields");
-
-        assert_eq!(
-            telemetry_configuration::DEFAULT_PATH.to_string(),
-            configuration.telemetry.path,
-            "Telemetry path must default to {}",
-            telemetry_configuration::DEFAULT_PATH
-        );
     }
 
     #[test]
@@ -432,7 +390,7 @@ port=5418
         let ini = Ini::load_from_str(MINIMAL_MOBILITY_CONFIGURATION)
             .expect("Ini creation should not fail");
 
-        let _ = Configuration::try_from(ini)
+        Configuration::try_from(ini)
             .expect("Failed to create Configuration with minimal mandatory sections and fields");
     }
 
@@ -443,7 +401,7 @@ port=5418
         let ini = Ini::load_from_str(MINIMAL_GEO_ROUTING_CONFIGURATION)
             .expect("Ini creation should not fail");
 
-        let _ = Configuration::try_from(ini)
+        Configuration::try_from(ini)
             .expect("Failed to create Configuration with minimal mandatory sections and fields");
     }
 }
