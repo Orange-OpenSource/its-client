@@ -11,6 +11,7 @@
 
 import Foundation
 
+/// The decentralized environmental notification message typealias.
 public typealias DENM = DecentralizedEnvironmentalNotificationMessage
 
 /// The DENM representation.
@@ -30,7 +31,7 @@ public struct DecentralizedEnvironmentalNotificationMessage: Codable, Sendable {
     /// The list of ordered elements root source of the message.
     public let path: [Path]?
     /// The timestamp when the message was generated since Unix Epoch in seconds.
-    public var timestamp: TimeInterval { Double(millisecondsTimestamp) / 1000 }
+    public var timestamp: TimeInterval { Double(millisecondsTimestamp) / 1_000 }
 
     enum CodingKeys: String, CodingKey {
         case message, origin, path, type, version
@@ -49,7 +50,7 @@ public struct DecentralizedEnvironmentalNotificationMessage: Codable, Sendable {
         self.origin = origin
         self.path = path
         self.sourceUUID = sourceUUID
-        self.millisecondsTimestamp = Int(timestamp * 1000)
+        self.millisecondsTimestamp = Int(timestamp * 1_000)
     }
 }
 
@@ -64,10 +65,4 @@ public struct Path: Codable, Sendable {
         case messageType = "message_type"
         case position
     }
-
-    init(messageType: MessageType, position: Position) {
-        self.messageType = messageType
-        self.position = position
-    }
 }
-

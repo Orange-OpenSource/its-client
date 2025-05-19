@@ -11,6 +11,7 @@
 
 import Foundation
 
+// swiftlint:disable file_length
 /// The cause.
 public enum Cause: Codable, Sendable, Equatable {
     /// The reserved cause.
@@ -95,6 +96,8 @@ public enum Cause: Codable, Sendable, Equatable {
         case subcause
     }
 
+    // swiftlint:disable function_body_length
+    // swiftlint:disable line_length
     /// Initializes a new instance by decoding from the given decoder.
     /// - Parameter decoder: The decoder to read data from.
     public init(from decoder: any Decoder) throws {
@@ -260,6 +263,8 @@ public enum Cause: Codable, Sendable, Equatable {
             try container.encode(dangerousSituationSubcause, forKey: .subcause)
         }
     }
+    // swiftlint:enable line_length
+    // swiftlint:enable function_body_length
 
     private static func decodeSubcause<T: Decodable>(_ type: T.Type,
                                                      in container: KeyedDecodingContainer<CodingKeys>,
@@ -679,3 +684,4 @@ public enum DangerousSituationSubcause: UInt8, Codable, Sendable {
     /// The collision risk warning engaged subcause.
     case collisionRiskWarningEngaged = 7
 }
+// swiftlint:enable file_length

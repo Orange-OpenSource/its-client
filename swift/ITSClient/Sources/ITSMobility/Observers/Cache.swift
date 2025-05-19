@@ -59,12 +59,12 @@ actor Cache<K: Hashable, V: Sendable> {
 
     private func removeExpiredEntries() {
         let now = Date()
-        cache = cache.filter({
-            let isExpired = $1.expirationDate.map({ now > $0 }) ?? false
+        cache = cache.filter {
+            let isExpired = $1.expirationDate.map { now > $0 } ?? false
             if isExpired {
                 expiredEntryHandler?($1)
             }
             return !isExpired
-        })
+        }
     }
 }

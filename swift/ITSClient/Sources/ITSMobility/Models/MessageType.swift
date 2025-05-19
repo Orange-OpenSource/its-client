@@ -13,8 +13,8 @@ import Foundation
 
 /// The message type.
 public enum MessageType: String, Codable, Sendable {
-    case cam = "cam"
-    case cpm = "cpm"
-    case denm = "denm"
-    case po = "po"
+    case cam
+    case cpm
+    case denm
+    case po
 }

@@ -13,11 +13,11 @@ import Foundation
 
 /// The low frequency container.
 public struct LowFrequencyContainer: Codable, Sendable {
-    /// The vehicule role.
-    public let vehicleRole: VehiculeRole?
+    /// The vehicle role.
+    public let vehicleRole: VehicleRole?
     /// The exterior lights status with a bit representation in a string.
     public let etsiExteriorLights: String
-    /// The path history, a path with a set of path points
+    /// The path history, a path with a set of path points.
     public let pathHistory: [PathHistory]
     /// The exterior lights status.
     public var exteriorLights: ExteriorLightStatus {
@@ -32,15 +32,15 @@ public struct LowFrequencyContainer: Codable, Sendable {
         case pathHistory = "path_history"
     }
 
-    init(vehicleRole: VehiculeRole?, exteriorLights: ExteriorLightStatus, pathHistory: [PathHistory]) {
+    init(vehicleRole: VehicleRole?, exteriorLights: ExteriorLightStatus, pathHistory: [PathHistory]) {
         self.vehicleRole = vehicleRole
         self.etsiExteriorLights = String(exteriorLights.rawValue, radix: 2)
         self.pathHistory = Array(pathHistory.prefix(Self.maxPathHistory))
     }
 }
 
-/// The vehicule role
-public enum VehiculeRole: Int, Codable, Sendable {
+/// The vehicle role
+public enum VehicleRole: Int, Codable, Sendable {
     case `default` = 0
     case publicTransport = 1
     case specialTransport = 2
@@ -67,12 +67,12 @@ public struct ExteriorLightStatus: OptionSet, Sendable {
         self.rawValue = rawValue
     }
 
-    static let lowBeamHeadlightsOn  = AccelerationControl(rawValue: 1 << 0)
-    static let highBeamHeadlightsOn  = AccelerationControl(rawValue: 1 << 1)
-    static let leftTurnSignalOn   = AccelerationControl(rawValue: 1 << 2)
-    static let rightTurnSignalOn   = AccelerationControl(rawValue: 1 << 3)
-    static let daytimeRunningLightsOn   = AccelerationControl(rawValue: 1 << 4)
-    static let reverseLightOn   = AccelerationControl(rawValue: 1 << 5)
-    static let fogLightOn   = AccelerationControl(rawValue: 1 << 6)
-    static let parkingLightsOn   = AccelerationControl(rawValue: 1 << 7)
+    static let lowBeamHeadlightsOn = AccelerationControl(rawValue: 1 << 0)
+    static let highBeamHeadlightsOn = AccelerationControl(rawValue: 1 << 1)
+    static let leftTurnSignalOn = AccelerationControl(rawValue: 1 << 2)
+    static let rightTurnSignalOn = AccelerationControl(rawValue: 1 << 3)
+    static let daytimeRunningLightsOn = AccelerationControl(rawValue: 1 << 4)
+    static let reverseLightOn = AccelerationControl(rawValue: 1 << 5)
+    static let fogLightOn = AccelerationControl(rawValue: 1 << 6)
+    static let parkingLightsOn = AccelerationControl(rawValue: 1 << 7)
 }

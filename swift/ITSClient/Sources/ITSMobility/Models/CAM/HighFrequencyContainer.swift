@@ -43,63 +43,62 @@ public struct HighFrequencyContainer: Codable, Sendable {
     public let confidence: HighFrequencyContainerConfidence?
     /// The heading in degree.
     public var heading: Double? {
-        etsiHeading.map({ ETSI.deciDegreesToDegrees($0) })
+        etsiHeading.map { ETSI.deciDegreesToDegrees($0) }
     }
     // The speed in m/s.
     public var speed: Double? {
-        etsiSpeed.map({ ETSI.centimetersPerSecondToMetersPerSecond($0) })
+        etsiSpeed.map { ETSI.centimetersPerSecondToMetersPerSecond($0) }
     }
     /// The vehicule length in meters.
     public var vehicleLength: Double? {
-        etsiVehicleLength.map({ ETSI.decimetersToMeters($0) })
+        etsiVehicleLength.map { ETSI.decimetersToMeters($0) }
     }
     /// The vehicule width in meters.
     public var vehicleWidth: Double? {
-        etsiVehicleWidth.map({ ETSI.decimetersToMeters($0) })
+        etsiVehicleWidth.map { ETSI.decimetersToMeters($0) }
     }
     /// The longitudinal acceleration in m/s2.
     public var longitudinalAcceleration: Double? {
-        etsiLongitudinalAcceleration.map({ ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) })
+        etsiLongitudinalAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
     }
     /// The yaw rate in degrees/s
     public var yawRate: Double? {
-        etsiYawRate.map({ ETSI.centiDegreesPerSecondToDegreesPerSecond($0) })
+        etsiYawRate.map { ETSI.centiDegreesPerSecondToDegreesPerSecond($0) }
     }
     /// The acceleration control.
     public var accelerationControl: AccelerationControl? {
-        etsiAccelerationControl.map({ AccelerationControl(rawValue: strtoul($0, nil, 2)) })
+        etsiAccelerationControl.map { AccelerationControl(rawValue: strtoul($0, nil, 2)) }
     }
     /// The lateral acceleration in m/s2.
     public var lateralAcceleration: Double? {
-        etsiLateralAcceleration.map({ ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) })
+        etsiLateralAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
     }
     /// The vertical acceleration in m/s2.
     public var verticalAcceleration: Double? {
-        etsiVerticalAcceleration.map({ ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) })
+        etsiVerticalAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
     }
 
     private static let minHeading = 0
-    private static let maxHeading = 3601
+    private static let maxHeading = 3_601
     private static let minSpeed = 0
-    private static let maxSpeed = 16383
+    private static let maxSpeed = 16_383
     private static let minVehiculeLength = 1
-    private static let maxVehiculeLength = 1023
+    private static let maxVehiculeLength = 1_023
     private static let minVehiculeWidth = 1
     private static let maxVehiculeWidth = 62
-    private static let minCurvature = -1023
-    private static let maxCurvature = 1023
+    private static let minCurvature = -1_023
+    private static let maxCurvature = 1_023
     private static let minAcceleration = -160
     private static let maxAcceleration = 161
-    private static let minYawRate = -32766
-    private static let maxYawRate = 32766
-    static let unavailableYawRate = 32767
+    private static let minYawRate = -32_766
+    private static let maxYawRate = 32_766
+    static let unavailableYawRate = 32_767
     static let unavailableHeading = ETSI.deciDegreesToDegrees(Self.maxHeading)
     static let unavailableSpeed = ETSI.centimetersPerSecondToMetersPerSecond(Self.maxSpeed)
     static let unavailableVehiculeLength = ETSI.decimetersToMeters(Self.maxVehiculeLength)
     static let unavailableVehiculeWidth = ETSI.decimetersToMeters(Self.maxVehiculeWidth)
-    static let unavailableCurvature = 1023
+    static let unavailableCurvature = 1_023
     static let unavailableAcceleration = ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond(Self.maxAcceleration)
-
 
     enum CodingKeys: String, CodingKey {
         case etsiHeading = "heading"
@@ -133,51 +132,51 @@ public struct HighFrequencyContainer: Codable, Sendable {
         verticalAcceleration: Double? = nil,
         confidence: HighFrequencyContainerConfidence? = nil
     ) {
-        self.etsiHeading = heading.map({
+        self.etsiHeading = heading.map {
             clip(ETSI.degreesToDeciDegrees($0),
                  Self.minHeading,
                  Self.maxHeading)
-        })
-        self.etsiSpeed = speed.map({
+        }
+        self.etsiSpeed = speed.map {
             clip(ETSI.metersPerSecondToCentimetersPerSecond($0),
                  Self.minSpeed,
                  Self.maxSpeed)
-        })
+        }
         self.driveDirection = driveDirection
-        self.etsiVehicleLength = vehicleLength.map({
+        self.etsiVehicleLength = vehicleLength.map {
             clip(ETSI.metersToDecimeters($0),
                  Self.minVehiculeLength,
                  Self.maxVehiculeLength)
-        })
-        self.etsiVehicleWidth = vehicleWidth.map({
+        }
+        self.etsiVehicleWidth = vehicleWidth.map {
             clip(ETSI.metersToDecimeters($0),
                  Self.minVehiculeWidth,
                  Self.maxVehiculeWidth)
-        })
-        self.curvature = curvature.map({ clip($0, Self.minCurvature, Self.maxCurvature) })
+        }
+        self.curvature = curvature.map { clip($0, Self.minCurvature, Self.maxCurvature) }
         self.curvatureCalculationMode = curvatureCalculationMode
-        self.etsiLongitudinalAcceleration = longitudinalAcceleration.map({
+        self.etsiLongitudinalAcceleration = longitudinalAcceleration.map {
             clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
-        })
-        self.etsiYawRate = yawRate.map({
+        }
+        self.etsiYawRate = yawRate.map {
             clip(ETSI.degreesPerSecondToCentiDegreesPerSecond($0),
                  Self.minYawRate,
                  Self.maxYawRate)
-        })
-        self.etsiAccelerationControl = accelerationControl.map({ String($0.rawValue, radix: 2) })
+        }
+        self.etsiAccelerationControl = accelerationControl.map { String($0.rawValue, radix: 2) }
         self.lanePosition = lanePosition
-        self.etsiLateralAcceleration = lateralAcceleration.map({
+        self.etsiLateralAcceleration = lateralAcceleration.map {
             clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
-        })
-        self.etsiVerticalAcceleration = verticalAcceleration.map({
+        }
+        self.etsiVerticalAcceleration = verticalAcceleration.map {
             clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
-        })
+        }
         self.confidence = confidence
     }
 }
@@ -204,13 +203,13 @@ public struct AccelerationControl: OptionSet, Sendable {
         self.rawValue = rawValue
     }
 
-    static let brakePedalEngaged  = AccelerationControl(rawValue: 1 << 0)
-    static let gasPedalEngaged  = AccelerationControl(rawValue: 1 << 1)
-    static let emergencyBrakeEngaged   = AccelerationControl(rawValue: 1 << 2)
-    static let collisionWarningEngaged   = AccelerationControl(rawValue: 1 << 3)
-    static let accEngaged   = AccelerationControl(rawValue: 1 << 4)
-    static let cruiseControlEngaged   = AccelerationControl(rawValue: 1 << 5)
-    static let speedLimiterEngaged   = AccelerationControl(rawValue: 1 << 6)
+    static let brakePedalEngaged = AccelerationControl(rawValue: 1 << 0)
+    static let gasPedalEngaged = AccelerationControl(rawValue: 1 << 1)
+    static let emergencyBrakeEngaged = AccelerationControl(rawValue: 1 << 2)
+    static let collisionWarningEngaged = AccelerationControl(rawValue: 1 << 3)
+    static let accEngaged = AccelerationControl(rawValue: 1 << 4)
+    static let cruiseControlEngaged = AccelerationControl(rawValue: 1 << 5)
+    static let speedLimiterEngaged = AccelerationControl(rawValue: 1 << 6)
 }
 
 /// The lane position.
@@ -242,23 +241,23 @@ public struct HighFrequencyContainerConfidence: Codable, Sendable {
     public let etsiVerticalAcceleration: Int?
     /// The heading in degree.
     public var heading: Double? {
-        etsiHeading.map({ ETSI.deciDegreesToDegrees($0) })
+        etsiHeading.map { ETSI.deciDegreesToDegrees($0) }
     }
     // The speed in m/s.
     public var speed: Double? {
-        etsiSpeed.map({ ETSI.centimetersPerSecondToMetersPerSecond($0) })
+        etsiSpeed.map { ETSI.centimetersPerSecondToMetersPerSecond($0) }
     }
     /// The longitudinal acceleration in m/s2
     public var longitudinalAcceleration: Double? {
-        etsiLongitudinalAcceleration.map({ ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) })
+        etsiLongitudinalAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
     }
     /// The lateral acceleration in m/s2
     public var lateralAcceleration: Double? {
-        etsiLateralAcceleration.map({ ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) })
+        etsiLateralAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
     }
     /// The vertical acceleration in m/s2
     public var verticalAcceleration: Double? {
-        etsiVerticalAcceleration.map({ ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) })
+        etsiVerticalAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
     }
 
     private static let minHeading = 1
@@ -292,34 +291,34 @@ public struct HighFrequencyContainerConfidence: Codable, Sendable {
         curvature: CurvatureConfidence? = nil,
         verticalAcceleration: Double? = nil
     ) {
-        self.etsiHeading = heading.map({
+        self.etsiHeading = heading.map {
             clip(ETSI.degreesToDeciDegrees($0),
                  Self.minHeading,
                  Self.maxHeading)
-        })
-        self.etsiSpeed = speed.map({
+        }
+        self.etsiSpeed = speed.map {
             clip(ETSI.metersPerSecondToCentimetersPerSecond($0),
                  Self.minSpeed,
                  Self.maxSpeed)
-        })
+        }
         self.vehicleLength = vehicleLength
         self.yawRate = yawRate
-        self.etsiLongitudinalAcceleration = longitudinalAcceleration.map({
+        self.etsiLongitudinalAcceleration = longitudinalAcceleration.map {
             clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
-        })
-        self.etsiLateralAcceleration = lateralAcceleration.map({
+        }
+        self.etsiLateralAcceleration = lateralAcceleration.map {
             clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
-        })
+        }
         self.curvature = curvature
-        self.etsiVerticalAcceleration = verticalAcceleration.map({
+        self.etsiVerticalAcceleration = verticalAcceleration.map {
             clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
-        })
+        }
     }
 }
 
@@ -343,7 +342,7 @@ public enum YawRateConfidence: Int, Codable, Sendable {
     case degSec_100_00 = 6
     case outOfRange = 7
     case unavailable = 8
-    
+
     enum CodingKeys: String, CodingKey {
         case degSec_000_01 = "degSec-000-01"
         case degSec_000_05 = "degSec-000-05"

@@ -9,8 +9,8 @@
  * Software description: Swift ITS client.
  */
 
-import ITSCore
 import Foundation
+import ITSCore
 
 /// An object that manages a mobility client using the `Core`.
 public actor Mobility {
@@ -44,7 +44,7 @@ public actor Mobility {
             throw .startFailed(error)
         }
     }
-    
+
     /// Stops the `Mobility` disconnecting the MQTT client and stopping the telemetry client.
     /// - Throws: A `MobilityError` if the MQTT unsubscriptions or disconnection fails.
     public func stop() async throws(MobilityError) {
@@ -103,7 +103,7 @@ public actor Mobility {
         let cam = CAM(message: camMessage,
                       sourceUUID: mobilityConfiguration.userIdentifier,
                       timestamp: now)
-        
+
         // Publish CAM
         let quadkey = QuadkeyBuilder().quadkeyFrom(latitude: latitude,
                                                    longitude: longitude,
@@ -111,7 +111,7 @@ public actor Mobility {
                                                    separator: "/")
         try await publish(cam, topic: try topic(for: .cam, in: quadkey))
     }
-    
+
     /// Sends an alert to share it.
     /// - Parameters:
     ///   - latitude: The latitude in decimal degrees.
@@ -239,7 +239,7 @@ public actor Mobility {
         in quadkey: String
     ) throws(MobilityError) -> String {
         guard let mobilityConfiguration else { throw .notStarted }
-        
+
         let namespace = mobilityConfiguration.namespace
         let userIdentifier = mobilityConfiguration.userIdentifier
         return "\(namespace)/inQueue/v2x/\(messageType.rawValue)/\(userIdentifier)/\(quadkey)"

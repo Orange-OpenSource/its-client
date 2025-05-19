@@ -10,8 +10,8 @@
  */
 
 import Foundation
-import Testing
 @testable import ITSMobility
+import Testing
 
 struct CAMTests {
     private let latitude = 44.7758076
@@ -124,4 +124,3 @@ struct CAMTests {
         #expect(cam.message.lowFrequencyContainer == nil)
     }
 }
-

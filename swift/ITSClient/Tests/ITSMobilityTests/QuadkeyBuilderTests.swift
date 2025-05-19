@@ -9,8 +9,8 @@
  * Software description: Swift ITS client.
  */
 
-import Testing
 @testable import ITSMobility
+import Testing
 
 struct QuadkeyBuilderTests {
     @Test("Quadkey must be generated from coordinates and zoom level")
@@ -41,7 +41,6 @@ struct QuadkeyBuilderTests {
         // Then
         #expect(quadKey == "1/2/0/2/2/2/0/2/1/3/3/3/1/0/3/0/0/0/3/3/2/1")
     }
-
 
     @Test("Quadkey must have 8 neighbors if not in a edge")
     func quadkey_must_have_neighbors_if_not_in_a_edge() {
@@ -172,5 +171,3 @@ struct QuadkeyBuilderTests {
         #expect(neighborQuadkeys.contains("20"))
     }
 }
-
-

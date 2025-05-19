@@ -14,5 +14,5 @@ import Foundation
 /// A global actor for change observer protocols.
 @globalActor public actor ChangeObserverActor: GlobalActor {
     /// The shared actor instance.
-    static public let shared = ChangeObserverActor()
+    public static let shared = ChangeObserverActor()
 }

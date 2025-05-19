@@ -37,7 +37,11 @@ struct NetworkManager {
             let explanationLine = "An asterisk (*) denotes that a network service is disabled."
             guard !line.hasPrefix(explanationLine) else { return }
 
-            line.hasPrefix("*") ? disabledServices.append(String(line.dropFirst())) : enabledServices.append(line)
+            if line.hasPrefix("*") {
+                disabledServices.append(String(line.dropFirst()))
+            } else {
+                enabledServices.append(line)
+            }
         }
 
         return (enabledServices, disabledServices)
@@ -56,7 +60,7 @@ struct NetworkManager {
         task.launch()
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        let output = String(data: data, encoding: .utf8)!
+        let output = #require(String(data: data, encoding: .utf8))
 
         return output
     }

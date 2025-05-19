@@ -35,7 +35,7 @@ struct QuadkeyBuilder {
         let maxTileValue = Int(pow(2.0, Double(zoomLevel))) - 1
         let westXValue = tile.x > 0 ? tile.x - 1 : maxTileValue
         let eastXValue = tile.x < maxTileValue ? tile.x + 1 : 0
-        
+
         // North-west
         if tile.y > 0 {
             quadkeys.append(self.quadkey(from: Tile(x: westXValue, y: tile.y - 1),
@@ -106,7 +106,6 @@ struct QuadkeyBuilder {
             switch digit {
             case 1:
                 x |= mask
-                break
             case 2:
                 y |= mask
             case 3:

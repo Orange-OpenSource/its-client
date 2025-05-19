@@ -10,8 +10,8 @@
  */
 
 import Foundation
-import Testing
 @testable import ITSMobility
+import Testing
 
 struct DENMTests {
     private let origin = Origin.mecApplication

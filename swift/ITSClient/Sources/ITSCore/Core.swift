@@ -22,7 +22,7 @@ public actor Core {
 
     /// Initializes a `Core`.
     public init() {}
-    
+
     /// Sets the message received handler.
     /// - Parameter messageReceivedHandler: A handler called when a message `CoreMQTTMessage` is received.
     public func setMessageReceivedHandler(messageReceivedHandler: (@escaping @Sendable (CoreMQTTMessage) -> Void)) {
@@ -123,7 +123,7 @@ public actor Core {
         self.mqttClient = mqttClient
         await mqttClient.setMessageReceivedHandler(messageReceivedHandler: { [weak self] message in
             guard let self else { return }
-            
+
             Task {
                 let spanID = await startReceivedMessageSpan(message)
                 let message = CoreMQTTMessage(payload: message.payload, topic: message.topic)
@@ -166,9 +166,11 @@ public actor Core {
     }
 
     private func buildAttributes(payload: Data, topic: String) -> [String: Sendable] {
-        ["iot3.core.mqtt.topic": topic,
-         "iot3.core.mqtt.payload_size": payload.count,
-         "iot3.core.sdk_language": "swift"]
+        [
+            "iot3.core.mqtt.topic": topic,
+            "iot3.core.mqtt.payload_size": payload.count,
+            "iot3.core.sdk_language": "swift",
+        ]
     }
 
     private func stopSpan(spanID: String?, errorMessage: String? = nil) async {

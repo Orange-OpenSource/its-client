@@ -34,9 +34,9 @@ public struct SituationContainer: Codable, Sendable {
         linkedCause: Cause? = nil
     ) {
         self.eventType = eventType
-        self.informationQuality = informationQuality.map({
+        self.informationQuality = informationQuality.map {
             clip($0, Self.unavailableInformationQuality, Self.maxInformationQuality)
-        })
+        }
         self.linkedCause = linkedCause
     }
 }

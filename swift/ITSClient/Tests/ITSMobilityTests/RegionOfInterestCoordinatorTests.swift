@@ -10,8 +10,8 @@
  */
 
 import Foundation
-import Testing
 @testable import ITSMobility
+import Testing
 
 struct RegionOfInterestCoordinatorTests {
     private let namespace = "default"
@@ -99,4 +99,3 @@ struct RegionOfInterestCoordinatorTests {
         #expect(requestUpdate == nil)
     }
 }
-

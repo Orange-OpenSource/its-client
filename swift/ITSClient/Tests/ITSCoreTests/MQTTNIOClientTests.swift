@@ -9,8 +9,9 @@
  * Software description: Swift ITS client.
  */
 
-import Testing
+import Foundation
 @testable import ITSCore
+import Testing
 
 struct MQTTNIOClientTests {
     private let clientIdentifier = "MQTTNIOClientTests"
@@ -114,7 +115,7 @@ struct MQTTNIOClientTests {
             // When
             try await mqttClient.connect()
             try await mqttClient.subscribe(to: topic)
-            try await mqttClient.publish(MQTTMessage(payload: payload.data(using: .utf8)!,
+            try await mqttClient.publish(MQTTMessage(payload: Data(payload.utf8),
                                                      topic: topic,
                                                      userProperty: userProperty))
             // Wait the message
@@ -144,7 +145,7 @@ struct MQTTNIOClientTests {
             try await mqttClient.connect()
             try await mqttClient.subscribe(to: topic)
             try await mqttClient.unsubscribe(from: topic)
-            try await mqttClient.publish(MQTTMessage(payload: payload.data(using: .utf8)!,
+            try await mqttClient.publish(MQTTMessage(payload: Data(payload.utf8),
                                                      topic: topic,
                                                      userProperty: nil))
             // Wait the message
@@ -221,7 +222,7 @@ struct MQTTNIOClientTests {
         // When
         do {
             let payload = "payload"
-            try await mqttClient.publish(MQTTMessage(payload: payload.data(using: .utf8)!,
+            try await mqttClient.publish(MQTTMessage(payload: Data(payload.utf8),
                                                      topic: "test",
                                                      userProperty: nil))
         } catch {
