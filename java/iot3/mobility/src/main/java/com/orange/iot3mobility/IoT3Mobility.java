@@ -1,15 +1,19 @@
 /*
- Copyright 2016-2024 Orange
+ Copyright 2016-2025 Orange
 
  This software is distributed under the MIT license, see LICENSE.txt file for more details.
 
- @author Mathieu LEFEBVRE <mathieu1.lefebvre@orange.com>
- */
+@authors
+    Mathieu LEFEBVRE   <mathieu1.lefebvre@orange.com>
+    Maciej Ćmiel       <maciej.cmiel@orange.com>
+    Zbigniew Krawczyk  <zbigniew2.krawczyk@orange.com>
+*/
 package com.orange.iot3mobility;
 
 import com.orange.iot3core.IoT3Core;
 import com.orange.iot3core.IoT3CoreCallback;
 import com.orange.iot3core.bootstrap.BootstrapConfig;
+import com.orange.iot3core.clients.lwm2m.model.*;
 import com.orange.iot3mobility.its.EtsiUtils;
 import com.orange.iot3mobility.its.HazardType;
 import com.orange.iot3mobility.its.StationType;
@@ -20,13 +24,7 @@ import com.orange.iot3mobility.its.json.cam.CAM;
 import com.orange.iot3mobility.its.json.cam.HighFrequencyContainer;
 import com.orange.iot3mobility.its.json.cpm.CPM;
 import com.orange.iot3mobility.its.json.denm.*;
-import com.orange.iot3mobility.managers.IoT3RoadHazardCallback;
-import com.orange.iot3mobility.managers.IoT3RoadSensorCallback;
-import com.orange.iot3mobility.managers.IoT3RoadUserCallback;
-import com.orange.iot3mobility.managers.RoIManager;
-import com.orange.iot3mobility.managers.RoadHazardManager;
-import com.orange.iot3mobility.managers.RoadSensorManager;
-import com.orange.iot3mobility.managers.RoadUserManager;
+import com.orange.iot3mobility.managers.*;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.quadkey.QuadTileHelper;
 import com.orange.iot3mobility.roadobjects.RoadHazard;
@@ -35,6 +33,8 @@ import com.orange.iot3mobility.roadobjects.RoadUser;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Arrays;
+import java.util.ArrayList;
 
 /**
  * Mobility SDK based on the Orange IoT3.0 platform.
@@ -55,6 +55,7 @@ public class IoT3Mobility {
     private final int stationId;
 
     private IoT3RawMessageCallback ioT3RawMessageCallback;
+    private Lwm2mLocation lwm2mLocation;
 
     /**
      * Instantiate the IoT3.0 Mobility SDK.
@@ -87,7 +88,11 @@ public class IoT3Mobility {
                         int telemetryPort,
                         String telemetryEndpoint,
                         String telemetryUsername,
-                        String telemetryPassword) {
+                        String telemetryPassword,
+                        Lwm2mConfig lwm2mConfig,
+                        Lwm2mDevice lwm2mDevice,
+                        Lwm2mInstance[] lwm2mInstances
+    ) {
         this.uuid = uuid;
         this.context = context;
         // random stationId at the moment, will be an option to set it later on
@@ -134,6 +139,14 @@ public class IoT3Mobility {
                         mqttUseTls)
                 .callback(ioT3CoreCallback);
 
+        if (lwm2mConfig != null && lwm2mDevice != null){
+             ioT3CoreBuilder.lwm2mParams(
+                    lwm2mConfig,
+                    lwm2mDevice,
+                    initLwm2mInstances(lwm2mInstances)
+            );
+        }
+
         if(telemetryHost != null) {
             ioT3CoreBuilder.telemetryParams(telemetryScheme,
                     telemetryHost,
@@ -148,6 +161,30 @@ public class IoT3Mobility {
         roIManager = new RoIManager(ioT3Core, uuid, context);
 
         TrueTime.initTrueTime();
+    }
+
+    private Lwm2mInstance[] initLwm2mInstances(Lwm2mInstance[] lwm2mInstances) {
+        ArrayList<Lwm2mInstance> lwm2mInstancesMutable = new ArrayList<>();
+
+        if (lwm2mInstances !=null){
+            lwm2mInstancesMutable.addAll(Arrays.asList(lwm2mInstances));
+        }
+
+        // init lwm2mLocation
+        Lwm2mInstance lwm2mLocationInstance = lwm2mInstancesMutable.stream()
+                .filter(lwm2mInstance -> lwm2mInstance instanceof Lwm2mLocation)
+                .findFirst()
+                .orElse(null);
+
+        if (lwm2mLocationInstance instanceof Lwm2mLocation) {
+            lwm2mLocation = (Lwm2mLocation) lwm2mLocationInstance;
+        } else {
+            lwm2mLocation = new Lwm2mLocation();
+            lwm2mInstancesMutable.add(lwm2mLocation);
+        }
+
+        // return result
+        return lwm2mInstancesMutable.toArray(new Lwm2mInstance[0]);
     }
 
     /**
@@ -293,6 +330,14 @@ public class IoT3Mobility {
         speed = Utils.clamp(speed, 0, 163);
         acceleration = Utils.clamp(acceleration, -16, 16);
         yawRate = Utils.clamp(yawRate, -327, 327);
+
+        LocationUpdate locationUpdate = new LocationUpdate.Builder(
+                position.getLatitude(),
+                position.getLongitude()
+        ).altitude((double) altitude)
+                .speed((double) speed)
+                .build();
+        lwm2mLocation.update(locationUpdate);
 
         // build the CAM
         CAM cam = new CAM.CAMBuilder()
@@ -471,6 +516,9 @@ public class IoT3Mobility {
         private String telemetryEndpoint;
         private String telemetryUsername;
         private String telemetryPassword;
+        private Lwm2mConfig lwm2mConfig;
+        private Lwm2mDevice lwm2mDevice;
+        private Lwm2mInstance[] lwm2mInstances;
 
         /**
          * Start building an instance of IoT3Mobility.
@@ -563,6 +611,36 @@ public class IoT3Mobility {
         }
 
         /**
+         * Set the LwM2M configuration for your IoT3Mobility instance.
+         *
+         * @param lwm2mConfig An instance of {@link Lwm2mConfig}, containing the endpoint name, server URI,
+         *                    security credentials, and optional parameters depending on the configuration type.
+         *                    - Use {@link Lwm2mConfig.Lwm2mBootstrapConfig} for bootstrap setup.
+         *                    - Use {@link Lwm2mConfig.Lwm2mClassicConfig} for direct PSK setup.
+         * @param lwm2mDevice represents the device's details [LwM2M Device (3) object]
+         * @param lwm2mInstances represents the instance details of the LwM2M's object
+         *                       [an object that conforms to the LwM2M specification]
+         * @return The current IoT3CoreBuilder instance with the updated LwM2M configuration.
+         * @throws IllegalArgumentException If the provided {@link Lwm2mConfig} is null or incomplete.
+         */
+        public IoT3Mobility.IoT3MobilityBuilder lwm2mParams(
+                Lwm2mConfig lwm2mConfig,
+                Lwm2mDevice lwm2mDevice,
+                Lwm2mInstance... lwm2mInstances
+        ) {
+            if (lwm2mConfig == null) {
+                throw new IllegalArgumentException("Lwm2mConfig cannot be null.");
+            }
+            if (lwm2mDevice == null) {
+                throw new IllegalArgumentException("Lwm2mDevice cannot be null.");
+            }
+            this.lwm2mConfig = lwm2mConfig;
+            this.lwm2mDevice = lwm2mDevice;
+            this.lwm2mInstances = lwm2mInstances;
+            return this;
+        }
+
+        /**
          * Set the callback of your IoT3Mobility instance.
          *
          * @param ioT3MobilityCallback callback to be notified of mainly MQTT-related events, e.g. message reception
@@ -593,7 +671,11 @@ public class IoT3Mobility {
                     telemetryPort,
                     telemetryEndpoint,
                     telemetryUsername,
-                    telemetryPassword);
+                    telemetryPassword,
+                    lwm2mConfig,
+                    lwm2mDevice,
+                    lwm2mInstances
+            );
         }
     }
 

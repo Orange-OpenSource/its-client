@@ -29,6 +29,11 @@ dependencies {
     implementation 'io.opentelemetry:opentelemetry-context:1.40.0'
     implementation 'org.json:json:20240303'
 
+    implementation 'org.eclipse.leshan:leshan-client-cf:1.5.0'
+    implementation 'org.eclipse.leshan:leshan-core:1.5.0'
+
+    implementation 'org.slf4j:slf4j-simple:1.7.30'
+
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
 }
@@ -37,3 +42,4 @@ tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 }
+
