@@ -28,6 +28,8 @@ jobs:
         run: |
           cd swift/ITSClient
           swift build
+          cd ../SampleApp
+          xcodebuild -scheme SampleApp -destination "name=iPhone 16"
 
   test:
     runs-on: macos-15
