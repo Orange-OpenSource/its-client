@@ -36,7 +36,7 @@ struct DENMTests {
                                                 nanosecond: 586 * 1_000_000) // Milliseconds
     // Wednesday 26 March 2025 10:21:43.586
     private let sourceUUID = "v2x_87654321"
-    private let causeType = CauseType.slowVehicle
+    private let cause = Cause.slowVehicle(subcause: .convoy)
     private let eventPositionHeading = 145.3
     private let eventSpeed = 0.14
 
@@ -67,7 +67,7 @@ struct DENMTests {
                                                       validityDuration: validityDuration,
                                                       transmissionInterval: transmissionInterval,
                                                       stationType: stationType)
-        let situationContainer = SituationContainer(eventType: Cause(cause: causeType, subcause: 0))
+        let situationContainer = SituationContainer(eventType: cause)
         let locationContainer = LocationContainer(eventSpeed: eventSpeed, eventPositionHeading: eventPositionHeading)
         let demMessage = DENMMessage(stationID: stationID,
                                      managementContainer: managementContainer,
@@ -107,8 +107,7 @@ struct DENMTests {
         #expect(managementContainer.relevanceDistance == relevanceDistance)
         #expect(managementContainer.relevanceTrafficDirection == relevanceTrafficDirection)
         let situationContainer = denm.message.situationContainer
-        #expect(situationContainer?.eventType.cause == causeType)
-        #expect(situationContainer?.eventType.subcause == 0)
+        #expect(situationContainer?.eventType == cause)
         let locationContainer = denm.message.locationContainer
         #expect(locationContainer?.eventPositionHeading == eventPositionHeading)
         #expect(locationContainer?.eventSpeed == eventSpeed)

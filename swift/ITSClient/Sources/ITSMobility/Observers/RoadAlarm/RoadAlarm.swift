@@ -16,7 +16,7 @@ public struct RoadAlarm: Sendable {
     /// The unique identifier.
     public let id: String
     /// The cause.
-    public let cause: CauseType?
+    public let cause: Cause?
     /// The longitude.
     public let longitude: Double
     /// The latitude.
@@ -47,7 +47,7 @@ public struct RoadAlarm: Sendable {
     ///   - underlyingDENM: The underlying DENM object.
     public init(
         id: String,
-        cause: CauseType?,
+        cause: Cause?,
         longitude: Double,
         latitude: Double,
         timestamp: Date,

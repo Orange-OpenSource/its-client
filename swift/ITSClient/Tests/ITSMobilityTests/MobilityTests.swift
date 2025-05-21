@@ -52,7 +52,7 @@ struct MobilityTests {
         try await mobility.sendAlert(latitude: 43.63516355648167,
                                      longitude: 1.3744570239910097,
                                      altitude: 155,
-                                     cause: .trafficCondition)
+                                     cause: .trafficCondition())
         try await mobility.stop()
         // Wait a bit for the spans flush
         try await Task.sleep(for: .seconds(0.5))
