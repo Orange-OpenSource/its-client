@@ -50,4 +50,3 @@ public struct MobilityConfiguration: Sendable {
         self.reportZoomLevel = reportZoomLevel
     }
 }
-

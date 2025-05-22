@@ -10,20 +10,21 @@
  */
 
 import Foundation
-import Testing
 @testable import ITSCore
+import Testing
 
 struct CoreUnitTests {
     private let mockMQTTClient: MockMQTTClient
     private let mockTelemetryClient: MockTelemetryClient
 
-    init() {
+    init() throws {
         let mqttClientConfiguration = MQTTClientConfiguration(host: "",
                                                               port: 0,
                                                               clientIdentifier: "",
                                                               useSSL: false)
         mockMQTTClient = MockMQTTClient(configuration: mqttClientConfiguration)
-        let telemetryClientConfiguration = TelemetryClientConfiguration(url: URL(string: "http://foo.com")!,
+        let url = try #require(URL(string: "http://foo.com"))
+        let telemetryClientConfiguration = TelemetryClientConfiguration(url: url,
                                                                         serviceName: "")
         mockTelemetryClient = MockTelemetryClient(configuration: telemetryClientConfiguration)
     }

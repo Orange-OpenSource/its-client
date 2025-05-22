@@ -13,11 +13,11 @@ import Foundation
 
 /// The path history.
 public struct PathHistory: Codable, Sendable {
-    /// The offset position of a detected event point with regards to the previous detected event point (event_position).
+    /// The offset position of a detected event point with regards to the previous detected event point.
     public let pathPosition: PathPosition
-    /// The time travelled by the detecting ITS-S since the previous detected event point (reference_time) in centiseconds.
+    /// The time travelled by the detecting ITS-S since the previous detected event point in centiseconds.
     public let etsiPathDeltaTime: Int16?
-    /// The time travelled by the detecting ITS-S since the previous detected event point (reference_time) in seconds.
+    /// The time travelled by the detecting ITS-S since the previous detected event point in seconds.
     public var pathDeltaTime: TimeInterval? {
         etsiPathDeltaTime.map { ETSI.centiSecondsToSeconds(Int($0)) }
     }
@@ -29,7 +29,7 @@ public struct PathHistory: Codable, Sendable {
 
     init(pathPosition: PathPosition, pathDeltaTime: TimeInterval?) {
         self.pathPosition = pathPosition
-        self.etsiPathDeltaTime = pathDeltaTime.map({ Int16(ETSI.secondsToCentiSeconds($0)) })
+        self.etsiPathDeltaTime = pathDeltaTime.map { Int16(ETSI.secondsToCentiSeconds($0)) }
     }
 }
 
@@ -43,21 +43,21 @@ public struct PathPosition: Codable, Sendable {
     public let etsiDeltaAltitude: Int?
     /// The delta latitiude in degrees.
     public var deltaLatitude: Double? {
-        etsiDeltaLatitude.map({ ETSI.deciMicroDegreesToDegrees($0) })
+        etsiDeltaLatitude.map { ETSI.deciMicroDegreesToDegrees($0) }
     }
     /// The delta longitude in degrees.
     public var deltaLongitude: Double? {
-        etsiDeltaLongitude.map({ ETSI.deciMicroDegreesToDegrees($0) })
+        etsiDeltaLongitude.map { ETSI.deciMicroDegreesToDegrees($0) }
     }
     /// The delta altitude in meters.
     public var deltaAltitude: Double? {
-        etsiDeltaAltitude.map({ ETSI.centimetersToMeters($0) })
+        etsiDeltaAltitude.map { ETSI.centimetersToMeters($0) }
     }
 
-    private static let minDeltaPosition = -131071
-    private static let maxDeltaPosition = 131072
-    private static let minDeltaAltitude = -12700
-    private static let maxDeltaAltitude = 12800
+    private static let minDeltaPosition = -131_071
+    private static let maxDeltaPosition = 131_072
+    private static let minDeltaAltitude = -12_700
+    private static let maxDeltaAltitude = 12_800
     static let deltaPositionUnavailable = ETSI.deciMicroDegreesToDegrees(Self.maxDeltaPosition)
     static let unavailableDeltaAltitude = ETSI.centimetersToMeters(Self.maxDeltaAltitude)
 
@@ -68,20 +68,20 @@ public struct PathPosition: Codable, Sendable {
     }
 
     init(deltaLatitude: Double?, deltaLongitude: Double?, deltaAltitude: Double?) {
-        self.etsiDeltaLatitude = deltaLatitude.map({
+        self.etsiDeltaLatitude = deltaLatitude.map {
             clip(ETSI.degreesToDeciMicroDegrees($0),
                  Self.minDeltaPosition,
                  Self.maxDeltaPosition)
-        })
-        self.etsiDeltaLongitude = deltaLongitude.map({
+        }
+        self.etsiDeltaLongitude = deltaLongitude.map {
             clip(ETSI.degreesToDeciMicroDegrees($0),
                  Self.minDeltaPosition,
                  Self.maxDeltaPosition)
-        })
-        self.etsiDeltaAltitude = deltaAltitude.map({
+        }
+        self.etsiDeltaAltitude = deltaAltitude.map {
             clip(ETSI.metersToCentimeters($0),
                  Self.minDeltaAltitude,
                  Self.maxDeltaAltitude)
-        })
+        }
     }
 }

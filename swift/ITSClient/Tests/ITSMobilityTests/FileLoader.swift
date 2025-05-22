@@ -11,7 +11,7 @@
 
 import Foundation
 
-struct FileLoader {
+enum FileLoader {
     static func loadJSONFile(_ filename: String) throws -> Data {
         guard let fileURL = Bundle.module.url(forResource: "Data/\(filename)", withExtension: "json") else {
             fatalError("File \(filename).json not found")

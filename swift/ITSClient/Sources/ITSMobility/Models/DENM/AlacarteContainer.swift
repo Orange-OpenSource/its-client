@@ -27,9 +27,9 @@ public struct AlacarteContainer: Codable, Sendable {
     }
 
     init(lanePosition: Int8?, positioningSolution: PositioningSolution?) {
-        self.lanePosition = lanePosition.map({
+        self.lanePosition = lanePosition.map {
             clip($0, Self.minLanePosition, Self.maxLanePosition)
-        })
+        }
         self.positioningSolution = positioningSolution
     }
 }

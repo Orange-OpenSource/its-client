@@ -32,5 +32,7 @@ public protocol RoadAlarmChangeObserver: AnyObject, Sendable {
 }
 
 extension RoadAlarmChangeObserver {
+    /// Provides the underlying `DENM` received to the observer.
+    /// - Parameter denm: The underlying `DENM`.
     public func didReceiveDENM(_ denm: DENM) {}
 }

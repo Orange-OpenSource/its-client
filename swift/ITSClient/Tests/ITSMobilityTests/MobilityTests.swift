@@ -11,8 +11,8 @@
 
 import Foundation
 import ITSCore
-import Testing
 @testable import ITSMobility
+import Testing
 
 struct MobilityTests {
     private let mobility: Mobility
@@ -58,5 +58,3 @@ struct MobilityTests {
         try await Task.sleep(for: .seconds(0.5))
     }
 }
-
-

@@ -27,7 +27,7 @@ public struct ManagementContainer: Codable, Sendable {
     public let termination: Termination?
     /// The relevance distance.
     public let relevanceDistance: RelevanceDistance?
-    /// The relevance traffic direction
+    /// The relevance traffic direction.
     public let relevanceTrafficDirection: RelevanceTrafficDirection?
     /// The validity duration in seconds.
     public let etsiValidityDuration: Int?
@@ -45,16 +45,17 @@ public struct ManagementContainer: Codable, Sendable {
     public var referenceTime: TimeInterval {
         ETSI.etsiMillisecondsToEpochTimestamp(etsiReferenceTime)
     }
+    /// The validity duration in seconds (default value: 600 seconds).
     public var validityDuration: TimeInterval {
-        etsiValidityDuration.map({ TimeInterval($0) }) ?? Self.defaultValidityDuration
+        etsiValidityDuration.map { TimeInterval($0) } ?? Self.defaultValidityDuration
     }
     /// The transmission interval in seconds.
     public var transmissionInterval: TimeInterval? {
-        etsiTransmissionInterval.map({ Double($0) / 1000 })
+        etsiTransmissionInterval.map { Double($0) / 1_000 }
     }
 
     private static let minValidityDuration: TimeInterval = 0
-    private static let maxValidityDuration: TimeInterval = 86400
+    private static let maxValidityDuration: TimeInterval = 86_400
     public static let defaultValidityDuration: TimeInterval = 600
 
     enum CodingKeys: String, CodingKey {
@@ -91,10 +92,10 @@ public struct ManagementContainer: Codable, Sendable {
         self.termination = termination
         self.relevanceDistance = relevanceDistance
         self.relevanceTrafficDirection = relevanceTrafficDirection
-        self.etsiValidityDuration = validityDuration.map({
+        self.etsiValidityDuration = validityDuration.map {
             Int(clip($0, Self.minValidityDuration, Self.maxValidityDuration))
-        })
-        self.etsiTransmissionInterval = transmissionInterval.map({ Int($0 * 1000) })
+        }
+        self.etsiTransmissionInterval = transmissionInterval.map { Int($0 * 1_000) }
         self.stationType = stationType
         self.confidence = confidence
     }
@@ -148,4 +149,3 @@ public enum RelevanceTrafficDirection: Int, Codable, Sendable {
     case downstreamTraffic = 2
     case oppositeTraffic = 3
 }
-

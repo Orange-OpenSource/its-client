@@ -27,4 +27,3 @@ public enum StationType: Int, Codable, Sendable {
     case tram = 11
     case roadSideUnit = 15
 }
-

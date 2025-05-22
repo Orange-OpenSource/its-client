@@ -22,12 +22,14 @@ jobs:
 
       - name: Set up Xcode 16
         run: |
-          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_16.3.app/Contents/Developer
 
       - name: Build
         run: |
           cd swift/ITSClient
           swift build
+          cd ../SampleApp
+          xcodebuild -scheme SampleApp -destination "name=iPhone 16"
 
   test:
     runs-on: macos-15
@@ -37,7 +39,7 @@ jobs:
 
       - name: Set up Xcode 16
         run: |
-          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_16.3.app/Contents/Developer
 
       - name: Build
         run: |

@@ -19,6 +19,10 @@ final class NetworkMonitor: Sendable {
         networkPathMonitor = NWPathMonitor()
     }
 
+    deinit {
+        stop()
+    }
+
     func start() -> AsyncStream<NetworkStatus> {
         AsyncStream { continuation in
             networkPathMonitor.pathUpdateHandler = { [weak self] path in

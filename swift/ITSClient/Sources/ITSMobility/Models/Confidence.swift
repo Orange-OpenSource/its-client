@@ -77,8 +77,8 @@ public struct PositionConfidenceEllipse: Codable, Sendable {
 
     private static let minConfidence: Int = 0
     private static let minOrientation: Int = 0
-    private static let unavailableConfidence: Int = 4095
-    private static let unavailableOrientation: Int = 3601
+    private static let unavailableConfidence: Int = 4_095
+    private static let unavailableOrientation: Int = 3_601
 
     enum CodingKeys: String, CodingKey {
         case semiMajorConfidence = "semi_major_confidence"
@@ -91,14 +91,14 @@ public struct PositionConfidenceEllipse: Codable, Sendable {
         semiMajorOrientation: Int? = Self.unavailableOrientation,
         semiMinorConfidence: Int? = Self.unavailableConfidence
     ) {
-        self.semiMajorConfidence = semiMajorConfidence.map({
+        self.semiMajorConfidence = semiMajorConfidence.map {
             clip($0, Self.minConfidence, Self.unavailableConfidence)
-        })
-        self.semiMinorConfidence = semiMinorConfidence.map({
+        }
+        self.semiMinorConfidence = semiMinorConfidence.map {
             clip($0, Self.minConfidence, Self.unavailableConfidence)
-        })
-        self.semiMajorOrientation = semiMajorOrientation.map({
+        }
+        self.semiMajorOrientation = semiMajorOrientation.map {
             clip($0, Self.minOrientation, Self.unavailableOrientation)
-        })
+        }
     }
 }

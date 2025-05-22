@@ -10,8 +10,8 @@
  */
 
 import Foundation
-import Testing
 @testable import ITSMobility
+import Testing
 
 struct RoadAlarmCoordinatorTests {
     @Test("Road alarm coordinator should send a create event when a new alarm is incoming")
@@ -33,7 +33,8 @@ struct RoadAlarmCoordinatorTests {
         let expectedOriginatingStationID = denm.message.managementContainer.actionID.originatingStationID
         let currentCreatedRoadAlarm = try #require(await observer.currentCreatedRoadAlarm)
         let currentDENM = try #require(await observer.currentDENM)
-        let originatingStationID = currentCreatedRoadAlarm.underlyingDENM.message.managementContainer.actionID.originatingStationID
+        let denmMessage = currentCreatedRoadAlarm.underlyingDENM.message
+        let originatingStationID = denmMessage.managementContainer.actionID.originatingStationID
         #expect(originatingStationID == expectedOriginatingStationID)
         #expect(currentDENM.sourceUUID == denm.sourceUUID)
         #expect(currentDENM.timestamp == denm.timestamp)
@@ -119,7 +120,8 @@ struct RoadAlarmCoordinatorTests {
 
         let expectedOriginatingStationID = denm.message.managementContainer.actionID.originatingStationID
         let currentDeletedRoadAlarm = try #require(await observer.currentDeletedRoadAlarm)
-        let originatingStationID = currentDeletedRoadAlarm.underlyingDENM.message.managementContainer.actionID.originatingStationID
+        let denmMessage = currentDeletedRoadAlarm.underlyingDENM.message
+        let originatingStationID = denmMessage.managementContainer.actionID.originatingStationID
         #expect(originatingStationID == expectedOriginatingStationID)
     }
 

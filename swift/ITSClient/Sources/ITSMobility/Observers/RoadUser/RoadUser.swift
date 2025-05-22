@@ -34,7 +34,7 @@ public struct RoadUser: Sendable {
         // Expiration 1.5s after
         timestamp.addingTimeInterval(1.5)
     }
-    
+
     /// Initializes a `RoadUser`.
     /// - Parameters:
     ///   - id: The unique identifier.

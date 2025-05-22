@@ -18,7 +18,6 @@ public struct CAMMessage: Codable, Sendable {
     /// The identifier for an ITS-S.
     public let stationID: UInt32
     /// The time of the reference position in the CAM, considered as time of the CAM generation.
-    /// TimestampIts mod 65 536. TimestampIts represents an integer value in milliseconds since 2004-01-01T00:00:00:000Z.
     public let etsiGenerationDeltaTime: Int
     /// The basic container.
     public let basicContainer: BasicContainer
@@ -45,8 +44,7 @@ public struct CAMMessage: Codable, Sendable {
         basicContainer: BasicContainer,
         highFrequencyContainer: HighFrequencyContainer?,
         lowFrequencyContainer: LowFrequencyContainer? = nil
-        )
-    {
+        ) {
         self.protocolVersion = protocolVersion
         self.stationID = stationID
         self.etsiGenerationDeltaTime = ETSI.epochTimestampToETSIMilliseconds(

@@ -18,7 +18,7 @@ actor RoadAlarmCoordinator {
     init() {
         Task { [weak self] in
             guard let self else { return }
-            
+
             await cache.setExpiredEntryHandler { [observer] entry in
                 Task {
                     await observer?.didDelete(entry.value)
@@ -67,4 +67,3 @@ actor RoadAlarmCoordinator {
         }
     }
 }
-

@@ -10,8 +10,8 @@
  */
 
 import Foundation
-import Testing
 @testable import ITSMobility
+import Testing
 
 struct CacheTests {
     @Test("Cache setValue should save value")
@@ -73,9 +73,9 @@ struct CacheTests {
         await cache.setValue("Value1", for: key, expirationDate: Date().addingTimeInterval(2))
 
         try await confirmation(expectedCount: 1) { confirmation in
-            await cache.setExpiredEntryHandler({ entry in
+            await cache.setExpiredEntryHandler { _ in
                 confirmation()
-            })
+            }
             try await Task.sleep(for: .seconds(3))
         }
 

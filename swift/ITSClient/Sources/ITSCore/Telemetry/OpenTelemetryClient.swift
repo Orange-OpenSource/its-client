@@ -30,7 +30,7 @@ actor OpenTelemetryClient: TelemetryClient {
 
         var credentials: String?
         if let user = configuration.user, let password = configuration.password {
-            credentials = "\(user):\(password)".data(using: .utf8)?.base64EncodedString()
+            credentials = Data("\(user):\(password)".utf8).base64EncodedString()
         }
         let headers = credentials.map { [("Authorization", "Basic \($0)")] }
         let otlpConfiguration = OtlpConfiguration(headers: headers)
@@ -39,7 +39,8 @@ actor OpenTelemetryClient: TelemetryClient {
         let batchSpanProcessor = BatchSpanProcessor(spanExporter: httpTraceExporter,
                                                     scheduleDelay: configuration.scheduleDelay,
                                                     maxExportBatchSize: configuration.batchSize)
-        let resource = Resource(attributes: [ResourceAttributes.serviceName.rawValue: .string(configuration.serviceName)])
+        let serviceNameKey = ResourceAttributes.serviceName.rawValue
+        let resource = Resource(attributes: [serviceNameKey: .string(configuration.serviceName)])
         let tracerProvider = TracerProviderSdk(resource: resource,
                                                spanProcessors: [batchSpanProcessor])
 
@@ -132,8 +133,10 @@ actor OpenTelemetryClient: TelemetryClient {
 
     private func spanKind(from spanType: SpanType) -> SpanKind {
         switch spanType {
-        case .consumer: return .consumer
-        case .producer: return .producer
+        case .consumer:
+            return .consumer
+        case .producer:
+            return .producer
         }
     }
 

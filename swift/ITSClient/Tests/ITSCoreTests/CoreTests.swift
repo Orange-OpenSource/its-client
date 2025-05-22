@@ -10,8 +10,8 @@
  */
 
 import Foundation
-import Testing
 @testable import ITSCore
+import Testing
 
 struct CoreTests {
     private let coreConfiguration: CoreConfiguration
@@ -114,7 +114,7 @@ struct CoreTests {
         }
 
         nonisolated(unsafe) var messagesReceivedCount = 0
-        await core.setMessageReceivedHandler(messageReceivedHandler: { message in
+        await core.setMessageReceivedHandler(messageReceivedHandler: { _ in
             messagesReceivedCount += 1
         })
 

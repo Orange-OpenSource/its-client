@@ -10,8 +10,8 @@
  */
 
 import Foundation
-import Testing
 @testable import ITSCore
+import Testing
 
 struct OpenTelemetryClientTests {
     private let telemetryClientConfiguration: TelemetryClientConfiguration

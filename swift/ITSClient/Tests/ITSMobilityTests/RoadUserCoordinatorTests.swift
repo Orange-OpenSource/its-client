@@ -10,8 +10,8 @@
  */
 
 import Foundation
-import Testing
 @testable import ITSMobility
+import Testing
 
 struct RoadUserCoordinatorTests {
     @Test("Road user coordinator should send a create event when a new user is incoming")

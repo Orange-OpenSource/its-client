@@ -11,6 +11,7 @@
 
 import Foundation
 
+/// The cooperative awareness message typealias.
 public typealias CAM = CooperativeAwarenessMessage
 
 /// The CAM representation.
@@ -28,7 +29,7 @@ public struct CooperativeAwarenessMessage: Codable, Sendable {
     /// The message format version.
     public let version: String = "1.1.3"
     /// The timestamp when the message was generated since Unix Epoch in seconds.
-    public var timestamp: TimeInterval { Double(millisecondsTimestamp) / 1000 }
+    public var timestamp: TimeInterval { Double(millisecondsTimestamp) / 1_000 }
 
     enum CodingKeys: String, CodingKey {
         case message, origin, type, version
@@ -45,6 +46,6 @@ public struct CooperativeAwarenessMessage: Codable, Sendable {
         self.message = message
         self.origin = origin
         self.sourceUUID = sourceUUID
-        self.millisecondsTimestamp = Int(timestamp * 1000)
+        self.millisecondsTimestamp = Int(timestamp * 1_000)
     }
 }

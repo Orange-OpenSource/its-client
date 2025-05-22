@@ -11,12 +11,12 @@
 
 import Foundation
 
-/// A structure to make conversion for ESTI units.
-struct ETSI {
+/// A structure to make conversion for ETSI units.
+enum ETSI {
     private static let deciMicroDegreesFactor: Double = 10_000_000
     /// The ETSI reference date is the 2004-01-01 00:00:00 UTC.
     /// This value is the number of seconds between the 1970-01-01T00:00:00Z and 2004-01-01T00:00:00Z.
-    private static let etsiUnixEpochDifference = 1072915200
+    private static let etsiUnixEpochDifference = 1_072_915_200
     private static let centiSecondsFactor: Double = 100
     private static let centimetersFactor: Double = 100
     private static let decimetersFactor: Double = 10
@@ -34,11 +34,11 @@ struct ETSI {
     }
 
     static func epochTimestampToETSIMilliseconds(_ epochTimestamp: TimeInterval) -> Int {
-        Int(Int(epochTimestamp * 1000) - (etsiUnixEpochDifference * 1000))
+        Int(Int(epochTimestamp * 1_000) - (etsiUnixEpochDifference * 1_000))
     }
 
     static func etsiMillisecondsToEpochTimestamp(_ etsiMilliseconds: Int) -> TimeInterval {
-        TimeInterval(etsiMilliseconds + etsiUnixEpochDifference * 1000) / 1000
+        TimeInterval(etsiMilliseconds + etsiUnixEpochDifference * 1_000) / 1_000
     }
 
     static func epochTimestampToETSISeconds(_ epochTimestamp: TimeInterval) -> Int {
@@ -102,6 +102,6 @@ struct ETSI {
     }
 }
 
-@inlinable func clip<T>(_ value: T, _ minimum: T, _ maximum: T) -> T where T : Comparable {
+@inlinable func clip<T>(_ value: T, _ minimum: T, _ maximum: T) -> T where T: Comparable {
     min(max(minimum, value), maximum)
 }

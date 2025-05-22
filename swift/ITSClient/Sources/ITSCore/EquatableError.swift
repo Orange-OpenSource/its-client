@@ -17,7 +17,7 @@ public struct EquatableError: Error, Equatable {
 
     /// The localized  description.
     public var localizedDescription: String {
-        return wrappedError.localizedDescription
+        wrappedError.localizedDescription
     }
 
     init<T: Error & Equatable>(wrappedError: T) {
@@ -27,6 +27,6 @@ public struct EquatableError: Error, Equatable {
     }
 
     public static func == (lhs: Self, rhs: Self) -> Bool {
-        return lhs.equalsClosure(rhs.wrappedError)
+        lhs.equalsClosure(rhs.wrappedError)
     }
 }

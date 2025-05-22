@@ -32,5 +32,7 @@ public protocol RoadUserChangeObserver: AnyObject, Sendable {
 }
 
 extension RoadUserChangeObserver {
+    /// Provides the underlying `CAM` received to the observer.
+    /// - Parameter cam: The underlying `CAM`.
     public func didReceiveCAM(_ cam: CAM) {}
 }

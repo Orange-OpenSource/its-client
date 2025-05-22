@@ -10,8 +10,8 @@
  */
 
 import Foundation
-import Testing
 @testable import ITSMobility
+import Testing
 
 final class MockRoadAlarmCoordinatorObserver: RoadAlarmChangeObserver {
     var didCreateCallsCount = 0

@@ -33,6 +33,9 @@ python/**/sending.txt
 # macOS
 .DS_Store
 
+# iOS
+xcuserdata
+
 # Custom
 .idea
 *.iml

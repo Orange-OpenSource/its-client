@@ -25,15 +25,15 @@ public struct LocationContainer: Codable, Sendable {
     public let confidence: LocationContainerConfidence?
     /// The event heading in degrees.
     public var eventPositionHeading: Double? {
-        etsiEventPositionHeading.map({ ETSI.deciDegreesToDegrees($0) })
+        etsiEventPositionHeading.map { ETSI.deciDegreesToDegrees($0) }
     }
     /// The event speed in m/s.
     public var eventSpeed: Double? {
-        etsiEventSpeed.map({ ETSI.centimetersPerSecondToMetersPerSecond($0) })
+        etsiEventSpeed.map { ETSI.centimetersPerSecondToMetersPerSecond($0) }
     }
 
     private static let minEventSpeed = 0
-    private static let maxEventSpeed = 16383
+    private static let maxEventSpeed = 16_383
     private static let maxTraces = 7
 
     enum CodingKeys: String, CodingKey {
@@ -52,12 +52,12 @@ public struct LocationContainer: Codable, Sendable {
         confidence: LocationContainerConfidence? = nil
     ) {
         self.traces = Array(traces.prefix(Self.maxTraces))
-        self.etsiEventSpeed = eventSpeed.map({
+        self.etsiEventSpeed = eventSpeed.map {
             clip(ETSI.metersPerSecondToCentimetersPerSecond($0),
                  Self.minEventSpeed,
                  Self.maxEventSpeed)
-        })
-        self.etsiEventPositionHeading = eventPositionHeading.map({ ETSI.degreesToDeciDegrees($0) })
+        }
+        self.etsiEventPositionHeading = eventPositionHeading.map { ETSI.degreesToDeciDegrees($0) }
         self.roadType = roadType
         self.confidence = confidence
     }
@@ -101,10 +101,10 @@ public struct LocationContainerConfidence: Codable, Sendable {
     /// The event position heading in 0.1 degrees.
     public let etsiEventPositionHeading: Int?
     public var eventSpeed: Double? {
-        etsiEventSpeed.map({ ETSI.centimetersPerSecondToMetersPerSecond($0)})
+        etsiEventSpeed.map { ETSI.centimetersPerSecondToMetersPerSecond($0) }
     }
     public var eventPositionHeading: Double? {
-        etsiEventPositionHeading.map({ ETSI.deciDegreesToDegrees($0)})
+        etsiEventPositionHeading.map { ETSI.deciDegreesToDegrees($0) }
     }
 
     enum CodingKeys: String, CodingKey {
@@ -113,11 +113,11 @@ public struct LocationContainerConfidence: Codable, Sendable {
     }
 
     init(eventSpeed: Double?, eventPositionHeading: Double?) {
-        self.etsiEventSpeed = eventSpeed.map({
+        self.etsiEventSpeed = eventSpeed.map {
             ETSI.metersPerSecondToCentimetersPerSecond($0)
-        })
-        self.etsiEventPositionHeading = eventPositionHeading.map({
+        }
+        self.etsiEventPositionHeading = eventPositionHeading.map {
             ETSI.degreesToDeciDegrees($0)
-        })
+        }
     }
 }

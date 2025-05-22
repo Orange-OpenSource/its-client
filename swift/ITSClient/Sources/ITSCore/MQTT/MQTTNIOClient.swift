@@ -48,14 +48,14 @@ actor MQTTNIOClient: MQTTClient {
             switch result {
             case .success(let publishInfo):
                 let receivedData = Data(buffer: publishInfo.payload)
-                let userProperty = publishInfo.properties.compactMap({
+                let userProperty = publishInfo.properties.compactMap {
                     switch $0 {
                     case .userProperty(let key, let value):
                         return MQTTMessageUserProperty(key: key, value: value)
                     default:
                         return nil
                     }
-                }).first
+                }.first
                 let message = MQTTMessage(payload: receivedData,
                                           topic: publishInfo.topicName,
                                           userProperty: userProperty)
@@ -116,8 +116,8 @@ actor MQTTNIOClient: MQTTClient {
         }
 
         do {
-            _ = try await client.v5.subscribe(to: [MQTTSubscribeInfoV5(topicFilter: topic,
-                                                                       qos: .atLeastOnce)])
+            let subscriptions = [MQTTSubscribeInfoV5(topicFilter: topic, qos: .atLeastOnce)]
+            _ = try await client.v5.subscribe(to: subscriptions)
             addTopicToSubscriptions(topic)
         } catch {
             throw .subscriptionFailed
