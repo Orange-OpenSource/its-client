@@ -9,12 +9,12 @@
 
 [package]
 name = "libits-client"
-version = "2.0.2"
+version = "2.1.0"
 authors = ["Frédéric Gardes <frederic.gardes@orange.com>", "Nicolas Buffon <nicolas.buffon@orange.com>"]
 license = "MIT"
 description = "library to connect on an ITS MQTT server"
 homepage = "https://github.com/Orange-OpenSource/its-client"
-documentation = "https://docs.rs/its-client"
+documentation = "https://docs.rs/libits-client"
 repository = "https://github.com/Orange-OpenSource/its-client.git"
 readme = "README.md"
 keywords = ["network", "its", "vehicle", "mqtt", "etsi"]
@@ -26,7 +26,6 @@ path = "src/lib.rs"
 test = true
 doctest = true
 doc = true
-edition = "2024"
 crate-type = ["lib"]
 
 [features]
