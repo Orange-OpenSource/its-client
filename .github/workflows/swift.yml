@@ -28,8 +28,8 @@ jobs:
         run: |
           cd swift/ITSClient
           swift build
-          cd ../SampleApp
-          xcodebuild -scheme SampleApp -destination "name=iPhone 16"
+          cd ..
+          xcodebuild -workspace ITSClient.xcworkspace -scheme SampleApp -destination "name=iPhone 16"
 
   test:
     runs-on: macos-15

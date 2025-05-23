@@ -9,13 +9,9 @@
  * Software description: Swift ITS client.
  */
 
-import SwiftUI
+import Foundation
 
-@main
-struct SampleApp: App {
-    var body: some Scene {
-        WindowGroup {
-            MobilityView(mobileService: ITSMobilityService())
-        }
-    }
+protocol MobilityService {
+    func start() async throws(MobilityError)
+    func stop() async throws(MobilityError)
 }

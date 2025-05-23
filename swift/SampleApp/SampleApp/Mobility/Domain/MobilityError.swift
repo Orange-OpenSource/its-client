@@ -9,17 +9,9 @@
  * Software description: Swift ITS client.
  */
 
-import SwiftUI
+import Foundation
 
-struct ContentView: View {
-    var body: some View {
-        VStack {
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
-
-#Preview {
-    ContentView()
+enum MobilityError: Error {
+    case startFailed
+    case stopFailed
 }
