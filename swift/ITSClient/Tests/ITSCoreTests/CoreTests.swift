@@ -54,7 +54,7 @@ struct CoreTests {
                 // Wait a bit to simulate a task that takes time
                 Thread.sleep(forTimeInterval: 0.25)
             })
-            try await Task.sleep(for: .seconds(1.0))
+            try await Task.sleep(for: .seconds(3.0))
         }
 
         // Wait a bit for the spans flush
@@ -93,6 +93,32 @@ struct CoreTests {
         await core.stop() // Stop as you want to flush spans
         // Wait a bit for the spans flush
         try await Task.sleep(for: .seconds(0.5))
+    }
+
+    @Test(.bug("https://github.com/Orange-OpenSource/its-client/issues/387",
+               "Start Core twice should throw an error each time"))
+    func start_core_twice_should_throw_an_error_each_time() async {
+        // Given
+        let core = Core()
+
+        // When
+        let mqttClientConfiguration = MQTTClientConfiguration(host: "badmqtthost.com",
+                                                              port: 1883,
+                                                              clientIdentifier: UUID().uuidString,
+                                                              useSSL: false)
+        let coreConfiguration = CoreConfiguration(mqttClientConfiguration: mqttClientConfiguration)
+
+        for _ in 0..<2 {
+            do {
+                try await core.start(coreConfiguration: coreConfiguration)
+                Issue.record("start should throw an error")
+            } catch {
+                // Then
+                if case .mqttError(let wrappedError) = error {
+                    #expect(wrappedError == EquatableError(wrappedError: MQTTClientError.connectionFailed))
+                }
+            }
+        }
     }
 
 #if os(macOS)

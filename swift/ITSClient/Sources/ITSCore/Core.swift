@@ -132,11 +132,12 @@ public actor Core {
 
         do {
             try await self.mqttClient?.connect()
+            await self.telemetryClient?.start()
         } catch {
+            self.mqttClient = nil
+            self.telemetryClient = nil
             throw .mqttError(EquatableError(wrappedError: error))
         }
-
-        await self.telemetryClient?.start()
     }
 
     private func startReceivedMessageSpan(_ message: MQTTMessage) async -> String? {
