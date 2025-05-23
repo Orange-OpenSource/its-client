@@ -42,7 +42,7 @@ struct CoreTests {
             try await Task.sleep(for: .seconds(0.5))
             try await core.publish(message: incomingMessage)
             try await Task.sleep(for: .seconds(0.5))
-            try await core.stop() // Stop to flush spans
+            await core.stop() // Stop to flush spans
         }
 
         try await confirmation(expectedCount: 1) { confirmation in
@@ -73,7 +73,7 @@ struct CoreTests {
         do {
             try await core.publish(message: message)
         } catch {
-            try await core.stop() // Stop to flush spans
+            await core.stop() // Stop to flush spans
             // Wait a bit for the spans flush
             try await Task.sleep(for: .seconds(0.5))
         }
@@ -90,7 +90,7 @@ struct CoreTests {
         try await core.start(coreConfiguration: coreConfiguration)
         let message = CoreMQTTMessage(payload: Data(), topic: topic)
         try await core.publish(message: message)
-        try await core.stop() // Stop as you want to flush spans
+        await core.stop() // Stop as you want to flush spans
         // Wait a bit for the spans flush
         try await Task.sleep(for: .seconds(0.5))
     }
@@ -154,7 +154,7 @@ struct CoreTests {
         // Expect that one message is received
         #expect(messagesReceivedCount == 1)
 
-        try await core.stop()
+        await core.stop()
     }
 #endif
 }

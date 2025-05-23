@@ -46,13 +46,8 @@ public actor Mobility {
     }
 
     /// Stops the `Mobility` disconnecting the MQTT client and stopping the telemetry client.
-    /// - Throws: A `MobilityError` if the MQTT unsubscriptions or disconnection fails.
-    public func stop() async throws(MobilityError) {
-        do {
-            try await core.stop()
-        } catch {
-            throw .stopFailed(error)
-        }
+    public func stop() async {
+        await core.stop()
     }
 
     /// Sets an observer to observe changes on road alarms.

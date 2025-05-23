@@ -13,5 +13,4 @@ import Foundation
 
 enum MobilityError: Error {
     case startFailed
-    case stopFailed
 }

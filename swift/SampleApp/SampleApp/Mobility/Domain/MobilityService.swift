@@ -13,5 +13,5 @@ import Foundation
 
 protocol MobilityService {
     func start() async throws(MobilityError)
-    func stop() async throws(MobilityError)
+    func stop() async
 }
