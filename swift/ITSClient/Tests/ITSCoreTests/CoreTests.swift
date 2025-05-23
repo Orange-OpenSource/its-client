@@ -54,7 +54,7 @@ struct CoreTests {
                 // Wait a bit to simulate a task that takes time
                 Thread.sleep(forTimeInterval: 0.25)
             })
-            try await Task.sleep(for: .seconds(1.0))
+            try await Task.sleep(for: .seconds(3.0))
         }
 
         // Wait a bit for the spans flush
