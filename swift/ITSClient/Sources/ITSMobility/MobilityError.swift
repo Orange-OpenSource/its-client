@@ -16,8 +16,6 @@ import ITSCore
 public enum MobilityError: Error {
     /// The mobilty start failed.
     case startFailed(CoreError)
-    /// The mobility stop failed.
-    case stopFailed(CoreError)
     /// The mobility must be started before performing this action.
     case notStarted
     /// The payload encoding failed.

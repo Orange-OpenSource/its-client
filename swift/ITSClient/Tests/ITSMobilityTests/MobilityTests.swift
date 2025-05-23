@@ -41,7 +41,7 @@ struct MobilityTests {
                                         altitude: 155,
                                         heading: 45,
                                         speed: 8.1)
-        try await mobility.stop()
+        await mobility.stop()
         // Wait a bit for the spans flush
         try await Task.sleep(for: .seconds(0.5))
     }
@@ -53,7 +53,7 @@ struct MobilityTests {
                                      longitude: 1.3744570239910097,
                                      altitude: 155,
                                      cause: .trafficCondition())
-        try await mobility.stop()
+        await mobility.stop()
         // Wait a bit for the spans flush
         try await Task.sleep(for: .seconds(0.5))
     }

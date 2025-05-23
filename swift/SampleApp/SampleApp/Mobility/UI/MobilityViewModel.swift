@@ -14,30 +14,24 @@ import SwiftUI
 @MainActor
 final class MobilityViewModel: ObservableObject {
     @Published var isStarted = false
-    @Published var error: MobilityError?
     private let mobilityService: MobilityService
 
     init(mobilityService: MobilityService) {
         self.mobilityService = mobilityService
     }
 
-    func start() async {
+    func start() async -> Bool {
         do {
             try await mobilityService.start()
             isStarted = true
-            error = nil
+            return true
         } catch {
-            self.error = error
+            return false
         }
     }
 
     func stop() async {
-        do {
-            try await mobilityService.stop()
-            isStarted = false
-            error = nil
-        } catch {
-            self.error = error
-        }
+        await mobilityService.stop()
+        isStarted = false
     }
 }

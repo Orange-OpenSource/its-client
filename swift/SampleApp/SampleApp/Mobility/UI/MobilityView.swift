@@ -26,30 +26,15 @@ struct MobilityView: View {
                     if viewModel.isStarted {
                         await viewModel.stop()
                     } else {
-                        await viewModel.start()
+                        showAlert = await !viewModel.start()
                     }
                 }
             }
             .buttonStyle(.borderedProminent)
         }
-        .onChange(of: viewModel.error) { newValue in
-            showAlert = newValue != nil
-        }
         .alert("Error", isPresented: $showAlert, actions: {}, message: {
-            errorView
-        })
-    }
-
-    @ViewBuilder
-    private var errorView: some View {
-        switch viewModel.error {
-        case .startFailed:
             Text("Start mobility failed")
-        case .stopFailed:
-            Text("Stop mobility failed")
-        default:
-            EmptyView()
-        }
+        })
     }
 }
 

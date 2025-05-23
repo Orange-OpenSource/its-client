@@ -52,7 +52,7 @@ struct CoreUnitTests {
         // When
         try await core.start(mqttClient: mockMQTTClient, telemetryClient: mockTelemetryClient)
         try await Task.sleep(for: .seconds(0.5))
-        try await core.stop()
+        await core.stop()
 
         // Then
         #expect(await !mockMQTTClient.isConnected)

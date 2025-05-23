@@ -54,14 +54,10 @@ actor ITSMobilityService: MobilityService {
         startSendingPosition()
     }
 
-    func stop() async throws(MobilityError) {
+    func stop() async {
         stopSendingPosition()
         roadAlarmChangeObserver = nil
-        do {
-            try await mobility.stop()
-        } catch {
-            throw .stopFailed
-        }
+        await mobility.stop()
     }
 
     func startSendingPosition() {

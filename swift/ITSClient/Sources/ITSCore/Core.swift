@@ -102,13 +102,10 @@ public actor Core {
     }
 
     /// Stops the `Core` disconnecting the MQTT client and stopping the telemetry client.
-    /// - Throws: A `CoreError` if the MQTT unsubscriptions or disconnection fails.
-    public func stop() async throws(CoreError) {
+    public func stop() async {
         do {
             try await mqttClient?.disconnect()
-        } catch {
-            throw .mqttError(EquatableError(wrappedError: error))
-        }
+        } catch {}
         mqttClient = nil
 
         await telemetryClient?.stop()
