@@ -19,14 +19,9 @@ use crate::client::configuration::mqtt_configuration::MqttConfiguration;
 use crate::client::configuration::telemetry_configuration::TelemetryConfiguration;
 use crate::client::configuration::{Configuration, get_optional_from_section};
 #[cfg(feature = "mobility")]
-use {
-    crate::client::configuration::{
-        mobility_configuration::MobilityConfiguration,
-        mobility_configuration::STATION_SECTION,
-        node_configuration::{NODE_SECTION, NodeConfiguration},
-        pick_mandatory_section,
-    },
-    std::sync::RwLock,
+use crate::client::configuration::{
+    mobility_configuration::MOBILITY_SECTION, mobility_configuration::MobilityConfiguration,
+    pick_mandatory_section,
 };
 
 use crate::client::bootstrap::bootstrap_error::BootstrapError::{
@@ -100,13 +95,11 @@ pub async fn bootstrap(mut ini: Ini) -> Result<Configuration, ConfigurationError
     let bootstrap_configuration = BootstrapConfiguration::try_from(&mut ini)?;
     #[cfg(feature = "mobility")]
     let mobility_configuration =
-        MobilityConfiguration::try_from(&pick_mandatory_section(STATION_SECTION, &mut ini)?)?;
-
+        MobilityConfiguration::try_from(&pick_mandatory_section(MOBILITY_SECTION, &mut ini)?)?;
     #[cfg(feature = "mobility")]
-    let id = mobility_configuration.station_id.as_str();
+    let id = mobility_configuration.source_uuid.as_str();
     #[cfg(not(feature = "mobility"))]
     let id = "iot3";
-
     match do_bootstrap(bootstrap_configuration, id).await {
         Ok(b) => {
             info!("Bootstrap call successful");
@@ -129,11 +122,6 @@ pub async fn bootstrap(mut ini: Ini) -> Result<Configuration, ConfigurationError
                 )?,
                 #[cfg(feature = "mobility")]
                 mobility: mobility_configuration,
-                #[cfg(feature = "mobility")]
-                node: match ini.section(Some(NODE_SECTION)) {
-                    Some(properties) => Some(RwLock::new(NodeConfiguration::try_from(properties)?)),
-                    None => None,
-                },
                 custom_settings: Some(ini),
             })
         }
