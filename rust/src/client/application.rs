@@ -16,7 +16,7 @@ use crate::exchange::etsi::cooperative_awareness_message::{
 use crate::exchange::etsi::decentralized_environmental_notification_message::{
     DecentralizedEnvironmentalNotificationMessage, RelevanceDistance, RelevanceTrafficDirection,
 };
-use crate::exchange::etsi::reference_position::ReferencePosition;
+use crate::exchange::etsi::reference_position::{ReferencePosition, ReferencePosition113};
 use crate::exchange::etsi::{etsi_now, heading_to_etsi, speed_to_etsi, timestamp_to_etsi};
 use crate::exchange::sequence_number::SequenceNumber;
 use crate::mobility::mobile::Mobile;
@@ -45,7 +45,7 @@ pub fn create_cam(
         station_id,
         basic_container: BasicContainer {
             station_type: Some(station_type),
-            reference_position: ReferencePosition::from(position),
+            reference_position: ReferencePosition113::from(position),
             ..Default::default()
         },
         high_frequency_container: HighFrequencyContainer {

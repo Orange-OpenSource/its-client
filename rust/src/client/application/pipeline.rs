@@ -126,7 +126,7 @@ pub async fn run<A, C, T>(
                         }
                         Err(recv_error) => {
                             info!("Exiting analysis thread: {}", recv_error);
-                            break;
+                            return; // Exit the thread when the channel is closed
                         }
                     }
                 }
@@ -209,7 +209,7 @@ where
                     }
                     Err(recv_error) => {
                         info!("Exiting filter thread: {}", recv_error);
-                        break;
+                        return; // Exit the thread when the channel is closed
                     }
                 }
             }
@@ -342,7 +342,6 @@ async fn mqtt_client_publish<T, P>(
             }
         }
     }
-
     info!("MQTT publishing thread stopped");
 }
 

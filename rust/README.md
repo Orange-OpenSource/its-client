@@ -67,18 +67,21 @@ Before running the example, you may edit the `[telemetry]` section of configurat
 with the proper values:
 
 ```config
+# telemetry feature settings
 [telemetry]
 # the host is the telemetry server to connect to
 host = localhost
 # the port is the port to connect to
 port = 4318
-# Optional, defaults to 'v1/traces'
-#path = default/v1/traces
-# Optional, defaults to 2048
-# max_batch_size = 10
-# Optional, for basic auth
+# true to use the TLS protocol
+use_tls = false
+# optional, defaults to 'v1/traces'
+#path = custom/v1/traces
+# optional, defaults to 2048
+#max_batch_size = 10
+# optional, for basic auth
 #username = username
-# Optional, for basic auth
+# optional, for basic auth
 #password = password
 ```
 
@@ -104,6 +107,12 @@ INFO [telemetry] Send a trace with 3 spans from 3 threads
 INFO [telemetry] └─ Main thread           trace_id: 2409551c828c0168c3828c6621c2df11, span_id: 0b27d386ff26555e
 INFO [telemetry]    ├─ Sender thread      trace_id: 2409551c828c0168c3828c6621c2df11, span_id: 6cc2a49841e217be
 INFO [telemetry]    └─ Listener thread    trace_id: 2409551c828c0168c3828c6621c2df11, span_id: 9c780d071865479c
+```
+
+If the `mobility` features is enabled, the `client_id` fiels is used as service name.
+
+```shell
+cargo run --example telemetry --features telemetry,mobility
 ```
 
 ### copycat
@@ -153,7 +162,7 @@ implementation to work relevantly**
 You can manually send an information and a stopped CAM message with the following commands:
 
 ```shell
-docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.org -p 8886 -t default/outQueue/v2x/info --tls-version tlsv1.2 --capath /etc/ssl/certs/ -m "{\"type\": \"broker\", \"version\": \"1.2.0\", \"instance_id\": \"ora_info_002\", \"instance_type\": \"geoserver\", \"running\": true, \"timestamp\": 1742226701618, \"validity_duration\": 3600, \"service_area\": {\"type\": \"tiles\", \"quadkeys\": [\"0\", \"1\", \"2\", \"3\"]}}"
+docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.org -p 8886 -t default/outQueue/v2x/info --tls-version tlsv1.2 --capath /etc/ssl/certs/ -m "{\"message_type\": \"information\", \"version\": \"2.1.0\", \"source_uuid\": \"ora_app_info-002\", \"instance_id\": \"ora_app_message-002\", \"instance_type\": \"central\", \"running\": true, \"timestamp\": 1742226701618, \"validity_duration\": 3600, \"service_area\": {\"type\": \"tiles\", \"quadkeys\": [\"0\", \"1\", \"2\", \"3\"]}}"
 docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.org -p 8886 -t default/outQueue/v2x/cam/com_car_555/0/3/1/3/3/3/1/1/1/2/0/2/1/0/0/1/2/1/2/1/2/1 --tls-version tlsv1.2 --capath /etc/ssl/certs/ -m "{\"type\":\"cam\",\"origin\":\"self\",\"version\":\"1.1.3\",\"source_uuid\":\"com_car_555\",\"timestamp\":1742227617044,\"message\":{\"protocol_version\":1,\"station_id\":555,\"generation_delta_time\":64291,\"basic_container\":{\"station_type\":5,\"reference_position\":{\"latitude\":447753167,\"longitude\":-6518623,\"altitude\":14750},\"confidence\":{\"position_confidence_ellipse\":{\"semi_major_confidence\":10,\"semi_minor_confidence\":50,\"semi_major_orientation\":1},\"altitude\":1}},\"high_frequency_container\":{\"heading\":3601,\"speed\":0,\"longitudinal_acceleration\":161,\"drive_direction\":0,\"vehicle_length\":40,\"vehicle_width\":20,\"confidence\":{\"heading\":2,\"speed\":3,\"vehicle_length\":0}}}}"
 ```
 
@@ -161,11 +170,9 @@ The application will receive the messages and log the actions:
 
 ```
 ...
-INFO [libits::client::application::pipeline] we received an information on the topic default/outQueue/v2x/info: Information { type_field: "broker", version: "1.2.0", instance_id: "ora_info_002", instance_type: "geoserver", central_instance_id: None, running: true, timestamp: 1742226701618, validity_duration: 3600, public_ip_address: [], mqtt_ip: [], mqtt_tls_ip: [], http_proxy: [], ntp_servers: [], domain_name_servers: [], gelf_loggers: [], udp_loggers: [], fbeat_loggers: [], service_area: Some(ServiceArea { type_field: "tiles", coordinates: [], radius: None, vertices: [], quadkeys: ["0", "1", "2", "3"] }), cells_id: [] }
-INFO [libits::client::configuration::node_configuration] Updating node configuration...
-INFO [libits::client::configuration::node_configuration] Node configuration updated!
+INFO [libits::client::application::pipeline] We received an new information
 ...
-INFO [copycat] we received an item from com_car_555 as stopped: we don't copy cat
+INFO [copycat] We received an item from com_car_555 as stopped: we don't copy cat
 ...
 ```
 
