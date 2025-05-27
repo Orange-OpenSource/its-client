@@ -11,7 +11,7 @@
 
 use crate::mobility::position::Position;
 
-/// Describes a mobile at a moment in time
+/// Describes a mobile at a position at a moment in time
 ///
 /// All attributes are expressed in SI units
 pub trait Mobile {
