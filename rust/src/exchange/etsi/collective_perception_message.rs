@@ -9,12 +9,11 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use crate::client::configuration::Configuration;
 use crate::exchange::etsi::mobile_perceived_object::MobilePerceivedObject;
 use crate::exchange::etsi::perceived_object::PerceivedObject;
 use crate::exchange::etsi::reference_position::ReferencePosition;
 use crate::exchange::etsi::{
-    PositionConfidence, acceleration_from_etsi, heading_from_etsi, speed_from_etsi,
+    acceleration_from_etsi, heading_from_etsi, speed_from_etsi, timestamp_to_generation_delta_time,
 };
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
@@ -27,19 +26,27 @@ use crate::mobility::position::Position;
 use serde::{Deserialize, Serialize};
 use std::any::type_name;
 
+/// Collective Perception Message (CPM) according to ETSI TS 103 324 v2.1.0
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CollectivePerceptionMessage {
+    /// Protocol version (mandatory)
     pub protocol_version: u8,
+    /// Station identifier (mandatory)
     pub station_id: u32,
-    // pub message_id: u8,
+    /// Generation delta time in milliseconds (mandatory)
     pub generation_delta_time: u16,
+    /// Management container with station information (mandatory)
     pub management_container: ManagementContainer,
+    /// Station data container with vehicle state information (optional)
     pub station_data_container: Option<StationDataContainer>,
+    /// List of sensor specifications (optional)
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub sensor_information_container: Vec<SensorInformation>,
+    /// List of detected objects (optional)
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub perceived_object_container: Vec<PerceivedObject>,
+    /// List of detected free spaces (optional)
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub free_space_addendum_container: Vec<FreeSpaceAddendum>,
 }
@@ -47,162 +54,291 @@ pub struct CollectivePerceptionMessage {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ManagementContainer {
+    /// Station type (mandatory)
     pub station_type: u8,
+    /// Reference position (mandatory)
     pub reference_position: ReferencePosition,
-    pub confidence: PositionConfidence,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StationDataContainer {
+    /// Container for originating vehicle data (optional)
     pub originating_vehicle_container: Option<OriginatingVehicleContainer>,
+    /// Container for originating RSU data (optional)
     pub originating_rsu_container: Option<OriginatingRSUContainer>,
 }
 
+/// Represents the container for data originating from a vehicle.
+/// This includes information about the vehicle's heading, speed, dimensions,
+/// acceleration, and confidence levels for these measurements.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OriginatingVehicleContainer {
+    /// Heading of the vehicle in centidegrees.
+    /// Range: 0 to 35999
     pub heading: u16,
+    /// Speed of the vehicle in 0.01 m/s.
+    /// Range: 0 to 16383
     pub speed: u16,
+    /// Direction of the vehicle's movement (optional).
+    /// Values: 0 (forward), 1 (backward), 2 (stationary)
     pub drive_direction: Option<u8>,
+    /// Length of the vehicle in decimeters (optional).
+    /// Range: 0 to 1023
     pub vehicle_length: Option<u16>,
+    /// Width of the vehicle in decimeters (optional).
+    /// Range: 0 to 255
     pub vehicle_width: Option<u8>,
+    /// Longitudinal acceleration of the vehicle in 0.01 m/s² (optional).
+    /// Range: -1600 to 1600
     pub longitudinal_acceleration: Option<i16>,
+    /// Yaw rate of the vehicle in 0.01 degrees/s (optional).
+    /// Range: -32766 to 32767
     pub yaw_rate: Option<i16>,
+    /// Lateral acceleration of the vehicle in 0.01 m/s² (optional).
+    /// Range: -1600 to 1600
     pub lateral_acceleration: Option<i16>,
+    /// Vertical acceleration of the vehicle in 0.01 m/s² (optional).
+    /// Range: -1600 to 1600
     pub vertical_acceleration: Option<i16>,
+    /// Confidence levels for the vehicle's measurements.
     pub confidence: OriginatingVehicleContainerConfidence,
 }
 
+/// Represents the container for data originating from a Road-Side Unit (RSU).
+/// This includes information about the intersection and road segment references.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OriginatingRSUContainer {
+    /// Identifier for the intersection reference (optional).
     pub intersection_reference_id: Option<IntersectionReferenceId>,
+    /// Identifier for the road segment reference (optional).
     pub road_segment_reference_id: Option<u32>,
 }
 
+/// Represents the identifier for an intersection reference.
+/// This includes the road regulator ID and the intersection ID.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IntersectionReferenceId {
+    /// Identifier for the road regulator (optional).
     pub road_regulator_id: Option<u32>,
+    /// Identifier for the intersection (mandatory).
     pub intersection_id: u32,
 }
 
+/// Represents the confidence levels for various attributes of a vehicle's state.
+/// Each field indicates the confidence in the corresponding measurement or property.
+/// Confidence values are typically represented as percentages or scaled values.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OriginatingVehicleContainerConfidence {
+    /// Confidence in the heading measurement.
+    /// Range: 0 to 255
     pub heading: u8,
+    /// Confidence in the speed measurement.
+    /// Range: 0 to 255
     pub speed: u8,
+    /// Confidence in the vehicle length measurement (optional).
+    /// Range: 0 to 255
     pub vehicle_length: Option<u8>,
+    /// Confidence in the yaw rate measurement (optional).
+    /// Range: 0 to 255
     pub yaw_rate: Option<u8>,
+    /// Confidence in the longitudinal acceleration measurement (optional).
+    /// Range: 0 to 255
     pub longitudinal_acceleration: Option<u8>,
+    /// Confidence in the lateral acceleration measurement (optional).
+    /// Range: 0 to 255
     pub lateral_acceleration: Option<u8>,
+    /// Confidence in the vertical acceleration measurement (optional).
+    /// Range: 0 to 255
     pub vertical_acceleration: Option<u8>,
 }
 
+/// Represents information about a sensor, including its identifier, type, and detection area.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SensorInformation {
+    /// Sensor identifier (mandatory).
     pub sensor_id: u8,
+    /// Type of the sensor (mandatory).
     #[serde(rename = "type")]
     pub sensor_type: u8,
+    /// Detection area covered by the sensor (mandatory).
     pub detection_area: DetectionArea,
 }
 
+/// Represents the detection area of a sensor.
+/// This includes various possible shapes such as polygons, radial areas,
+/// circular areas, elliptical areas, and rectangular areas.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DetectionArea {
+    /// Vehicle sensor information (optional).
     pub vehicle_sensor: Option<VehicleSensor>,
+    /// Polygon representation of a stationary sensor's detection area (optional).
     pub stationary_sensor_polygon: Option<Vec<Offset>>,
+    /// Radial representation of a stationary sensor's detection area (optional).
     pub stationary_sensor_radial: Option<StationarySensorRadial>,
+    /// Circular representation of a stationary sensor's detection area (optional).
     pub stationary_sensor_circular: Option<CircularArea>,
+    /// Elliptical representation of a stationary sensor's detection area (optional).
     pub stationary_sensor_ellipse: Option<EllipticArea>,
+    /// Rectangular representation of a stationary sensor's detection area (optional).
     pub stationary_sensor_rectangle: Option<RectangleArea>,
 }
 
+/// Represents a vehicle sensor and its properties.
+/// This includes the sensor's reference point, offsets, and a list of properties.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct VehicleSensor {
+    /// Identifier for the reference point of the sensor (mandatory).
     pub ref_point_id: u8,
+    /// X-axis offset of the sensor in millimeters (mandatory).
     pub x_sensor_offset: i16,
+    /// Y-axis offset of the sensor in millimeters (mandatory).
     pub y_sensor_offset: i16,
+    /// Z-axis offset of the sensor in millimeters (optional).
     pub z_sensor_offset: Option<u16>,
+    /// List of properties associated with the vehicle sensor (optional).
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub vehicle_sensor_property_list: Vec<VehicleSensorProperty>,
 }
 
+/// Represents the properties of a vehicle sensor.
+/// This includes the range and opening angles for both horizontal and vertical directions.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct VehicleSensorProperty {
+    /// The range of the sensor in millimeters (mandatory).
     pub range: u16,
+    /// The starting angle of the horizontal opening in centidegrees (mandatory).
     pub horizontal_opening_angle_start: u16,
+    /// The ending angle of the horizontal opening in centidegrees (mandatory).
     pub horizontal_opening_angle_end: u16,
+    /// The starting angle of the vertical opening in centidegrees (optional).
     pub vertical_opening_angle_start: Option<u16>,
+    /// The ending angle of the vertical opening in centidegrees (optional).
     pub vertical_opening_angle_end: Option<u16>,
 }
 
+/// Represents a stationary sensor with a radial detection area.
+/// This includes the range, horizontal and vertical opening angles,
+/// and an optional offset for the sensor's position.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StationarySensorRadial {
+    /// The maximum range of the sensor in millimeters (mandatory).
     pub range: u16,
+    /// The starting angle of the horizontal opening in centidegrees (mandatory).
     pub horizontal_opening_angle_start: u16,
+    /// The ending angle of the horizontal opening in centidegrees (mandatory).
     pub horizontal_opening_angle_end: u16,
+    /// The starting angle of the vertical opening in centidegrees (optional).
     pub vertical_opening_angle_start: Option<u16>,
+    /// The ending angle of the vertical opening in centidegrees (optional).
     pub vertical_opening_angle_end: Option<u16>,
+    /// The offset of the sensor's position (optional).
     pub sensor_position_offset: Option<Offset>,
 }
 
+/// Represents a circular area.
+/// This includes the center point of the circle and its radius.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CircularArea {
+    /// The center point of the circular area (optional).
     pub node_center_point: Option<Offset>,
+    /// The radius of the circular area in millimeters (mandatory).
     pub radius: u16,
 }
 
+/// Represents an elliptical area.
+/// This includes the semi-major and semi-minor range lengths,
+/// the orientation of the semi-major range, and an optional center point and height.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EllipticArea {
+    /// The length of the semi-major axis in millimeters (mandatory).
     pub semi_major_range_length: u16,
+    /// The length of the semi-minor axis in millimeters (mandatory).
     pub semi_minor_range_length: u16,
+    /// The orientation of the semi-major axis in centidegrees (mandatory).
     pub semi_major_range_orientation: u16,
+    /// The center point of the elliptical area (optional).
     pub node_center_point: Option<Offset>,
+    /// The height of the elliptical area in millimeters (optional).
     pub semi_height: Option<u16>,
 }
 
+/// Represents a rectangular area.
+/// This includes the semi-major and semi-minor range lengths,
+/// the orientation of the semi-major range, and an optional center point and height.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RectangleArea {
+    /// The length of the semi-major axis in millimeters (mandatory).
     pub semi_major_range_length: u16,
+    /// The length of the semi-minor axis in millimeters (mandatory).
     pub semi_minor_range_length: u16,
+    /// The orientation of the semi-major axis in centidegrees (mandatory).
     pub semi_major_range_orientation: u16,
+    /// The center point of the rectangular area (optional).
     pub node_center_point: Option<Offset>,
+    /// The height of the rectangular area in millimeters (optional).
     pub semi_height: Option<u16>,
 }
 
+/// Represents an offset in a 3D coordinate system.
+/// This includes the x and y coordinates, and an optional z coordinate.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Offset {
+    /// The x-coordinate of the offset in millimeters.
     pub x: i32,
+    /// The y-coordinate of the offset in millimeters.
     pub y: i32,
+    /// The z-coordinate of the offset in millimeters (optional).
     pub z: Option<i32>,
 }
 
+/// Represents a free space addendum.
+/// This includes the free space area, confidence level, contributing sensor IDs,
+/// and an optional shadowing indicator.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FreeSpaceAddendum {
+    /// Free space area (mandatory).
     pub free_space_area: FreeSpaceArea,
+    /// Confidence level for the free space (mandatory).
     pub free_space_confidence: u8,
+    /// List of sensor IDs contributing to the free space detection (optional).
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub sensor_id_list: Vec<u8>,
+    /// Indicates whether shadowing applies (optional).
     pub shadowing_applies: Option<bool>,
 }
 
+/// Represents a free space area.
+/// This includes various possible shapes such as polygons, circular areas,
+/// elliptical areas, and rectangular areas.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FreeSpaceArea {
+    /// Polygon representation of the free space (optional).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub free_space_polygon: Option<Vec<Offset>>,
+    /// Circular representation of the free space (optional).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub free_space_circular: Option<CircularArea>,
+    /// Elliptical representation of the free space (optional).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub free_space_ellipse: Option<EllipticArea>,
+    /// Rectangular representation of the free space (optional).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub free_space_rectangle: Option<RectangleArea>,
 }
 
@@ -212,7 +348,7 @@ impl CollectivePerceptionMessage {
             .iter()
             .map(|perceived_object| {
                 MobilePerceivedObject::new(
-                    //assumed clone : we store a copy into the MobilePerceivedObject container
+                    // assumed clone : we store a copy into the MobilePerceivedObject container
                     // TODO use a lifetime to propage the lifecycle between PerceivedObject and MobilePerceivedObject instead of clone
                     perceived_object.clone(),
                     self,
@@ -272,9 +408,9 @@ impl Content for CollectivePerceptionMessage {
         "cpm"
     }
 
-    /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
-    fn appropriate(&mut self, _configuration: &Configuration, _timestamp: u64) {
-        todo!()
+    fn appropriate(&mut self, timestamp: u64, new_station_id: u32) {
+        self.station_id = new_station_id;
+        self.generation_delta_time = timestamp_to_generation_delta_time(timestamp);
     }
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
@@ -305,13 +441,13 @@ mod tests {
 
     use crate::exchange::etsi::perceived_object::PerceivedObject;
     use crate::exchange::etsi::reference_position::{
-        ReferencePosition, altitude_from_etsi, coordinate_from_etsi,
+        Altitude, ReferencePosition, altitude_from_etsi, coordinate_from_etsi,
     };
     use crate::exchange::etsi::speed_from_etsi;
 
     macro_rules! assert_float_eq {
-        ($a:expr_2021, $b:expr_2021, $e:expr_2021) => {
-            let delta = ($a - $b).abs();
+        ($a:expr, $b:expr, $e:expr) => {
+            let delta = (($a) - ($b)).abs();
             assert!(delta <= $e, "Actual:   {}\nExpected: {}", $a, $b)
         };
     }
@@ -325,9 +461,12 @@ mod tests {
                 reference_position: ReferencePosition {
                     latitude: 488417860,
                     longitude: 23678940,
-                    altitude: 900,
+                    altitude: Some(Altitude {
+                        value: 900,
+                        ..Default::default()
+                    }),
+                    ..Default::default()
                 },
-                confidence: Default::default(),
             },
             perceived_object_container: vec![
                 PerceivedObject {
@@ -406,8 +545,10 @@ mod tests {
               "reference_position": {
                 "latitude": 488640493,
                 "longitude": 23310526,
-                "altitude": 900
-              },
+                "altitude": {
+                    "value": 900,
+                    "confidence": 2
+                }              },
               "confidence": {
                 "position_confidence_ellipse": {
                   "semi_major_confidence": 1,
@@ -874,8 +1015,11 @@ mod tests {
 			"reference_position": {
 				"latitude": 426263556,
 				"longitude": -82492123,
-				"altitude": 800001
-			},
+                "altitude": {
+                    "value": 800001,
+                    "confidence": 1
+                }
+            },
 			"confidence": {
 				"position_confidence_ellipse": {
 					"semi_major_confidence": 4095,
@@ -1512,5 +1656,224 @@ mod tests {
             }
             Err(e) => panic!("Failed to deserialize FreeSpaceAddendum: '{}'", e),
         }
+    }
+
+    #[test]
+    fn test_deserialize_minimal_cpm() {
+        let data = r#"{
+            "protocol_version": 2,
+            "station_id": 42,
+            "generation_delta_time": 1000,
+            "management_container": {
+                "station_type": 5,
+                "reference_position": {
+                    "latitude": 426263556,
+                    "longitude": -82492123
+                },
+                "confidence": {
+                    "position_confidence_ellipse": {
+                        "semi_major_confidence": 100,
+                        "semi_minor_confidence": 50,
+                        "semi_major_orientation": 180
+                    },
+                    "altitude": 3
+                }
+            }
+        }"#;
+
+        let cpm = serde_json::from_str::<CollectivePerceptionMessage>(data).unwrap();
+        assert_eq!(cpm.protocol_version, 2);
+        assert_eq!(cpm.station_id, 42);
+        assert_eq!(cpm.generation_delta_time, 1000);
+        assert!(cpm.station_data_container.is_none());
+        assert!(cpm.sensor_information_container.is_empty());
+        assert!(cpm.perceived_object_container.is_empty());
+        assert!(cpm.free_space_addendum_container.is_empty());
+    }
+
+    #[test]
+    fn test_cpm_defaults() {
+        let cpm = CollectivePerceptionMessage::default();
+        assert_eq!(cpm.protocol_version, 0);
+        assert_eq!(cpm.station_id, 0);
+        assert_eq!(cpm.generation_delta_time, 0);
+        assert!(cpm.sensor_information_container.is_empty());
+        assert!(cpm.perceived_object_container.is_empty());
+        assert!(cpm.free_space_addendum_container.is_empty());
+    }
+
+    #[test]
+    fn deserialize_minimal_collective_perception_message() {
+        let data = r#"{
+                "protocol_version": 1,
+                "station_id": 12345,
+                "generation_delta_time": 500,
+                "management_container": {
+                    "station_type": 3,
+                    "reference_position": {
+                        "latitude": 123456789,
+                        "longitude": 987654321
+                    }
+                }
+            }"#;
+
+        let cpm = serde_json::from_str::<CollectivePerceptionMessage>(data).unwrap();
+        assert_eq!(cpm.protocol_version, 1);
+        assert_eq!(cpm.station_id, 12345);
+        assert_eq!(cpm.generation_delta_time, 500);
+        assert_eq!(cpm.management_container.station_type, 3);
+        assert_eq!(
+            cpm.management_container.reference_position.latitude,
+            123456789
+        );
+        assert_eq!(
+            cpm.management_container.reference_position.longitude,
+            987654321
+        );
+        assert_eq!(cpm.management_container.reference_position.altitude, None);
+        assert!(cpm.station_data_container.is_none());
+        assert!(cpm.sensor_information_container.is_empty());
+        assert!(cpm.perceived_object_container.is_empty());
+        assert!(cpm.free_space_addendum_container.is_empty());
+    }
+
+    #[test]
+    fn deserialize_collective_perception_message_with_full_data() {
+        let data = r#"{
+                "protocol_version": 2,
+                "station_id": 67890,
+                "generation_delta_time": 1000,
+                "management_container": {
+                    "station_type": 4,
+                    "reference_position": {
+                        "latitude": 987654321,
+                        "longitude": 123456789,
+                        "altitude": {
+                            "value": 3000,
+                            "confidence": 3
+                        }                    
+                    }
+                },
+                "station_data_container": {
+                    "originating_vehicle_container": {
+                        "heading": 180,
+                        "speed": 1500,
+                        "drive_direction": 0,
+                        "vehicle_length": 50,
+                        "vehicle_width": 20,
+                        "longitudinal_acceleration": 100,
+                        "yaw_rate": 50,
+                        "confidence": {
+                            "heading": 100,
+                            "speed": 100
+                        }
+                    }
+                },
+                "sensor_information_container": [
+                    {
+                        "sensor_id": 1,
+                        "type": 2,
+                        "detection_area": {
+                            "vehicle_sensor": {
+                                "ref_point_id": 1,
+                                "x_sensor_offset": 100,
+                                "y_sensor_offset": 200
+                            }
+                        }
+                    }
+                ],
+                "perceived_object_container": [
+                    {
+                        "object_id": 1,
+                        "time_of_measurement": 10,
+                        "x_distance": 100,
+                        "y_distance": 200,
+                        "object_age": 1000,
+                        "x_speed": 50,
+                        "y_speed": 10,
+                        "confidence": {
+                            "x_distance": 100,
+                            "y_distance": 100,
+                            "x_speed": 10,
+                            "y_speed": 5,
+                            "object": 10
+                        }
+                    }
+                ],
+                "free_space_addendum_container": [
+                    {
+                        "free_space_area": {
+                            "free_space_polygon": [
+                                {"x": 0, "y": 0},
+                                {"x": 100, "y": 100}
+                            ]
+                        },
+                        "free_space_confidence": 90
+                    }
+                ]
+            }"#;
+
+        let cpm = serde_json::from_str::<CollectivePerceptionMessage>(data).unwrap();
+        assert_eq!(cpm.protocol_version, 2);
+        assert_eq!(cpm.station_id, 67890);
+        assert_eq!(cpm.generation_delta_time, 1000);
+        assert_eq!(cpm.management_container.station_type, 4);
+        assert_eq!(
+            cpm.management_container.reference_position.latitude,
+            987654321
+        );
+        assert_eq!(
+            cpm.management_container.reference_position.longitude,
+            123456789
+        );
+        assert_eq!(
+            cpm.management_container.reference_position.altitude,
+            Some(Altitude {
+                value: 3000,
+                confidence: Some(3),
+            })
+        );
+        assert!(cpm.station_data_container.is_some());
+        assert_eq!(cpm.sensor_information_container.len(), 1);
+        assert_eq!(cpm.perceived_object_container.len(), 1);
+        assert_eq!(cpm.free_space_addendum_container.len(), 1);
+    }
+
+    #[test]
+    fn deserialize_collective_perception_message_with_empty_containers() {
+        let data = r#"{
+                "protocol_version": 3,
+                "station_id": 54321,
+                "generation_delta_time": 2000,
+                "management_container": {
+                    "station_type": 5,
+                    "reference_position": {
+                        "latitude": 111111111,
+                        "longitude": 222222222
+                    }
+                },
+                "station_data_container": null,
+                "sensor_information_container": [],
+                "perceived_object_container": [],
+                "free_space_addendum_container": []
+            }"#;
+
+        let cpm = serde_json::from_str::<CollectivePerceptionMessage>(data).unwrap();
+        assert_eq!(cpm.protocol_version, 3);
+        assert_eq!(cpm.station_id, 54321);
+        assert_eq!(cpm.generation_delta_time, 2000);
+        assert_eq!(cpm.management_container.station_type, 5);
+        assert_eq!(
+            cpm.management_container.reference_position.latitude,
+            111111111
+        );
+        assert_eq!(
+            cpm.management_container.reference_position.longitude,
+            222222222
+        );
+        assert!(cpm.station_data_container.is_none());
+        assert!(cpm.sensor_information_container.is_empty());
+        assert!(cpm.perceived_object_container.is_empty());
+        assert!(cpm.free_space_addendum_container.is_empty());
     }
 }
