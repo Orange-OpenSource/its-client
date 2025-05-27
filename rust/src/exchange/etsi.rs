@@ -9,6 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+use crate::exchange::etsi::reference_position::DeltaReferencePosition;
 use crate::now;
 use serde::{Deserialize, Serialize};
 
@@ -40,17 +41,9 @@ pub struct PositionConfidenceEllipse {
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PathHistory {
-    pub path_position: PathPosition,
+pub struct PathPoint {
+    pub path_position: DeltaReferencePosition,
     pub path_delta_time: Option<u16>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PathPosition {
-    pub delta_latitude: Option<i32>,
-    pub delta_longitude: Option<i32>,
-    pub delta_altitude: Option<i32>,
 }
 
 /// Converts heading from decidegrees to radians
@@ -106,18 +99,22 @@ pub(crate) fn etsi_now() -> u64 {
     timestamp_to_etsi(now())
 }
 
+pub(crate) fn timestamp_to_generation_delta_time(unix_timestamp: u64) -> u16 {
+    ((unix_timestamp.saturating_sub(ETSI_TIMESTAMP_OFFSET)) % 65536) as u16
+}
+
 #[cfg(test)]
 mod tests {
     use crate::exchange::etsi::{
         ETSI_TIMESTAMP_OFFSET, acceleration_from_etsi, acceleration_to_etsi, etsi_now,
         heading_from_etsi, heading_to_etsi, speed_from_etsi, speed_to_etsi, timestamp_from_etsi,
-        timestamp_to_etsi,
+        timestamp_to_etsi, timestamp_to_generation_delta_time,
     };
     use crate::now;
     use std::f64::consts::PI;
 
     macro_rules! test_from_etsi {
-        ($func:ident, $test_name:ident, $value:expr_2021, $expected:expr_2021) => {
+        ($func:ident, $test_name:ident, $value:expr, $expected:expr) => {
             #[test]
             fn $test_name() {
                 let epsilon = 1e-11;
@@ -179,7 +176,7 @@ mod tests {
     );
 
     macro_rules! test_to_etsi {
-        ($func:ident, $test_name:ident, $value:expr_2021, $expected:expr_2021) => {
+        ($func:ident, $test_name:ident, $value:expr, $expected:expr) => {
             #[test]
             fn $test_name() {
                 let as_etsi = $func($value);
@@ -248,5 +245,23 @@ mod tests {
         let now = timestamp_from_etsi(etsi_now);
 
         assert_eq!(now - etsi_now, ETSI_TIMESTAMP_OFFSET);
+    }
+
+    #[test]
+    fn timestamp_to_generation_delta_time_handles_valid_input() {
+        let result = timestamp_to_generation_delta_time(ETSI_TIMESTAMP_OFFSET + 12345);
+        assert_eq!(result, 12345);
+    }
+
+    #[test]
+    fn timestamp_to_generation_delta_time_handles_edge_case_min() {
+        let result = timestamp_to_generation_delta_time(ETSI_TIMESTAMP_OFFSET);
+        assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn timestamp_to_generation_delta_time_handles_edge_case_max() {
+        let result = timestamp_to_generation_delta_time(u64::MAX);
+        assert_eq!(result, ((u64::MAX - ETSI_TIMESTAMP_OFFSET) % 65536) as u16);
     }
 }

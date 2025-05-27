@@ -11,15 +11,12 @@
 
 use std::hash;
 
-use crate::client::configuration::Configuration;
 use crate::exchange::etsi::decentralized_environmental_notification_message::RelevanceDistance::{
     LessThan5Km, LessThan10Km, LessThan50m, LessThan100m, LessThan200m, LessThan500m,
     LessThan1000m, Over10Km,
 };
-use crate::exchange::etsi::reference_position::ReferencePosition;
-use crate::exchange::etsi::{
-    PathHistory, PositionConfidence, etsi_now, heading_from_etsi, speed_from_etsi,
-};
+use crate::exchange::etsi::reference_position::{PositionConfidence, ReferencePosition};
+use crate::exchange::etsi::{PathPoint, etsi_now, heading_from_etsi, speed_from_etsi};
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::mortal::Mortal;
@@ -28,55 +25,118 @@ use crate::mobility::position::Position;
 
 use serde::{Deserialize, Serialize};
 
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+/// Represents a Decentralized Environmental Notification Message (DENM) according to ETSI standard.
+///
+/// This message is used to describe detected road hazards and traffic conditions.
+/// The structure follows the JSON schema version 2.1.0 specification.
+///
+/// # Fields
+///
+/// * `protocol_version` - The version of the protocol used (default: 2)
+/// * `station_id` - Unique identifier for the ITS station (0..4294967295)
+/// * `management_container` - Contains basic information about the DENM
+/// * `situation_container` - Optional container with details about the event type
+/// * `location_container` - Optional container with position-related information
+/// * `alacarte_container` - Optional container with additional specific information
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct DecentralizedEnvironmentalNotificationMessage {
-    pub protocol_version: u8,
-    pub station_id: u32,
+    #[serde(default = "default_protocol_version")]
+    pub protocol_version: u8, // 0..255
+    pub station_id: u32, // 0..4294967295
     pub management_container: ManagementContainer,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub situation_container: Option<SituationContainer>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub location_container: Option<LocationContainer>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub alacarte_container: Option<AlacarteContainer>,
 }
 
-#[serde_with::skip_serializing_none]
+fn default_protocol_version() -> u8 {
+    2
+}
+
+/// Contains management information for the DENM
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ManagementContainer {
     pub action_id: ActionId,
-    pub detection_time: u64,
-    pub reference_time: u64,
-    pub termination: Option<u8>,
+    pub detection_time: u64, // 0..4398046511103
+    pub reference_time: u64, // 0..4398046511103
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub termination: Option<u8>, // 0..1
     pub event_position: ReferencePosition,
-    pub relevance_distance: Option<u8>,
-    pub relevance_traffic_direction: Option<u8>,
-    pub validity_duration: Option<u32>,
-    pub transmission_interval: Option<u16>,
-    pub station_type: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub awareness_distance: Option<u8>, // 0..7
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub relevance_traffic_direction: Option<u8>, // 0..3
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)] // This will use Default::default() which returns None
+    pub validity_duration: Option<u32>, // 0..86400, default 600
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transmission_interval: Option<u16>, // 1..10000
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub station_type: Option<u8>, // 0..255, default 0
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub confidence: Option<PositionConfidence>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct ActionId {
-    pub originating_station_id: u32,
-    pub sequence_number: u16,
-}
-
+/// Contains situation information about the detected event
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SituationContainer {
+    /// Quality of the information (0..7)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(
+        deserialize_with = "deserialize_information_quality",
+        serialize_with = "serialize_information_quality"
+    )]
     pub information_quality: Option<u8>,
     pub event_type: EventType,
     pub linked_cause: Option<EventType>,
 }
 
+fn deserialize_information_quality<'de, D>(deserializer: D) -> Result<Option<u8>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::Error;
+    let value = Option::<u8>::deserialize(deserializer)?;
+    if let Some(quality) = value {
+        if quality > 7 {
+            return Err(Error::custom("information_quality must be between 0 and 7"));
+        }
+    }
+    Ok(value)
+}
+
+fn serialize_information_quality<S>(value: &Option<u8>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    use serde::ser::Error;
+    if let Some(quality) = value {
+        if *quality > 7 {
+            return Err(Error::custom("information_quality must be between 0 and 7"));
+        }
+        serializer.serialize_some(quality)
+    } else {
+        serializer.serialize_none()
+    }
+}
+
+/// Contains location-related information about the event
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct LocationContainer {
+    /// Speed at the event location in 0.01 m/s
     pub event_speed: Option<u16>,
+    /// Heading at the event location in 0.1 degrees
     pub event_position_heading: Option<u16>,
-    pub traces: Vec<Trace>,
+    /// List of traces leading to the event position
+    #[serde(default)]
+    pub detection_zones_to_event_position: Vec<Trace>,
+    /// Type of road where the event occurred
     pub road_type: Option<u8>,
-    pub confidence: Option<LocationContainerConfidence>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -84,6 +144,13 @@ pub struct LocationContainer {
 pub struct AlacarteContainer {
     pub lane_position: Option<i8>,
     pub positioning_solution: Option<u8>,
+}
+
+/// Represents an action identifier
+#[derive(Clone, Debug, Default, Hash, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ActionId {
+    pub originating_station_id: u32, // 0..4294967295
+    pub sequence_number: u16,        // 0..65535
 }
 
 #[serde_with::skip_serializing_none]
@@ -95,8 +162,7 @@ pub struct EventType {
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Trace {
-    #[serde(rename = "path_history")]
-    pub path_history: Vec<PathHistory>,
+    pub path: Vec<PathPoint>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -184,7 +250,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
         sequence_number: u16,
         etsi_timestamp: u64,
         subcause: Option<u8>,
-        relevance_distance: Option<u8>,
+        awareness_distance: Option<u8>,
         relevance_traffic_direction: Option<u8>,
         event_speed: Option<u16>,
         event_position_heading: Option<u16>,
@@ -197,7 +263,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
             etsi_timestamp,
             1,
             subcause,
-            relevance_distance,
+            awareness_distance,
             relevance_traffic_direction,
             event_speed,
             event_position_heading,
@@ -214,7 +280,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
         sequence_number: u16,
         etsi_timestamp: u64,
         subcause: Option<u8>,
-        relevance_distance: Option<u8>,
+        awareness_distance: Option<u8>,
         relevance_traffic_direction: Option<u8>,
         event_speed: Option<u16>,
         event_position_heading: Option<u16>,
@@ -228,7 +294,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
             etsi_timestamp,
             97,
             subcause,
-            relevance_distance,
+            awareness_distance,
             relevance_traffic_direction,
             event_speed,
             event_position_heading,
@@ -241,7 +307,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
         mut denm: Self,
         event_position: ReferencePosition,
         etsi_timestamp: u64,
-        relevance_distance: Option<u8>,
+        awareness_distance: Option<u8>,
         relevance_traffic_direction: Option<u8>,
         event_speed: Option<u16>,
         event_position_heading: Option<u16>,
@@ -249,7 +315,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
         // collisionRisk
         denm.management_container.event_position = event_position;
         denm.management_container.reference_time = etsi_timestamp;
-        denm.management_container.relevance_distance = relevance_distance;
+        denm.management_container.awareness_distance = awareness_distance;
         denm.management_container.relevance_traffic_direction = relevance_traffic_direction;
         if event_speed.is_some() || event_position_heading.is_some() {
             denm.location_container = Option::from(LocationContainer {
@@ -270,7 +336,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
         etsi_timestamp: u64,
         cause: u8,
         subcause: Option<u8>,
-        relevance_distance: Option<u8>,
+        awareness_distance: Option<u8>,
         relevance_traffic_direction: Option<u8>,
         event_speed: Option<u16>,
         event_position_heading: Option<u16>,
@@ -291,7 +357,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
                 validity_duration,
                 transmission_interval,
                 station_type: Some(5),
-                relevance_distance,
+                awareness_distance,
                 relevance_traffic_direction,
                 ..Default::default()
             },
@@ -391,9 +457,13 @@ impl Content for DecentralizedEnvironmentalNotificationMessage {
         "denm"
     }
 
-    /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
-    fn appropriate(&mut self, _configuration: &Configuration, _timestamp: u64) {
-        todo!()
+    fn appropriate(&mut self, timestamp: u64, new_station_id: u32) {
+        self.station_id = new_station_id;
+        // we keep the action_id: originating_station_id and sequence_number remain unchanged
+        // detection_time updated because values changed in the payload (anything else has been updated)
+        self.management_container.detection_time = timestamp;
+        // reference_time different for each message
+        self.management_container.reference_time = timestamp;
     }
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
@@ -445,7 +515,7 @@ impl Default for ManagementContainer {
             reference_time: Default::default(),
             termination: Default::default(),
             event_position: Default::default(),
-            relevance_distance: Default::default(),
+            awareness_distance: Default::default(),
             relevance_traffic_direction: Default::default(),
             validity_duration: Some(600),
             transmission_interval: Default::default(),
@@ -470,12 +540,14 @@ impl hash::Hash for ManagementContainer {
 #[cfg(test)]
 mod tests {
     use crate::exchange::etsi::decentralized_environmental_notification_message::{
-        DecentralizedEnvironmentalNotificationMessage, ManagementContainer,
+        ActionId, AlacarteContainer, DecentralizedEnvironmentalNotificationMessage, EventType,
+        LocationContainer, ManagementContainer, SituationContainer,
     };
-    use crate::exchange::etsi::reference_position::ReferencePosition;
+    use crate::exchange::etsi::reference_position::{PositionConfidence, ReferencePosition};
     use crate::exchange::etsi::{etsi_now, timestamp_to_etsi};
     use crate::exchange::mortal::Mortal;
     use crate::now;
+    use serde_json::json;
 
     #[test]
     fn create_new_stationary_vehicle() {
@@ -543,5 +615,137 @@ mod tests {
             denm.timeout() - denm.management_container.reference_time,
             10_000
         );
+    }
+
+    #[test]
+    fn serialize_minimal_denm() {
+        let denm = DecentralizedEnvironmentalNotificationMessage {
+            protocol_version: 2,
+            station_id: 12345,
+            management_container: ManagementContainer {
+                action_id: ActionId {
+                    originating_station_id: 54321,
+                    sequence_number: 1,
+                },
+                detection_time: 1000,
+                reference_time: 1000,
+                event_position: ReferencePosition::default(),
+                validity_duration: Some(600),
+                termination: None,
+                awareness_distance: None,
+                relevance_traffic_direction: None,
+                transmission_interval: None,
+                station_type: None,
+                confidence: None,
+            },
+            situation_container: None,
+            location_container: None,
+            alacarte_container: None,
+        };
+
+        let json = serde_json::to_value(&denm).unwrap();
+        assert_eq!(json["protocol_version"], 2);
+        assert_eq!(json["station_id"], 12345);
+        assert!(json.get("situation_container").is_none());
+    }
+
+    #[test]
+    fn serialize_full_denm() {
+        let denm = DecentralizedEnvironmentalNotificationMessage {
+            protocol_version: 2,
+            station_id: 12345,
+            management_container: ManagementContainer {
+                action_id: ActionId {
+                    originating_station_id: 54321,
+                    sequence_number: 1,
+                },
+                detection_time: 1000,
+                reference_time: 1000,
+                event_position: ReferencePosition::default(),
+                validity_duration: Some(600),
+                termination: Some(0),
+                awareness_distance: Some(5),
+                relevance_traffic_direction: Some(0),
+                transmission_interval: Some(1000),
+                station_type: Some(5),
+                confidence: Some(PositionConfidence {
+                    semi_major_confidence: 100,
+                    semi_minor_confidence: 100,
+                    semi_major_orientation: 0,
+                }),
+            },
+            situation_container: Some(SituationContainer {
+                information_quality: Some(7),
+                event_type: EventType {
+                    cause: 94,
+                    subcause: Some(2),
+                },
+                linked_cause: None,
+            }),
+            location_container: Some(LocationContainer {
+                event_speed: Some(100),
+                event_position_heading: Some(900),
+                detection_zones_to_event_position: vec![],
+                road_type: Some(0),
+            }),
+            alacarte_container: Some(AlacarteContainer {
+                lane_position: Some(1),
+                positioning_solution: Some(1),
+            }),
+        };
+
+        let json = serde_json::to_value(&denm).unwrap();
+        assert_eq!(json["protocol_version"], 2);
+        assert_eq!(json["situation_container"]["information_quality"], 7);
+        assert_eq!(json["location_container"]["event_speed"], 100);
+    }
+
+    #[test]
+    fn deserialize_denm() {
+        let json = json!({
+            "protocol_version": 2,
+            "station_id": 12345,
+            "management_container": {
+                "action_id": {
+                    "originating_station_id": 54321,
+                    "sequence_number": 1
+                },
+                "detection_time": 1000,
+                "reference_time": 1000,
+                "event_position": {
+                    "latitude": 0,
+                    "longitude": 0,
+                    "altitude": {
+                        "value": 0,
+                        "confidence": 0
+                    }
+                },
+                "validity_duration": 600
+            }
+        });
+
+        let denm: DecentralizedEnvironmentalNotificationMessage =
+            serde_json::from_value(json).unwrap();
+        assert_eq!(denm.protocol_version, 2);
+        assert_eq!(denm.station_id, 12345);
+        assert_eq!(denm.management_container.validity_duration, Some(600));
+    }
+
+    #[test]
+    fn validate_information_quality_bounds() {
+        let denm = DecentralizedEnvironmentalNotificationMessage {
+            situation_container: Some(SituationContainer {
+                information_quality: Some(8), // Invalid value
+                event_type: EventType {
+                    cause: 94,
+                    subcause: None,
+                },
+                linked_cause: None,
+            }),
+            ..Default::default()
+        };
+
+        let result = serde_json::to_string(&denm);
+        assert!(result.is_err());
     }
 }

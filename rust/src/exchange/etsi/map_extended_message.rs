@@ -12,7 +12,6 @@
 use log::warn;
 use std::any::type_name;
 
-use crate::client::configuration::Configuration;
 use crate::exchange::etsi::reference_position::ReferencePosition;
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
@@ -35,13 +34,14 @@ use std::hash::{Hash, Hasher};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MAPExtendedMessage {
-    pub protocol_version: u16,
-    pub id: u64,
+    pub protocol_version: u8,
+    pub station_id: u32,
+    pub msg_issue_revision: u8,
+
     /// Reference time of the geometry present in the message
     pub timestamp: Option<u64>,
     pub sending_station_id: Option<u64>,
     pub region: Option<u64>,
-    pub revision: Option<u16>,
     /// List of the lanes in the intersection
     pub lanes: Vec<Lane>,
 }
@@ -51,9 +51,9 @@ impl Content for MAPExtendedMessage {
         "mapem"
     }
 
-    /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
-    fn appropriate(&mut self, _configuration: &Configuration, _timestamp: u64) {
-        todo!()
+    fn appropriate(&mut self, timestamp: u64, new_station_id: u32) {
+        self.station_id = new_station_id;
+        self.timestamp = Some(timestamp);
     }
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
@@ -67,13 +67,13 @@ impl Content for MAPExtendedMessage {
 
 impl PartialEq<Self> for MAPExtendedMessage {
     fn eq(&self, other: &Self) -> bool {
-        self.id.eq(&other.id) && self.timestamp.eq(&other.timestamp)
+        self.station_id.eq(&other.station_id) && self.timestamp.eq(&other.timestamp)
     }
 }
 
 impl Hash for MAPExtendedMessage {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
+        self.station_id.hash(state);
         self.timestamp.hash(state);
     }
 }
@@ -152,7 +152,7 @@ pub struct Connection {
     pub lane_id: u64,
     /// Turn direction leading to the connected lane
     pub action: Action,
-    /// True if taking this pas has to be executed with caution
+    /// True if taking this path to be executed with caution
     /// (e.g. pedestrian crossing on a right or left turn)
     pub caution: Option<bool>,
 }
@@ -198,11 +198,11 @@ mod test {
         let data = r#"
         {
             "protocolVersion": 1,
-            "id": 10,
+            "stationId": 10,
             "timestamp": 123456789,
             "sendingStationId": 11,
             "region": 12,
-            "revision": 13,
+            "msgIssueRevision": 13,
             "lanes":
             [
                 {
@@ -248,12 +248,12 @@ mod test {
 
         match serde_json::from_str::<MAPExtendedMessage>(data) {
             Ok(map) => {
-                assert_eq!(map.id, 10);
+                assert_eq!(map.station_id, 10);
                 assert_eq!(map.protocol_version, 1);
                 assert_eq!(map.timestamp.unwrap(), 123456789);
                 assert_eq!(map.sending_station_id.unwrap(), 11);
                 assert_eq!(map.region.unwrap(), 12);
-                assert_eq!(map.revision.unwrap(), 13);
+                assert_eq!(map.msg_issue_revision, 13);
                 assert_eq!(map.lanes.len(), 1);
                 let lane = map.lanes.first().unwrap();
                 assert_eq!(lane.id, 14);
@@ -300,7 +300,8 @@ mod test {
         let data = r#"
         {
             "protocolVersion": 1,
-            "id": 10,
+            "stationId": 10,
+            "msgIssueRevision": 127,
             "lanes":
             [
                 {
@@ -354,11 +355,11 @@ mod test {
 
         match serde_json::from_str::<MAPExtendedMessage>(data) {
             Ok(map) => {
-                assert_eq!(map.id, 10);
+                assert_eq!(map.station_id, 10);
                 assert_eq!(map.protocol_version, 1);
                 assert!(map.timestamp.is_none());
                 assert!(map.region.is_none());
-                assert!(map.revision.is_none());
+                assert_eq!(map.msg_issue_revision, 127);
                 assert!(map.sending_station_id.is_none());
                 assert_eq!(map.lanes.len(), 2);
                 let lane = map.lanes.first().unwrap();
@@ -425,7 +426,7 @@ mod test {
     #[test]
     fn test_real_map_extended_message() {
         let data = r#"{
-            "id": 243,
+            "stationId": 243,
             "lanes": [{
                 "approachId": 0,
                 "connections": [{
@@ -1192,13 +1193,13 @@ mod test {
             }],
             "protocolVersion": 1,
             "region": 751,
-            "revision": 11,
+            "msgIssueRevision": 11,
             "sendingStationId": 75000
         }"#;
 
         match serde_json::from_str::<MAPExtendedMessage>(data) {
             Ok(map) => {
-                assert_eq!(243, map.id);
+                assert_eq!(243, map.station_id);
             }
             Err(e) => {
                 panic!("Failed to deserialize MAPEM: '{}'", e);
