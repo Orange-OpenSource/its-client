@@ -1,0 +1,901 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/cam",
+  "$references": [
+    {
+      "name": "CAM TS 103 900",
+      "version": "2.1.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/cam_ts103900/-/tree/V2.1.1"
+    },
+    {
+      "name": "CAM EN 302 637-2",
+      "version": "1.4.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/cam_en302637_2/-/tree/v1.4.1"
+    }
+  ],
+  "description": "CAM JSON schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "message_type",
+    "source_uuid",
+    "timestamp",
+    "version",
+    "message"
+  ],
+  "properties": {
+    "message_type": {
+      "type": "string",
+      "description": "message type",
+      "const": "cam"
+    },
+    "source_uuid": {
+      "type": "string",
+      "description": "identifier",
+      "examples": [
+        "UNKNOWN",
+        "42"
+      ]
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01).",
+      "examples": [
+        1574778515424
+      ],
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
+    },
+    "version": {
+      "type": "string",
+      "description": "json message format version",
+      "const": "2.1.0"
+    },
+    "message": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "station_id",
+        "generation_delta_time",
+        "basic_container",
+        "high_frequency_container"
+      ],
+      "properties": {
+        "protocol_version": {
+          "type": "integer",
+          "description": "version of the ITS message and/or communication protocol",
+          "minimum": 0,
+          "maximum": 255,
+          "examples": [
+            1
+          ]
+        },
+        "station_id": {
+          "type": "integer",
+          "description": "identifier for an ITS-S",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "examples": [
+            1,
+            42
+          ]
+        },
+        "generation_delta_time": {
+          "type": "integer",
+          "description": "time of the reference position in the CAM, considered as time of the CAM generation. TimestampIts mod 65 536. TimestampIts represents an integer value in milliseconds since 2004-01-01T00:00:00:000Z. oneMilliSec(1)",
+          "minimum": 0,
+          "maximum": 65535,
+          "examples": [
+            1,
+            1245
+          ]
+        },
+        "basic_container": {
+          "type": "object",
+          "required": [
+            "station_type",
+            "reference_position"
+          ],
+          "properties": {
+            "station_type": {
+              "description": "unknown(0), pedestrian(1), cyclist(2), moped(3), motorcycle(4), passengerCar(5), bus(6), lightTruck(7), heavyTruck(8), trailer(9), specialVehicles(10), tram(11), roadSideUnit(15)",
+              "type": "integer",
+              "default": 0,
+              "minimum": 0,
+              "maximum": 255
+            },
+            "reference_position": {
+              "type": "object",
+              "required": [
+                "latitude",
+                "longitude"
+              ],
+              "properties": {
+                "latitude": {
+                  "type": "integer",
+                  "description": "Unit: 0.1 microdegree. oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10), unavailable(900000001)",
+                  "default": 900000001,
+                  "minimum": -900000000,
+                  "maximum": 900000001
+                },
+                "longitude": {
+                  "type": "integer",
+                  "description": "Unit: 0.1 microdegree. oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(1800000001)",
+                  "default": 1800000001,
+                  "minimum": -1800000000,
+                  "maximum": 1800000001
+                },
+                "altitude": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "Unit: 0.01 meter. referenceEllipsoidSurface(0), oneCentimeter(1), unavailable(800001)",
+                      "default": 800001,
+                      "minimum": -100000,
+                      "maximum": 800001
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "alt-000-01 (0), alt-000-02 (1), alt-000-05 (2), alt-000-10 (3), alt-000-20 (4), alt-000-50 (5), alt-001-00 (6), alt-002-00 (7), alt-005-00 (8), alt-010-00 (9), alt-020-00 (10), alt-050-00 (11), alt-100-00 (12), alt-200-00 (13), outOfRange (14), unavailable (15)",
+                      "default": 15,
+                      "minimum": 0,
+                      "maximum": 15
+                    }
+                  }
+                },
+                "position_confidence_ellipse": {
+                  "type": "object",
+                  "required": [
+                    "semi_major_confidence",
+                    "semi_minor_confidence",
+                    "semi_major_orientation"
+                  ],
+                  "properties": {
+                    "semi_major_confidence": {
+                      "type": "integer",
+                      "description": "doNotUse(0), oneCentimeter(1), outOfRange(4094), unavailable(4095)",
+                      "default": 4095,
+                      "minimum": 0,
+                      "maximum": 4095
+                    },
+                    "semi_minor_confidence": {
+                      "type": "integer",
+                      "description": "doNotUse(0), oneCentimeter(1), outOfRange(4094), unavailable(4095)",
+                      "default": 4095,
+                      "minimum": 0,
+                      "maximum": 4095
+                    },
+                    "semi_major_orientation": {
+                      "type": "integer",
+                      "description": "wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), doNotUse(3600), unavailable(3601)",
+                      "default": 3601,
+                      "minimum": 0,
+                      "maximum": 3601
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "high_frequency_container": {
+          "type": "object",
+          "oneOf": [
+            {
+              "required": [
+                "basic_vehicle_container_high_frequency"
+              ]
+            },
+            {
+              "required": [
+                "rsu_container_high_frequency"
+              ]
+            }
+          ],
+          "properties": {
+            "basic_vehicle_container_high_frequency": {
+              "type": "object",
+              "description": "The basic vehicle container high frequency",
+              "required": [
+                "heading",
+                "speed"
+              ],
+              "properties": {
+                "heading": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "Unit: 0.1 degree. wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), doNotUse(3600), unavailable(3601)",
+                      "default": 3601,
+                      "minimum": 0,
+                      "maximum": 3601
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "equalOrWithinZeroPointOneDegree(1), equalOrWithinOneDegree(10), outOfRange(126), unavailable(127)",
+                      "default": 127,
+                      "minimum": 1,
+                      "maximum": 127
+                    }
+                  }
+                },
+                "speed": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "Unit 0.01 m/s. standstill(0), oneCentimeterPerSec(1), outOfRange(16382), unavailable(16383)",
+                      "default": 16383,
+                      "minimum": 0,
+                      "maximum": 16383
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "equalOrWithinOneCentimeterPerSec(1), equalOrWithinOneMeterPerSec(100), outOfRange(126), unavailable(127)",
+                      "default": 127,
+                      "minimum": 1,
+                      "maximum": 127
+                    }
+                  }
+                },
+                "drive_direction": {
+                  "type": "integer",
+                  "description": "forward (0), backward (1), unavailable (2)",
+                  "default": 2,
+                  "minimum": 0,
+                  "maximum": 2
+                },
+                "vehicle_length": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "tenCentimeters(1), outOfRange(1022), unavailable(1023)",
+                      "default": 1023,
+                      "minimum": 1,
+                      "maximum": 1023
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "noTrailerPresent(0), trailerPresentWithKnownLength(1), trailerPresentWithUnknownLength(2), trailerPresenceIsUnknown(3), unavailable(4)",
+                      "default": 4,
+                      "minimum": 0,
+                      "maximum": 4
+                    }
+                  }
+                },
+                "vehicle_width": {
+                  "type": "integer",
+                  "description": "tenCentimeters(1), outOfRange(61), unavailable(62)",
+                  "default": 62,
+                  "minimum": 1,
+                  "maximum": 62
+                },
+                "longitudinal_acceleration": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "unit: 0.1 m/s2. pointOneMeterPerSecSquaredForward(1), pointOneMeterPerSecSquaredBackward(-1), unavailable(161)",
+                      "default": 161,
+                      "minimum": -160,
+                      "maximum": 161
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102)",
+                      "minimum": 0,
+                      "maximum": 102
+                    }
+                  }
+                },
+                "curvature": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "unit: 1 over 10 000 m, outOfRangeNegative(-1023), straight(0), outOfRangePositive(1022), unavailable(1023)",
+                      "default": 1023,
+                      "minimum": -1023,
+                      "maximum": 1023
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "onePerMeter-0-00002(0), onePerMeter-0-0001(1), onePerMeter-0-0005(2), onePerMeter-0-002(3), onePerMeter-0-01(4), onePerMeter-0-1(5), outOfRange(6), unavailable(7)",
+                      "minimum": 0,
+                      "maximum": 7
+                    }
+                  }
+                },
+                "curvature_calculation_mode": {
+                  "type": "integer",
+                  "description": "It describes whether the yaw rate is used to calculate the curvature: yawRateUsed(0), yawRateNotUsed(1), unavailable(2)",
+                  "default": 2,
+                  "minimum": 0,
+                  "maximum": 2
+                },
+                "yaw_rate": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "Unit: 0.01 degree/s: negativeOutOfRange(-32766), straight(0), degSec-000-01ToRight(-1), degSec-000-01ToLeft(1), positiveOutOfRange(32766), unavailable(32767)",
+                      "default": 32767,
+                      "minimum": -32766,
+                      "maximum": 32767
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "degSec-000-01(0), degSec-000-05(1), degSec-000-10(2), degSec-001-00(3), degSec-005-00(4), degSec-010-00(5), degSec-100-00(6), outOfRange(7), unavailable(8)",
+                      "default": 8,
+                      "minimum": 0,
+                      "maximum": 8
+                    }
+                  }
+                },
+                "acceleration_control": {
+                  "type": "string",
+                  "description": "Current controlling mechanism for longitudinal movement of the vehicle. Represented as a bit string: brakePedalEngaged (0), gasPedalEngaged (1), emergencyBrakeEngaged (2), collisionWarningEngaged(3), accEngaged(4), cruiseControlEngaged(5), speedLimiterEngaged(6)",
+                  "minLength": 7,
+                  "maxLength": 7,
+                  "example": [
+                    "0000000",
+                    "1000000",
+                    "0000011"
+                  ]
+                },
+                "lane_position": {
+                  "type": "integer",
+                  "description": "offTheRoad(-1), innerHardShoulder(0), innermostDrivingLane(1), secondLaneFromInside(2), outterHardShoulder(14)",
+                  "minimum": -1,
+                  "maximum": 14
+                },
+                "steering_wheel_angle": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "Unit: 1;5 degree: negativeOutOfRange(-511), onePointFiveDegreeClockwise(-1), onePointFiveDegreeCounterClockwise(1), positiveOutOfRange(511), unavailable(512)",
+                      "default": 512,
+                      "minimum": -511,
+                      "maximum": 512
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "Unit: 1;5 degree: equalOrWithinOnePointFiveDegree(1), outOfRange(126), unavailable (127)",
+                      "default": 127,
+                      "minimum": 1,
+                      "maximum": 127
+                    }
+                  }
+                },
+                "lateral_acceleration": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "unit: 0.1 m/s2. pointOneMeterPerSecSquaredForward(1), pointOneMeterPerSecSquaredBackward(-1), unavailable(161)",
+                      "default": 161,
+                      "minimum": -160,
+                      "maximum": 161
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102)",
+                      "minimum": 0,
+                      "maximum": 102
+                    }
+                  }
+                },
+                "vertical_acceleration": {
+                  "type": "object",
+                  "required": [
+                    "value"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer",
+                      "description": "unit: 0.1 m/s2. pointOneMeterPerSecSquaredForward(1), pointOneMeterPerSecSquaredBackward(-1), unavailable(161)",
+                      "default": 161,
+                      "minimum": -160,
+                      "maximum": 161
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "pointOneMeterPerSecSquared(1), outOfRange(101), unavailable(102)",
+                      "minimum": 0,
+                      "maximum": 102
+                    }
+                  }
+                },
+                "performance_class": {
+                  "type": "integer",
+                  "description": "unavailable 0), performanceClassA(1), performanceClassB(2), reserved(3-7)",
+                  "default": 0,
+                  "minimum": 0,
+                  "maximum": 7
+                },
+                "cen_dsrc_tolling_zone": {
+                  "type": "object",
+                  "description": "information about a the position of a CEN DSRC Tolling Station operating in the 5,8 GHz frequency band.",
+                  "properties": {
+                    "protected_zone_latitude": {
+                      "type": "integer",
+                      "description": "Unit: 0.1 microdegree. oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10), unavailable(900000001)",
+                      "default": 900000001,
+                      "minimum": -900000000,
+                      "maximum": 900000001
+                    },
+                    "protected_zone_longitude": {
+                      "type": "integer",
+                      "description": "Unit: 0.1 microdegree. oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(1800000001)",
+                      "default": 1800000001,
+                      "minimum": -1800000000,
+                      "maximum": 1800000001
+                    },
+                    "cen_dsrc_tolling_zone_id": {
+                      "type": "integer",
+                      "description": "id of a protected communication zone",
+                      "minimum": 0,
+                      "maximum": 134217727
+                    }
+                  }
+                }
+              }
+            },
+            "rsu_container_high_frequency": {
+              "type": "object",
+              "description": "The basic RSU container high frequency",
+              "properties": {
+                "protected_communication_zones_rsu": {
+                  "type": "array",
+                  "description": "the path history, a path with a set of path points",
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "protected_zone_type",
+                      "protected_zone_latitude",
+                      "protected_zone_longitude"
+                    ],
+                    "properties": {
+                      "protected_zone_type": {
+                        "type": "integer",
+                        "description": "permanentCenDsrcTolling(0), temporaryCenDsrcTolling(1)",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "expiry_time": {
+                        "type": "integer",
+                        "description": "Unit: millisecond. The number of elapsed milliseconds since the ITS epoch (2004/01/01).",
+                        "minimum": 0,
+                        "maximum": 4398046511103
+                      },
+                      "protected_zone_latitude": {
+                        "type": "integer",
+                        "description": "Unit: 0.1 microdegree. oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10), unavailable(900000001)",
+                        "default": 900000001,
+                        "minimum": -900000000,
+                        "maximum": 900000001
+                      },
+                      "protected_zone_longitude": {
+                        "type": "integer",
+                        "description": "Unit: 0.1 microdegree. oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(1800000001)",
+                        "default": 1800000001,
+                        "minimum": -1800000000,
+                        "maximum": 1800000001
+                      },
+                      "protected_zone_radius": {
+                        "type": "integer",
+                        "description": "Unit: m. radius of protected communication zone",
+                        "minimum": 1,
+                        "maximum": 255
+                      },
+                      "protected_zone_id": {
+                        "type": "integer",
+                        "description": "id of a protected communication zone",
+                        "minimum": 0,
+                        "maximum": 134217727
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "low_frequency_container": {
+          "type": "object",
+          "required": [
+            "basic_vehicle_container_low_frequency"
+          ],
+          "properties": {
+            "basic_vehicle_container_low_frequency": {
+              "description": "The basic vehicle container low frequency",
+              "required": [
+                "exterior_lights",
+                "path_history"
+              ],
+              "properties": {
+                "vehicle_role": {
+                  "type": "integer",
+                  "description": "default(0), publicTransport(1), specialTransport(2), dangerousGoods(3), roadWork(4), rescue(5), emergency(6), safetyCar(7), agriculture(8),commercial(9),military(10),roadOperator(11),taxi(12), reserved1(13), reserved2(14), reserved3(15)",
+                  "default": 0,
+                  "minimum": 0,
+                  "maximum": 15
+                },
+                "exterior_lights": {
+                  "type": "string",
+                  "description": "Status of the exterior light switches represented as a bit string: lowBeamHeadlightsOn(0), highBeamHeadlightsOn(1), leftTurnSignalOn(2), rightTurnSignalOn(3), daytimeRunningLightsOn(4), reverseLightOn(5), fogLightOn(6), parkingLightsOn(7)",
+                  "minLength": 8,
+                  "maxLength": 8,
+                  "example": [
+                    "00000000",
+                    "10011010",
+                    "00000110"
+                  ]
+                },
+                "path_history": {
+                  "type": "array",
+                  "description": "the path history, a path with a set of path points",
+                  "maxItems": 23,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "path_position"
+                    ],
+                    "properties": {
+                      "path_position": {
+                        "type": "object",
+                        "description": "offset position of a detected event point with regards to the previous detected event point (reference_position).",
+                        "properties": {
+                          "delta_latitude": {
+                            "type": "integer",
+                            "description": "oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10) , unavailable(131072)",
+                            "default": 131072,
+                            "minimum": -131071,
+                            "maximum": 131072
+                          },
+                          "delta_longitude": {
+                            "type": "integer",
+                            "description": "oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(131072)",
+                            "default": 131072,
+                            "minimum": -131071,
+                            "maximum": 131072
+                          },
+                          "delta_altitude": {
+                            "type": "integer",
+                            "description": "oneCentimeterUp (1), oneCentimeterDown (-1), unavailable(12800)",
+                            "default": 12800,
+                            "minimum": -12700,
+                            "maximum": 12800
+                          }
+                        }
+                      },
+                      "path_delta_time": {
+                        "type": "integer",
+                        "description": "time travelled by the detecting ITS-S since the previous detected event point (generation_delta_time). tenMilliSecondsInPast(1)",
+                        "minimum": 1,
+                        "maximum": 65535
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "special_vehicle_container": {
+          "type": "object",
+          "oneOf": [
+            {
+              "required": [
+                "public_transport_container"
+              ]
+            },
+            {
+              "required": [
+                "special_transport_container"
+              ]
+            },
+            {
+              "required": [
+                "dangerous_goods_container"
+              ]
+            },
+            {
+              "required": [
+                "road_works_container_basic"
+              ]
+            },
+            {
+              "required": [
+                "rescue_container"
+              ]
+            },
+            {
+              "required": [
+                "emergency_container"
+              ]
+            },
+            {
+              "required": [
+                "safety_car_container"
+              ]
+            }
+          ],
+          "properties": {
+            "public_transport_container": {
+              "type": "object",
+              "description": "detailed information of the Public Transport Container",
+              "required": [
+                "embarkation_status"
+              ],
+              "properties": {
+                "embarkation_status": {
+                  "type": "boolean",
+                  "description": "indicates whether a vehicle (e.g. public transport vehicle, truck) is under the embarkation process. If that is the case, the value is true, otherwise false "
+                },
+                "pt_activation": {
+                  "type": "object",
+                  "description": "activation data for real-time systems designed for operations control",
+                  "required": [
+                    "pt_activation_data"
+                  ],
+                  "properties": {
+                    "pt_activation-type": {
+                      "type": "integer",
+                      "description": "Coding type of the pt_activation_data data: undefinedCodingType(0), r09-16CodingType(1), vdv-50149CodingType(2), reserved for alternative and future use (3-255)",
+                      "default": 0,
+                      "minimum": 0,
+                      "maximum": 255
+                    },
+                    "pt_activation_data": {
+                      "type": "string",
+                      "description": "used for various tasks in the public transportation environment",
+                      "minLength": 1,
+                      "maxLength": 20
+                    }
+                  }
+                }
+              }
+            },
+            "special_transport_container": {
+              "type": "object",
+              "description": "detailed information of the Special Transport Container",
+              "required": [
+                "special_transport_type",
+                "light_bar_siren_in_use"
+              ],
+              "properties": {
+                "special_transport_type": {
+                  "type": "string",
+                  "description": "indicates if a vehicle is carrying goods in the special transport conditions as a bit string: heavyLoad(0), excessWidth(1), excessLength(2), excessHeight(3)",
+                  "minLength": 4,
+                  "maxLength": 4,
+                  "example": [
+                    "0000",
+                    "1001"
+                  ]
+                },
+                "light_bar_siren_in_use": {
+                  "type": "string",
+                  "description": "indicates the status of light bar and any sort of audible alarm system besides the horn as a bit string: lightBarActivated(0), sirenActivated(1)",
+                  "minLength": 2,
+                  "maxLength": 2,
+                  "example": [
+                    "00",
+                    "10"
+                  ]
+                }
+              }
+            },
+            "dangerous_goods_container": {
+              "type": "object",
+              "description": "detailed information of the Dangerous Goods Container",
+              "required": [
+                "dangerous_goods_basic"
+              ],
+              "properties": {
+                "dangerous_goods_basic": {
+                  "type": "integer",
+                  "description": "indicates the type of the dangerous goods being carried by a heavy vehicle: explosives1(0), explosives2(1), explosives3(2), explosives4(3), explosives5(4), explosives6(5), flammableGases(6), nonFlammableGases(7), toxicGases(8), flammableLiquids(9), flammableSolids(10), substancesLiableToSpontaneousCombustion(11), substancesEmittingFlammableGasesUponContactWithWater(12), oxidizingSubstances(13), organicPeroxides(14), toxicSubstances(15), infectiousSubstances(16), radioactiveMaterial(17), corrosiveSubstances(18), miscellaneousDangerousSubstances(19)",
+                  "minimum": 0,
+                  "maximum": 18
+                }
+              }
+            },
+            "road_works_container_basic": {
+              "type": "object",
+              "description": "detailed information of the Road Works Container",
+              "required": [
+                "light_bar_siren_in_use"
+              ],
+              "properties": {
+                "road_works_sub_cause_code": {
+                  "type": "integer",
+                  "description": "unavailable(0), majorRoadworks(1),roadMarkingWork(2), slowMovingRoadMaintenance(3), shortTermStationaryRoadworks(4), streetCleaning(5), winterService(6), reserved for future usage (7-255)",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "light_bar_siren_in_use": {
+                  "type": "string",
+                  "description": "indicates the status of light bar and any sort of audible alarm system besides the horn as a bit string: lightBarActivated(0), sirenActivated(1)",
+                  "minLength": 2,
+                  "maxLength": 2,
+                  "example": [
+                    "00",
+                    "10"
+                  ]
+                },
+                "closed_lanes": {
+                  "type": "object",
+                  "description": "indicates the opening/closure status of the lanes of a carriageway.",
+                  "properties": {
+                    "inner_hard_shoulder_status": {
+                      "type": "integer",
+                      "description": "indicates the current status of a hard shoulder: whether it is available for special usage: availableForStopping(0), closed(1), availableForDriving(2)",
+                      "minimum": 0,
+                      "maximum": 2
+                    },
+                    "outer_hard_shoulder_status": {
+                      "type": "integer",
+                      "description": "indicates the current status of a hard shoulder: whether it is available for special usage: availableForStopping(0), closed(1), availableForDriving(2)",
+                      "minimum": 0,
+                      "maximum": 2
+                    },
+                    "driving_lane_status": {
+                      "type": "string",
+                      "description": "indicates whether a driving lane is open to traffic as a bit string. A lane is counted from inside border of the road excluding the hard shoulder. The size of the bit string shall correspond to the total number of the driving lanes in the carriageway",
+                      "minLength": 1,
+                      "maxLength": 13
+                    }
+                  }
+                }
+              }
+            },
+            "rescue_container": {
+              "type": "object",
+              "description": "detailed information of the Rescue Container",
+              "required": [
+                "light_bar_siren_in_use"
+              ],
+              "properties": {
+                "light_bar_siren_in_use": {
+                  "type": "string",
+                  "description": "indicates the status of light bar and any sort of audible alarm system besides the horn as a bit string: lightBarActivated(0), sirenActivated(1)",
+                  "minLength": 2,
+                  "maxLength": 2,
+                  "example": [
+                    "00",
+                    "10"
+                  ]
+                }
+              }
+            },
+            "emergency_container": {
+              "type": "object",
+              "description": "detailed information of the Rescue Container",
+              "required": [
+                "light_bar_siren_in_use"
+              ],
+              "properties": {
+                "light_bar_siren_in_use": {
+                  "type": "string",
+                  "description": "indicates the status of light bar and any sort of audible alarm system besides the horn as a bit string: lightBarActivated(0), sirenActivated(1)",
+                  "minLength": 2,
+                  "maxLength": 2,
+                  "example": [
+                    "00",
+                    "10"
+                  ]
+                },
+                "incident_indication": {
+                  "type": "object",
+                  "description": "the optional incident related to the roadworks to provide additional information of the roadworks zone.",
+                  "required": [
+                    "cc_and_scc"
+                  ],
+                  "properties": {
+                    "cc_and_scc": {
+                      "type": "integer",
+                      "description": "reserved for future use(0), trafficCondition(1), accident(2), roadworks(3), reserved for future usage(4), impassability(5), adverseWeatherCondition-Adhesion(6), aquaplaning(7), reserved for future usage(8),hazardousLocation-SurfaceCondition(9), hazardousLocation-ObstacleOnTheRoad(10), hazardousLocation-AnimalOnTheRoad(11), humanPresenceOnTheRoad(12), reserved for future usage(13), wrongWayDriving(14), rescueAndRecoveryWorkInProgress(15), reserved for future usage(16), adverseWeatherCondition-ExtremeWeatherCondition(17), adverseWeatherCondition-Visibility(18), adverseWeatherCondition-Precipitation(19), violence(20), reserved for future usage(21-25), slowVehicle(26), dangerousEndOfQueue(27), reserved for future usage(28-90), vehicleBreakdown(91), postCrash(92), humanProblem(93), stationaryVehicle(94), emergencyVehicleApproaching(95), hazardousLocation-DangerousCurve(96), collisionRisk(97), signalViolation(98), dangerousSituation(99), railwayLevelCrossing(100), reserved for future usage(101-255)",
+                      "minimum": 0,
+                      "maximum": 255
+                    }
+                  }
+                },
+                "emergency_priority": {
+                  "type": "string",
+                  "description": "indicates the right of priority requested or assumed by an operating emergency vehicle as a bit string: requestForRightOfWay(0), requestForFreeCrossingAtATrafficLight(1)",
+                  "minLength": 2,
+                  "maxLength": 2,
+                  "example": [
+                    "00",
+                    "10"
+                  ]
+                }
+              }
+            },
+            "safety_car_container": {
+              "type": "object",
+              "description": "detailed information of the Safety Car Container",
+              "required": [
+                "light_bar_siren_in_use"
+              ],
+              "properties": {
+                "light_bar_siren_in_use": {
+                  "type": "string",
+                  "description": "indicates the status of light bar and any sort of audible alarm system besides the horn as a bit string: lightBarActivated(0), sirenActivated(1)",
+                  "minLength": 2,
+                  "maxLength": 2,
+                  "example": [
+                    "00",
+                    "10"
+                  ]
+                },
+                "incident_indication": {
+                  "type": "object",
+                  "description": "the optional incident related to the roadworks to provide additional information of the roadworks zone",
+                  "required": [
+                    "cc_and_scc"
+                  ],
+                  "properties": {
+                    "cc_and_scc": {
+                      "type": "integer",
+                      "description": "reserved for future use(0), trafficCondition(1), accident(2), roadworks(3), reserved for future usage(4), impassability(5), adverseWeatherCondition-Adhesion(6), aquaplaning(7), reserved for future usage(8),hazardousLocation-SurfaceCondition(9), hazardousLocation-ObstacleOnTheRoad(10), hazardousLocation-AnimalOnTheRoad(11), humanPresenceOnTheRoad(12), reserved for future usage(13), wrongWayDriving(14), rescueAndRecoveryWorkInProgress(15), reserved for future usage(16), adverseWeatherCondition-ExtremeWeatherCondition(17), adverseWeatherCondition-Visibility(18), adverseWeatherCondition-Precipitation(19), violence(20), reserved for future usage(21-25), slowVehicle(26), dangerousEndOfQueue(27), reserved for future usage(28-90), vehicleBreakdown(91), postCrash(92), humanProblem(93), stationaryVehicle(94), emergencyVehicleApproaching(95), hazardousLocation-DangerousCurve(96), collisionRisk(97), signalViolation(98), dangerousSituation(99), railwayLevelCrossing(100), reserved for future usage(101-255)",
+                      "minimum": 0,
+                      "maximum": 255
+                    }
+                  }
+                },
+                "traffic_rule": {
+                  "type": "integer",
+                  "description": "indicates whether vehicles are allowed to overtake a safety car that is originating this CAM: noPassing(0), noPassingForTrucks(1), passToRight(2), passToLeft(3)",
+                  "minimum": 0,
+                  "maximum": 3
+                },
+                "speed_limit": {
+                  "type": "integer",
+                  "description": "indicates whether a speed limit is applied to vehicles following the safety car. Unit: km/h",
+                  "minimum": 1,
+                  "maximum": 255
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
