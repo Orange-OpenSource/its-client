@@ -95,7 +95,7 @@ async fn main() {
     #[cfg(feature = "mobility")]
     init_tracer(
         &configuration.telemetry,
-        Box::<str>::leak(configuration.mobility.station_id.into_boxed_str()),
+        Box::<str>::leak(configuration.mobility.source_uuid.into_boxed_str()),
     )
     .expect("Failed to configure telemetry");
     #[cfg(not(feature = "mobility"))]

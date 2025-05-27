@@ -68,7 +68,7 @@ impl TryFrom<&Properties> for TelemetryConfiguration {
             Ok(value) => value.unwrap_or(DEFAULT_PATH.to_string()),
             Err(e) => {
                 warn!(
-                    "Defaulting OLTP collector path to '{DEFAULT_PATH}' as it cannot be read from configuration: {e}"
+                    "OLTP collector path cannot be read from configuration: {e}, defaulting to '{DEFAULT_PATH}'"
                 );
                 DEFAULT_PATH.to_string()
             }

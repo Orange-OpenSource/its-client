@@ -16,7 +16,7 @@ use crate::exchange::etsi::cooperative_awareness_message::{
 use crate::exchange::etsi::decentralized_environmental_notification_message::{
     DecentralizedEnvironmentalNotificationMessage, RelevanceDistance, RelevanceTrafficDirection,
 };
-use crate::exchange::etsi::reference_position::ReferencePosition;
+use crate::exchange::etsi::reference_position::{ReferencePosition, ReferencePosition113};
 use crate::exchange::etsi::{etsi_now, heading_to_etsi, speed_to_etsi, timestamp_to_etsi};
 use crate::exchange::sequence_number::SequenceNumber;
 use crate::mobility::mobile::Mobile;
@@ -45,7 +45,7 @@ pub fn create_cam(
         station_id,
         basic_container: BasicContainer {
             station_type: Some(station_type),
-            reference_position: ReferencePosition::from(position),
+            reference_position: ReferencePosition113::from(position),
             ..Default::default()
         },
         high_frequency_container: HighFrequencyContainer {
@@ -67,47 +67,39 @@ pub fn create_denm(
     mobile: &dyn Mobile,
     path: Vec<PathElement>,
 ) -> DecentralizedEnvironmentalNotificationMessage {
-    if let Some(node_configuration) = &configuration.node {
-        let read_lock = node_configuration.read().unwrap();
-        let station_id = read_lock.station_id(None);
-        drop(read_lock);
+    let (relevance_distance, relevance_traffic_direction, event_speed, event_heading) =
+        match path.len() {
+            len if len <= 1 => {
+                let event_speed = mobile.speed().map(speed_to_etsi);
+                let event_heading = mobile.heading().map(heading_to_etsi);
 
-        let (relevance_distance, relevance_traffic_direction, event_speed, event_heading) =
-            match path.len() {
-                len if len <= 1 => {
-                    let event_speed = mobile.speed().map(speed_to_etsi);
-                    let event_heading = mobile.heading().map(heading_to_etsi);
+                (
+                    Some(RelevanceDistance::LessThan50m.into()),
+                    Some(RelevanceTrafficDirection::UpstreamTraffic.into()),
+                    event_speed,
+                    event_heading,
+                )
+            }
+            _ => {
+                todo!("\"extrapolate\" relevance distance and traffic direction from path")
+            }
+        };
 
-                    (
-                        Some(RelevanceDistance::LessThan50m.into()),
-                        Some(RelevanceTrafficDirection::UpstreamTraffic.into()),
-                        event_speed,
-                        event_heading,
-                    )
-                }
-                _ => {
-                    todo!("\"extrapolate\" relevance distance and traffic direction from path")
-                }
-            };
-
-        DecentralizedEnvironmentalNotificationMessage::new(
-            mobile.id(),
-            station_id,
-            ReferencePosition::from(mobile.position()),
-            sequence_number.get_next() as u16,
-            timestamp_to_etsi(detection_time),
-            cause,
-            subcause,
-            relevance_distance,
-            relevance_traffic_direction,
-            event_speed,
-            event_heading,
-            Some(10),
-            Some(200),
-        )
-    } else {
-        todo!("Ego DENM creation not managed yet")
-    }
+    DecentralizedEnvironmentalNotificationMessage::new(
+        mobile.id(),
+        configuration.mobility.station_id,
+        ReferencePosition::from(mobile.position()),
+        sequence_number.get_next() as u16,
+        timestamp_to_etsi(detection_time),
+        cause,
+        subcause,
+        relevance_distance,
+        relevance_traffic_direction,
+        event_speed,
+        event_heading,
+        Some(10),
+        Some(200),
+    )
 }
 
 /// Creates an updated copy of the provided DENM

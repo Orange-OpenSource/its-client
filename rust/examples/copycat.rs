@@ -60,18 +60,16 @@ impl Analyzer<GeoTopic, NoContext> for CopyCat {
         &mut self,
         mut packet: Packet<GeoTopic, Exchange>,
     ) -> Vec<Packet<GeoTopic, Exchange>> {
-        let mut item_to_publish = Vec::new();
-        let component_name = self.configuration.component_name(None);
-
         debug!("Item received: {:?}", packet);
-
-        let clone = packet.clone();
+        let mut item_to_publish = Vec::new();
+        let source_uuid = self.configuration.mobility.source_uuid.as_ref();
+        let paquet_clone = packet.clone();
         let content = packet.payload.message.as_content();
 
         // 1- delay the storage of the new item
         match content.as_mobile() {
             Ok(mobile_message) => {
-                if packet.payload.source_uuid == component_name {
+                if packet.payload.source_uuid == source_uuid {
                     info!(
                         "We received an item as itself {} : we don't copy cat",
                         packet.payload.source_uuid
@@ -92,7 +90,7 @@ impl Analyzer<GeoTopic, NoContext> for CopyCat {
 
                         let guard = self
                             .timer
-                            .schedule_with_delay(chrono::Duration::seconds(3), clone);
+                            .schedule_with_delay(chrono::Duration::seconds(3), paquet_clone);
                         guard.ignore();
                         debug!("Scheduling done");
                     }
@@ -113,10 +111,18 @@ impl Analyzer<GeoTopic, NoContext> for CopyCat {
                                 item.payload.source_uuid,
                                 &mobile_message.id(),
                             );
+
+                            // we compute a fake station id (it may be replace by a station base call)
+                            let station_id = match &mobile_message.id() {
+                                &id if id > (u32::MAX - 100000) => id - 100000,
+                                id => id + 100000,
+                            };
                             let timestamp = now();
-
-                            own_exchange.appropriate(&self.configuration, timestamp);
-
+                            own_exchange.appropriate(
+                                timestamp,
+                                station_id,
+                                source_uuid.to_string(),
+                            );
                             let mut own_topic = item.topic.clone();
                             own_topic.appropriate(&self.configuration);
                             item_to_publish.push(Packet::new(own_topic, own_exchange));
