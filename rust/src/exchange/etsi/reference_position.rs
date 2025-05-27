@@ -17,14 +17,58 @@ use serde::{Deserialize, Serialize};
 const COORDINATE_SIGNIFICANT_DIGIT: u8 = 7;
 const ALTITUDE_SIGNIFICANT_DIGIT: u8 = 2;
 
+/// Represents a reference position with confidence information
 #[derive(Clone, Default, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct ReferencePosition {
-    /// Latitude in tenths of microdegree
-    pub latitude: i32,
-    /// Longitude in tenths of microdegree
-    pub longitude: i32,
-    /// Altitude in centimeters
-    pub altitude: i32,
+    #[serde(default = "default_latitude")]
+    pub latitude: i32, // -900000000..900000001
+    #[serde(default = "default_longitude")]
+    pub longitude: i32, // -1800000000..1800000001
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub altitude: Option<Altitude>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub confidence: Option<PositionConfidence>,
+}
+
+fn default_latitude() -> i32 {
+    900000001
+}
+fn default_longitude() -> i32 {
+    1800000001
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Altitude {
+    #[serde(default = "default_altitude")]
+    pub value: i32, // -100000..800001
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub confidence: Option<u8>, // 0..15
+}
+
+fn default_altitude() -> i32 {
+    800001
+}
+
+/// Represents the position confidence in a reference position
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct PositionConfidence {
+    #[serde(default = "default_semi_major_confidence")]
+    pub semi_major_confidence: u16, // 0..4095, default 4095
+    #[serde(default = "default_semi_minor_confidence")]
+    pub semi_minor_confidence: u16, // 0..4095, default 4095
+    #[serde(default = "default_semi_major_orientation")]
+    pub semi_major_orientation: u16, // 0..3601, default 3601
+}
+
+fn default_semi_major_confidence() -> u16 {
+    4095
+}
+fn default_semi_minor_confidence() -> u16 {
+    4095
+}
+fn default_semi_major_orientation() -> u16 {
+    3601
 }
 
 impl ReferencePosition {
@@ -32,7 +76,7 @@ impl ReferencePosition {
         Position {
             latitude: coordinate_from_etsi(self.latitude),
             longitude: coordinate_from_etsi(self.longitude),
-            altitude: altitude_from_etsi(self.altitude),
+            altitude: altitude_from_etsi(self.altitude.as_ref().map(|a| a.value).unwrap_or(0)),
         }
     }
 }
@@ -42,17 +86,22 @@ impl From<Position> for ReferencePosition {
         ReferencePosition {
             latitude: coordinate_to_etsi(position.latitude),
             longitude: coordinate_to_etsi(position.longitude),
-            altitude: altitude_to_etsi(position.altitude),
+            altitude: Some(Altitude {
+                value: altitude_to_etsi(position.altitude),
+                ..Default::default()
+            }),
+            ..Default::default()
         }
     }
 }
 
 impl fmt::Display for ReferencePosition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let altitude = self.altitude.as_ref().unwrap();
         write!(
             f,
-            "(lat: {} / lon: {} / alt: {})",
-            self.latitude, self.longitude, self.altitude,
+            "(lat: {} / lon: {} / alt: {}(prec. {:?}) / conf: {:?})",
+            self.latitude, self.longitude, altitude.value, altitude.confidence, self.confidence
         )
     }
 }
@@ -65,7 +114,7 @@ pub(crate) fn coordinate_from_etsi(microdegree_tenths: i32) -> f64 {
 }
 
 /// Converts a coordinate from radians to tenths of microdegree
-fn coordinate_to_etsi(radians: f64) -> i32 {
+pub(crate) fn coordinate_to_etsi(radians: f64) -> i32 {
     let degrees = radians.to_degrees();
     (degrees * f64::from(10i32.pow(u32::from(COORDINATE_SIGNIFICANT_DIGIT)))) as i32
 }
@@ -76,14 +125,51 @@ pub(crate) fn altitude_from_etsi(centimeters: i32) -> f64 {
 }
 
 /// Converts altitude from meters to centimeters
-fn altitude_to_etsi(meters: f64) -> i32 {
+pub(crate) fn altitude_to_etsi(meters: f64) -> i32 {
     (meters * 10_f64.powf(f64::from(ALTITUDE_SIGNIFICANT_DIGIT))) as i32
+}
+
+#[derive(Clone, Default, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
+pub struct ReferencePosition113 {
+    #[serde(default = "default_latitude")]
+    pub latitude: i32, // -900000000..900000001
+    #[serde(default = "default_longitude")]
+    pub longitude: i32, // -1800000000..1800000001
+    #[serde(default = "default_altitude")]
+    pub altitude: i32, // -100000..800001
+}
+impl From<Position> for ReferencePosition113 {
+    fn from(position: Position) -> Self {
+        ReferencePosition113 {
+            latitude: coordinate_to_etsi(position.latitude),
+            longitude: coordinate_to_etsi(position.longitude),
+            altitude: altitude_to_etsi(position.altitude),
+        }
+    }
+}
+
+impl ReferencePosition113 {
+    pub fn as_position(&self) -> Position {
+        Position {
+            latitude: coordinate_from_etsi(self.latitude),
+            longitude: coordinate_from_etsi(self.longitude),
+            altitude: altitude_from_etsi(self.altitude),
+        }
+    }
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DeltaReferencePosition {
+    pub delta_latitude: i32,
+    pub delta_longitude: i32,
+    pub delta_altitude: i32,
 }
 
 #[cfg(test)]
 mod tests {
     use crate::exchange::etsi::reference_position::{
-        ReferencePosition, altitude_from_etsi, altitude_to_etsi, coordinate_from_etsi,
+        Altitude, ReferencePosition, altitude_from_etsi, altitude_to_etsi, coordinate_from_etsi,
         coordinate_to_etsi,
     };
     use crate::mobility::position::Position;
@@ -146,7 +232,11 @@ mod tests {
         let reference_position = ReferencePosition {
             latitude: 488417860,
             longitude: 23678940,
-            altitude: 16880,
+            altitude: Some(Altitude {
+                value: 16880,
+                ..Default::default()
+            }),
+            ..Default::default()
         };
         let expected_position = Position {
             latitude: 48.8417860_f64.to_radians(),
@@ -186,7 +276,11 @@ mod tests {
         let expected_reference_position = ReferencePosition {
             latitude: 488417860,
             longitude: 23678940,
-            altitude: 16880,
+            altitude: Some(Altitude {
+                value: 16880,
+                ..Default::default()
+            }),
+            ..Default::default()
         };
 
         let reference_position = ReferencePosition::from(position);

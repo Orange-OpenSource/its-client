@@ -9,6 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+use crate::exchange::etsi::reference_position::DeltaReferencePosition;
 use crate::now;
 use serde::{Deserialize, Serialize};
 
@@ -40,17 +41,9 @@ pub struct PositionConfidenceEllipse {
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PathHistory {
-    pub path_position: PathPosition,
+pub struct PathPoint {
+    pub path_position: DeltaReferencePosition,
     pub path_delta_time: Option<u16>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PathPosition {
-    pub delta_latitude: Option<i32>,
-    pub delta_longitude: Option<i32>,
-    pub delta_altitude: Option<i32>,
 }
 
 /// Converts heading from decidegrees to radians

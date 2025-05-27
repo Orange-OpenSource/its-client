@@ -193,7 +193,7 @@ mod tests {
     };
     use crate::exchange::etsi::perceived_object::PerceivedObject;
     use crate::exchange::etsi::reference_position::{
-        ReferencePosition, altitude_from_etsi, coordinate_from_etsi,
+        Altitude, ReferencePosition, altitude_from_etsi, coordinate_from_etsi,
     };
     use crate::exchange::etsi::{heading_from_etsi, speed_from_etsi};
     use crate::mobility::position::Position;
@@ -219,7 +219,11 @@ mod tests {
                     &ReferencePosition {
                         latitude: 486251958,
                         longitude: 22415093,
-                        altitude: 900,
+                        altitude: Some(Altitude {
+                            value: 900,
+                            ..Default::default()
+                        }),
+                        ..Default::default()
                     }
                     .as_position(),
                     heading_from_etsi(900),
@@ -230,7 +234,11 @@ mod tests {
                     ReferencePosition {
                         latitude: 486251958,
                         longitude: 22415093,
-                        altitude: 900,
+                        altitude: Some(Altitude {
+                            value: 900,
+                            ..Default::default()
+                        }),
+                        ..Default::default()
                     }
                     .as_position()
                 );
@@ -327,7 +335,11 @@ mod tests {
                     reference_position: ReferencePosition {
                         latitude: 434667520,
                         longitude: 1205862,
-                        altitude: 220000,
+                        altitude: Some(Altitude {
+                            value: 220000,
+                            ..Default::default()
+                        }),
+                        ..Default::default()
                     },
                     ..Default::default()
                 },
@@ -399,7 +411,11 @@ mod tests {
                     reference_position: ReferencePosition {
                         latitude: 488417860,
                         longitude: 23678940,
-                        altitude: 900,
+                        altitude: Some(Altitude {
+                            value: 900,
+                            ..Default::default()
+                        }),
+                        ..Default::default()
                     },
                     ..Default::default()
                 },
