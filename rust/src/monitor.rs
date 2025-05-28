@@ -32,7 +32,6 @@ pub fn trace_exchange(
         Message::CPM(cpm) => format_cpm_trace(cpm),
         Message::MAPEM(map) => format_mapem_trace(map),
         Message::SPATEM(spat) => format_spatem_trace(spat),
-        Message::INFO(info) => info.instance_id.to_string(),
     };
     println!(
         "{} {} {} {} {} at {}",
