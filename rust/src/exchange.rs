@@ -20,7 +20,6 @@ use crate::exchange::message::content::Content;
 use crate::mobility::position::Position;
 use crate::transport::payload::Payload;
 
-use crate::client::configuration::Configuration;
 use serde::{Deserialize, Serialize};
 
 #[serde_with::skip_serializing_none]
@@ -95,14 +94,13 @@ impl Exchange {
         })
     }
 
-    // TODO find a better way to appropriate
-    pub fn appropriate(&mut self, configuration: &Configuration, timestamp: u64) {
+    pub fn appropriate(&mut self, timestamp: u64, new_station_id: u32, new_source_uuid: &str) {
         self.origin = "mec_application".to_string();
+        self.source_uuid = new_source_uuid.to_string();
+        self.timestamp = timestamp;
         self.message
             .as_content()
-            .appropriate(configuration, timestamp);
-        self.source_uuid = configuration.component_name(None);
-        self.timestamp = timestamp;
+            .appropriate(timestamp, new_station_id);
     }
 }
 

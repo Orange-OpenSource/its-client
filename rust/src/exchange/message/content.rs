@@ -9,7 +9,6 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use crate::client::configuration::Configuration;
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::mortal::Mortal;
 use crate::mobility::mobile::Mobile;
@@ -19,7 +18,7 @@ use enum_dispatch::enum_dispatch;
 pub trait Content {
     fn get_type(&self) -> &str;
 
-    fn appropriate(&mut self, configuration: &Configuration, timestam: u64);
+    fn appropriate(&mut self, timestamp: u64, station_id: u32);
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError>;
 
