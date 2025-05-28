@@ -310,8 +310,8 @@ mod tests {
     use crate::exchange::etsi::speed_from_etsi;
 
     macro_rules! assert_float_eq {
-        ($a:expr_2021, $b:expr_2021, $e:expr_2021) => {
-            let delta = ($a - $b).abs();
+        ($a:expr, $b:expr, $e:expr) => {
+            let delta = (($a) - ($b)).abs();
             assert!(delta <= $e, "Actual:   {}\nExpected: {}", $a, $b)
         };
     }
