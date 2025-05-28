@@ -114,28 +114,6 @@ impl PartialEq for Exchange {
 
 impl Eq for Exchange {}
 
-// FIXME the following code is commented because it requires structs or functions which will be added later in the
-// refactoring branch; this code will be either uncommented and fixed or deleted following following refactoring choices
-//
-// impl Mortal for Exchange {
-//     fn timeout(&self) -> u128 {
-//         self.message.timeout()
-//     }
-//
-//     fn terminate(&mut self) {
-//         self.message.terminate();
-//     }
-//
-//     fn terminated(&self) -> bool {
-//         self.message.terminated()
-//     }
-//
-//     fn remaining_time(&self) -> u128 {
-//         (self.timeout() - now()) / 1000
-//     }
-// }
-// --- ENDFIXME
-
 #[cfg(test)]
 mod tests {
     use crate::exchange::Exchange;
