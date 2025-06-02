@@ -67,47 +67,39 @@ pub fn create_denm(
     mobile: &dyn Mobile,
     path: Vec<PathElement>,
 ) -> DecentralizedEnvironmentalNotificationMessage {
-    if let Some(node_configuration) = &configuration.node {
-        let read_lock = node_configuration.read().unwrap();
-        let station_id = read_lock.station_id(None);
-        drop(read_lock);
+    let (relevance_distance, relevance_traffic_direction, event_speed, event_heading) =
+        match path.len() {
+            len if len <= 1 => {
+                let event_speed = mobile.speed().map(speed_to_etsi);
+                let event_heading = mobile.heading().map(heading_to_etsi);
 
-        let (relevance_distance, relevance_traffic_direction, event_speed, event_heading) =
-            match path.len() {
-                len if len <= 1 => {
-                    let event_speed = mobile.speed().map(speed_to_etsi);
-                    let event_heading = mobile.heading().map(heading_to_etsi);
+                (
+                    Some(RelevanceDistance::LessThan50m.into()),
+                    Some(RelevanceTrafficDirection::UpstreamTraffic.into()),
+                    event_speed,
+                    event_heading,
+                )
+            }
+            _ => {
+                todo!("\"extrapolate\" relevance distance and traffic direction from path")
+            }
+        };
 
-                    (
-                        Some(RelevanceDistance::LessThan50m.into()),
-                        Some(RelevanceTrafficDirection::UpstreamTraffic.into()),
-                        event_speed,
-                        event_heading,
-                    )
-                }
-                _ => {
-                    todo!("\"extrapolate\" relevance distance and traffic direction from path")
-                }
-            };
-
-        DecentralizedEnvironmentalNotificationMessage::new(
-            mobile.id(),
-            station_id,
-            ReferencePosition::from(mobile.position()),
-            sequence_number.get_next() as u16,
-            timestamp_to_etsi(detection_time),
-            cause,
-            subcause,
-            relevance_distance,
-            relevance_traffic_direction,
-            event_speed,
-            event_heading,
-            Some(10),
-            Some(200),
-        )
-    } else {
-        todo!("Ego DENM creation not managed yet")
-    }
+    DecentralizedEnvironmentalNotificationMessage::new(
+        mobile.id(),
+        configuration.mobility.station_id,
+        ReferencePosition::from(mobile.position()),
+        sequence_number.get_next() as u16,
+        timestamp_to_etsi(detection_time),
+        cause,
+        subcause,
+        relevance_distance,
+        relevance_traffic_direction,
+        event_speed,
+        event_heading,
+        Some(10),
+        Some(200),
+    )
 }
 
 /// Creates an updated copy of the provided DENM

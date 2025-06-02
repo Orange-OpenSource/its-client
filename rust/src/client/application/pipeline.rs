@@ -75,23 +75,12 @@ pub async fn run<A, C, T>(
     T: Topic + 'static,
     C: Send + Sync + 'static,
 {
-    let mut thread_count: usize = 1;
-    {
-        let node_configuration = configuration
-            .node
-            .as_ref()
-            .expect("Node configuration is required for analysis")
-            .read()
-            .unwrap();
-
-        if let Some(value) = node_configuration.thread_count {
-            thread_count = value;
-        }
-    }
+    let thread_count = configuration.mobility.thread_count;
     info!("Analysis thread count set to: {}", thread_count);
 
+    let information = Arc::new(RwLock::new(Information::default()));
+
     loop {
-        let configuration = configuration.clone();
         let (mut mqtt_client, event_loop) = MqttClient::new(&configuration.mqtt);
         mqtt_client_subscribe(subscription_list, &mut mqtt_client).await;
 
@@ -101,7 +90,10 @@ pub async fn run<A, C, T>(
 
         let monitor_reception_handle = monitor_thread(
             "received_on".to_string(),
-            configuration.clone(),
+            // assumed clone
+            configuration.mobility.source_uuid.clone(),
+            // assumed clone, only on the Arc, not on the RwLock
+            information.clone(),
             monitoring_receiver,
         );
 
@@ -148,12 +140,15 @@ pub async fn run<A, C, T>(
         let (publish_item_receiver, publish_monitoring_receiver, filter_handle) =
             filter_thread::<T>(configuration.clone(), analyser_receiver);
 
-        let reader_configure_handle =
-            reader_configure_thread(configuration.clone(), information_receiver);
+        // assumed clone, only on the Arc, not on the RwLock
+        let information_handle = information_thread(information.clone(), information_receiver);
 
         let monitor_publish_handle = monitor_thread(
             "sent_on".to_string(),
-            configuration,
+            // assumed clone
+            configuration.mobility.source_uuid.clone(),
+            // assumed clone, only on the Arc, not on the RwLock
+            information.clone(),
             publish_monitoring_receiver,
         );
 
@@ -166,7 +161,7 @@ pub async fn run<A, C, T>(
         debug!("Start monitor_reception_handle joining...");
         monitor_reception_handle.join().unwrap();
         debug!("Start reader_configure_handler joining...");
-        reader_configure_handle.join().unwrap();
+        information_handle.join().unwrap();
         debug!("Start analyser_generate_handler joining...");
         analysis_pool.join();
         debug!("Start filter_handle joining...");
@@ -234,7 +229,8 @@ where
 
 fn monitor_thread<T>(
     direction: String,
-    configuration: Arc<Configuration>,
+    source_uuid: String,
+    information: Arc<RwLock<Information>>,
     exchange_receiver: Receiver<(Packet<T, Exchange>, Option<Cause>)>,
 ) -> JoinHandle<()>
 where
@@ -245,37 +241,22 @@ where
         .name("monitor-reception".into())
         .spawn(move || {
             trace!("Monitor reception entering...");
-
             for tuple in exchange_receiver {
                 let packet = tuple.0;
                 let cause = tuple.1;
-
-                let node_configuration = configuration
-                    .node
-                    .as_ref()
-                    .expect("Pipeline requires NodeConfiguration")
-                    .read()
-                    .unwrap();
-
-                match node_configuration.gateway_component_name() {
-                    Some(gateway_component_name) => {
-                        trace_exchange(
-                            &packet.payload,
-                            cause,
-                            direction.as_str(),
-                            configuration.component_name(None),
-                            format!(
-                                "{}/{}/{}",
-                                gateway_component_name,
-                                packet.topic.as_route(),
-                                packet.payload.source_uuid
-                            ),
-                        );
-                    }
-                    _ => {
-                        info!("Cannot trace exchange, missing gateway component name in node configuration");
-                    }
-                }
+                let information_instance_id = &information.read().unwrap().instance_id;
+                trace_exchange(
+                    &packet.payload,
+                    cause,
+                    direction.as_str(),
+                    source_uuid.as_str(),
+                    format!(
+                        "{}/{}/{}",
+                        information_instance_id,
+                        packet.topic.as_route(),
+                        packet.payload.source_uuid
+                    ),
+                );
             }
         })
         .unwrap();
@@ -297,8 +278,8 @@ fn mqtt_client_listen_thread(
     (event_receiver, handle)
 }
 
-fn reader_configure_thread<T>(
-    configuration: Arc<Configuration>,
+fn information_thread<T>(
+    information: Arc<RwLock<Information>>,
     information_receiver: Receiver<Packet<T, Information>>,
 ) -> JoinHandle<()>
 where
@@ -310,18 +291,12 @@ where
         .spawn(move || {
             trace!("Reader configuration closure entering...");
             for packet in information_receiver {
-                info!(
-                    "We received an information on the topic {}: {:?}",
+                info!("We received a new information");
+                debug!(
+                    "Information on the topic {}: {:?}",
                     packet.topic, packet.payload
                 );
-
-                configuration
-                    .node
-                    .as_ref()
-                    .expect("Node app requires node configuration")
-                    .write()
-                    .unwrap()
-                    .update(packet.payload);
+                information.write().unwrap().replace(packet.payload);
             }
             trace!("Reader configuration closure finished");
         })
