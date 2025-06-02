@@ -115,16 +115,14 @@ pub async fn run<A, C, T>(
                         Ok(item) => {
                             for publish_item in analyser.analyze(item.clone()) {
                                 let cause = Cause::from_exchange(&(item.payload));
-                                match tx.send((publish_item, cause)) {
-                                    Ok(()) => trace!("Analyser sent"),
-                                    Err(error) => {
-                                        error!("Stopped to send analyser: {}", error);
-                                        break;
-                                    }
+                                if let Err(error) = tx.send((publish_item, cause)) {
+                                    error!("Stopped to send analyser: {}", error);
+                                    // break is not enough here as it only exits the for when we
+                                    // need to exit the loop it is in, so use return instead
+                                    return;
                                 }
                             }
                             trace!("Analyser generation closure finished");
-                            break;
                         }
                         Err(recv_error) => {
                             info!("Exiting analysis thread: {}", recv_error);
@@ -198,19 +196,13 @@ where
                         //assumed clone, we just send the GeoExtension
                         // if configuration.is_in_region_of_responsibility(item.topic.geo_extension.clone()) {
                         //assumed clone, we send to 2 channels
-                        match publish_sender.send(item.clone()) {
-                            Ok(()) => trace!("Publish sent"),
-                            Err(error) => {
-                                error!("Stopped to send publish: {}", error);
-                                break;
-                            }
+                        if let Err(error) = publish_sender.send(item.clone()) {
+                            error!("Stopped to send publish: {}", error);
+                            break;
                         }
-                        match monitoring_sender.send((item, cause)) {
-                            Ok(()) => trace!("Monitoring sent"),
-                            Err(error) => {
-                                error!("Stopped to send monitoring: {}", error);
-                                break;
-                            }
+                        if let Err(error) = monitoring_sender.send((item, cause)) {
+                            error!("Stopped to send monitoring: {}", error);
+                            break;
                         }
                         // }
                         trace!("Filter closure finished");
