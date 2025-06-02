@@ -16,7 +16,7 @@ import ITSCore
 public struct MobilityConfiguration: Sendable {
     /// The `CoreConfiguration` which includes MQTT and telemetry configurations.
     public let coreConfiguration: CoreConfiguration
-    /// The station identifier. Must be unique and the same each time on a same device.
+    /// The station identifier.
     public let stationID: UInt32
     /// The `StationType` of the user.
     public let stationType: StationType

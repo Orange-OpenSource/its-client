@@ -10,6 +10,7 @@
  */
 
 import Foundation
+import ITSCommonTests
 @testable import ITSMobility
 import Testing
 
@@ -46,7 +47,7 @@ struct CAMTests {
     @Test("CAM JSON should be decoded correctly")
     func cam_json_should_be_decoded_correctly() throws {
         // Given
-        let camData = try FileLoader.loadJSONFile("Cam")
+        let camData = try FileLoader.loadJSONFile("Cam", from: Bundle.module)
 
         // When
         let cam = try JSONDecoder().decode(CAM.self, from: camData)

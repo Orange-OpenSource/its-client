@@ -45,6 +45,33 @@ public actor Mobility {
         }
     }
 
+    /// Starts the `Mobility` mainly with a bootstrap to connect to a MQTT server and initialize the telemetry client.
+    /// - Parameters:
+    ///   - bootstrap: The `Bootstrap` which can be retrieved with `BootstrapService`.
+    ///   - stationID: The station identifier.
+    ///   - telemetryServiceName: The telemetry service name (default: nil, no telemetry).
+    public func start(
+        bootstrap: Bootstrap,
+        stationID: UInt32,
+        telemetryServiceName: String? = nil
+    ) async throws(MobilityError) {
+        guard let mqttClientConfiguration = bootstrap.mqttClientConfiguration() else { throw .notStarted }
+
+        var telemetryClientConfiguration: TelemetryClientConfiguration?
+        if let telemetryServiceName {
+            telemetryClientConfiguration = bootstrap.telemetryClientConfiguration(serviceName: telemetryServiceName)
+        }
+
+        let coreConfiguration = CoreConfiguration(mqttClientConfiguration: mqttClientConfiguration,
+                                                  telemetryClientConfiguration: telemetryClientConfiguration)
+
+        let mobilityConfiguration = MobilityConfiguration(coreConfiguration: coreConfiguration,
+                                                          stationID: stationID,
+                                                          namespace: bootstrap.mqttRootTopic)
+
+        try await start(mobilityConfiguration: mobilityConfiguration)
+    }
+
     /// Stops the `Mobility` disconnecting the MQTT client and stopping the telemetry client.
     public func stop() async {
         await core.stop()
