@@ -11,6 +11,7 @@
 
 import Foundation
 
+<<<<<<<< HEAD:swift/ITSClient/Sources/ITSCore/Bootstrap/Data/ITSBootstrapRequestDTO.swift
 struct ITSBootstrapRequestDTO: Codable {
     let identifier: String
     let user: String
@@ -22,5 +23,12 @@ struct ITSBootstrapRequestDTO: Codable {
         case user = "psk_login"
         case password = "psk_password"
         case role
+========
+extension String {
+    func removingSuffix(_ suffix: String) -> String {
+        guard hasSuffix(suffix) else { return self }
+
+        return String(dropLast(suffix.count))
+>>>>>>>> 9f8895c (swift: add bootstrap to get a configuration):swift/ITSClient/Sources/ITSCore/StringExtensions.swift
     }
 }
