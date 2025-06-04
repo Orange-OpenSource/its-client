@@ -91,6 +91,7 @@ public actor Mobility {
 
     /// Sends a position to share it.
     /// - Parameters:
+    ///   - stationType: The user `StationType`.
     ///   - latitude: The latitude in decimal degrees.
     ///   - longitude: The longitude in decimal degrees.
     ///   - altitude: The altitude in meters.
@@ -99,6 +100,7 @@ public actor Mobility {
     ///   - acceleration: The longitudinal acceleration in meters per squared second.
     ///   - yawRate: The rotational acceleration in degrees per squared second.
     public func sendPosition(
+        stationType: StationType,
         latitude: Double,
         longitude: Double,
         altitude: Double,
@@ -112,7 +114,7 @@ public actor Mobility {
         // Build CAM
         let now = Date().timeIntervalSince1970
         let position = Position(latitude: latitude, longitude: longitude, altitude: altitude)
-        let basicContainer = BasicContainer(stationType: mobilityConfiguration.stationType,
+        let basicContainer = BasicContainer(stationType: stationType,
                                             referencePosition: position)
         let highFrequencyContainer = HighFrequencyContainer(heading: heading,
                                                             speed: speed,
@@ -136,11 +138,13 @@ public actor Mobility {
 
     /// Sends an alert to share it.
     /// - Parameters:
+    ///   - stationType: The user `StationType`.
     ///   - latitude: The latitude in decimal degrees.
     ///   - longitude: The longitude in decimal degrees.
     ///   - altitude: The altitude in meters.
     ///   - cause: The alert cause.
     public func sendAlert(
+        stationType: StationType,
         latitude: Double,
         longitude: Double,
         altitude: Double,
@@ -156,7 +160,7 @@ public actor Mobility {
                                                       detectionTime: now,
                                                       referenceTime: now,
                                                       eventPosition: position,
-                                                      stationType: mobilityConfiguration.stationType)
+                                                      stationType: stationType)
         let situationContainer = SituationContainer(eventType: cause)
         let denmMessage = DENMMessage(stationID: mobilityConfiguration.stationID,
                                       managementContainer: managementContainer,

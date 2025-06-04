@@ -95,7 +95,8 @@ actor ITSMobilityService: MobilityService {
                 try await mobility.updateRoadAlarmRegionOfInterest(latitude: latitude,
                                                                    longitude: longitude,
                                                                    zoomLevel: 15)
-                try await mobility.sendPosition(latitude: latitude,
+                try await mobility.sendPosition(stationType: .pedestrian,
+                                                latitude: latitude,
                                                 longitude: longitude,
                                                 altitude: 35,
                                                 heading: 35,
