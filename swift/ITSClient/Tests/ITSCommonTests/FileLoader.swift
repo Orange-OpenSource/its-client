@@ -11,9 +11,15 @@
 
 import Foundation
 
-enum FileLoader {
-    static func loadJSONFile(_ filename: String) throws -> Data {
-        guard let fileURL = Bundle.module.url(forResource: "Data/\(filename)", withExtension: "json") else {
+/// The file loader.
+public enum FileLoader {
+    /// Load a JSON file located in Data directory for tests.
+    /// - Parameters:
+    ///   - filename: The filename.
+    ///   - bundle: The bundle.
+    /// - Returns: The contents of the JSON file.
+    public static func loadJSONFile(_ filename: String, from bundle: Bundle) throws -> Data {
+        guard let fileURL = bundle.url(forResource: "Data/\(filename)", withExtension: "json") else {
             fatalError("File \(filename).json not found")
         }
         return try Data(contentsOf: fileURL)

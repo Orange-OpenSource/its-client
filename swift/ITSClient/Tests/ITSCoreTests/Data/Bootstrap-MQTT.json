@@ -1,0 +1,21 @@
+{
+    "message_type": "bootstrap",
+    "version": "2.0.0",
+    "iot3_id": "external-app-swift",
+    "psk_iot3_id": "psk_login",
+    "psk_iot3_secret": "psk_password",
+    "services": {
+        "message": [
+            {
+                "payload": "json",
+                "uri": "mqtt://mybroker.com:8886",
+                "topic_root": "test/"
+            },
+            {
+                "payload": "json",
+                "uri": "mqtt+ws://mybroker.com:80/message/default/",
+                "topic_root": "test/"
+            },
+        ]
+    }
+}

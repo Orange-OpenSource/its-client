@@ -10,6 +10,7 @@
  */
 
 import Foundation
+import ITSCommonTests
 @testable import ITSMobility
 import Testing
 
@@ -43,7 +44,7 @@ struct DENMTests {
     @Test("DENM JSON should be decoded correctly")
     func denm_json_should_be_decoded_correctly() throws {
         // Given
-        let denmData = try FileLoader.loadJSONFile("Denm")
+        let denmData = try FileLoader.loadJSONFile("Denm", from: Bundle.module)
 
         // When
         let denm = try JSONDecoder().decode(DENM.self, from: denmData)

@@ -17,6 +17,9 @@
       "skippedTests" : {
         "suites" : [
           {
+            "name" : "BootstrapTests"
+          },
+          {
             "name" : "CoreUnitTests"
           }
         ]
