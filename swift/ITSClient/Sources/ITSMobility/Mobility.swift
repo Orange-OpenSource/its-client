@@ -19,6 +19,7 @@ public actor Mobility {
     private var mobilityConfiguration: MobilityConfiguration?
     private let roadAlarmCoordinator: RoadAlarmCoordinator
     private let roadUserCoordinator: RoadUserCoordinator
+    private var reportZoomLevel: Int
 
     /// Initializes a `Mobility`.
     public init() {
@@ -26,6 +27,7 @@ public actor Mobility {
         regionOfInterestCoordinator = RegionOfInterestCoordinator()
         roadAlarmCoordinator = RoadAlarmCoordinator()
         roadUserCoordinator = RoadUserCoordinator()
+        reportZoomLevel = 22
     }
 
     /// Starts the `Mobility` with a configuration to connect to a MQTT server and initialize the telemetry client.
@@ -89,6 +91,12 @@ public actor Mobility {
         await roadUserCoordinator.setObserver(observer)
     }
 
+    /// Sets the report zoom level.
+    /// - Parameter reportZoomLevel: The report zoom level.
+    public func setReportZoomLevel(_ reportZoomLevel: Int) {
+        self.reportZoomLevel = reportZoomLevel
+    }
+
     /// Sends a position to share it.
     /// - Parameters:
     ///   - stationType: The user `StationType`.
@@ -131,7 +139,7 @@ public actor Mobility {
         // Publish CAM
         let quadkey = QuadkeyBuilder().quadkeyFrom(latitude: latitude,
                                                    longitude: longitude,
-                                                   zoomLevel: mobilityConfiguration.reportZoomLevel,
+                                                   zoomLevel: reportZoomLevel,
                                                    separator: "/")
         try await publish(cam, topic: try topic(for: .cam, in: quadkey))
     }
@@ -172,7 +180,7 @@ public actor Mobility {
         // Publish DENM
         let quadkey = QuadkeyBuilder().quadkeyFrom(latitude: latitude,
                                                    longitude: longitude,
-                                                   zoomLevel: mobilityConfiguration.reportZoomLevel,
+                                                   zoomLevel: reportZoomLevel,
                                                    separator: "/")
         try await publish(denm, topic: try topic(for: .denm, in: quadkey))
     }
