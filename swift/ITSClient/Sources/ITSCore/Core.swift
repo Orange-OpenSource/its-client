@@ -33,10 +33,10 @@ public actor Core {
     /// - Parameter coreConfiguration: The configuration used to start the MQTT client and the telemetry client.
     /// - Throws: A `CoreError` if the MQTT connection fails.
     public func start(coreConfiguration: CoreConfiguration) async throws(CoreError) {
-        let telemetryClient = coreConfiguration.telemetryClientConfiguration.map {
-            OpenTelemetryClient(configuration: $0)
+        if let telemetryClientConfiguration = coreConfiguration.telemetryClientConfiguration {
+            telemetryClient = await OpenTelemetryClient(configuration: telemetryClientConfiguration)
         }
-        let mqttClient = MQTTNIOClient(configuration: coreConfiguration.mqttClientConfiguration)
+        let mqttClient = await MQTTNIOClient(configuration: coreConfiguration.mqttClientConfiguration)
 
         try await start(mqttClient: mqttClient, telemetryClient: telemetryClient)
     }

@@ -17,16 +17,16 @@ struct CoreUnitTests {
     private let mockMQTTClient: MockMQTTClient
     private let mockTelemetryClient: MockTelemetryClient
 
-    init() throws {
+    init() async throws {
         let mqttClientConfiguration = MQTTClientConfiguration(host: "",
                                                               port: 0,
                                                               clientIdentifier: "",
                                                               useSSL: false)
-        mockMQTTClient = MockMQTTClient(configuration: mqttClientConfiguration)
+        mockMQTTClient = await MockMQTTClient(configuration: mqttClientConfiguration)
         let url = try #require(URL(string: "http://foo.com"))
         let telemetryClientConfiguration = TelemetryClientConfiguration(url: url,
                                                                         serviceName: "")
-        mockTelemetryClient = MockTelemetryClient(configuration: telemetryClientConfiguration)
+        mockTelemetryClient = await MockTelemetryClient(configuration: telemetryClientConfiguration)
     }
 
     @Test("Core start with telemetry configuration should connect to MQTT and start telemetry")

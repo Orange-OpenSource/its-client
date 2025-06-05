@@ -19,7 +19,7 @@ actor MockTelemetryClient: TelemetryClient {
     var startSpanWithContextCallsCount: Int = 0
     var stopSpanCallsCount: Int = 0
 
-    init(configuration: TelemetryClientConfiguration) {
+    init(configuration: TelemetryClientConfiguration) async {
     }
 
     func start() {

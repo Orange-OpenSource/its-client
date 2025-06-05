@@ -23,7 +23,7 @@ struct MQTTNIOClientTests {
                                                               port: 1883,
                                                               clientIdentifier: clientIdentifier,
                                                               useSSL: false)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+        let mqttClient = await MQTTNIOClient(configuration: mqttClientConfiguration)
 
         // When
         try await mqttClient.connect()
@@ -41,7 +41,7 @@ struct MQTTNIOClientTests {
                                                               port: 8886,
                                                               clientIdentifier: clientIdentifier,
                                                               useSSL: true)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+        let mqttClient = await MQTTNIOClient(configuration: mqttClientConfiguration)
 
         // When
         try await mqttClient.connect()
@@ -61,7 +61,7 @@ struct MQTTNIOClientTests {
                                                               userName: "rw",
                                                               password: "readwrite",
                                                               useSSL: false)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+        let mqttClient = await MQTTNIOClient(configuration: mqttClientConfiguration)
 
         // When
         try await mqttClient.connect()
@@ -80,7 +80,7 @@ struct MQTTNIOClientTests {
                                                               clientIdentifier: clientIdentifier,
                                                               useSSL: true,
                                                               useWebSockets: true)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+        let mqttClient = await MQTTNIOClient(configuration: mqttClientConfiguration)
 
         // When
         try await mqttClient.connect()
@@ -103,7 +103,7 @@ struct MQTTNIOClientTests {
         let userProperty = MQTTMessageUserProperty(key: "test", value: "its")
 
         try await confirmation(expectedCount: 1) { confirmation in
-            let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+            let mqttClient = await MQTTNIOClient(configuration: mqttClientConfiguration)
             await mqttClient.setMessageReceivedHandler(messageReceivedHandler: { message in
                 // Then
                 #expect(message.topic == topic)
@@ -136,7 +136,7 @@ struct MQTTNIOClientTests {
         let payload = "payload"
 
         try await confirmation(expectedCount: 0) { confirmation in
-            let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+            let mqttClient = await MQTTNIOClient(configuration: mqttClientConfiguration)
             await mqttClient.setMessageReceivedHandler(messageReceivedHandler: { _ in
                 confirmation()
             })
@@ -162,7 +162,7 @@ struct MQTTNIOClientTests {
                                                               port: 1883,
                                                               clientIdentifier: clientIdentifier,
                                                               useSSL: false)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+        let mqttClient = await MQTTNIOClient(configuration: mqttClientConfiguration)
 
         // When
         try await mqttClient.connect()
@@ -180,7 +180,7 @@ struct MQTTNIOClientTests {
                                                               port: 1883,
                                                               clientIdentifier: clientIdentifier,
                                                               useSSL: false)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+        let mqttClient = await MQTTNIOClient(configuration: mqttClientConfiguration)
 
         // When
         try await mqttClient.connect()
@@ -199,7 +199,7 @@ struct MQTTNIOClientTests {
                                                               port: 1883,
                                                               clientIdentifier: clientIdentifier,
                                                               useSSL: false)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+        let mqttClient = await MQTTNIOClient(configuration: mqttClientConfiguration)
 
         // When
         do {
@@ -217,7 +217,7 @@ struct MQTTNIOClientTests {
                                                               port: 1883,
                                                               clientIdentifier: clientIdentifier,
                                                               useSSL: false)
-        let mqttClient = MQTTNIOClient(configuration: mqttClientConfiguration)
+        let mqttClient = await MQTTNIOClient(configuration: mqttClientConfiguration)
 
         // When
         do {
@@ -240,7 +240,7 @@ struct MQTTNIOClientTests {
                                                               clientIdentifier: clientIdentifier,
                                                               useSSL: false)
         weak var weakMQTTClient: MQTTClient?
-        var mqttClient: MQTTClient? = MQTTNIOClient(configuration: mqttClientConfiguration)
+        var mqttClient: MQTTClient? = await MQTTNIOClient(configuration: mqttClientConfiguration)
 
         // When
         try await mqttClient?.connect()

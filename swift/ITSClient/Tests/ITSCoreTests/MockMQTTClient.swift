@@ -27,7 +27,7 @@ actor MockMQTTClient: MQTTClient {
     nonisolated(unsafe) var throwsUnsubscribeError: Bool = false
     nonisolated(unsafe) var throwsPublishError: Bool = false
 
-    init(configuration: MQTTClientConfiguration) {}
+    init(configuration: MQTTClientConfiguration) async {}
 
     func setMessageReceivedHandler(messageReceivedHandler handler: @escaping (@Sendable (MQTTMessage) -> Void)) {
         messageReceivedHandler = handler

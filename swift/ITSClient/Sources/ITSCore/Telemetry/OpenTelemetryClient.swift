@@ -21,7 +21,7 @@ actor OpenTelemetryClient: TelemetryClient {
     private var tracerProvider: TracerProviderSdk?
     private var spans = [SpanID: Span]()
 
-    init(configuration: TelemetryClientConfiguration) {
+    init(configuration: TelemetryClientConfiguration) async {
         self.configuration = configuration
     }
 
