@@ -559,18 +559,18 @@ mod tests {
                 "perceived_object_container": [{
                     "object_id": 0,
                     "time_of_measurement": 50,
+                    "x_distance": 400,
+                    "y_distance": 100,
+                    "x_speed": 1400,
+                    "y_speed": 500,
+                    "object_age": 1500,
                     "confidence": {
                         "x_distance": 102,
                         "y_distance": 102,
                         "x_speed": 127,
                         "y_speed": 127,
                         "object": 10
-                    },
-                    "x_distance": 400,
-                    "y_distance": 100,
-                    "x_speed": 1400,
-                    "y_speed": 500,
-                    "object_age": 1500
+                    }
                 }]
             }
         }"#
@@ -647,13 +647,6 @@ mod tests {
                 "perceived_object_container": [{
                     "object_id": 0,
                     "time_of_measurement": 50,
-                    "confidence": {
-                        "x_distance": 102,
-                        "y_distance": 102,
-                        "x_speed": 7,
-                        "y_speed": 7,
-                        "object": 10
-                    },
                     "x_distance": 400,
                     "y_distance": 100,
                     "z_distance": 50,
@@ -661,6 +654,13 @@ mod tests {
                     "y_speed": 500,
                     "z_speed": 0,
                     "object_age": 1500,
+                    "confidence": {
+                        "x_distance": 102,
+                        "y_distance": 102,
+                        "x_speed": 7,
+                        "y_speed": 7,
+                        "object": 10
+                    },
                     "object_ref_point": 8,
                     "x_acceleration": -160,
                     "y_acceleration": 0,
