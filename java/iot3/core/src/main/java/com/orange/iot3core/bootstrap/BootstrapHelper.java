@@ -88,6 +88,7 @@ public class BootstrapHelper {
         EXTERNAL_APP("external-app"),
         INTERNAL_APP("internal-app"),
         NEIGHBOUR("neighbour"),
+        INTERQUEUE_APP("interqueue-app"),
         USER_EQUIPMENT("user-equipment");
 
         private final String jsonValue;
