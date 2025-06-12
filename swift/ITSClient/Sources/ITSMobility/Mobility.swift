@@ -19,6 +19,7 @@ public actor Mobility {
     private var mobilityConfiguration: MobilityConfiguration?
     private let roadAlarmCoordinator: RoadAlarmCoordinator
     private let roadUserCoordinator: RoadUserCoordinator
+    private var reportZoomLevel: Int
 
     /// Initializes a `Mobility`.
     public init() {
@@ -26,6 +27,7 @@ public actor Mobility {
         regionOfInterestCoordinator = RegionOfInterestCoordinator()
         roadAlarmCoordinator = RoadAlarmCoordinator()
         roadUserCoordinator = RoadUserCoordinator()
+        reportZoomLevel = 22
     }
 
     /// Starts the `Mobility` with a configuration to connect to a MQTT server and initialize the telemetry client.
@@ -45,6 +47,33 @@ public actor Mobility {
         }
     }
 
+    /// Starts the `Mobility` mainly with a bootstrap to connect to a MQTT server and initialize the telemetry client.
+    /// - Parameters:
+    ///   - bootstrap: The `Bootstrap` which can be retrieved with `BootstrapService`.
+    ///   - stationID: The station identifier.
+    ///   - telemetryServiceName: The telemetry service name (default: nil, no telemetry).
+    public func start(
+        bootstrap: Bootstrap,
+        stationID: UInt32,
+        telemetryServiceName: String? = nil
+    ) async throws(MobilityError) {
+        guard let mqttClientConfiguration = bootstrap.mqttClientConfiguration() else { throw .notStarted }
+
+        var telemetryClientConfiguration: TelemetryClientConfiguration?
+        if let telemetryServiceName {
+            telemetryClientConfiguration = bootstrap.telemetryClientConfiguration(serviceName: telemetryServiceName)
+        }
+
+        let coreConfiguration = CoreConfiguration(mqttClientConfiguration: mqttClientConfiguration,
+                                                  telemetryClientConfiguration: telemetryClientConfiguration)
+
+        let mobilityConfiguration = MobilityConfiguration(coreConfiguration: coreConfiguration,
+                                                          stationID: stationID,
+                                                          namespace: bootstrap.mqttRootTopic)
+
+        try await start(mobilityConfiguration: mobilityConfiguration)
+    }
+
     /// Stops the `Mobility` disconnecting the MQTT client and stopping the telemetry client.
     public func stop() async {
         await core.stop()
@@ -62,8 +91,15 @@ public actor Mobility {
         await roadUserCoordinator.setObserver(observer)
     }
 
+    /// Sets the report zoom level.
+    /// - Parameter reportZoomLevel: The report zoom level.
+    public func setReportZoomLevel(_ reportZoomLevel: Int) {
+        self.reportZoomLevel = reportZoomLevel
+    }
+
     /// Sends a position to share it.
     /// - Parameters:
+    ///   - stationType: The user `StationType`.
     ///   - latitude: The latitude in decimal degrees.
     ///   - longitude: The longitude in decimal degrees.
     ///   - altitude: The altitude in meters.
@@ -72,6 +108,7 @@ public actor Mobility {
     ///   - acceleration: The longitudinal acceleration in meters per squared second.
     ///   - yawRate: The rotational acceleration in degrees per squared second.
     public func sendPosition(
+        stationType: StationType,
         latitude: Double,
         longitude: Double,
         altitude: Double,
@@ -85,7 +122,7 @@ public actor Mobility {
         // Build CAM
         let now = Date().timeIntervalSince1970
         let position = Position(latitude: latitude, longitude: longitude, altitude: altitude)
-        let basicContainer = BasicContainer(stationType: mobilityConfiguration.stationType,
+        let basicContainer = BasicContainer(stationType: stationType,
                                             referencePosition: position)
         let highFrequencyContainer = HighFrequencyContainer(heading: heading,
                                                             speed: speed,
@@ -102,18 +139,20 @@ public actor Mobility {
         // Publish CAM
         let quadkey = QuadkeyBuilder().quadkeyFrom(latitude: latitude,
                                                    longitude: longitude,
-                                                   zoomLevel: mobilityConfiguration.reportZoomLevel,
+                                                   zoomLevel: reportZoomLevel,
                                                    separator: "/")
         try await publish(cam, topic: try topic(for: .cam, in: quadkey))
     }
 
     /// Sends an alert to share it.
     /// - Parameters:
+    ///   - stationType: The user `StationType`.
     ///   - latitude: The latitude in decimal degrees.
     ///   - longitude: The longitude in decimal degrees.
     ///   - altitude: The altitude in meters.
     ///   - cause: The alert cause.
     public func sendAlert(
+        stationType: StationType,
         latitude: Double,
         longitude: Double,
         altitude: Double,
@@ -129,7 +168,7 @@ public actor Mobility {
                                                       detectionTime: now,
                                                       referenceTime: now,
                                                       eventPosition: position,
-                                                      stationType: mobilityConfiguration.stationType)
+                                                      stationType: stationType)
         let situationContainer = SituationContainer(eventType: cause)
         let denmMessage = DENMMessage(stationID: mobilityConfiguration.stationID,
                                       managementContainer: managementContainer,
@@ -141,7 +180,7 @@ public actor Mobility {
         // Publish DENM
         let quadkey = QuadkeyBuilder().quadkeyFrom(latitude: latitude,
                                                    longitude: longitude,
-                                                   zoomLevel: mobilityConfiguration.reportZoomLevel,
+                                                   zoomLevel: reportZoomLevel,
                                                    separator: "/")
         try await publish(denm, topic: try topic(for: .denm, in: quadkey))
     }

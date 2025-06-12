@@ -32,7 +32,8 @@ let package = Package(
         ),
         .testTarget(
             name: "ITSCoreTests",
-            dependencies: ["ITSCore"]
+            dependencies: ["ITSCore", "ITSCommonTests"],
+            resources: [.copy("Data")]
         ),
         .target(
             name: "ITSMobility",
@@ -40,8 +41,12 @@ let package = Package(
         ),
         .testTarget(
             name: "ITSMobilityTests",
-            dependencies: ["ITSMobility"],
+            dependencies: ["ITSMobility", "ITSCommonTests"],
             resources: [.copy("Data")]
+        ),
+        .target(
+            name: "ITSCommonTests",
+            path: "Tests/ITSCommonTests"
         ),
     ]
 )
