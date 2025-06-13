@@ -74,7 +74,6 @@ public class BootstrapConfig {
 
                         try {
                             URI uri = new URI(anUriAsStr);
-                            System.out.println("Coucou----->" + anUriAsStr);
                             String aScheme = uri.getScheme();
                             //Trying to associate the protocol with our Enum.
                             switch (aScheme) {
