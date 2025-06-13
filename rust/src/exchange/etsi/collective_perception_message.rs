@@ -9,12 +9,12 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use crate::client::configuration::Configuration;
 use crate::exchange::etsi::mobile_perceived_object::MobilePerceivedObject;
 use crate::exchange::etsi::perceived_object::PerceivedObject;
 use crate::exchange::etsi::reference_position::ReferencePosition;
 use crate::exchange::etsi::{
     PositionConfidence, acceleration_from_etsi, heading_from_etsi, speed_from_etsi,
+    timestamp_to_generation_delta_time,
 };
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
@@ -272,9 +272,9 @@ impl Content for CollectivePerceptionMessage {
         "cpm"
     }
 
-    /// TODO implement this (issue [#96](https://github.com/Orange-OpenSource/its-client/issues/96))
-    fn appropriate(&mut self, _configuration: &Configuration, _timestamp: u64) {
-        todo!()
+    fn appropriate(&mut self, timestamp: u64, new_station_id: u32) {
+        self.station_id = new_station_id;
+        self.generation_delta_time = timestamp_to_generation_delta_time(timestamp);
     }
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
@@ -310,8 +310,8 @@ mod tests {
     use crate::exchange::etsi::speed_from_etsi;
 
     macro_rules! assert_float_eq {
-        ($a:expr_2021, $b:expr_2021, $e:expr_2021) => {
-            let delta = ($a - $b).abs();
+        ($a:expr, $b:expr, $e:expr) => {
+            let delta = (($a) - ($b)).abs();
             assert!(delta <= $e, "Actual:   {}\nExpected: {}", $a, $b)
         };
     }

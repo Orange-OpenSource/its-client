@@ -9,15 +9,8 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use crate::exchange::message::content::Content;
 use crate::exchange::mortal::Mortal;
-use crate::mobility::mobile::Mobile;
-use std::any::type_name;
-use std::ops::Deref;
 
-use crate::client::configuration::Configuration;
-use crate::exchange::message::content_error::ContentError;
-use crate::exchange::message::content_error::ContentError::{NotAMobile, NotAMortal};
 use crate::transport::payload::Payload;
 use serde::{Deserialize, Serialize};
 
@@ -88,23 +81,14 @@ pub struct Vertex {
 
 impl Information {
     pub const TYPE: &'static str = "info";
-}
 
-impl Content for Information {
-    fn get_type(&self) -> &str {
-        Self::TYPE
-    }
-
-    fn appropriate(&mut self, _configuration: &Configuration, _timestamp: u64) {
-        todo!()
-    }
-
-    fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
-        Err(NotAMobile(type_name::<Information>()))
-    }
-
-    fn as_mortal(&self) -> Result<&dyn Mortal, ContentError> {
-        Err(NotAMortal(type_name::<Information>()))
+    /// Replaces the current `Information` instance with a new one.
+    ///
+    /// # Arguments
+    ///
+    /// * `new_info` - The new `Information` instance to replace the current one.
+    pub fn replace(&mut self, new_info: Information) {
+        *self = new_info;
     }
 }
 
@@ -124,33 +108,10 @@ impl Mortal for Information {
 
 impl Payload for Information {}
 
-/// Making Information as a [Message][1] enum variant triggers Clippy's [large enum variant][2] warning
-/// All other variant are going to be used more than this one so box it to avoid making the enum size
-/// grow unnecessarily
+/// A boxed type for the `Information` struct.
 ///
-/// As enum variant are required to implement specific traits here is declared a dedicated type to
-/// impl these traits
-///
-/// [1]: crate::exchange::message::Message
-/// [2]: https://rust-lang.github.io/rust-clippy/master/index.html#/large_enum_variant
+/// This is used to avoid increasing the size of enums that include `Information` as a variant.
 pub type BoxedInformation = Box<Information>;
-impl Content for BoxedInformation {
-    fn get_type(&self) -> &str {
-        (*self).deref().get_type()
-    }
-
-    fn appropriate(&mut self, _configuration: &Configuration, _timestamp: u64) {
-        todo!()
-    }
-
-    fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
-        (*self).deref().as_mobile()
-    }
-
-    fn as_mortal(&self) -> Result<&dyn Mortal, ContentError> {
-        (*self).deref().as_mortal()
-    }
-}
 
 #[cfg(test)]
 mod tests {

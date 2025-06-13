@@ -20,7 +20,6 @@ use crate::exchange::message::content::Content;
 use crate::mobility::position::Position;
 use crate::transport::payload::Payload;
 
-use crate::client::configuration::Configuration;
 use serde::{Deserialize, Serialize};
 
 #[serde_with::skip_serializing_none]
@@ -95,14 +94,13 @@ impl Exchange {
         })
     }
 
-    // TODO find a better way to appropriate
-    pub fn appropriate(&mut self, configuration: &Configuration, timestamp: u64) {
+    pub fn appropriate(&mut self, timestamp: u64, new_station_id: u32, new_source_uuid: &str) {
         self.origin = "mec_application".to_string();
+        self.source_uuid = new_source_uuid.to_string();
+        self.timestamp = timestamp;
         self.message
             .as_content()
-            .appropriate(configuration, timestamp);
-        self.source_uuid = configuration.component_name(None);
-        self.timestamp = timestamp;
+            .appropriate(timestamp, new_station_id);
     }
 }
 
@@ -115,28 +113,6 @@ impl PartialEq for Exchange {
 }
 
 impl Eq for Exchange {}
-
-// FIXME the following code is commented because it requires structs or functions which will be added later in the
-// refactoring branch; this code will be either uncommented and fixed or deleted following following refactoring choices
-//
-// impl Mortal for Exchange {
-//     fn timeout(&self) -> u128 {
-//         self.message.timeout()
-//     }
-//
-//     fn terminate(&mut self) {
-//         self.message.terminate();
-//     }
-//
-//     fn terminated(&self) -> bool {
-//         self.message.terminated()
-//     }
-//
-//     fn remaining_time(&self) -> u128 {
-//         (self.timeout() - now()) / 1000
-//     }
-// }
-// --- ENDFIXME
 
 #[cfg(test)]
 mod tests {
@@ -583,18 +559,18 @@ mod tests {
                 "perceived_object_container": [{
                     "object_id": 0,
                     "time_of_measurement": 50,
+                    "x_distance": 400,
+                    "y_distance": 100,
+                    "x_speed": 1400,
+                    "y_speed": 500,
+                    "object_age": 1500,
                     "confidence": {
                         "x_distance": 102,
                         "y_distance": 102,
                         "x_speed": 127,
                         "y_speed": 127,
                         "object": 10
-                    },
-                    "x_distance": 400,
-                    "y_distance": 100,
-                    "x_speed": 1400,
-                    "y_speed": 500,
-                    "object_age": 1500
+                    }
                 }]
             }
         }"#
@@ -671,13 +647,6 @@ mod tests {
                 "perceived_object_container": [{
                     "object_id": 0,
                     "time_of_measurement": 50,
-                    "confidence": {
-                        "x_distance": 102,
-                        "y_distance": 102,
-                        "x_speed": 7,
-                        "y_speed": 7,
-                        "object": 10
-                    },
                     "x_distance": 400,
                     "y_distance": 100,
                     "z_distance": 50,
@@ -685,6 +654,13 @@ mod tests {
                     "y_speed": 500,
                     "z_speed": 0,
                     "object_age": 1500,
+                    "confidence": {
+                        "x_distance": 102,
+                        "y_distance": 102,
+                        "x_speed": 7,
+                        "y_speed": 7,
+                        "object": 10
+                    },
                     "object_ref_point": 8,
                     "x_acceleration": -160,
                     "y_acceleration": 0,

@@ -69,7 +69,8 @@ impl GeoTopic {
 
     // TODO find a better way to appropriate
     pub fn appropriate(&mut self, configuration: &Configuration) {
-        self.uuid = configuration.component_name(None);
+        // assumed clone
+        self.uuid = configuration.mobility.source_uuid.clone();
         self.queue = Queue::In;
     }
 }

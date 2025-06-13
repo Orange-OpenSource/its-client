@@ -200,7 +200,7 @@ mod tests {
     use std::f64::consts::PI;
 
     macro_rules! po {
-        ($x_speed:expr_2021, $y_speed:expr_2021) => {
+        ($x_speed:expr, $y_speed:expr) => {
             PerceivedObject {
                 x_speed: $x_speed,
                 y_speed: $y_speed,
@@ -210,7 +210,7 @@ mod tests {
     }
 
     macro_rules! test_compute_position_from_mobile {
-        ($test_name:ident, $x:expr_2021, $y:expr_2021, $expected:expr_2021) => {
+        ($test_name:ident, $x:expr, $y:expr, $expected:expr) => {
             #[test]
             fn $test_name() {
                 let position = compute_position_from_mobile(
@@ -466,7 +466,7 @@ mod tests {
     }
 
     macro_rules! test_mobile_heading_computation {
-        ($test_name:ident, $po:expr_2021, $mob_heading:expr_2021, $expected:expr_2021) => {
+        ($test_name:ident, $po:expr, $mob_heading:expr, $expected:expr) => {
             #[test]
             fn $test_name() {
                 let _epsilon = 1e-11;
@@ -515,7 +515,7 @@ mod tests {
     );
 
     macro_rules! test_rsu_heading_computation {
-        ($test_name:ident, $po:expr_2021, $expected:expr_2021) => {
+        ($test_name:ident, $po:expr, $expected:expr) => {
             #[test]
             fn $test_name() {
                 let _epsilon = 1e-11;
