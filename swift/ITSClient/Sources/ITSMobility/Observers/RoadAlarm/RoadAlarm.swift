@@ -63,3 +63,15 @@ public struct RoadAlarm: Sendable {
         self.underlyingDENM = underlyingDENM
     }
 }
+
+extension RoadAlarm: Equatable {
+    public static func == (lhs: RoadAlarm, rhs: RoadAlarm) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
+extension RoadAlarm: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}

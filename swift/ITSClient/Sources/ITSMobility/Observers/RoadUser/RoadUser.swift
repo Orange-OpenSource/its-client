@@ -65,3 +65,15 @@ public struct RoadUser: Sendable {
         self.underlyingCAM = underlyingCAM
     }
 }
+
+extension RoadUser: Equatable {
+    public static func == (lhs: RoadUser, rhs: RoadUser) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
+extension RoadUser: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
