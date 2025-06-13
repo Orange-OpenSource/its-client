@@ -7,9 +7,7 @@
  */
 package com.orange.iot3core.bootstrap;
 
-import com.orange.iot3core.clients.MqttClient;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URI;
@@ -55,7 +53,7 @@ public class BootstrapConfig {
      *
      * @param jsonConfig JSON object obtained from the bootstrap sequence
      */
-    public BootstrapConfig(JSONObject jsonConfig) throws JSONException {
+    public BootstrapConfig(JSONObject jsonConfig) throws Exception {
 
         this.iot3Id = jsonConfig.getString("iot3_id");
         this.pskRunLogin = jsonConfig.getString("psk_iot3_id");
@@ -73,8 +71,10 @@ public class BootstrapConfig {
                     //We grab all uris in this json array.
                     if (messageObj.has("uri")) {
                         String anUriAsStr = messageObj.getString("uri");
+
                         try {
                             URI uri = new URI(anUriAsStr);
+                            System.out.println("Coucou----->" + anUriAsStr);
                             String aScheme = uri.getScheme();
                             //Trying to associate the protocol with our Enum.
                             switch (aScheme) {
@@ -93,6 +93,7 @@ public class BootstrapConfig {
                             }
                         } catch (URISyntaxException e) {
                             LOGGER.log(Level.SEVERE, "Error when parsing URI in the message services json array: " + e.getMessage());
+                            throw new Exception("Error when parsing URI in the message services json array: " + e.getMessage());
                         }
                     }
                 }
@@ -121,6 +122,7 @@ public class BootstrapConfig {
                             }
                         } catch (URISyntaxException e) {
                             LOGGER.log(Level.SEVERE, "Error when parsing URI in the telemetry services json array: " + e.getMessage());
+                            throw new Exception("Error when parsing URI in the telemetry services json array: " + e.getMessage());
                         }
                     }
                 }
@@ -147,7 +149,8 @@ public class BootstrapConfig {
                                     break;
                             }
                         } catch (URISyntaxException e) {
-                            LOGGER.log(Level.SEVERE, "Error when parsing URI in the api services json array: " + e.getMessage());
+                            LOGGER.log(Level.SEVERE, "Error when parsing URI in the api services json array 3: " + e.getMessage());
+                            throw new Exception("Error when parsing URI in the api services json array: " + e.getMessage());
                         }
                     }
                 }
@@ -155,6 +158,7 @@ public class BootstrapConfig {
         }
         catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error whith the json array: " + e.getMessage());
+            throw new Exception("Error with the jsonConfig provided to BootstrapConfig:" + e.getMessage());
         }
     }
 
