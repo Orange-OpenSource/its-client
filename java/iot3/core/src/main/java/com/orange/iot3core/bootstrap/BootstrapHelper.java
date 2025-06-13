@@ -89,8 +89,8 @@ public class BootstrapHelper {
         INTERNAL_APP("internal-app"),
         NEIGHBOUR("neighbour"),
         INTERQUEUE_APP("interqueue-app"),
-        USER_EQUIPMENT("user-equipment");
-
+        USER_EQUIPMENT("user-equipment"),
+        MONITORING_APP("monitoring-app");
         private final String jsonValue;
 
         Role(String jsonValue) {

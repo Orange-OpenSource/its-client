@@ -7,6 +7,7 @@
  */
 package com.orange.iot3core.bootstrap;
 
+import com.orange.iot3core.clients.MqttClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,6 +15,9 @@ import org.json.JSONObject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.EnumMap;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The BootstrapConfig provides all the information required to build a {@link com.orange.iot3core.IoT3Core} instance.
@@ -23,7 +27,10 @@ public class BootstrapConfig {
     private final String iot3Id;
     private final String pskRunLogin;
     private final String pskRunPassword;
-    private EnumMap<Protocol, String> protocols = new EnumMap<>(Protocol.class) ;
+    private final EnumMap<Protocol, String> protocols = new EnumMap<>(Protocol.class) ;
+
+    private static final Logger LOGGER = Logger.getLogger(BootstrapConfig.class.getName());
+
 
     public enum Protocol {
         MQTT,
@@ -70,21 +77,22 @@ public class BootstrapConfig {
                             URI uri = new URI(anUriAsStr);
                             String aScheme = uri.getScheme();
                             //Trying to associate the protocol with our Enum.
-                            if(aScheme.equals("mqtt")){
-                                protocols.put(Protocol.MQTT, anUriAsStr);
+                            switch (aScheme) {
+                                case "mqtt":
+                                    protocols.put(Protocol.MQTT, anUriAsStr);
+                                    break;
+                                case "mqtts":
+                                    protocols.put(Protocol.MQTTS, anUriAsStr);
+                                    break;
+                                case "mqtt+ws":
+                                    protocols.put(Protocol.MQTT_WS, anUriAsStr);
+                                    break;
+                                case "mqtts+ws":
+                                    protocols.put(Protocol.MQTT_WSS, anUriAsStr);
+                                    break;
                             }
-                            else if (aScheme.equals("mqtts")) {
-                                protocols.put(Protocol.MQTTS, anUriAsStr);
-                            }
-                            else if (aScheme.equals("mqtt+ws")) {
-                                protocols.put(Protocol.MQTT_WS, anUriAsStr);
-                            }
-                            else if (aScheme.equals("mqtt+wss")) {
-                                protocols.put(Protocol.MQTT_WSS, anUriAsStr);
-                            }
-
                         } catch (URISyntaxException e) {
-                            e.printStackTrace();
+                            LOGGER.log(Level.SEVERE, "Error when parsing URI in the message services json array: " + e.getMessage());
                         }
                     }
                 }
@@ -103,14 +111,16 @@ public class BootstrapConfig {
                             URI uri = new URI(anUriAsStr);
                             String aScheme = uri.getScheme();
                             //Trying to associate the protocol with our Enum.
-                            if (aScheme.equals("http")) {
-                                protocols.put(Protocol.OTLP_HTTP, anUriAsStr);
-                            }
-                            else if (aScheme.equals("https")) {
-                                protocols.put(Protocol.OTLP_HTTPS, anUriAsStr);
+                            switch (aScheme) {
+                                case "http":
+                                    protocols.put(Protocol.OTLP_HTTP, anUriAsStr);
+                                    break;
+                                case "https":
+                                    protocols.put(Protocol.OTLP_HTTPS, anUriAsStr);
+                                    break;
                             }
                         } catch (URISyntaxException e) {
-                            e.printStackTrace();
+                            LOGGER.log(Level.SEVERE, "Error when parsing URI in the telemetry services json array: " + e.getMessage());
                         }
                     }
                 }
@@ -128,25 +138,23 @@ public class BootstrapConfig {
                             URI uri = new URI(anUriAsStr);
                             String aScheme = uri.getScheme();
                             //Trying to associate the protocol with our Enum.
-                            if (aScheme.equals("http")) {
-                                protocols.put(Protocol.JAEGER_HTTP, anUriAsStr);
+                            switch (aScheme) {
+                                case "http":
+                                    protocols.put(Protocol.JAEGER_HTTP, anUriAsStr);
+                                    break;
+                                case "https":
+                                    protocols.put(Protocol.JAEGER_HTTPS, anUriAsStr);
+                                    break;
                             }
-                            else if (aScheme.equals("https")) {
-                                protocols.put(Protocol.JAEGER_HTTPS, anUriAsStr);
-                            }
-
                         } catch (URISyntaxException e) {
-                            e.printStackTrace();
+                            LOGGER.log(Level.SEVERE, "Error when parsing URI in the api services json array: " + e.getMessage());
                         }
                     }
                 }
             }
         }
-        catch (JSONException jsonee) {
-            jsonee.printStackTrace();
-        }
         catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error whith the json array: " + e.getMessage());
         }
     }
 
@@ -249,5 +257,4 @@ public class BootstrapConfig {
         }
         return false;
     }
-
 }
