@@ -24,7 +24,7 @@ struct OpenTelemetryClientTests {
 
     @Test("Send several consumer and producer spans")
     func send_several_consumer_and_producer_spans() async throws {
-        let openTelemetryClient = OpenTelemetryClient(configuration: telemetryClientConfiguration)
+        let openTelemetryClient = await OpenTelemetryClient(configuration: telemetryClientConfiguration)
 
         await openTelemetryClient.start()
         await withThrowingTaskGroup(of: Void.self) { group in
@@ -45,7 +45,7 @@ struct OpenTelemetryClientTests {
 
     @Test("Send a producer and a child consumer span")
     func send_producer_and_child_consumer_span() async throws {
-        let openTelemetryClient = OpenTelemetryClient(configuration: telemetryClientConfiguration)
+        let openTelemetryClient = await OpenTelemetryClient(configuration: telemetryClientConfiguration)
 
         await openTelemetryClient.start()
         let traceParent = try await startProducerSpan(telemetryClient: openTelemetryClient)
@@ -58,7 +58,7 @@ struct OpenTelemetryClientTests {
 
     @Test("Send a producer span with error")
     func send_producer_span_with_error() async throws {
-        let openTelemetryClient = OpenTelemetryClient(configuration: telemetryClientConfiguration)
+        let openTelemetryClient = await OpenTelemetryClient(configuration: telemetryClientConfiguration)
 
         await openTelemetryClient.start()
         try await startProducerSpan(telemetryClient: openTelemetryClient,

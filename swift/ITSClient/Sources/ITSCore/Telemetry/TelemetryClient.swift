@@ -12,7 +12,7 @@
 import Foundation
 
 protocol TelemetryClient: Actor {
-    init(configuration: TelemetryClientConfiguration)
+    init(configuration: TelemetryClientConfiguration) async
     func start()
     func stop()
     func startSpan(name: String, type: SpanType, attributes: [String: Any]) -> SpanID?

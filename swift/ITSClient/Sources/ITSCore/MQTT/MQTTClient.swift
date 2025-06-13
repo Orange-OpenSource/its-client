@@ -14,7 +14,7 @@ import Foundation
 protocol MQTTClient: Actor {
     var isConnected: Bool { get }
 
-    init(configuration: MQTTClientConfiguration)
+    init(configuration: MQTTClientConfiguration) async
     func setMessageReceivedHandler(messageReceivedHandler: (@escaping @Sendable (MQTTMessage) -> Void))
     func connect() async throws(MQTTClientError)
     func subscribe(to topic: String) async throws(MQTTClientError)

@@ -29,7 +29,7 @@ actor MQTTNIOClient: MQTTClient {
         client.isActive()
     }
 
-    init(configuration: MQTTClientConfiguration) {
+    init(configuration: MQTTClientConfiguration) async {
         client = MQTTNIO.MQTTClient(
             host: configuration.host,
             port: configuration.port,
