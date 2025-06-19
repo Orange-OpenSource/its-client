@@ -7,7 +7,7 @@
  */
 package com.orange.iot3core.bootstrap;
 
-import org.json.JSONException;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.net.URI;
@@ -22,7 +22,7 @@ public class BootstrapConfig {
     private final String iot3Id;
     private final String pskRunLogin;
     private final String pskRunPassword;
-    private final EnumMap<Protocol, String> protocols;
+    private final EnumMap<Protocol, String> protocols = new EnumMap<>(Protocol.class) ;
 
     public enum Protocol {
         MQTT,
@@ -47,40 +47,125 @@ public class BootstrapConfig {
      *
      * @param jsonConfig JSON object obtained from the bootstrap sequence
      */
-    public BootstrapConfig(JSONObject jsonConfig) throws JSONException {
+    public BootstrapConfig(JSONObject jsonConfig) throws Exception {
+
         this.iot3Id = jsonConfig.getString("iot3_id");
-        this.pskRunLogin = jsonConfig.getString("psk_run_login");
-        this.pskRunPassword = jsonConfig.getString("psk_run_password");
+        this.pskRunLogin = jsonConfig.getString("psk_iot3_id");
+        this.pskRunPassword = jsonConfig.getString("psk_iot3_secret");
 
-        protocols = new EnumMap<>(Protocol.class);
-        JSONObject jsonProtocols = jsonConfig.getJSONObject("protocols");
+        //Have to retrieve all URIs and its protocols allocated in json tabs.
+        try {
+            JSONObject services = jsonConfig.getJSONObject("services");
+            // Extract URIs from "message" service.
+            if (services.has("message")) {
+                JSONArray messageArray = services.getJSONArray("message");
+                for (int i = 0; i < messageArray.length(); i++) {
 
-        // MQTT flavors
-        String mqtt = jsonProtocols.optString("mqtt");
-        if(!mqtt.isEmpty()) protocols.put(Protocol.MQTT, mqtt);
+                    JSONObject messageObj = messageArray.getJSONObject(i);
+                    //We grab all uris in this json array.
+                    if (messageObj.has("uri")) {
+                        String anUriAsStr = messageObj.getString("uri");
 
-        String mqtts = jsonProtocols.optString("mqtts");
-        if(!mqtts.isEmpty()) protocols.put(Protocol.MQTTS, mqtts);
+                        try {
+                            URI uri = new URI(anUriAsStr);
+                            String aScheme = uri.getScheme();
+                            //Trying to associate the protocol with our Enum.
+                            switch (aScheme) {
+                                case "mqtt":
+                                    protocols.put(Protocol.MQTT, anUriAsStr);
+                                    break;
+                                case "mqtts":
+                                    protocols.put(Protocol.MQTTS, anUriAsStr);
+                                    break;
+                                case "mqtt+ws":
+                                    protocols.put(Protocol.MQTT_WS, anUriAsStr);
+                                    break;
+                                case "mqtt+wss":
+                                    protocols.put(Protocol.MQTT_WSS, anUriAsStr);
+                                    break;
+                                default:
+                                    throw new Exception("Error when parsing URI in the message services json array: Unknown Scheme.");
+                            }
+                        } catch (URISyntaxException e) {
+                            throw new Exception("Error when parsing URI in the message services json array: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+            else{
+                throw new Exception("Error when parsing URI in the message services json array: Word 'message' is missing in services JSON array  ");
+            }
 
-        String mqttWs = jsonProtocols.optString("mqtt-ws");
-        if(!mqttWs.isEmpty()) protocols.put(Protocol.MQTT_WS, mqttWs);
+            // Extract URIs from "telemetry" service
+            if (services.has("telemetry")) {
+                JSONArray messageArray = services.getJSONArray("telemetry");
+                for (int i = 0; i < messageArray.length(); i++) {
 
-        String mqttWss = jsonProtocols.optString("mqtt-wss");
-        if(!mqttWss.isEmpty()) protocols.put(Protocol.MQTT_WSS, mqttWss);
+                    JSONObject messageObj = messageArray.getJSONObject(i);
+                    //We grab all uris in this json array.
+                    if (messageObj.has("uri")) {
+                        String anUriAsStr = messageObj.getString("uri");
+                        try {
+                            URI uri = new URI(anUriAsStr);
+                            String aScheme = uri.getScheme();
+                            //Trying to associate the protocol with our Enum.
+                            switch (aScheme) {
+                                case "http":
+                                    protocols.put(Protocol.OTLP_HTTP, anUriAsStr);
+                                    break;
+                                case "https":
+                                    protocols.put(Protocol.OTLP_HTTPS, anUriAsStr);
+                                    break;
+                                default:
+                                    throw new Exception("Error when parsing URI in the telemetry services json array: Unknown Scheme.");
+                            }
+                        }
+                        catch (URISyntaxException e) {
+                            throw new Exception("Error when parsing URI in the telemetry services json array: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+            else{
+                throw new Exception("Error when parsing URI in the message services json array: Word 'telemetry' is missing in services JSON array  ");
+            }
+            // Extract URIs from "jaeger" service.
+            if (services.has("api")) {
+                JSONArray messageArray = services.getJSONArray("api");
+                for (int i = 0; i < messageArray.length(); i++) {
 
-        // OTLP flavors
-        String otlpHttp = jsonProtocols.optString("otlp-http");
-        if(!otlpHttp.isEmpty()) protocols.put(Protocol.OTLP_HTTP, otlpHttp);
+                    JSONObject messageObj = messageArray.getJSONObject(i);
+                    //We grab all uris in this json array.
+                    if (messageObj.has("uri")) {
+                        String anUriAsStr = messageObj.getString("uri");
+                        try {
+                            URI uri = new URI(anUriAsStr);
+                            String aScheme = uri.getScheme();
+                            //Trying to associate the protocol with our Enum.
+                            switch (aScheme) {
+                                case "http":
+                                    protocols.put(Protocol.JAEGER_HTTP, anUriAsStr);
+                                    break;
+                                case "https":
+                                    protocols.put(Protocol.JAEGER_HTTPS, anUriAsStr);
+                                    break;
+                                default:
+                                    throw new Exception("Error when parsing URI in the api services json array: Unknown Scheme.");
+                            }
+                        } catch (URISyntaxException e) {
+                            throw new Exception("Error when parsing URI in the api services json array: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+            else{
+                throw new Exception("Error when parsing URI in the message services json array: Word 'api' is missing in services JSON array  ");
+            }
 
-        String otlpHttps = jsonProtocols.optString("otlp-https");
-        if(!otlpHttps.isEmpty()) protocols.put(Protocol.OTLP_HTTPS, otlpHttps);
-
-        // Jaeger
-        String jaegerHttp = jsonProtocols.optString("jaeger-http");
-        if(!jaegerHttp.isEmpty()) protocols.put(Protocol.JAEGER_HTTP, jaegerHttp);
-
-        String jaegerHttps = jsonProtocols.optString("jaeger-https");
-        if(!jaegerHttps.isEmpty()) protocols.put(Protocol.JAEGER_HTTPS, jaegerHttps);
+        }
+        catch (Exception e) {
+            throw new Exception("Error with the jsonConfig provided to BootstrapConfig:" + e.getMessage());
+        }
     }
 
     /**
@@ -182,5 +267,4 @@ public class BootstrapConfig {
         }
         return false;
     }
-
 }

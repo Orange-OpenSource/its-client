@@ -8,6 +8,7 @@
 package com.orange.iot3core.bootstrap;
 
 import okhttp3.*;
+import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -75,8 +76,13 @@ public class BootstrapHelper {
                     bootstrapCallback.boostrapError(new Throwable("Error: " + statusCode + " - " + responseBody));
                 } else {
                     JSONObject jsonResponse = new JSONObject(responseBody);
-                    BootstrapConfig bootstrapConfig = new BootstrapConfig(jsonResponse);
-                    bootstrapCallback.boostrapSuccess(bootstrapConfig);
+                    try {
+                        BootstrapConfig bootstrapConfig = new BootstrapConfig(jsonResponse);
+                        bootstrapCallback.boostrapSuccess(bootstrapConfig);
+                    }
+                    catch (Exception exception) {
+                        bootstrapCallback.boostrapError(exception);
+                    }
                 }
             }
         } catch (IllegalArgumentException | IOException exception) {
@@ -88,7 +94,9 @@ public class BootstrapHelper {
         EXTERNAL_APP("external-app"),
         INTERNAL_APP("internal-app"),
         NEIGHBOUR("neighbour"),
-        USER_EQUIPMENT("user-equipment");
+        INTERQUEUE_APP("interqueue-app"),
+        USER_EQUIPMENT("user-equipment"),
+        MONITORING_APP("monitoring-app");
 
         private final String jsonValue;
 
