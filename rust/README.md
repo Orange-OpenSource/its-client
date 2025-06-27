@@ -53,32 +53,25 @@ Received 2000 messages including 1997 as JSON
 
 This example describes how to send OpenTelemetry traces and how to transmit W3C Context to link spans between traces.
 
-We don't expose any public OTLP collector (yet?),
-so you either have to use one of your own already available or spawn one:
-
-```shell
-docker container run --rm --name jaeger \
-   -p 16686:16686 \
-   -p 4318:4318 \
-jaegertracing/all-in-one:1.58
-```
-
 Before running the example, you may edit the `[telemetry]` section of configuration
 with the proper values:
 
 ```config
+# telemetry feature settings
 [telemetry]
 # the host is the telemetry server to connect to
 host = localhost
 # the port is the port to connect to
 port = 4318
-# Optional, defaults to 'v1/traces'
-#path = default/v1/traces
-# Optional, defaults to 2048
-# max_batch_size = 10
-# Optional, for basic auth
+# true to use the TLS protocol
+use_tls = false
+# optional, defaults to 'v1/traces'
+#path = custom/v1/traces
+# optional, defaults to 2048
+#max_batch_size = 10
+# optional, for basic auth
 #username = username
-# Optional, for basic auth
+# optional, for basic auth
 #password = password
 ```
 
@@ -104,6 +97,12 @@ INFO [telemetry] Send a trace with 3 spans from 3 threads
 INFO [telemetry] └─ Main thread           trace_id: 2409551c828c0168c3828c6621c2df11, span_id: 0b27d386ff26555e
 INFO [telemetry]    ├─ Sender thread      trace_id: 2409551c828c0168c3828c6621c2df11, span_id: 6cc2a49841e217be
 INFO [telemetry]    └─ Listener thread    trace_id: 2409551c828c0168c3828c6621c2df11, span_id: 9c780d071865479c
+```
+
+If the `mobility` features is enabled, the `client_id` fiels is used as service name.
+
+```shell
+cargo run --example telemetry --features telemetry,mobility
 ```
 
 ### copycat
@@ -153,7 +152,16 @@ implementation to work relevantly**
 You can manually send an information and a stopped CAM message with the following commands:
 
 ```shell
-docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.org -p 8886 -t default/outQueue/v2x/info --tls-version tlsv1.2 --capath /etc/ssl/certs/ -m "{\"type\": \"broker\", \"version\": \"1.2.0\", \"instance_id\": \"ora_info_002\", \"instance_type\": \"geoserver\", \"running\": true, \"timestamp\": 1742226701618, \"validity_duration\": 3600, \"service_area\": {\"type\": \"tiles\", \"quadkeys\": [\"0\", \"1\", \"2\", \"3\"]}}"
+docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.org -p 8886 -t default/outQueue/v2x/info --tls-version tlsv1.2 --capath /etc/ssl/certs/ -m "{\"message_type\": \"information\", \"version\": \"2.1.0\", \"source_uuid\": \"ora_app_info-002\", \"instance_id\": \"ora_app_message-002\", \"instance_type\": \"central\", \"running\": true, \"timestamp\": 1742226701618, \"validity_duration\": 3600, \"service_area\": {\"type\": \"tiles\", \"quadkeys\": [\"0\", \"1\", \"2\", \"3\"]}}"
+```
+
+```shell
+docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.org -p 8886 -t default/outQueue/v2x/cam/com_car_555/0/3/1/3/3/3/1/1/1/2/0/2/1/0/0/1/2/1/2/1/2/1 --tls-version tlsv1.2 --capath /etc/ssl/certs/ -m "{\"message_type\":\"cam\",\"origin\":\"self\",\"version\":\"2.2.0\",\"source_uuid\":\"com_car_555\",\"timestamp\":1742227617044,\"message\":{\"protocol_version\":1,\"station_id\":555,\"generation_delta_time\":64291,\"basic_container\":{\"station_type\":5,\"reference_position\":{\"latitude\":447753167,\"longitude\":-6518623,\"position_confidence_ellipse\":{\"semi_major\":10,\"semi_minor\":50,\"semi_major_orientation\":1},\"altitude\":{\"value\":14750,\"confidence\":1}}},\"high_frequency_container\":{\"basic_vehicle_container_high_frequency\":{\"heading\":{\"value\":1800,\"confidence\":2},\"speed\":{\"value\":0,\"confidence\":3},\"drive_direction\":0,\"vehicle_length\":{\"value\":40,\"confidence\":0},\"vehicle_width\":20,\"longitudinal_acceleration\":{\"value\":10,\"confidence\":2},\"curvature\":{\"value\":11,\"confidence\":4},\"curvature_calculation_mode\":0,\"yaw_rate\":{\"value\":562,\"confidence\":2}}}}}"
+```
+
+NB: you can alse use the deprecated version 1.1.3 of a CAM message:
+
+```shell
 docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.org -p 8886 -t default/outQueue/v2x/cam/com_car_555/0/3/1/3/3/3/1/1/1/2/0/2/1/0/0/1/2/1/2/1/2/1 --tls-version tlsv1.2 --capath /etc/ssl/certs/ -m "{\"type\":\"cam\",\"origin\":\"self\",\"version\":\"1.1.3\",\"source_uuid\":\"com_car_555\",\"timestamp\":1742227617044,\"message\":{\"protocol_version\":1,\"station_id\":555,\"generation_delta_time\":64291,\"basic_container\":{\"station_type\":5,\"reference_position\":{\"latitude\":447753167,\"longitude\":-6518623,\"altitude\":14750},\"confidence\":{\"position_confidence_ellipse\":{\"semi_major_confidence\":10,\"semi_minor_confidence\":50,\"semi_major_orientation\":1},\"altitude\":1}},\"high_frequency_container\":{\"heading\":3601,\"speed\":0,\"longitudinal_acceleration\":161,\"drive_direction\":0,\"vehicle_length\":40,\"vehicle_width\":20,\"confidence\":{\"heading\":2,\"speed\":3,\"vehicle_length\":0}}}}"
 ```
 
@@ -161,18 +169,16 @@ The application will receive the messages and log the actions:
 
 ```
 ...
-INFO [libits::client::application::pipeline] we received an information on the topic default/outQueue/v2x/info: Information { type_field: "broker", version: "1.2.0", instance_id: "ora_info_002", instance_type: "geoserver", central_instance_id: None, running: true, timestamp: 1742226701618, validity_duration: 3600, public_ip_address: [], mqtt_ip: [], mqtt_tls_ip: [], http_proxy: [], ntp_servers: [], domain_name_servers: [], gelf_loggers: [], udp_loggers: [], fbeat_loggers: [], service_area: Some(ServiceArea { type_field: "tiles", coordinates: [], radius: None, vertices: [], quadkeys: ["0", "1", "2", "3"] }), cells_id: [] }
-INFO [libits::client::configuration::node_configuration] Updating node configuration...
-INFO [libits::client::configuration::node_configuration] Node configuration updated!
+INFO [libits::client::application::pipeline] We received an new information
 ...
-INFO [copycat] we received an item from com_car_555 as stopped: we don't copy cat
+INFO [copycat] We received an item from com_car_555 as stopped: we don't copy cat
 ...
 ```
 
-Then you can send a non-stopped CAM message many times during more than 3 seconds in loop:
+Then you can send a non-stopped CAM message many times during more than 3 seconds in a loop:
 
 ```shell
-docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.org -p 8886 -t default/outQueue/v2x/cam/com_car_555/0/3/1/3/3/3/1/1/1/2/0/2/1/0/0/1/2/1/2/1/2/1 --tls-version tlsv1.2 --capath /etc/ssl/certs/ -m "{\"type\":\"cam\",\"origin\":\"self\",\"version\":\"1.1.3\",\"source_uuid\":\"com_car_555\",\"timestamp\":1742227617044,\"message\":{\"protocol_version\":1,\"station_id\":555,\"generation_delta_time\":64291,\"basic_container\":{\"station_type\":5,\"reference_position\":{\"latitude\":447753167,\"longitude\":-6518623,\"altitude\":14750},\"confidence\":{\"position_confidence_ellipse\":{\"semi_major_confidence\":10,\"semi_minor_confidence\":50,\"semi_major_orientation\":1},\"altitude\":1}},\"high_frequency_container\":{\"heading\":3601,\"speed\":141,\"longitudinal_acceleration\":161,\"drive_direction\":0,\"vehicle_length\":40,\"vehicle_width\":20,\"confidence\":{\"heading\":2,\"speed\":3,\"vehicle_length\":0}}}}"
+docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.org -p 8886 -t default/outQueue/v2x/cam/com_car_555/0/3/1/3/3/3/1/1/1/2/0/2/1/0/0/1/2/1/2/1/2/1 --tls-version tlsv1.2 --capath /etc/ssl/certs/ -m "{\"message_type\":\"cam\",\"origin\":\"self\",\"version\":\"2.2.0\",\"source_uuid\":\"com_car_555\",\"timestamp\":1742227617044,\"message\":{\"protocol_version\":1,\"station_id\":555,\"generation_delta_time\":64291,\"basic_container\":{\"station_type\":5,\"reference_position\":{\"latitude\":447753167,\"longitude\":-6518623,\"position_confidence_ellipse\":{\"semi_major\":10,\"semi_minor\":50,\"semi_major_orientation\":1},\"altitude\":{\"value\":14750,\"confidence\":1}}},\"high_frequency_container\":{\"basic_vehicle_container_high_frequency\":{\"heading\":{\"value\":1800,\"confidence\":2},\"speed\":{\"value\":144,\"confidence\":3},\"drive_direction\":0,\"vehicle_length\":{\"value\":40,\"confidence\":0},\"vehicle_width\":20,\"longitudinal_acceleration\":{\"value\":10,\"confidence\":2},\"curvature\":{\"value\":11,\"confidence\":4},\"curvature_calculation_mode\":0,\"yaw_rate\":{\"value\":562,\"confidence\":2}}}}}"
 ```
 
 The application will receive the messages and log the actions:
@@ -231,6 +237,9 @@ The file export saves it to a file, rotating and compressing each 10000 lines:
 
 ```shell
 cat /data/collector/*.log | wc -l && ls -lh /data/collector/
+```
+
+```
 8073
 total 1,3M
 -rw-rw-r-- 1 user group 156K abr.  11 10:41 collector_20250411_104132_771.tar.gz
