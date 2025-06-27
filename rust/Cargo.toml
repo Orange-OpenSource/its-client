@@ -9,7 +9,7 @@
 
 [package]
 name = "libits-client"
-version = "2.1.0"
+version = "2.2.0"
 authors = ["Frédéric Gardes <frederic.gardes@orange.com>", "Nicolas Buffon <nicolas.buffon@orange.com>"]
 license = "MIT"
 description = "library to connect on an ITS MQTT server"
@@ -59,6 +59,7 @@ serde_repr = "0.1"
 thiserror = "2.0"
 threadpool = "1.8"
 flexi_logger = "0.30"
+rand = "0.8.5"
 
 [dependencies.base64]
 version = "0.22"
@@ -124,3 +125,6 @@ features = ["async", "compress"]
 name = "position"
 harness = false
 required-features = ["mobility"]
+
+[profile.dev]
+incremental = true
