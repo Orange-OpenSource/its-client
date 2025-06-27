@@ -9,201 +9,171 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use crate::exchange::etsi::mobile_perceived_object::MobilePerceivedObject;
+use crate::exchange::etsi::angle::Angle;
+pub(crate) use crate::exchange::etsi::heading_from_etsi;
+use crate::exchange::etsi::map_extended_message::{Intersection, RoadSegment};
 use crate::exchange::etsi::perceived_object::PerceivedObject;
 use crate::exchange::etsi::reference_position::ReferencePosition;
-use crate::exchange::etsi::{
-    PositionConfidence, acceleration_from_etsi, heading_from_etsi, speed_from_etsi,
-    timestamp_to_generation_delta_time,
-};
+use crate::exchange::etsi::shape::Shape;
+use crate::exchange::etsi::timestamp_to_etsi;
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
-use crate::exchange::message::content_error::ContentError::{
-    MissingStationDataContainer, NotAMortal, RsuOriginatingMessage,
-};
+use crate::exchange::message::content_error::ContentError::{NotAMortal, NotOriginatingVehicle};
 use crate::exchange::mortal::Mortal;
 use crate::mobility::mobile::Mobile;
+use crate::mobility::mobile_perceived_object::MobilePerceivedObject;
 use crate::mobility::position::Position;
 use serde::{Deserialize, Serialize};
 use std::any::type_name;
 
+/// Represents a Collective Perception Message (CPM) according to an ETSI standard.
+///
+/// This message is used to describe information around itself.
+/// It implements the schema defined in the [CPM version 2.1.0][1].
+///
+/// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/cpm/cpm_schema_2-1-0.json
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CollectivePerceptionMessage {
+    /// Protocol version (mandatory).
     pub protocol_version: u8,
+    /// Unique identifier for the station (mandatory).
     pub station_id: u32,
-    // pub message_id: u8,
-    pub generation_delta_time: u16,
+    /// Container with management information about the station (mandatory).
     pub management_container: ManagementContainer,
-    pub station_data_container: Option<StationDataContainer>,
+
+    /// Container with originating vehicle specifications (optional).
+    pub originating_vehicle_container: Option<OriginatingVehicleContainer>,
+    /// List of originating rsu specifications (optional).
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub originating_rsu_container: Vec<MapReference>,
+    /// List of sensor specifications (optional).
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub sensor_information_container: Vec<SensorInformation>,
+    /// List of perception region information (optional).
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub perception_region_container: Vec<PerceptionRegion>,
+    /// List of detected objects (optional).
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub perceived_object_container: Vec<PerceivedObject>,
-    #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    pub free_space_addendum_container: Vec<FreeSpaceAddendum>,
 }
 
+/// Represents the management container of a CPM.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ManagementContainer {
-    pub station_type: u8,
+    /// Reference time of the station (mandatory).
+    pub reference_time: u64,
+    /// Reference position of the station (mandatory).
     pub reference_position: ReferencePosition,
-    pub confidence: PositionConfidence,
+
+    /// Information regarding the message segmentation on the facility layer (optional).
+    pub segmentation_info: Option<SegmentationInfo>,
+    /// The planned or expected range of the CPM generation rate (optional).
+    pub message_rate_range: Option<MessageRateRange>,
 }
 
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct StationDataContainer {
-    pub originating_vehicle_container: Option<OriginatingVehicleContainer>,
-    pub originating_rsu_container: Option<OriginatingRSUContainer>,
-}
-
+/// Represents the container for data originating from a vehicle.
+/// Includes information about the vehicle's heading, speed, dimensions, and acceleration.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OriginatingVehicleContainer {
-    pub heading: u16,
-    pub speed: u16,
-    pub drive_direction: Option<u8>,
-    pub vehicle_length: Option<u16>,
-    pub vehicle_width: Option<u8>,
-    pub longitudinal_acceleration: Option<i16>,
-    pub yaw_rate: Option<i16>,
-    pub lateral_acceleration: Option<i16>,
-    pub vertical_acceleration: Option<i16>,
-    pub confidence: OriginatingVehicleContainerConfidence,
+    pub orientation_angle: Angle,
+
+    pub pitch_angle: Option<Angle>,
+    pub roll_angle: Option<Angle>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub trailer_data_set: Vec<Trailer>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct OriginatingRSUContainer {
-    pub intersection_reference_id: Option<IntersectionReferenceId>,
-    pub road_segment_reference_id: Option<u32>,
+pub struct PerceptionRegion {
+    pub measurement_delta_time: i16,
+    pub perception_region_confidence: u8,
+    pub perception_region_shape: Shape,
+    pub shadowing_applies: bool,
+
+    pub sensor_id_list: Vec<u8>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub perceived_object_ids: Vec<u16>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct IntersectionReferenceId {
-    pub road_regulator_id: Option<u32>,
-    pub intersection_id: u32,
+pub struct MapReference {
+    pub road_segment: Option<RoadSegment>,
+    pub intersection: Option<Intersection>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct OriginatingVehicleContainerConfidence {
-    pub heading: u8,
-    pub speed: u8,
-    pub vehicle_length: Option<u8>,
-    pub yaw_rate: Option<u8>,
-    pub longitudinal_acceleration: Option<u8>,
-    pub lateral_acceleration: Option<u8>,
-    pub vertical_acceleration: Option<u8>,
+pub struct Trailer {
+    pub ref_point_id: u8,
+    pub hitch_point_offset: u8,
+    pub hitch_angle: Angle,
+
+    pub front_overhang: Option<u8>,
+    pub rear_overhang: Option<u8>,
+    pub trailer_width: Option<u8>,
 }
 
+/// Represents information about a sensor, including its identifier, type, and detection area.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SensorInformation {
+    /// Sensor identifier (mandatory).
     pub sensor_id: u8,
-    #[serde(rename = "type")]
-    pub sensor_type: u8,
-    pub detection_area: DetectionArea,
+    /// Type of the sensor (mandatory).
+    pub sensor_type: SensorType,
+    /// Indicates if the standard shadowing approach applies to the described perception region (mandatory).
+    pub shadowing_applies: bool,
+
+    /// The perception region of the sensor (optional).
+    pub perception_region_shape: Option<Shape>,
+    ///The homogeneous perception region confidence that can be assumed for the entire perception region shape of this sensor (optional).
+    pub perception_region_confidence: Option<u8>,
+}
+
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(from = "u8", into = "u8")]
+pub enum SensorType {
+    #[default]
+    Undefined = 0,
+    Radar = 1,
+    Lidar = 2,
+    MonoVideo = 3,
+    StereoVision = 4,
+    NightVision = 5,
+    Ultrasonic = 6,
+    Pmd = 7,
+    InductionLoop = 8,
+    SphericalCamera = 9,
+    Uwb = 10,
+    Acoustic = 11,
+    LocalAggregation = 12,
+    ItsAggregation = 13,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct DetectionArea {
-    pub vehicle_sensor: Option<VehicleSensor>,
-    pub stationary_sensor_polygon: Option<Vec<Offset>>,
-    pub stationary_sensor_radial: Option<StationarySensorRadial>,
-    pub stationary_sensor_circular: Option<CircularArea>,
-    pub stationary_sensor_ellipse: Option<EllipticArea>,
-    pub stationary_sensor_rectangle: Option<RectangleArea>,
+pub struct SegmentationInfo {
+    pub total_msg_no: u8,
+    pub this_msg_no: u8,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct VehicleSensor {
-    pub ref_point_id: u8,
-    pub x_sensor_offset: i16,
-    pub y_sensor_offset: i16,
-    pub z_sensor_offset: Option<u16>,
-    #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    pub vehicle_sensor_property_list: Vec<VehicleSensorProperty>,
+pub struct MessageRateRange {
+    pub message_rate_min: MessageRateHz,
+    pub message_rate_max: MessageRateHz,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct VehicleSensorProperty {
-    pub range: u16,
-    pub horizontal_opening_angle_start: u16,
-    pub horizontal_opening_angle_end: u16,
-    pub vertical_opening_angle_start: Option<u16>,
-    pub vertical_opening_angle_end: Option<u16>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct StationarySensorRadial {
-    pub range: u16,
-    pub horizontal_opening_angle_start: u16,
-    pub horizontal_opening_angle_end: u16,
-    pub vertical_opening_angle_start: Option<u16>,
-    pub vertical_opening_angle_end: Option<u16>,
-    pub sensor_position_offset: Option<Offset>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct CircularArea {
-    pub node_center_point: Option<Offset>,
-    pub radius: u16,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct EllipticArea {
-    pub semi_major_range_length: u16,
-    pub semi_minor_range_length: u16,
-    pub semi_major_range_orientation: u16,
-    pub node_center_point: Option<Offset>,
-    pub semi_height: Option<u16>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct RectangleArea {
-    pub semi_major_range_length: u16,
-    pub semi_minor_range_length: u16,
-    pub semi_major_range_orientation: u16,
-    pub node_center_point: Option<Offset>,
-    pub semi_height: Option<u16>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Offset {
-    pub x: i32,
-    pub y: i32,
-    pub z: Option<i32>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct FreeSpaceAddendum {
-    pub free_space_area: FreeSpaceArea,
-    pub free_space_confidence: u8,
-    #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    pub sensor_id_list: Vec<u8>,
-    pub shadowing_applies: Option<bool>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct FreeSpaceArea {
-    pub free_space_polygon: Option<Vec<Offset>>,
-    pub free_space_circular: Option<CircularArea>,
-    pub free_space_ellipse: Option<EllipticArea>,
-    pub free_space_rectangle: Option<RectangleArea>,
+pub struct MessageRateHz {
+    pub mantissa: u8,
+    pub exponent: i8,
 }
 
 impl CollectivePerceptionMessage {
@@ -212,7 +182,7 @@ impl CollectivePerceptionMessage {
             .iter()
             .map(|perceived_object| {
                 MobilePerceivedObject::new(
-                    //assumed clone : we store a copy into the MobilePerceivedObject container
+                    // assumed clone : we store a copy into the MobilePerceivedObject container
                     // TODO use a lifetime to propage the lifecycle between PerceivedObject and MobilePerceivedObject instead of clone
                     perceived_object.clone(),
                     self,
@@ -232,37 +202,21 @@ impl Mobile for CollectivePerceptionMessage {
     }
 
     fn speed(&self) -> Option<f64> {
-        if let Some(station_data_container) = &self.station_data_container {
-            if let Some(originating_vehicle_container) =
-                &station_data_container.originating_vehicle_container
-            {
-                return Some(speed_from_etsi(originating_vehicle_container.speed));
-            }
-        }
+        // No speed is provided
         None
     }
 
     fn heading(&self) -> Option<f64> {
-        if let Some(station_data_container) = &self.station_data_container {
-            if let Some(originating_vehicle_container) =
-                &station_data_container.originating_vehicle_container
-            {
-                return Some(heading_from_etsi(originating_vehicle_container.heading));
-            }
+        if let Some(originating_vehicle_container) = &self.originating_vehicle_container {
+            return Some(heading_from_etsi(
+                originating_vehicle_container.orientation_angle.value,
+            ));
         }
         None
     }
 
     fn acceleration(&self) -> Option<f64> {
-        if let Some(station_data_container) = &self.station_data_container {
-            if let Some(originating_vehicle_container) =
-                &station_data_container.originating_vehicle_container
-            {
-                return originating_vehicle_container
-                    .longitudinal_acceleration
-                    .map(acceleration_from_etsi);
-            }
-        }
+        // No acceleration is provided
         None
     }
 }
@@ -274,18 +228,13 @@ impl Content for CollectivePerceptionMessage {
 
     fn appropriate(&mut self, timestamp: u64, new_station_id: u32) {
         self.station_id = new_station_id;
-        self.generation_delta_time = timestamp_to_generation_delta_time(timestamp);
+        self.management_container.reference_time = timestamp_to_etsi(timestamp);
     }
 
     fn as_mobile(&self) -> Result<&dyn Mobile, ContentError> {
-        match &self.station_data_container {
-            Some(container) => match container.originating_vehicle_container {
-                Some(_) => Ok(self),
-                None => Err(RsuOriginatingMessage(type_name::<
-                    CollectivePerceptionMessage,
-                >())),
-            },
-            None => Err(MissingStationDataContainer(type_name::<
+        match self.originating_vehicle_container {
+            Some(_) => Ok(self),
+            None => Err(NotOriginatingVehicle(type_name::<
                 CollectivePerceptionMessage,
             >())),
         }
@@ -296,1221 +245,1718 @@ impl Content for CollectivePerceptionMessage {
     }
 }
 
+impl SensorType {
+    fn try_from(value: u8) -> Result<SensorType, String> {
+        match value {
+            0 => Ok(SensorType::Undefined),
+            1 => Ok(SensorType::Radar),
+            2 => Ok(SensorType::Lidar),
+            3 => Ok(SensorType::MonoVideo),
+            4 => Ok(SensorType::StereoVision),
+            5 => Ok(SensorType::NightVision),
+            6 => Ok(SensorType::Ultrasonic),
+            7 => Ok(SensorType::Pmd),
+            8 => Ok(SensorType::InductionLoop),
+            9 => Ok(SensorType::SphericalCamera),
+            10 => Ok(SensorType::Uwb),
+            11 => Ok(SensorType::Acoustic),
+            12 => Ok(SensorType::LocalAggregation),
+            13 => Ok(SensorType::ItsAggregation),
+            _ => Err(format!("Invalid sensor type value: {}", value)),
+        }
+    }
+}
+
+impl From<u8> for SensorType {
+    fn from(value: u8) -> Self {
+        Self::try_from(value).unwrap_or(SensorType::Undefined)
+    }
+}
+
+impl From<SensorType> for u8 {
+    fn from(sensor_type: SensorType) -> Self {
+        sensor_type as u8
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::exchange::etsi::collective_perception_message::{
-        CircularArea, CollectivePerceptionMessage, EllipticArea, FreeSpaceAddendum,
-        ManagementContainer, Offset, RectangleArea, StationarySensorRadial,
+        CollectivePerceptionMessage, MapReference, SensorType,
     };
 
-    use crate::exchange::etsi::perceived_object::PerceivedObject;
-    use crate::exchange::etsi::reference_position::{
-        ReferencePosition, altitude_from_etsi, coordinate_from_etsi,
-    };
-    use crate::exchange::etsi::speed_from_etsi;
-
-    macro_rules! assert_float_eq {
-        ($a:expr, $b:expr, $e:expr) => {
-            let delta = (($a) - ($b)).abs();
-            assert!(delta <= $e, "Actual:   {}\nExpected: {}", $a, $b)
-        };
-    }
-
-    #[test]
-    fn it_can_provide_the_mobile_perceived_object_list() {
-        let cpm = CollectivePerceptionMessage {
-            station_id: 12,
-            management_container: ManagementContainer {
-                station_type: 15,
-                reference_position: ReferencePosition {
-                    latitude: 488417860,
-                    longitude: 23678940,
-                    altitude: 900,
-                },
-                confidence: Default::default(),
-            },
-            perceived_object_container: vec![
-                PerceivedObject {
-                    object_id: 1,
-                    x_distance: 1398,
-                    y_distance: -1138,
-                    z_distance: None,
-                    x_speed: 389,
-                    y_speed: 25,
-                    z_speed: None,
-                    object_age: 1500,
-                    ..Default::default()
-                },
-                PerceivedObject {
-                    object_id: 4,
-                    x_distance: 102,
-                    y_distance: -942,
-                    z_distance: None,
-                    x_speed: 9,
-                    y_speed: 16,
-                    z_speed: None,
-                    object_age: 533,
-                    ..Default::default()
-                },
-            ],
-            ..Default::default()
-        };
-
-        let perceived_object = cpm.mobile_perceived_object_list();
-        let first = perceived_object
-            .first()
-            .expect("Perceived object list must contain two elements");
-        let second = perceived_object
-            .get(1)
-            .expect("Perceived object list must contain two elements");
-
-        assert_eq!(first.mobile_id, 121);
-        assert_float_eq!(
-            first.position.latitude,
-            coordinate_from_etsi(488416836),
-            1e-6
-        );
-        assert_float_eq!(
-            first.position.longitude,
-            coordinate_from_etsi(23680844),
-            1e-6
-        );
-        assert_float_eq!(first.position.altitude, altitude_from_etsi(900), 1e-3);
-        assert_float_eq!(first.speed, speed_from_etsi(389), 1e-5);
-        assert_float_eq!(first.heading.to_degrees(), 86.3, 1e-1);
-
-        assert_eq!(second.mobile_id, 124);
-        assert_float_eq!(
-            second.position.latitude,
-            coordinate_from_etsi(488417013),
-            1e-6
-        );
-        assert_float_eq!(
-            second.position.longitude,
-            coordinate_from_etsi(23679078),
-            1e-6
-        );
-        assert_float_eq!(second.position.altitude, altitude_from_etsi(900), 1e-3);
-        assert_float_eq!(second.speed, speed_from_etsi(18), 1e-5);
-        assert_float_eq!(second.heading.to_degrees(), 29.3, 1e-1);
-    }
-
-    #[test]
-    fn test_deserialize() {
-        let data = r#"{
-            "protocol_version": 0,
-            "station_id": 0,
-            "generation_delta_time": 0,
+    fn minimal_cpm() -> &'static str {
+        r#"{
+            "protocol_version": 255,
+            "station_id": 4294967295,
             "management_container": {
-              "station_type": 15,
-              "reference_position": {
-                "latitude": 488640493,
-                "longitude": 23310526,
-                "altitude": 900
-              },
-              "confidence": {
-                "position_confidence_ellipse": {
-                  "semi_major_confidence": 1,
-                  "semi_minor_confidence": 1,
-                  "semi_major_orientation": 0
-                },
-                "altitude": 0
-              }
+                "reference_time": 4398046511103,
+                "reference_position": {
+                    "latitude": 900000001,
+                    "longitude": -1800000001,
+                    "altitude": {
+                        "value": 800001,
+                        "confidence": 15
+                    },                    
+                    "position_confidence_ellipse": {
+                        "semi_major": 4095,
+                        "semi_minor": 4095,
+                        "semi_major_orientation": 3601
+                    }
+                }
+            }
+        }"#
+    }
+
+    fn standard_cpm() -> &'static str {
+        r#"{
+            "protocol_version": 255,
+            "station_id": 4294967295,
+            "management_container": {
+                "reference_time": 4398046511103,
+                "reference_position": {
+                    "latitude": 900000001,
+                    "longitude": -1800000001,
+                    "altitude": {
+                        "value": 800001,
+                        "confidence": 15
+                    },
+                    "position_confidence_ellipse": {
+                        "semi_major": 4095,
+                        "semi_minor": 4095,
+                        "semi_major_orientation": 3601
+                    }                    
+                }
             },
-            "perceived_object_container": [
-              {
-                "object_id": 5,
-                "time_of_measurement": 2,
-                "x_distance": 804,
-                "y_distance": 400,
-                "x_speed": 401,
-                "y_speed": 401,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "pedestrian": 1
-                      }
-                    },
-                    "confidence": 40
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
+            "sensor_information_container": [
+                {
+                    "sensor_id": 255,
+                    "sensor_type": 13,
+                    "shadowing_applies": true
                 }
-              },
-              {
-                "object_id": 7,
-                "time_of_measurement": 2,
-                "x_distance": -1594,
-                "y_distance": 540,
-                "x_speed": 652,
-                "y_speed": 652,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "pedestrian": 1
-                      }
+            ],
+            "perception_region_container": [
+                {
+                    "measurement_delta_time": 2047,
+                    "perception_region_confidence": 101,
+                    "perception_region_shape": {
+                        "polygonal": {
+                            "polygon": [
+                                {
+                                    "x_coordinate": -32768,
+                                    "y_coordinate": -32768,
+                                    "z_coordinate": -32768
+                                },
+                                {
+                                    "x_coordinate": 32767,
+                                    "y_coordinate": -32768,
+                                    "z_coordinate": -32768
+                                },
+                                {
+                                    "x_coordinate": 32767,
+                                    "y_coordinate": 32767,
+                                    "z_coordinate": -32768
+                                },
+                                {
+                                    "x_coordinate": -32768,
+                                    "y_coordinate": 32767,
+                                    "z_coordinate": -32768
+                                }
+                            ]
+                        }
                     },
-                    "confidence": 40
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
+                    "shadowing_applies": true,
+                    "sensor_id_list": [ 1 ]
                 }
-              },
-              {
-                "object_id": 9,
-                "time_of_measurement": 3,
-                "x_distance": 1009,
-                "y_distance": 581,
-                "x_speed": 283,
-                "y_speed": 283,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "pedestrian": 1
-                      }
-                    },
-                    "confidence": 40
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
-                }
-              },
-              {
-                "object_id": 11,
-                "time_of_measurement": 3,
-                "x_distance": -224,
-                "y_distance": 3077,
-                "x_speed": 343,
-                "y_speed": 343,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "pedestrian": 1
-                      }
-                    },
-                    "confidence": 40
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
-                }
-              },
-              {
-                "object_id": 12,
-                "time_of_measurement": 4,
-                "x_distance": 3329,
-                "y_distance": -813,
-                "x_speed": 735,
-                "y_speed": 735,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "pedestrian": 1
-                      }
-                    },
-                    "confidence": 40
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
-                }
-              },
-              {
-                "object_id": 88,
-                "time_of_measurement": 7,
-                "x_distance": 1056,
-                "y_distance": 979,
-                "y_speed": 7,
-                "x_speed": 7,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "pedestrian": 1
-                      }
-                    },
-                    "confidence": 40
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
-                }
-              },
-              {
-                "object_id": 195,
-                "time_of_measurement": 7,
-                "x_distance": -365,
-                "y_distance": 2896,
-                "x_speed": 514,
-                "y_speed": 514,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "pedestrian": 1
-                      }
-                    },
-                    "confidence": 40
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
-                }
-              },
-              {
-                "object_id": 200,
-                "time_of_measurement": 7,
-                "x_distance": 42,
-                "y_distance": 1523,
-                "x_speed": 948,
-                "y_speed": 948,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "bicyclist": 1
-                      }
-                    },
-                    "confidence": 36
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
-                }
-              },
-              {
-                "object_id": 206,
-                "time_of_measurement": 7,
-                "x_distance": -857,
-                "y_distance": 117,
-                "x_speed": 241,
-                "y_speed": 241,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "bicyclist": 1
-                      }
-                    },
-                    "confidence": 36
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
-                }
-              },
-              {
-                "object_id": 214,
-                "time_of_measurement": 8,
-                "x_distance": 776,
-                "y_distance": 498,
-                "x_speed": 223,
-                "y_speed": 223,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "pedestrian": 1
-                      }
-                    },
-                    "confidence": 40
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
-                }
-              },
-              {
-                "object_id": 225,
-                "time_of_measurement": 9,
-                "x_distance": -103,
-                "y_distance": 511,
-                "x_speed": 556,
-                "y_speed": 556,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "bicyclist": 1
-                      }
-                    },
-                    "confidence": 39
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
-                }
-              },
-              {
-                "object_id": 229,
-                "time_of_measurement": 9,
-                "x_distance": 1603,
-                "y_distance": 517,
-                "x_speed": 154,
-                "y_speed": 154,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "pedestrian": 1
-                      }
-                    },
-                    "confidence": 46
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
-                }
-              },
-              {
-                "object_id": 241,
-                "time_of_measurement": 10,
-                "x_distance": 1872,
-                "y_distance": -164,
-                "x_speed": 134,
-                "y_speed": 134,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "pedestrian": 1
-                      }
-                    },
-                    "confidence": 44
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
-                }
-              },
-              {
-                "object_id": 244,
-                "time_of_measurement": 10,
-                "x_distance": 611,
-                "y_distance": 339,
-                "x_speed": 283,
-                "y_speed": 283,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "pedestrian": 1
-                      }
-                    },
-                    "confidence": 44
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
-                }
-              },
-              {
-                "object_id": 247,
-                "time_of_measurement": 10,
-                "x_distance": -645,
-                "y_distance": 12,
-                "x_speed": 735,
-                "y_speed": 735,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "pedestrian": 1
-                      }
-                    },
-                    "confidence": 44
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
-                }
-              },
-              {
-                "object_id": 249,
-                "time_of_measurement": 10,
-                "x_distance": 4360,
-                "y_distance": -262,
-                "x_speed": 513,
-                "y_speed": 513,
-                "object_age": 1500,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "pedestrian": 1
-                      }
-                    },
-                    "confidence": 44
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
-                }
-              }
             ]
-        }"#;
-
-        match serde_json::from_str::<CollectivePerceptionMessage>(data) {
-            Ok(cpm) => {
-                assert_eq!(cpm.station_id, 0);
-            }
-            Err(e) => {
-                panic!("Failed to deserialize CPM: '{}'", e);
-            }
-        }
+        }"#
     }
 
-    #[test]
-    fn test_deserialize_full_cpm() {
-        let data = r#"{
-		"protocol_version": 255,
-		"station_id": 4294967295,
-		"generation_delta_time": 65535,
-		"management_container": {
-			"station_type": 254,
-			"reference_position": {
-				"latitude": 426263556,
-				"longitude": -82492123,
-				"altitude": 800001
-			},
-			"confidence": {
-				"position_confidence_ellipse": {
-					"semi_major_confidence": 4095,
-					"semi_minor_confidence": 4095,
-					"semi_major_orientation": 3601
-				},
-				"altitude": 15
-			}
-		},
-		"station_data_container": {
-			"originating_vehicle_container": {
-				"heading": 180,
-				"speed": 1600,
-				"drive_direction": 0,
-				"vehicle_length": 31,
-				"vehicle_width": 18,
-				"longitudinal_acceleration": -160,
-				"yaw_rate": -32766,
-				"lateral_acceleration": -2,
-				"vertical_acceleration": -1,
-				"confidence": {
-					"heading": 127,
-					"speed": 127,
-					"vehicle_length": 3,
-					"yaw_rate": 2,
-					"longitudinal_acceleration": 12,
-					"lateral_acceleration": 13,
-					"vertical_acceleration": 14
-				}
-			}
-		},
-		"sensor_information_container": [{
-			"sensor_id": 1,
-			"type": 3,
-			"detection_area": {
-				"vehicle_sensor": {
-					"ref_point_id": 255,
-					"x_sensor_offset": -3094,
-					"y_sensor_offset": -1000,
-					"z_sensor_offset": 1000,
-					"vehicle_sensor_property_list": [{
-						"range": 10000,
-						"horizontal_opening_angle_start": 3601,
-						"horizontal_opening_angle_end": 3601,
-						"vertical_opening_angle_start": 3601,
-						"vertical_opening_angle_end": 3601
-					}]
-				},
-				"stationary_sensor_radial": {
-					"range": 10000,
-					"horizontal_opening_angle_start": 3601,
-					"horizontal_opening_angle_end": 3601,
-					"vertical_opening_angle_start": 3601,
-					"vertical_opening_angle_end": 3601,
-					"sensor_position_offset": {
-						"x": 32767,
-						"y": -32768,
-						"z": 0
-					}
-				},
-				"stationary_sensor_polygon": [{
-						"x": -32768,
-						"y": 32767,
-						"z": 0
-					},
-					{
-						"x": 10,
-						"y": 20,
-						"z": 30
-					},
-					{
-						"x": 32767,
-						"y": -32768,
-						"z": 0
-					}
-				],
-				"stationary_sensor_circular": {
-					"radius": 10000,
-					"node_center_point": {
-						"x": 32767,
-						"y": -32768,
-						"z": 0
-					}
-				},
-				"stationary_sensor_ellipse": {
-					"node_center_point": {
-						"x": 32767,
-						"y": -32768,
-						"z": 0
-					},
-					"semi_major_range_length": 10000,
-					"semi_minor_range_length": 10000,
-					"semi_major_range_orientation": 3601,
-					"semi_height": 10000
-				},
-				"stationary_sensor_rectangle": {
-					"node_center_point": {
-						"x": 32767,
-						"y": -32768,
-						"z": 0
-					},
-					"semi_major_range_length": 10000,
-					"semi_minor_range_length": 10000,
-					"semi_major_range_orientation": 3601,
-					"semi_height": 10000
-				}
-			}
-		}],
-		"perceived_object_container": [{
-			"object_id": 0,
-			"time_of_measurement": 50,
-			"x_distance": 400,
-			"y_distance": 100,
-			"z_distance": 50,
-			"x_speed": 1400,
-			"y_speed": 500,
-			"z_speed": 0,
-			"x_acceleration": -160,
-			"y_acceleration": 0,
-			"z_acceleration": 161,
-			"roll_angle": 0,
-			"pitch_angle": 3600,
-			"yaw_angle": 3601,
-			"roll_rate": -32766,
-			"pitch_rate": 0,
-			"yaw_rate": 32767,
-			"roll_acceleration": -32766,
-			"pitch_acceleration": 0,
-			"yaw_acceleration": 32767,
-			"lower_triangular_correlation_matrix_columns": [
-				[-100, -99, -98],
-				[0, 1, 2],
-				[98, 99, 100]
-			],
-			"planar_object_dimension_1": 1023,
-			"planar_object_dimension_2": 1023,
-			"vertical_object_dimension": 1023,
-			"object_ref_point": 8,
-			"confidence": {
-				"x_distance": 102,
-				"y_distance": 102,
-				"z_distance": 102,
-				"x_speed": 7,
-				"y_speed": 7,
-				"z_speed": 7,
-				"x_acceleration": 102,
-				"y_acceleration": 102,
-				"z_acceleration": 102,
-				"roll_angle": 127,
-				"pitch_angle": 127,
-				"yaw_angle": 127,
-				"roll_rate": 8,
-				"pitch_rate": 8,
-				"yaw_rate": 8,
-				"roll_acceleration": 8,
-				"pitch_acceleration": 8,
-				"yaw_acceleration": 8,
-				"planar_object_dimension_1": 102,
-				"planar_object_dimension_2": 102,
-				"vertical_object_dimension": 102,
-				"longitudinal_lane_position": 102,
-				"object": 10
-			},
-			"object_age": 1500,
-			"sensor_id_list": [1, 2, 10, 100, 255],
-			"dynamic_status": 2,
-			"classification": [{
-					"object_class": {
-						"vehicle": 10
-					},
-					"confidence": 101
-				},
-				{
-					"object_class": {
-						"single_vru": {
-							"pedestrian": 2
-						}
-					},
-					"confidence": 25
-				},
-				{
-					"object_class": {
-						"vru_group": {
-							"group_type": {
-								"pedestrian": true,
-								"bicyclist": false,
-								"motorcyclist": false,
-								"animal": true
-							},
-							"group_size": 12,
-							"cluster_id": 255
-						}
-					},
-					"confidence": 64
-				},
-				{
-					"object_class": {
-						"other": 1
-					},
-					"confidence": 0
-				}
-			],
-			"matched_position": {
-				"lane_id": 255,
-				"longitudinal_lane_position": 32767
-			}
-		}],
-		"free_space_addendum_container": [{
-				"free_space_area": {
-					"free_space_polygon": [{
-							"x": -32768,
-							"y": 32767,
-							"z": 0
-						},
-						{
-							"x": 10,
-							"y": 20,
-							"z": 30
-						},
-						{
-							"x": 32767,
-							"y": -32768,
-							"z": 0
-						}
-					]
-				},
-				"free_space_confidence": 0,
-				"sensor_id_list": [0, 1, 2],
-				"shadowing_applies": false
-			},
-			{
-				"free_space_area": {
-					"free_space_circular": {
-						"radius": 10000,
-						"node_center_point": {
-							"x": 32767,
-							"y": -32768,
-							"z": 0
-						}
-					}
-				},
-				"free_space_confidence": 101,
-				"sensor_id_list": [10, 20, 30],
-				"shadowing_applies": true
-			},
-			{
-				"free_space_area": {
-					"free_space_ellipse": {
-						"node_center_point": {
-							"x": 32767,
-							"y": -32768,
-							"z": 0
-						},
-						"semi_major_range_length": 10000,
-						"semi_minor_range_length": 10000,
-						"semi_major_range_orientation": 3601,
-						"semi_height": 10000
-					}
-				},
-				"free_space_confidence": 0,
-				"sensor_id_list": [100, 102, 103],
-				"shadowing_applies": false
-			},
-			{
-				"free_space_area": {
-					"free_space_rectangle": {
-						"node_center_point": {
-							"x": 32767,
-							"y": -32768,
-							"z": 0
-						},
-						"semi_major_range_length": 10000,
-						"semi_minor_range_length": 10000,
-						"semi_major_range_orientation": 3601,
-						"semi_height": 10000
-					}
-				},
-				"free_space_confidence": 50,
-				"sensor_id_list": [200, 250, 255],
-				"shadowing_applies": true
-			}
-		]
-	}"#;
-
-        match serde_json::from_str::<CollectivePerceptionMessage>(data) {
-            Ok(cpm) => {
-                assert_eq!(cpm.station_id, 4294967295);
-            }
-            Err(e) => {
-                panic!("Failed to deserialize CPM: '{}'", e);
-            }
-        }
-    }
-
-    #[test]
-    fn test_deserialize_minimal_offset() {
-        let data = r#"{
-            "x": 123456,
-            "y": 654321
-        }"#;
-
-        match serde_json::from_str::<Offset>(data) {
-            Ok(offset) => {
-                assert_eq!(offset.x, 123456);
-                assert_eq!(offset.y, 654321);
-                assert!(offset.z.is_none());
-            }
-            Err(e) => panic!("Failed to deserialize minimal Offset: '{}'", e),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_full_offset() {
-        let data = r#"{
-            "x": 123456,
-            "y": 654321,
-            "z": 456789
-        }"#;
-
-        match serde_json::from_str::<Offset>(data) {
-            Ok(offset) => {
-                assert_eq!(offset.x, 123456);
-                assert_eq!(offset.y, 654321);
-                assert_eq!(offset.z, Some(456789));
-            }
-            Err(e) => panic!("Failed to deserialize minimal Offset: '{}'", e),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_minimal_stationary_sensor_radial() {
-        let data = r#"{
-            "range": 1,
-            "horizontal_opening_angle_start": 2,
-            "horizontal_opening_angle_end": 3
-        }"#;
-
-        match serde_json::from_str::<StationarySensorRadial>(data) {
-            Ok(stationary_sensor_radial) => {
-                assert_eq!(stationary_sensor_radial.range, 1);
-                assert_eq!(stationary_sensor_radial.horizontal_opening_angle_start, 2);
-                assert_eq!(stationary_sensor_radial.horizontal_opening_angle_end, 3);
-                assert!(stationary_sensor_radial.sensor_position_offset.is_none());
-                assert!(
-                    stationary_sensor_radial
-                        .vertical_opening_angle_start
-                        .is_none()
-                );
-                assert!(
-                    stationary_sensor_radial
-                        .vertical_opening_angle_end
-                        .is_none()
-                );
-            }
-            Err(e) => panic!(
-                "Failed to deserialize minimal StationarySensorRadial: '{}'",
-                e
-            ),
-        }
-    }
-
-    #[test]
-    fn test_deserialize_full_stationary_sensor_radial() {
-        let data = r#"{
-            "range": 1,
-            "horizontal_opening_angle_start": 2,
-            "horizontal_opening_angle_end": 3,
-            "sensor_position_offset": {
-                "x": 123456,
-                "y": 654321
+    fn full_rsu_cpm() -> &'static str {
+        r#"{
+            "protocol_version": 255,
+            "station_id": 4294967295,
+            "management_container": {
+                "reference_time": 4398046511103,
+                "reference_position": {
+                    "latitude": 900000001,
+                    "longitude": -1800000001,
+                    "altitude": {
+                        "value": 800001,
+                        "confidence": 15
+                    },
+                    "position_confidence_ellipse": {
+                        "semi_major": 4095,
+                        "semi_minor": 4095,
+                        "semi_major_orientation": 3601
+                    }                    
+                },
+                "segmentation_info": {
+                    "total_msg_no": 8,
+                    "this_msg_no": 8
+                },
+                "message_rate_range": {
+                    "message_rate_min": {
+                        "mantissa": 100,
+                        "exponent": 2
+                    },
+                    "message_rate_max": {
+                        "mantissa": 1,
+                        "exponent": -5
+                    }
+                }
             },
-            "vertical_opening_angle_start": 123,
-            "vertical_opening_angle_end": 456
-        }"#;
-
-        match serde_json::from_str::<StationarySensorRadial>(data) {
-            Ok(stationary_sensor_radial) => {
-                assert_eq!(stationary_sensor_radial.range, 1);
-                assert_eq!(stationary_sensor_radial.horizontal_opening_angle_start, 2);
-                assert_eq!(stationary_sensor_radial.horizontal_opening_angle_end, 3);
-                assert_eq!(
-                    stationary_sensor_radial.sensor_position_offset,
-                    Some(Offset {
-                        x: 123456,
-                        y: 654321,
-                        z: None
-                    })
-                );
-                assert_eq!(
-                    stationary_sensor_radial.vertical_opening_angle_start,
-                    Some(123)
-                );
-                assert_eq!(
-                    stationary_sensor_radial.vertical_opening_angle_end,
-                    Some(456)
-                );
-            }
-            Err(e) => panic!(
-                "Failed to deserialize minimal StationarySensorRadial: '{}'",
-                e
-            ),
-        }
+            "originating_rsu_container": [
+                {
+                    "road_segment": {
+                        "id": 65535,
+                        "region": 65535
+                    }
+                },
+                {
+                    "intersection": {
+                        "id": 65535,
+                        "region": 65535
+                    }
+                }
+            ],
+            "sensor_information_container": [
+                {
+                    "sensor_id": 255,
+                    "sensor_type": 13,
+                    "shadowing_applies": true,                    
+                    "perception_region_shape": {
+                         "polygonal": {
+                            "polygon": [
+                                {
+                                    "x_coordinate": -32768,
+                                    "y_coordinate": -32768,
+                                    "z_coordinate": -32768
+                                },
+                                {
+                                    "x_coordinate": 32767,
+                                    "y_coordinate": -32768,
+                                    "z_coordinate": -32768
+                                },
+                                {
+                                    "x_coordinate": 32767,
+                                    "y_coordinate": 32767,
+                                    "z_coordinate": -32768
+                                },
+                                {
+                                    "x_coordinate": -32768,
+                                    "y_coordinate": 32767,
+                                    "z_coordinate": -32768
+                                }
+                            ],
+                            "shape_reference_point": {
+                                "x_coordinate": 32767,
+                                "y_coordinate": -32768,
+                                "z_coordinate": 0
+                            },
+                            "height": 2045
+                        }
+                    },
+                    "perception_region_confidence": 101
+                },
+                {
+                    "sensor_id": 2,
+                    "sensor_type": 1,
+                    "shadowing_applies": true,                    
+                    "perception_region_shape": {
+                        "circular": {
+                            "radius": 4095,
+                            "shape_reference_point": {
+                                "x_coordinate": 32767,
+                                "y_coordinate": -32768,
+                                "z_coordinate": 0
+                            },
+                            "height": 0
+                        }
+                    },
+                    "perception_region_confidence": 101
+                },
+                {
+                    "sensor_id": 3,
+                    "sensor_type": 2,
+                    "shadowing_applies": true,
+                    "perception_region_shape": {
+                        "rectangular": {
+                            "semi_length": 102,
+                            "semi_breadth": 0,
+                            "center_point": {
+                                "x_coordinate": 32767,
+                                "y_coordinate": -32768,
+                                "z_coordinate": 0
+                            },
+                            "orientation": 3601,
+                            "height": 4095
+                        }
+                    },
+                    "perception_region_confidence": 101
+                },
+                {
+                    "sensor_id": 4,
+                    "sensor_type": 3,
+                    "shadowing_applies": true,
+                    "perception_region_shape": {
+                        "elliptical": {
+                            "semi_major_axis_length": 4095,
+                            "semi_minor_axis_length": 0,
+                            "shape_reference_point": {
+                                "x_coordinate": 32767,
+                                "y_coordinate": -32768,
+                                "z_coordinate": 0
+                            },
+                            "orientation": 1800,
+                            "height": 2047
+                        }
+                    },
+                    "perception_region_confidence": 101
+                },
+                {
+                    "sensor_id": 5,
+                    "sensor_type": 4,
+                    "shadowing_applies": true,
+                    "perception_region_shape": {
+                        "radial": {
+                            "range": 4095,
+                            "stationary_horizontal_opening_angle_start": 900,
+                            "stationary_horizontal_opening_angle_end": 2700,
+                            "shape_reference_point": {
+                                "x_coordinate": 32767,
+                                "y_coordinate": -32768,
+                                "z_coordinate": 0
+                            },
+                            "vertical_opening_angle_start": 0,
+                            "vertical_opening_angle_end": 3601
+                        }
+                    },
+                    "perception_region_confidence": 101
+                },
+                {
+                    "sensor_id": 6,
+                    "sensor_type": 5,
+                    "shadowing_applies": true,
+                    "perception_region_shape": {
+                        "radial_shapes": {
+                            "ref_point_id": 255,
+                            "x_coordinate": 1001,
+                            "y_coordinate": -3094,
+                            "radial_shapes_list": [
+                                {
+                                    "range": 4095,
+                                    "stationary_horizontal_opening_angle_start": 900,
+                                    "stationary_horizontal_opening_angle_end": 2700,
+                                    "shape_reference_point": {
+                                        "x_coordinate": 32767,
+                                        "y_coordinate": -32768,
+                                        "z_coordinate": 0
+                                    },
+                                    "vertical_opening_angle_start": 0,
+                                    "vertical_opening_angle_end": 3601
+                                },
+                                {
+                                    "range": 2047,
+                                    "stationary_horizontal_opening_angle_start": 0,
+                                    "stationary_horizontal_opening_angle_end": 3601,
+                                    "shape_reference_point": {
+                                        "x_coordinate": 32767,
+                                        "y_coordinate": -32768,
+                                        "z_coordinate": 0
+                                    },
+                                    "vertical_opening_angle_start": 0,
+                                    "vertical_opening_angle_end": 3601
+                                }
+                            ],
+                            "z_coordinate": 1047
+                        }
+                    },
+                    "perception_region_confidence": 101
+                }
+            ],
+            "perception_region_container": [
+                {
+                    "measurement_delta_time": 2047,
+                    "perception_region_confidence": 101,
+                    "perception_region_shape": {
+                        "polygonal": {
+                            "polygon": [
+                                {
+                                    "x_coordinate": -32768,
+                                    "y_coordinate": -32768,
+                                    "z_coordinate": -32768
+                                },
+                                {
+                                    "x_coordinate": 32767,
+                                    "y_coordinate": -32768,
+                                    "z_coordinate": -32768
+                                },
+                                {
+                                    "x_coordinate": 32767,
+                                    "y_coordinate": 32767,
+                                    "z_coordinate": -32768
+                                },
+                                {
+                                    "x_coordinate": -32768,
+                                    "y_coordinate": 32767,
+                                    "z_coordinate": -32768
+                                }
+                            ]
+                        }
+                    },
+                    "shadowing_applies": true,
+                    "sensor_id_list": [ 1 ]
+                },
+                {
+                    "measurement_delta_time": -2048,
+                    "perception_region_confidence": 1,
+                    "perception_region_shape": {
+                        "elliptical": {
+                            "semi_major_axis_length": 4095,
+                            "semi_minor_axis_length": 0,
+                            "shape_reference_point": {
+                                "x_coordinate": 32767,
+                                "y_coordinate": -32768,
+                                "z_coordinate": 0
+                            },
+                            "orientation": 3601,
+                            "height": 4095
+                        }
+                    },
+                    "shadowing_applies": false,
+                    "sensor_id_list": [ 2, 3, 4, 5, 6 ]
+                }
+            ]
+        }"#
     }
 
-    #[test]
-    fn deserialize_minimal_circular_area() {
-        let data = r#"{
-            "radius": 999
-        }"#;
-
-        match serde_json::from_str::<CircularArea>(data) {
-            Ok(circular_area) => {
-                assert_eq!(circular_area.radius, 999);
-                assert!(circular_area.node_center_point.is_none());
-            }
-            Err(e) => panic!("Failed to deserialize: '{}'", e),
-        }
-    }
-
-    #[test]
-    fn deserialize_full_circular_area() {
-        let data = r#"{
-            "radius": 999,
-            "node_center_point": {
-                "x": 1,
-                "y": 2
-            }
-        }"#;
-
-        match serde_json::from_str::<CircularArea>(data) {
-            Ok(circular_area) => {
-                assert_eq!(circular_area.radius, 999);
-                assert!(circular_area.node_center_point.is_some());
-            }
-            Err(e) => panic!("Failed to deserialize: '{}'", e),
-        }
-    }
-
-    #[test]
-    fn deserialize_minimal_elliptic_area() {
-        let data = r#"{
-            "semi_major_range_length": 1,
-            "semi_minor_range_length": 2,
-            "semi_major_range_orientation": 3
-        }"#;
-
-        match serde_json::from_str::<EllipticArea>(data) {
-            Ok(elliptic_area) => {
-                assert_eq!(elliptic_area.semi_major_range_length, 1);
-                assert_eq!(elliptic_area.semi_minor_range_length, 2);
-                assert_eq!(elliptic_area.semi_major_range_orientation, 3);
-                assert!(elliptic_area.node_center_point.is_none());
-                assert!(elliptic_area.semi_height.is_none());
-            }
-            Err(e) => panic!("Failed to deserialize EllipticArea: '{}'", e),
-        }
-    }
-
-    #[test]
-    fn deserialize_full_elliptic_area() {
-        let data = r#"{
-            "semi_major_range_length": 1,
-            "semi_minor_range_length": 2,
-            "semi_major_range_orientation": 3,
-            "semi_height": 4,
-            "node_center_point": {
-                "x": 5,
-                "y": 6
-            }
-        }"#;
-
-        match serde_json::from_str::<EllipticArea>(data) {
-            Ok(elliptic_area) => {
-                assert_eq!(elliptic_area.semi_major_range_length, 1);
-                assert_eq!(elliptic_area.semi_minor_range_length, 2);
-                assert_eq!(elliptic_area.semi_major_range_orientation, 3);
-                assert!(elliptic_area.node_center_point.is_some());
-                assert!(elliptic_area.semi_height.is_some());
-            }
-            Err(e) => panic!("Failed to deserialize EllipticArea: '{}'", e),
-        }
-    }
-
-    #[test]
-    fn deserialize_minimal_rectangle_area() {
-        let data = r#"{
-            "semi_major_range_length": 1,
-            "semi_minor_range_length": 2,
-            "semi_major_range_orientation": 3
-        }"#;
-
-        match serde_json::from_str::<RectangleArea>(data) {
-            Ok(elliptic_area) => {
-                assert_eq!(elliptic_area.semi_major_range_length, 1);
-                assert_eq!(elliptic_area.semi_minor_range_length, 2);
-                assert_eq!(elliptic_area.semi_major_range_orientation, 3);
-                assert!(elliptic_area.node_center_point.is_none());
-                assert!(elliptic_area.semi_height.is_none());
-            }
-            Err(e) => panic!("Failed to deserialize RectangleArea: '{}'", e),
-        }
-    }
-
-    #[test]
-    fn deserialize_full_rectangle_area() {
-        let data = r#"{
-            "semi_major_range_length": 1,
-            "semi_minor_range_length": 2,
-            "semi_major_range_orientation": 3,
-            "semi_height": 4,
-            "node_center_point": {
-                "x": 5,
-                "y": 6
-            }
-        }"#;
-
-        match serde_json::from_str::<RectangleArea>(data) {
-            Ok(elliptic_area) => {
-                assert_eq!(elliptic_area.semi_major_range_length, 1);
-                assert_eq!(elliptic_area.semi_minor_range_length, 2);
-                assert_eq!(elliptic_area.semi_major_range_orientation, 3);
-                assert!(elliptic_area.node_center_point.is_some());
-                assert!(elliptic_area.semi_height.is_some());
-            }
-            Err(e) => panic!("Failed to deserialize RectangleArea: '{}'", e),
-        }
-    }
-
-    #[test]
-    fn deserialize_minimal_free_space_area_polygon() {
-        let data = r#"{
-            "free_space_area": {
-                "free_space_polygon": [{
-                        "x": -32768,
-                        "y": 32767,
-                        "z": 0
+    fn full_vehicle_cpm() -> &'static str {
+        r#"{
+            "protocol_version": 255,
+            "station_id": 4294967295,
+            "management_container": {
+                "reference_time": 4398046511103,
+                "reference_position": {
+                    "latitude": 900000001,
+                    "longitude": -1800000001,
+                    "altitude": {
+                        "value": 800001,
+                        "confidence": 15
+                    },
+                    "position_confidence_ellipse": {
+                        "semi_major": 4095,
+                        "semi_minor": 4095,
+                        "semi_major_orientation": 3601
+                    }                    
+                },
+                "segmentation_info": {
+                    "total_msg_no": 8,
+                    "this_msg_no": 8
+                },
+                "message_rate_range": {
+                    "message_rate_min": {
+                        "mantissa": 100,
+                        "exponent": 2
+                    },
+                    "message_rate_max": {
+                        "mantissa": 1,
+                        "exponent": -5
+                    }
+                }
+            },
+            "originating_vehicle_container": {
+                "orientation_angle": {
+                    "value": 3601,
+                    "confidence": 127
+                },
+                "pitch_angle": {
+                    "value": 0,
+                    "confidence": 1
+                },
+                "roll_angle": {
+                    "value": 1800,
+                    "confidence": 64
+                },
+                "trailer_data_set": [
+                    {
+                        "ref_point_id": 255,
+                        "hitch_point_offset": 255,
+                        "hitch_angle": {
+                            "value": 3601,
+                            "confidence": 127
+                        },
+                        "front_overhang": 255,
+                        "rear_overhang": 255,
+                        "trailer_width": 62
                     },
                     {
-                        "x": 10,
-                        "y": 20,
-                        "z": 30
-                    },
-                    {
-                        "x": 32767,
-                        "y": -32768,
-                        "z": 0
+                        "ref_point_id": 0,
+                        "hitch_point_offset": 0,
+                        "hitch_angle": {
+                            "value": 0,
+                            "confidence": 1
+                        },
+                        "front_overhang": 0,
+                        "rear_overhang": 0,
+                        "trailer_width": 1
                     }
                 ]
             },
-            "free_space_confidence": 12
+            "sensor_information_container": [
+                {
+                    "sensor_id": 255,
+                    "sensor_type": 13,
+                    "shadowing_applies": true,                    
+                    "perception_region_shape": {
+                         "polygonal": {
+                            "polygon": [
+                                {
+                                    "x_coordinate": -32768,
+                                    "y_coordinate": -32768,
+                                    "z_coordinate": -32768
+                                },
+                                {
+                                    "x_coordinate": 32767,
+                                    "y_coordinate": -32768,
+                                    "z_coordinate": -32768
+                                },
+                                {
+                                    "x_coordinate": 32767,
+                                    "y_coordinate": 32767,
+                                    "z_coordinate": -32768
+                                },
+                                {
+                                    "x_coordinate": -32768,
+                                    "y_coordinate": 32767,
+                                    "z_coordinate": -32768
+                                }
+                            ],
+                            "shape_reference_point": {
+                                "x_coordinate": 32767,
+                                "y_coordinate": -32768,
+                                "z_coordinate": 0
+                            },
+                            "height": 2045
+                        }
+                    },
+                    "perception_region_confidence": 101
+                },
+                {
+                    "sensor_id": 2,
+                    "sensor_type": 1,
+                    "shadowing_applies": true,
+                    "perception_region_shape": {
+                        "circular": {
+                            "radius": 4095,
+                            "shape_reference_point": {
+                                "x_coordinate": 32767,
+                                "y_coordinate": -32768,
+                                "z_coordinate": 0
+                            },
+                            "height": 0
+                        }
+                    },
+                    "perception_region_confidence": 101
+                },
+                {
+                    "sensor_id": 3,
+                    "sensor_type": 2,
+                    "shadowing_applies": true,
+                    "perception_region_shape": {
+                        "rectangular": {
+                            "semi_length": 102,
+                            "semi_breadth": 0,
+                            "center_point": {
+                                "x_coordinate": 32767,
+                                "y_coordinate": -32768,
+                                "z_coordinate": 0
+                            },
+                            "orientation": 3601,
+                            "height": 4095
+                        }
+                    },
+                    "perception_region_confidence": 101
+                },
+                {
+                    "sensor_id": 4,
+                    "sensor_type": 3,
+                    "shadowing_applies": true,
+                    "perception_region_shape": {
+                        "elliptical": {
+                            "semi_major_axis_length": 4095,
+                            "semi_minor_axis_length": 0,
+                            "shape_reference_point": {
+                                "x_coordinate": 32767,
+                                "y_coordinate": -32768,
+                                "z_coordinate": 0
+                            },
+                            "orientation": 1800,
+                            "height": 2047
+                        }
+                    },
+                    "perception_region_confidence": 101
+                },
+                {
+                    "sensor_id": 5,
+                    "sensor_type": 4,
+                    "shadowing_applies": true,
+                    "perception_region_shape": {
+                        "radial": {
+                            "range": 4095,
+                            "stationary_horizontal_opening_angle_start": 900,
+                            "stationary_horizontal_opening_angle_end": 2700,
+                            "shape_reference_point": {
+                                "x_coordinate": 32767,
+                                "y_coordinate": -32768,
+                                "z_coordinate": 0
+                            },
+                            "vertical_opening_angle_start": 0,
+                            "vertical_opening_angle_end": 3601
+                        }
+                    },
+                    "perception_region_confidence": 101
+                },
+                {
+                    "sensor_id": 6,
+                    "sensor_type": 5,
+                    "shadowing_applies": true,
+                    "perception_region_shape": {
+                        "radial_shapes": {
+                            "ref_point_id": 255,
+                            "x_coordinate": 1001,
+                            "y_coordinate": -3094,
+                            "radial_shapes_list": [
+                                {
+                                    "range": 4095,
+                                    "stationary_horizontal_opening_angle_start": 900,
+                                    "stationary_horizontal_opening_angle_end": 2700,
+                                    "shape_reference_point": {
+                                        "x_coordinate": 32767,
+                                        "y_coordinate": -32768,
+                                        "z_coordinate": 0
+                                    },
+                                    "vertical_opening_angle_start": 0,
+                                    "vertical_opening_angle_end": 3601
+                                },
+                                {
+                                    "range": 2047,
+                                    "stationary_horizontal_opening_angle_start": 0,
+                                    "stationary_horizontal_opening_angle_end": 3601,
+                                    "shape_reference_point": {
+                                        "x_coordinate": 32767,
+                                        "y_coordinate": -32768,
+                                        "z_coordinate": 0
+                                    },
+                                    "vertical_opening_angle_start": 0,
+                                    "vertical_opening_angle_end": 3601
+                                }
+                            ],
+                            "z_coordinate": 1047
+                        }
+                    },
+                    "perception_region_confidence": 101
+                }
+            ],
+            "perception_region_container": [
+                {
+                    "measurement_delta_time": 2047,
+                    "perception_region_confidence": 101,
+                    "perception_region_shape": {
+                        "polygonal": {
+                            "polygon": [
+                                {
+                                    "x_coordinate": -32768,
+                                    "y_coordinate": -32768,
+                                    "z_coordinate": -32768
+                                },
+                                {
+                                    "x_coordinate": 32767,
+                                    "y_coordinate": -32768,
+                                    "z_coordinate": -32768
+                                },
+                                {
+                                    "x_coordinate": 32767,
+                                    "y_coordinate": 32767,
+                                    "z_coordinate": -32768
+                                },
+                                {
+                                    "x_coordinate": -32768,
+                                    "y_coordinate": 32767,
+                                    "z_coordinate": -32768
+                                }
+                            ]
+                        }
+                    },
+                    "shadowing_applies": true,
+                    "sensor_id_list": [ 1 ]
+                },
+                {
+                    "measurement_delta_time": -2048,
+                    "perception_region_confidence": 1,
+                    "perception_region_shape": {
+                        "elliptical": {
+                            "semi_major_axis_length": 4095,
+                            "semi_minor_axis_length": 0,
+                            "shape_reference_point": {
+                                "x_coordinate": 32767,
+                                "y_coordinate": -32768,
+                                "z_coordinate": 0
+                            },
+                            "orientation": 3601,
+                            "height": 4095
+                        }
+                    },
+                    "shadowing_applies": false,
+                    "sensor_id_list": [ 2, 3, 4, 5, 6 ]
+                }
+            ]
+        }"#
+    }
+
+    #[test]
+    fn test_deserialize_minimal_cpm() {
+        let data = minimal_cpm();
+
+        let cpm = serde_json::from_str::<CollectivePerceptionMessage>(data).unwrap();
+
+        // minimal
+        assert_eq!(cpm.protocol_version, 255);
+        assert_eq!(cpm.station_id, 4294967295);
+        assert_eq!(cpm.management_container.reference_time, 4398046511103);
+        assert_eq!(
+            cpm.management_container.reference_position.latitude,
+            900000001
+        );
+        assert_eq!(
+            cpm.management_container.reference_position.longitude,
+            -1800000001
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .position_confidence_ellipse
+                .semi_major,
+            4095
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .position_confidence_ellipse
+                .semi_minor,
+            4095
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .position_confidence_ellipse
+                .semi_major_orientation,
+            3601
+        );
+        assert_eq!(
+            cpm.management_container.reference_position.altitude.value,
+            800001
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .altitude
+                .confidence,
+            15
+        );
+
+        // the other containers should be empty
+        assert!(cpm.originating_vehicle_container.is_none());
+        assert!(cpm.originating_rsu_container.is_empty());
+        assert!(cpm.sensor_information_container.is_empty());
+        assert!(cpm.perception_region_container.is_empty());
+        assert!(cpm.perceived_object_container.is_empty());
+    }
+
+    #[test]
+    fn test_deserialize_standard_cpm() {
+        let data = standard_cpm();
+
+        let cpm = serde_json::from_str::<CollectivePerceptionMessage>(data).unwrap();
+
+        // minimal
+        assert_eq!(cpm.protocol_version, 255);
+        assert_eq!(cpm.station_id, 4294967295);
+        assert_eq!(cpm.management_container.reference_time, 4398046511103);
+        assert_eq!(
+            cpm.management_container.reference_position.latitude,
+            900000001
+        );
+        assert_eq!(
+            cpm.management_container.reference_position.longitude,
+            -1800000001
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .position_confidence_ellipse
+                .semi_major,
+            4095
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .position_confidence_ellipse
+                .semi_minor,
+            4095
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .position_confidence_ellipse
+                .semi_major_orientation,
+            3601
+        );
+        assert_eq!(
+            cpm.management_container.reference_position.altitude.value,
+            800001
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .altitude
+                .confidence,
+            15
+        );
+
+        //standard
+        assert_eq!(cpm.sensor_information_container[0].sensor_id, 255);
+        assert_eq!(
+            cpm.sensor_information_container[0].sensor_type,
+            SensorType::ItsAggregation
+        );
+        assert!(cpm.sensor_information_container[0].shadowing_applies);
+
+        assert_eq!(
+            cpm.perception_region_container[0].measurement_delta_time,
+            2047
+        );
+        assert_eq!(
+            cpm.perception_region_container[0].perception_region_confidence,
+            101
+        );
+        let polygon = &cpm.perception_region_container[0]
+            .perception_region_shape
+            .polygonal
+            .as_ref()
+            .unwrap()
+            .polygon;
+        assert_eq!(polygon.len(), 4);
+        assert_eq!(polygon[0].x_coordinate, -32768);
+        assert_eq!(polygon[0].y_coordinate, -32768);
+        assert_eq!(polygon[0].z_coordinate.unwrap(), -32768);
+        assert_eq!(polygon[1].x_coordinate, 32767);
+        assert_eq!(polygon[1].y_coordinate, -32768);
+        assert_eq!(polygon[1].z_coordinate.unwrap(), -32768);
+        assert_eq!(polygon[2].x_coordinate, 32767);
+        assert_eq!(polygon[2].y_coordinate, 32767);
+        assert_eq!(polygon[2].z_coordinate.unwrap(), -32768);
+        assert_eq!(polygon[3].x_coordinate, -32768);
+        assert_eq!(polygon[3].y_coordinate, 32767);
+        assert_eq!(polygon[3].z_coordinate.unwrap(), -32768);
+        assert!(cpm.perception_region_container[0].shadowing_applies);
+        assert_eq!(cpm.perception_region_container[0].sensor_id_list, vec![1]);
+
+        // the other containers should be empty
+        assert!(cpm.originating_vehicle_container.is_none());
+        assert!(cpm.originating_rsu_container.is_empty());
+        assert!(cpm.perceived_object_container.is_empty());
+    }
+
+    #[test]
+    fn test_deserialize_full_vehicle_cpm() {
+        let data = full_vehicle_cpm();
+
+        let cpm = serde_json::from_str::<CollectivePerceptionMessage>(data).unwrap();
+
+        // minimal
+        assert_eq!(cpm.protocol_version, 255);
+        assert_eq!(cpm.station_id, 4294967295);
+        assert_eq!(cpm.management_container.reference_time, 4398046511103);
+        assert_eq!(
+            cpm.management_container.reference_position.latitude,
+            900000001
+        );
+        assert_eq!(
+            cpm.management_container.reference_position.longitude,
+            -1800000001
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .position_confidence_ellipse
+                .semi_major,
+            4095
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .position_confidence_ellipse
+                .semi_minor,
+            4095
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .position_confidence_ellipse
+                .semi_major_orientation,
+            3601
+        );
+        assert_eq!(
+            cpm.management_container.reference_position.altitude.value,
+            800001
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .altitude
+                .confidence,
+            15
+        );
+
+        // standard
+        assert_eq!(cpm.sensor_information_container[0].sensor_id, 255);
+        assert_eq!(
+            cpm.sensor_information_container[0].sensor_type,
+            SensorType::ItsAggregation
+        );
+        assert!(cpm.sensor_information_container[0].shadowing_applies);
+
+        assert_eq!(
+            cpm.perception_region_container[0].measurement_delta_time,
+            2047
+        );
+        assert_eq!(
+            cpm.perception_region_container[0].perception_region_confidence,
+            101
+        );
+        let polygon = &cpm.perception_region_container[0]
+            .perception_region_shape
+            .polygonal
+            .as_ref()
+            .unwrap()
+            .polygon;
+        assert_eq!(polygon.len(), 4);
+        assert_eq!(polygon[0].x_coordinate, -32768);
+        assert_eq!(polygon[0].y_coordinate, -32768);
+        assert_eq!(polygon[0].z_coordinate.unwrap(), -32768);
+        assert_eq!(polygon[1].x_coordinate, 32767);
+        assert_eq!(polygon[1].y_coordinate, -32768);
+        assert_eq!(polygon[1].z_coordinate.unwrap(), -32768);
+        assert_eq!(polygon[2].x_coordinate, 32767);
+        assert_eq!(polygon[2].y_coordinate, 32767);
+        assert_eq!(polygon[2].z_coordinate.unwrap(), -32768);
+        assert_eq!(polygon[3].x_coordinate, -32768);
+        assert_eq!(polygon[3].y_coordinate, 32767);
+        assert_eq!(polygon[3].z_coordinate.unwrap(), -32768);
+        assert!(cpm.perception_region_container[0].shadowing_applies);
+        assert_eq!(cpm.perception_region_container[0].sensor_id_list, vec![1]);
+
+        // full vehicle
+        assert!(cpm.management_container.segmentation_info.is_some());
+        let segmentation_info = cpm.management_container.segmentation_info.unwrap();
+        assert_eq!(segmentation_info.total_msg_no, 8);
+        assert_eq!(segmentation_info.this_msg_no, 8);
+        assert!(cpm.management_container.message_rate_range.is_some());
+        let message_rate_range = cpm.management_container.message_rate_range.unwrap();
+        assert_eq!(message_rate_range.message_rate_min.mantissa, 100);
+        assert_eq!(message_rate_range.message_rate_min.exponent, 2);
+        assert_eq!(message_rate_range.message_rate_max.mantissa, 1);
+        assert_eq!(message_rate_range.message_rate_max.exponent, -5);
+
+        assert!(cpm.originating_vehicle_container.is_some());
+        let originating_vehicle = cpm.originating_vehicle_container.as_ref().unwrap();
+        assert_eq!(originating_vehicle.orientation_angle.value, 3601);
+        assert_eq!(originating_vehicle.orientation_angle.confidence, 127);
+        assert!(originating_vehicle.pitch_angle.is_some());
+        let pitch_angle = originating_vehicle.pitch_angle.as_ref().unwrap();
+        assert_eq!(pitch_angle.value, 0);
+        assert_eq!(pitch_angle.confidence, 1);
+        assert!(originating_vehicle.roll_angle.is_some());
+        let roll_angle = originating_vehicle.roll_angle.as_ref().unwrap();
+        assert_eq!(roll_angle.value, 1800);
+        assert_eq!(roll_angle.confidence, 64);
+        assert_eq!(originating_vehicle.trailer_data_set.len(), 2);
+        assert_eq!(originating_vehicle.trailer_data_set[0].ref_point_id, 255);
+        assert_eq!(
+            originating_vehicle.trailer_data_set[0].hitch_point_offset,
+            255
+        );
+        assert_eq!(
+            originating_vehicle.trailer_data_set[0].hitch_angle.value,
+            3601
+        );
+        assert_eq!(
+            originating_vehicle.trailer_data_set[0]
+                .hitch_angle
+                .confidence,
+            127
+        );
+        assert_eq!(
+            originating_vehicle.trailer_data_set[0]
+                .front_overhang
+                .unwrap(),
+            255
+        );
+        assert_eq!(
+            originating_vehicle.trailer_data_set[0]
+                .rear_overhang
+                .unwrap(),
+            255
+        );
+        assert_eq!(
+            originating_vehicle.trailer_data_set[0]
+                .trailer_width
+                .unwrap(),
+            62
+        );
+        assert_eq!(originating_vehicle.trailer_data_set[1].ref_point_id, 0);
+        assert_eq!(
+            originating_vehicle.trailer_data_set[1].hitch_point_offset,
+            0
+        );
+        assert_eq!(originating_vehicle.trailer_data_set[1].hitch_angle.value, 0);
+        assert_eq!(
+            originating_vehicle.trailer_data_set[1]
+                .hitch_angle
+                .confidence,
+            1
+        );
+        assert_eq!(
+            originating_vehicle.trailer_data_set[1]
+                .front_overhang
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            originating_vehicle.trailer_data_set[1]
+                .rear_overhang
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            originating_vehicle.trailer_data_set[1]
+                .trailer_width
+                .unwrap(),
+            1
+        );
+
+        assert_eq!(cpm.sensor_information_container.len(), 6);
+        let perception_region_shape = cpm.sensor_information_container[0]
+            .perception_region_shape
+            .as_ref()
+            .unwrap();
+        assert!(perception_region_shape.polygonal.is_some());
+        let polygonal = perception_region_shape.polygonal.as_ref().unwrap();
+        let polygon = &polygonal.polygon;
+        assert_eq!(polygon.len(), 4);
+        assert_eq!(polygon[0].x_coordinate, -32768);
+        assert_eq!(polygon[0].y_coordinate, -32768);
+        assert_eq!(polygon[0].z_coordinate.unwrap(), -32768);
+        assert_eq!(polygon[1].x_coordinate, 32767);
+        assert_eq!(polygon[1].y_coordinate, -32768);
+        assert_eq!(polygon[1].z_coordinate.unwrap(), -32768);
+        assert_eq!(polygon[2].x_coordinate, 32767);
+        assert_eq!(polygon[2].y_coordinate, 32767);
+        assert_eq!(polygon[2].z_coordinate.unwrap(), -32768);
+        assert_eq!(polygon[3].x_coordinate, -32768);
+        assert_eq!(polygon[3].y_coordinate, 32767);
+        assert_eq!(polygon[3].z_coordinate.unwrap(), -32768);
+        assert!(polygonal.shape_reference_point.is_some());
+        let shape_reference_point = polygonal.shape_reference_point.as_ref().unwrap();
+        assert_eq!(shape_reference_point.x_coordinate, 32767);
+        assert_eq!(shape_reference_point.y_coordinate, -32768);
+        assert_eq!(shape_reference_point.z_coordinate.unwrap(), 0);
+        assert_eq!(polygonal.height.unwrap(), 2045);
+        assert_eq!(
+            cpm.sensor_information_container[0]
+                .perception_region_confidence
+                .unwrap(),
+            101
+        );
+
+        assert_eq!(cpm.sensor_information_container[1].sensor_id, 2);
+        assert_eq!(
+            cpm.sensor_information_container[1].sensor_type,
+            SensorType::Radar
+        );
+        assert!(cpm.sensor_information_container[1].shadowing_applies);
+        let perception_region_shape = cpm.sensor_information_container[1]
+            .perception_region_shape
+            .as_ref()
+            .unwrap();
+        assert!(perception_region_shape.circular.is_some());
+        let circular = perception_region_shape.circular.as_ref().unwrap();
+        assert_eq!(circular.radius, 4095);
+        assert!(circular.shape_reference_point.is_some());
+        let shape_reference_point = circular.shape_reference_point.as_ref().unwrap();
+        assert_eq!(shape_reference_point.x_coordinate, 32767);
+        assert_eq!(shape_reference_point.y_coordinate, -32768);
+        assert_eq!(shape_reference_point.z_coordinate.unwrap(), 0);
+        assert_eq!(circular.height.unwrap(), 0);
+        assert_eq!(
+            cpm.sensor_information_container[1]
+                .perception_region_confidence
+                .unwrap(),
+            101
+        );
+
+        assert_eq!(cpm.sensor_information_container[2].sensor_id, 3);
+        assert_eq!(
+            cpm.sensor_information_container[2].sensor_type,
+            SensorType::Lidar
+        );
+        assert!(cpm.sensor_information_container[2].shadowing_applies);
+        let perception_region_shape = cpm.sensor_information_container[2]
+            .perception_region_shape
+            .as_ref()
+            .unwrap();
+        assert!(perception_region_shape.rectangular.is_some());
+        let rectangular = perception_region_shape.rectangular.as_ref().unwrap();
+        assert!(rectangular.center_point.is_some());
+        let center_point = rectangular.center_point.as_ref().unwrap();
+        assert_eq!(center_point.x_coordinate, 32767);
+        assert_eq!(center_point.y_coordinate, -32768);
+        assert_eq!(center_point.z_coordinate.unwrap(), 0);
+        assert_eq!(rectangular.semi_length, 102);
+        assert_eq!(rectangular.semi_breadth, 0);
+        assert_eq!(rectangular.orientation.unwrap(), 3601);
+        assert_eq!(rectangular.height.unwrap(), 4095);
+
+        assert_eq!(cpm.sensor_information_container[3].sensor_id, 4);
+        assert_eq!(
+            cpm.sensor_information_container[3].sensor_type,
+            SensorType::MonoVideo
+        );
+        assert!(cpm.sensor_information_container[3].shadowing_applies);
+        let perception_region_shape = cpm.sensor_information_container[3]
+            .perception_region_shape
+            .as_ref()
+            .unwrap();
+        assert!(perception_region_shape.elliptical.is_some());
+        let elliptical = perception_region_shape.elliptical.as_ref().unwrap();
+        assert_eq!(elliptical.semi_major_axis_length, 4095);
+        assert_eq!(elliptical.semi_minor_axis_length, 0);
+        assert!(elliptical.shape_reference_point.is_some());
+        let shape_reference_point = elliptical.shape_reference_point.as_ref().unwrap();
+        assert_eq!(shape_reference_point.x_coordinate, 32767);
+        assert_eq!(shape_reference_point.y_coordinate, -32768);
+        assert_eq!(shape_reference_point.z_coordinate.unwrap(), 0);
+        assert_eq!(elliptical.orientation.unwrap(), 1800);
+        assert_eq!(elliptical.height.unwrap(), 2047);
+        assert_eq!(
+            cpm.sensor_information_container[3]
+                .perception_region_confidence
+                .unwrap(),
+            101
+        );
+
+        assert_eq!(cpm.sensor_information_container[4].sensor_id, 5);
+        assert_eq!(
+            cpm.sensor_information_container[4].sensor_type,
+            SensorType::StereoVision
+        );
+        assert!(cpm.sensor_information_container[4].shadowing_applies);
+        assert!(
+            cpm.sensor_information_container[4]
+                .perception_region_shape
+                .is_some()
+        );
+        let perception_region_shape = cpm.sensor_information_container[4]
+            .perception_region_shape
+            .as_ref()
+            .unwrap();
+        assert!(perception_region_shape.radial.is_some());
+        let radial = perception_region_shape.radial.as_ref().unwrap();
+        assert_eq!(radial.range, 4095);
+        assert_eq!(radial.stationary_horizontal_opening_angle_start, 900);
+        assert_eq!(radial.stationary_horizontal_opening_angle_end, 2700);
+        assert!(radial.shape_reference_point.is_some());
+        let shape_reference_point = radial.shape_reference_point.as_ref().unwrap();
+        assert_eq!(shape_reference_point.x_coordinate, 32767);
+        assert_eq!(shape_reference_point.y_coordinate, -32768);
+        assert_eq!(shape_reference_point.z_coordinate.unwrap(), 0);
+        assert_eq!(radial.vertical_opening_angle_start.unwrap(), 0);
+        assert_eq!(radial.vertical_opening_angle_end.unwrap(), 3601);
+        assert_eq!(
+            cpm.sensor_information_container[4]
+                .perception_region_confidence
+                .unwrap(),
+            101
+        );
+
+        assert_eq!(cpm.sensor_information_container[5].sensor_id, 6);
+        assert_eq!(
+            cpm.sensor_information_container[5].sensor_type,
+            SensorType::NightVision
+        );
+        assert!(cpm.sensor_information_container[5].shadowing_applies);
+        let perception_region_shape = cpm.sensor_information_container[5]
+            .perception_region_shape
+            .as_ref()
+            .unwrap();
+        assert!(perception_region_shape.radial_shapes.is_some());
+        let radial_shapes = perception_region_shape.radial_shapes.as_ref().unwrap();
+        assert_eq!(radial_shapes.ref_point_id, 255);
+        assert_eq!(radial_shapes.x_coordinate, 1001);
+        assert_eq!(radial_shapes.y_coordinate, -3094);
+        assert_eq!(radial_shapes.z_coordinate.unwrap(), 1047);
+        assert_eq!(radial_shapes.radial_shapes_list.len(), 2);
+        let radial_shape = &radial_shapes.radial_shapes_list[0];
+        assert_eq!(radial_shape.range, 4095);
+        assert_eq!(radial_shape.stationary_horizontal_opening_angle_start, 900);
+        assert_eq!(radial_shape.stationary_horizontal_opening_angle_end, 2700);
+        assert!(radial_shape.shape_reference_point.is_some());
+        let shape_reference_point = radial_shape.shape_reference_point.as_ref().unwrap();
+        assert_eq!(shape_reference_point.x_coordinate, 32767);
+        assert_eq!(shape_reference_point.y_coordinate, -32768);
+        assert_eq!(shape_reference_point.z_coordinate.unwrap(), 0);
+        assert_eq!(radial_shape.vertical_opening_angle_start.unwrap(), 0);
+        assert_eq!(radial_shape.vertical_opening_angle_end.unwrap(), 3601);
+        let radial_shape = &radial_shapes.radial_shapes_list[1];
+        assert_eq!(radial_shape.range, 2047);
+        assert_eq!(radial_shape.stationary_horizontal_opening_angle_start, 0);
+        assert_eq!(radial_shape.stationary_horizontal_opening_angle_end, 3601);
+        assert!(radial_shape.shape_reference_point.is_some());
+        let shape_reference_point = radial_shape.shape_reference_point.as_ref().unwrap();
+        assert_eq!(shape_reference_point.x_coordinate, 32767);
+        assert_eq!(shape_reference_point.y_coordinate, -32768);
+        assert_eq!(shape_reference_point.z_coordinate.unwrap(), 0);
+        assert_eq!(radial_shape.vertical_opening_angle_start.unwrap(), 0);
+        assert_eq!(radial_shape.vertical_opening_angle_end.unwrap(), 3601);
+        assert_eq!(
+            cpm.sensor_information_container[5]
+                .perception_region_confidence
+                .unwrap(),
+            101
+        );
+
+        assert_eq!(
+            cpm.perception_region_container[1].measurement_delta_time,
+            -2048
+        );
+        assert_eq!(
+            cpm.perception_region_container[1].perception_region_confidence,
+            1
+        );
+        let perception_region_shape = &cpm.perception_region_container[1].perception_region_shape;
+        assert!(perception_region_shape.elliptical.is_some());
+        let elliptical = perception_region_shape.elliptical.as_ref().unwrap();
+        assert_eq!(elliptical.semi_major_axis_length, 4095);
+        assert_eq!(elliptical.semi_minor_axis_length, 0);
+        assert!(elliptical.shape_reference_point.is_some());
+        let shape_reference_point = elliptical.shape_reference_point.as_ref().unwrap();
+        assert_eq!(shape_reference_point.x_coordinate, 32767);
+        assert_eq!(shape_reference_point.y_coordinate, -32768);
+        assert_eq!(shape_reference_point.z_coordinate.unwrap(), 0);
+        assert_eq!(elliptical.orientation.unwrap(), 3601);
+        assert_eq!(elliptical.height.unwrap(), 4095);
+        assert!(!cpm.perception_region_container[1].shadowing_applies);
+        assert_eq!(
+            cpm.perception_region_container[1].sensor_id_list,
+            vec![2, 3, 4, 5, 6]
+        );
+        assert!(
+            cpm.perception_region_container[1]
+                .perceived_object_ids
+                .is_empty()
+        );
+
+        // the other containers should be empty
+        assert!(cpm.originating_rsu_container.is_empty());
+        assert!(cpm.perceived_object_container.is_empty());
+    }
+
+    #[test]
+    fn test_deserialize_full_rsu_cpm() {
+        let data = full_rsu_cpm();
+
+        let cpm = serde_json::from_str::<CollectivePerceptionMessage>(data).unwrap();
+
+        // minimal
+        assert_eq!(cpm.protocol_version, 255);
+        assert_eq!(cpm.station_id, 4294967295);
+        assert_eq!(cpm.management_container.reference_time, 4398046511103);
+        assert_eq!(
+            cpm.management_container.reference_position.latitude,
+            900000001
+        );
+        assert_eq!(
+            cpm.management_container.reference_position.longitude,
+            -1800000001
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .position_confidence_ellipse
+                .semi_major,
+            4095
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .position_confidence_ellipse
+                .semi_minor,
+            4095
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .position_confidence_ellipse
+                .semi_major_orientation,
+            3601
+        );
+        assert_eq!(
+            cpm.management_container.reference_position.altitude.value,
+            800001
+        );
+        assert_eq!(
+            cpm.management_container
+                .reference_position
+                .altitude
+                .confidence,
+            15
+        );
+
+        // standard
+        assert_eq!(cpm.sensor_information_container[0].sensor_id, 255);
+        assert_eq!(
+            cpm.sensor_information_container[0].sensor_type,
+            SensorType::ItsAggregation
+        );
+        assert!(cpm.sensor_information_container[0].shadowing_applies);
+
+        assert_eq!(
+            cpm.perception_region_container[0].measurement_delta_time,
+            2047
+        );
+        assert_eq!(
+            cpm.perception_region_container[0].perception_region_confidence,
+            101
+        );
+        let polygon = &cpm.perception_region_container[0]
+            .perception_region_shape
+            .polygonal
+            .as_ref()
+            .unwrap()
+            .polygon;
+        assert_eq!(polygon.len(), 4);
+        assert_eq!(polygon[0].x_coordinate, -32768);
+        assert_eq!(polygon[0].y_coordinate, -32768);
+        assert_eq!(polygon[0].z_coordinate.unwrap(), -32768);
+        assert_eq!(polygon[1].x_coordinate, 32767);
+        assert_eq!(polygon[1].y_coordinate, -32768);
+        assert_eq!(polygon[1].z_coordinate.unwrap(), -32768);
+        assert_eq!(polygon[2].x_coordinate, 32767);
+        assert_eq!(polygon[2].y_coordinate, 32767);
+        assert_eq!(polygon[2].z_coordinate.unwrap(), -32768);
+        assert_eq!(polygon[3].x_coordinate, -32768);
+        assert_eq!(polygon[3].y_coordinate, 32767);
+        assert_eq!(polygon[3].z_coordinate.unwrap(), -32768);
+        assert!(cpm.perception_region_container[0].shadowing_applies);
+        assert_eq!(cpm.perception_region_container[0].sensor_id_list, vec![1]);
+
+        // full rsu
+        assert!(cpm.management_container.segmentation_info.is_some());
+        let segmentation_info = cpm.management_container.segmentation_info.unwrap();
+        assert_eq!(segmentation_info.total_msg_no, 8);
+        assert_eq!(segmentation_info.this_msg_no, 8);
+        assert!(cpm.management_container.message_rate_range.is_some());
+        let message_rate_range = cpm.management_container.message_rate_range.unwrap();
+        assert_eq!(message_rate_range.message_rate_min.mantissa, 100);
+        assert_eq!(message_rate_range.message_rate_min.exponent, 2);
+        assert_eq!(message_rate_range.message_rate_max.mantissa, 1);
+        assert_eq!(message_rate_range.message_rate_max.exponent, -5);
+
+        assert_eq!(cpm.originating_rsu_container.len(), 2);
+        assert!(cpm.originating_rsu_container[0].road_segment.is_some());
+        let road_segment = cpm.originating_rsu_container[0]
+            .road_segment
+            .as_ref()
+            .unwrap();
+        assert_eq!(road_segment.id, 65535);
+        assert_eq!(road_segment.region.unwrap(), 65535);
+        assert!(cpm.originating_rsu_container[1].intersection.is_some());
+        let intersection = cpm.originating_rsu_container[1]
+            .intersection
+            .as_ref()
+            .unwrap();
+        assert_eq!(intersection.id, 65535);
+        assert_eq!(intersection.region.unwrap(), 65535);
+
+        assert_eq!(cpm.sensor_information_container.len(), 6);
+        let perception_region_shape = cpm.sensor_information_container[0]
+            .perception_region_shape
+            .as_ref()
+            .unwrap();
+        assert!(perception_region_shape.polygonal.is_some());
+        let polygonal = perception_region_shape.polygonal.as_ref().unwrap();
+        let polygon = &polygonal.polygon;
+        assert_eq!(polygon.len(), 4);
+        assert_eq!(polygon[0].x_coordinate, -32768);
+        assert_eq!(polygon[0].y_coordinate, -32768);
+        assert_eq!(polygon[0].z_coordinate.unwrap(), -32768);
+        assert_eq!(polygon[1].x_coordinate, 32767);
+        assert_eq!(polygon[1].y_coordinate, -32768);
+        assert_eq!(polygon[1].z_coordinate.unwrap(), -32768);
+        assert_eq!(polygon[2].x_coordinate, 32767);
+        assert_eq!(polygon[2].y_coordinate, 32767);
+        assert_eq!(polygon[2].z_coordinate.unwrap(), -32768);
+        assert_eq!(polygon[3].x_coordinate, -32768);
+        assert_eq!(polygon[3].y_coordinate, 32767);
+        assert_eq!(polygon[3].z_coordinate.unwrap(), -32768);
+        assert!(polygonal.shape_reference_point.is_some());
+        let shape_reference_point = polygonal.shape_reference_point.as_ref().unwrap();
+        assert_eq!(shape_reference_point.x_coordinate, 32767);
+        assert_eq!(shape_reference_point.y_coordinate, -32768);
+        assert_eq!(shape_reference_point.z_coordinate.unwrap(), 0);
+        assert_eq!(polygonal.height.unwrap(), 2045);
+        assert_eq!(
+            cpm.sensor_information_container[0]
+                .perception_region_confidence
+                .unwrap(),
+            101
+        );
+
+        assert_eq!(cpm.sensor_information_container[1].sensor_id, 2);
+        assert_eq!(
+            cpm.sensor_information_container[1].sensor_type,
+            SensorType::Radar
+        );
+        assert!(cpm.sensor_information_container[1].shadowing_applies);
+        let perception_region_shape = cpm.sensor_information_container[1]
+            .perception_region_shape
+            .as_ref()
+            .unwrap();
+        assert!(perception_region_shape.circular.is_some());
+        let circular = perception_region_shape.circular.as_ref().unwrap();
+        assert_eq!(circular.radius, 4095);
+        assert!(circular.shape_reference_point.is_some());
+        let shape_reference_point = circular.shape_reference_point.as_ref().unwrap();
+        assert_eq!(shape_reference_point.x_coordinate, 32767);
+        assert_eq!(shape_reference_point.y_coordinate, -32768);
+        assert_eq!(shape_reference_point.z_coordinate.unwrap(), 0);
+        assert_eq!(circular.height.unwrap(), 0);
+        assert_eq!(
+            cpm.sensor_information_container[1]
+                .perception_region_confidence
+                .unwrap(),
+            101
+        );
+
+        assert_eq!(cpm.sensor_information_container[2].sensor_id, 3);
+        assert_eq!(
+            cpm.sensor_information_container[2].sensor_type,
+            SensorType::Lidar
+        );
+        assert!(cpm.sensor_information_container[2].shadowing_applies);
+        let perception_region_shape = cpm.sensor_information_container[2]
+            .perception_region_shape
+            .as_ref()
+            .unwrap();
+        assert!(perception_region_shape.rectangular.is_some());
+        let rectangular = perception_region_shape.rectangular.as_ref().unwrap();
+        assert!(rectangular.center_point.is_some());
+        let center_point = rectangular.center_point.as_ref().unwrap();
+        assert_eq!(center_point.x_coordinate, 32767);
+        assert_eq!(center_point.y_coordinate, -32768);
+        assert_eq!(center_point.z_coordinate.unwrap(), 0);
+        assert_eq!(rectangular.semi_length, 102);
+        assert_eq!(rectangular.semi_breadth, 0);
+        assert_eq!(rectangular.orientation.unwrap(), 3601);
+        assert_eq!(rectangular.height.unwrap(), 4095);
+
+        assert_eq!(cpm.sensor_information_container[3].sensor_id, 4);
+        assert_eq!(
+            cpm.sensor_information_container[3].sensor_type,
+            SensorType::MonoVideo
+        );
+        assert!(cpm.sensor_information_container[3].shadowing_applies);
+        let perception_region_shape = cpm.sensor_information_container[3]
+            .perception_region_shape
+            .as_ref()
+            .unwrap();
+        assert!(perception_region_shape.elliptical.is_some());
+        let elliptical = perception_region_shape.elliptical.as_ref().unwrap();
+        assert_eq!(elliptical.semi_major_axis_length, 4095);
+        assert_eq!(elliptical.semi_minor_axis_length, 0);
+        assert!(elliptical.shape_reference_point.is_some());
+        let shape_reference_point = elliptical.shape_reference_point.as_ref().unwrap();
+        assert_eq!(shape_reference_point.x_coordinate, 32767);
+        assert_eq!(shape_reference_point.y_coordinate, -32768);
+        assert_eq!(shape_reference_point.z_coordinate.unwrap(), 0);
+        assert_eq!(elliptical.orientation.unwrap(), 1800);
+        assert_eq!(elliptical.height.unwrap(), 2047);
+        assert_eq!(
+            cpm.sensor_information_container[3]
+                .perception_region_confidence
+                .unwrap(),
+            101
+        );
+
+        assert_eq!(cpm.sensor_information_container[4].sensor_id, 5);
+        assert_eq!(
+            cpm.sensor_information_container[4].sensor_type,
+            SensorType::StereoVision
+        );
+        assert!(cpm.sensor_information_container[4].shadowing_applies);
+        assert!(
+            cpm.sensor_information_container[4]
+                .perception_region_shape
+                .is_some()
+        );
+        let perception_region_shape = cpm.sensor_information_container[4]
+            .perception_region_shape
+            .as_ref()
+            .unwrap();
+        assert!(perception_region_shape.radial.is_some());
+        let radial = perception_region_shape.radial.as_ref().unwrap();
+        assert_eq!(radial.range, 4095);
+        assert_eq!(radial.stationary_horizontal_opening_angle_start, 900);
+        assert_eq!(radial.stationary_horizontal_opening_angle_end, 2700);
+        assert!(radial.shape_reference_point.is_some());
+        let shape_reference_point = radial.shape_reference_point.as_ref().unwrap();
+        assert_eq!(shape_reference_point.x_coordinate, 32767);
+        assert_eq!(shape_reference_point.y_coordinate, -32768);
+        assert_eq!(shape_reference_point.z_coordinate.unwrap(), 0);
+        assert_eq!(radial.vertical_opening_angle_start.unwrap(), 0);
+        assert_eq!(radial.vertical_opening_angle_end.unwrap(), 3601);
+        assert_eq!(
+            cpm.sensor_information_container[4]
+                .perception_region_confidence
+                .unwrap(),
+            101
+        );
+
+        assert_eq!(cpm.sensor_information_container[5].sensor_id, 6);
+        assert_eq!(
+            cpm.sensor_information_container[5].sensor_type,
+            SensorType::NightVision
+        );
+        assert!(cpm.sensor_information_container[5].shadowing_applies);
+        let perception_region_shape = cpm.sensor_information_container[5]
+            .perception_region_shape
+            .as_ref()
+            .unwrap();
+        assert!(perception_region_shape.radial_shapes.is_some());
+        let radial_shapes = perception_region_shape.radial_shapes.as_ref().unwrap();
+        assert_eq!(radial_shapes.ref_point_id, 255);
+        assert_eq!(radial_shapes.x_coordinate, 1001);
+        assert_eq!(radial_shapes.y_coordinate, -3094);
+        assert_eq!(radial_shapes.z_coordinate.unwrap(), 1047);
+        assert_eq!(radial_shapes.radial_shapes_list.len(), 2);
+        let radial_shape = &radial_shapes.radial_shapes_list[0];
+        assert_eq!(radial_shape.range, 4095);
+        assert_eq!(radial_shape.stationary_horizontal_opening_angle_start, 900);
+        assert_eq!(radial_shape.stationary_horizontal_opening_angle_end, 2700);
+        assert!(radial_shape.shape_reference_point.is_some());
+        let shape_reference_point = radial_shape.shape_reference_point.as_ref().unwrap();
+        assert_eq!(shape_reference_point.x_coordinate, 32767);
+        assert_eq!(shape_reference_point.y_coordinate, -32768);
+        assert_eq!(shape_reference_point.z_coordinate.unwrap(), 0);
+        assert_eq!(radial_shape.vertical_opening_angle_start.unwrap(), 0);
+        assert_eq!(radial_shape.vertical_opening_angle_end.unwrap(), 3601);
+        let radial_shape = &radial_shapes.radial_shapes_list[1];
+        assert_eq!(radial_shape.range, 2047);
+        assert_eq!(radial_shape.stationary_horizontal_opening_angle_start, 0);
+        assert_eq!(radial_shape.stationary_horizontal_opening_angle_end, 3601);
+        assert!(radial_shape.shape_reference_point.is_some());
+        let shape_reference_point = radial_shape.shape_reference_point.as_ref().unwrap();
+        assert_eq!(shape_reference_point.x_coordinate, 32767);
+        assert_eq!(shape_reference_point.y_coordinate, -32768);
+        assert_eq!(shape_reference_point.z_coordinate.unwrap(), 0);
+        assert_eq!(radial_shape.vertical_opening_angle_start.unwrap(), 0);
+        assert_eq!(radial_shape.vertical_opening_angle_end.unwrap(), 3601);
+        assert_eq!(
+            cpm.sensor_information_container[5]
+                .perception_region_confidence
+                .unwrap(),
+            101
+        );
+
+        assert_eq!(
+            cpm.perception_region_container[1].measurement_delta_time,
+            -2048
+        );
+        assert_eq!(
+            cpm.perception_region_container[1].perception_region_confidence,
+            1
+        );
+        let perception_region_shape = &cpm.perception_region_container[1].perception_region_shape;
+        assert!(perception_region_shape.elliptical.is_some());
+        let elliptical = perception_region_shape.elliptical.as_ref().unwrap();
+        assert_eq!(elliptical.semi_major_axis_length, 4095);
+        assert_eq!(elliptical.semi_minor_axis_length, 0);
+        assert!(elliptical.shape_reference_point.is_some());
+        let shape_reference_point = elliptical.shape_reference_point.as_ref().unwrap();
+        assert_eq!(shape_reference_point.x_coordinate, 32767);
+        assert_eq!(shape_reference_point.y_coordinate, -32768);
+        assert_eq!(shape_reference_point.z_coordinate.unwrap(), 0);
+        assert_eq!(elliptical.orientation.unwrap(), 3601);
+        assert_eq!(elliptical.height.unwrap(), 4095);
+        assert!(!cpm.perception_region_container[1].shadowing_applies);
+        assert_eq!(
+            cpm.perception_region_container[1].sensor_id_list,
+            vec![2, 3, 4, 5, 6]
+        );
+        assert!(
+            cpm.perception_region_container[1]
+                .perceived_object_ids
+                .is_empty()
+        );
+
+        // the other containers should be empty
+        assert!(cpm.originating_vehicle_container.is_none());
+        assert!(cpm.perceived_object_container.is_empty());
+    }
+
+    #[test]
+    fn test_reserialize_minimal_cpm() {
+        let data = minimal_cpm();
+
+        let cpm = serde_json::from_str::<CollectivePerceptionMessage>(data).unwrap();
+        let serialized = serde_json::to_string(&cpm).unwrap();
+        assert_eq!(
+            serialized,
+            data.replace("\n", "").replace(" ", "").replace("\t", "")
+        );
+    }
+
+    #[test]
+    fn test_reserialize_standard_cpm() {
+        let data = standard_cpm();
+
+        let cpm = serde_json::from_str::<CollectivePerceptionMessage>(data).unwrap();
+        let serialized = serde_json::to_string(&cpm).unwrap();
+        assert_eq!(
+            serialized,
+            data.replace("\n", "").replace(" ", "").replace("\t", "")
+        );
+    }
+
+    #[test]
+    fn test_reserialize_full_vehicle_cpm() {
+        let data = full_vehicle_cpm();
+
+        let cpm = serde_json::from_str::<CollectivePerceptionMessage>(data).unwrap();
+        let serialized = serde_json::to_string(&cpm).unwrap();
+        assert_eq!(
+            serialized,
+            data.replace("\n", "").replace(" ", "").replace("\t", "")
+        );
+    }
+
+    #[test]
+    fn test_reserialize_full_rsu_cpm() {
+        let data = full_rsu_cpm();
+
+        let cpm = serde_json::from_str::<CollectivePerceptionMessage>(data).unwrap();
+        let serialized = serde_json::to_string(&cpm).unwrap();
+        assert_eq!(
+            serialized,
+            data.replace("\n", "").replace(" ", "").replace("\t", "")
+        );
+    }
+
+    #[test]
+    fn test_deserialize_road_segment_map_reference() {
+        let data = r#"{
+            "road_segment": {
+                "id": 65535,
+                "region": 65535
+            }
         }"#;
 
-        match serde_json::from_str::<FreeSpaceAddendum>(data) {
-            Ok(free_space_addendum) => {
-                assert!(
-                    free_space_addendum
-                        .free_space_area
-                        .free_space_polygon
-                        .is_some()
-                );
-                assert!(
-                    free_space_addendum
-                        .free_space_area
-                        .free_space_circular
-                        .is_none()
-                );
-                assert!(
-                    free_space_addendum
-                        .free_space_area
-                        .free_space_rectangle
-                        .is_none()
-                );
-                assert!(
-                    free_space_addendum
-                        .free_space_area
-                        .free_space_ellipse
-                        .is_none()
-                );
-                assert_eq!(free_space_addendum.free_space_confidence, 12);
-                assert!(free_space_addendum.sensor_id_list.is_empty());
-                assert!(free_space_addendum.shadowing_applies.is_none());
+        match serde_json::from_str::<MapReference>(data) {
+            Ok(object) => {
+                let road_segment = object.road_segment.unwrap();
+                assert_eq!(road_segment.id, 65535);
+                assert_eq!(road_segment.region, Some(65535));
             }
-            Err(e) => panic!("Failed to deserialize FreeSpaceAddendum: '{}'", e),
+            Err(e) => panic!("Failed to deserialize a road segment MapReference: '{}'", e),
         }
     }
 
     #[test]
-    fn deserialize_minimal_free_space_area_circular() {
+    fn test_deserialize_intersection_map_reference() {
         let data = r#"{
-            "free_space_area": {
-                "free_space_circular": {
-                    "radius": 10000,
-                    "node_center_point": {
-                        "x": 32767,
-                        "y": -32768,
-                        "z": 0
-                    }
-                }
-            },
-            "free_space_confidence": 101,
-            "sensor_id_list": [10, 20, 30],
-            "shadowing_applies": true
+            "intersection": {
+                "id": 65535,
+                "region": 65535
+            }
         }"#;
 
-        match serde_json::from_str::<FreeSpaceAddendum>(data) {
-            Ok(free_space_addendum) => {
-                assert!(
-                    free_space_addendum
-                        .free_space_area
-                        .free_space_polygon
-                        .is_none()
-                );
-                assert!(
-                    free_space_addendum
-                        .free_space_area
-                        .free_space_circular
-                        .is_some()
-                );
-                assert!(
-                    free_space_addendum
-                        .free_space_area
-                        .free_space_rectangle
-                        .is_none()
-                );
-                assert!(
-                    free_space_addendum
-                        .free_space_area
-                        .free_space_ellipse
-                        .is_none()
-                );
-                assert_eq!(free_space_addendum.free_space_confidence, 101);
-                assert_eq!(free_space_addendum.sensor_id_list.len(), 3);
-                assert_eq!(free_space_addendum.shadowing_applies, Some(true))
+        match serde_json::from_str::<MapReference>(data) {
+            Ok(object) => {
+                let intersection = object.intersection.unwrap();
+                assert_eq!(intersection.id, 65535);
+                assert_eq!(intersection.region, Some(65535));
             }
-            Err(e) => panic!("Failed to deserialize FreeSpaceAddendum: '{}'", e),
+            Err(e) => panic!(
+                "Failed to deserialize an intersection MapReference: '{}'",
+                e
+            ),
         }
+    }
+
+    #[test]
+    fn test_cpm_defaults() {
+        let cpm = CollectivePerceptionMessage::default();
+        assert_eq!(cpm.protocol_version, 0);
+        assert_eq!(cpm.station_id, 0);
+        assert!(cpm.originating_vehicle_container.is_none());
+        assert!(cpm.originating_rsu_container.is_empty());
+        assert!(cpm.sensor_information_container.is_empty());
+        assert!(cpm.perception_region_container.is_empty());
+        assert!(cpm.perceived_object_container.is_empty());
+    }
+
+    #[test]
+    fn test_deserialize_collective_perception_message_with_empty_containers() {
+        let data = r#"{
+                "protocol_version": 3,
+                "station_id": 54321,
+                "management_container": {
+                    "reference_time": 4398046511103,
+                    "reference_position": {
+                        "latitude": 111111111,
+                        "longitude": 222222222,
+                        "altitude": {
+                            "value": 800001,
+                            "confidence": 15
+                        },
+                        "position_confidence_ellipse": {
+                            "semi_major": 4095,
+                            "semi_minor": 4095,
+                            "semi_major_orientation": 3601
+                        }                        
+                    }
+                },
+                "sensor_information_container": [],
+                "perception_region_container": [],
+                "perceived_object_container": []
+            }"#;
+
+        let cpm = serde_json::from_str::<CollectivePerceptionMessage>(data).unwrap();
+        assert_eq!(cpm.protocol_version, 3);
+        assert_eq!(cpm.station_id, 54321);
+        assert_eq!(
+            cpm.management_container.reference_position.latitude,
+            111111111
+        );
+        assert_eq!(
+            cpm.management_container.reference_position.longitude,
+            222222222
+        );
+        assert!(cpm.originating_vehicle_container.is_none());
+        assert!(cpm.originating_rsu_container.is_empty());
+        assert!(cpm.sensor_information_container.is_empty());
+        assert!(cpm.perception_region_container.is_empty());
+        assert!(cpm.perceived_object_container.is_empty());
     }
 }

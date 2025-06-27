@@ -16,11 +16,12 @@ use std::hash::{Hash, Hasher};
 
 use self::integer_sqrt::IntegerSquareRoot;
 use crate::exchange::etsi::collective_perception_message::CollectivePerceptionMessage;
-use crate::exchange::etsi::perceived_object::PerceivedObject;
+use crate::exchange::etsi::perceived_object::{CartesianVelocity, PerceivedObject};
 use crate::exchange::etsi::speed_from_etsi;
 use crate::mobility::mobile::Mobile;
 use crate::mobility::position::{Position, enu_destination, haversine_destination};
 use log::trace;
+use rand::Rng;
 
 const PI2: f64 = 2. * PI;
 
@@ -42,34 +43,57 @@ impl MobilePerceivedObject {
         cpm: &CollectivePerceptionMessage,
     ) -> Self {
         let mobile_id = compute_id(perceived_object.object_id, cpm.station_id);
-        let speed = speed_from_yaw_angle(perceived_object.x_speed, perceived_object.y_speed);
-        let (position, heading) = match cpm.management_container.station_type {
-            15 => {
-                let position = enu_destination(
-                    &cpm.position(),
-                    perceived_object.x_distance as f64 / 100.,
-                    perceived_object.y_distance as f64 / 100.,
-                    perceived_object.z_distance.unwrap_or_default() as f64 / 100.,
-                );
-                let heading = compute_heading_from_rsu(&perceived_object);
-
-                (position, heading)
+        let cartesian_velocity = &perceived_object
+            .velocity
+            .as_ref()
+            .and_then(|v| v.cartesian_velocity.as_ref())
+            .map_or(CartesianVelocity::default(), |v| v.clone());
+        let speed = speed_from_yaw_angle(
+            cartesian_velocity.x_velocity.value,
+            cartesian_velocity.y_velocity.value,
+        );
+        let (position, heading) = match &cpm.originating_vehicle_container {
+            Some(_) => {
+                let cpm_heading = cpm.heading().unwrap_or_default();
+                // If the CPM has an originating vehicle container, we compute the heading
+                // from the perceived object and the vehicle's heading.
+                (
+                    compute_position_from_mobile(
+                        perceived_object.position.x_coordinate.value,
+                        perceived_object.position.y_coordinate.value,
+                        &cpm.position(),
+                        cpm_heading,
+                    ),
+                    compute_heading_from_mobile(
+                        cartesian_velocity.x_velocity.value,
+                        cartesian_velocity.y_velocity.value,
+                        cpm_heading,
+                    ),
+                )
             }
-            _ => {
-                let position = compute_position_from_mobile(
-                    perceived_object.x_distance,
-                    perceived_object.y_distance,
-                    &cpm.position(),
-                    cpm.heading().unwrap_or_default(),
-                );
-                let heading = compute_heading_from_mobile(
-                    &perceived_object,
-                    cpm.heading().unwrap_or_default(),
-                );
-
-                (position, heading)
+            None => {
+                // If there is no originating vehicle container, we compute from the RSU
+                (
+                    enu_destination(
+                        &cpm.position(),
+                        perceived_object.position.x_coordinate.value as f64 / 100.,
+                        perceived_object.position.y_coordinate.value as f64 / 100.,
+                        perceived_object
+                            .position
+                            .z_coordinate
+                            .unwrap_or_default()
+                            .value as f64
+                            / 100.,
+                    ),
+                    compute_heading_from_rsu(
+                        cartesian_velocity.x_velocity.value,
+                        cartesian_velocity.y_velocity.value,
+                    ),
+                )
             }
         };
+        // FIXME compute acceleration from perceived object velocity. See https://github.com/Orange-OpenSource/its-client/issues/416
+        let acceleration = 0.0;
 
         Self {
             perceived_object,
@@ -77,8 +101,7 @@ impl MobilePerceivedObject {
             position,
             speed,
             heading,
-            // TODO
-            acceleration: 0.0,
+            acceleration,
         }
     }
 }
@@ -126,13 +149,14 @@ impl Hash for MobilePerceivedObject {
 }
 
 /// FIXME this function does not create a unique id (issue [99](https://github.com/Orange-OpenSource/its-client/issues/99))
-fn compute_id(object_id: u8, cpm_station_id: u32) -> u32 {
-    let string_id = format!("{}{}", cpm_station_id, object_id);
+fn compute_id(object_id: Option<u16>, cpm_station_id: u32) -> u32 {
+    let object_id_basis = object_id.unwrap_or_else(|| rand::thread_rng().gen_range(0..=u16::MAX));
+    let string_id = format!("{}{}", cpm_station_id, object_id_basis);
     match string_id.parse() {
         Ok(id) => id,
         Err(_err) => {
             trace!("Unable to generate a mobile id with {string_id}, we create a short one");
-            cpm_station_id + object_id as u32
+            cpm_station_id + object_id_basis as u32
         }
     }
 }
@@ -154,8 +178,12 @@ fn compute_position_from_mobile(
     )
 }
 
-fn compute_heading_from_mobile(perceived_object: &PerceivedObject, cpm_heading: f64) -> f64 {
-    (cpm_heading + compute_heading_from_rsu(perceived_object)) % PI2
+fn compute_heading_from_mobile(
+    x_velocity_value: i16,
+    y_velocity_value: i16,
+    cpm_heading: f64,
+) -> f64 {
+    (cpm_heading + compute_heading_from_rsu(x_velocity_value, y_velocity_value)) % PI2
 }
 
 pub fn speed_from_yaw_angle(x_speed: i16, y_speed: i16) -> f64 {
@@ -174,36 +202,62 @@ pub fn speed_from_yaw_angle(x_speed: i16, y_speed: i16) -> f64 {
 /// - https://www.omnicalculator.com/math/vector-direction
 /// - https://support.nortekgroup.com/hc/en-us/articles/360012774640-How-do-I-calculate-current-speed-and-direction-from-three-beam-ADCP-velocity-components-
 ///
-fn compute_heading_from_rsu(perceived_object: &PerceivedObject) -> f64 {
-    let y_speed = f64::from(perceived_object.y_speed);
-    let x_speed = f64::from(perceived_object.x_speed);
-
-    PI + -x_speed.atan2(-y_speed)
+fn compute_heading_from_rsu(x_velocity_value: i16, y_velocity_value: i16) -> f64 {
+    PI + -(x_velocity_value as f64).atan2(-(y_velocity_value as f64))
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::exchange::etsi::angle::Angle;
     use crate::exchange::etsi::collective_perception_message::{
         CollectivePerceptionMessage, ManagementContainer, OriginatingVehicleContainer,
-        StationDataContainer,
     };
-    use crate::exchange::etsi::mobile_perceived_object::{
-        MobilePerceivedObject, compute_heading_from_mobile, compute_heading_from_rsu, compute_id,
-        compute_position_from_mobile,
+    use crate::exchange::etsi::coordinate::CartesianCoordinate;
+    use crate::exchange::etsi::perceived_object::{
+        CartesianPosition3DWithConfidence, CartesianVelocity, PerceivedObject,
+        Velocity3dWithConfidence,
     };
-    use crate::exchange::etsi::perceived_object::PerceivedObject;
     use crate::exchange::etsi::reference_position::{
-        ReferencePosition, altitude_from_etsi, coordinate_from_etsi,
+        Altitude, ReferencePosition, altitude_from_etsi, coordinate_from_etsi,
     };
+    use crate::exchange::etsi::velocity::Velocity;
     use crate::exchange::etsi::{heading_from_etsi, speed_from_etsi};
+    use crate::mobility::mobile_perceived_object::compute_heading_from_mobile;
+    use crate::mobility::mobile_perceived_object::{
+        MobilePerceivedObject, compute_heading_from_rsu, compute_id, compute_position_from_mobile,
+    };
     use crate::mobility::position::Position;
     use std::f64::consts::PI;
 
     macro_rules! po {
-        ($x_speed:expr, $y_speed:expr) => {
+        ($x_velocity:expr, $y_velocity:expr) => {
             PerceivedObject {
-                x_speed: $x_speed,
-                y_speed: $y_speed,
+                measurement_delta_time: 2047,
+                position: CartesianPosition3DWithConfidence {
+                    x_coordinate: CartesianCoordinate {
+                        value: 131071,
+                        confidence: 4096,
+                    },
+                    y_coordinate: CartesianCoordinate {
+                        value: -131072,
+                        confidence: 1,
+                    },
+                    ..Default::default()
+                },
+                velocity: Some(Velocity3dWithConfidence {
+                    cartesian_velocity: Some(CartesianVelocity {
+                        x_velocity: Velocity {
+                            value: $x_velocity,
+                            confidence: 127,
+                        },
+                        y_velocity: Velocity {
+                            value: $y_velocity,
+                            confidence: 1,
+                        },
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }),
                 ..Default::default()
             }
         };
@@ -219,7 +273,11 @@ mod tests {
                     &ReferencePosition {
                         latitude: 486251958,
                         longitude: 22415093,
-                        altitude: 900,
+                        altitude: Altitude {
+                            value: 900,
+                            ..Default::default()
+                        },
+                        ..Default::default()
                     }
                     .as_position(),
                     heading_from_etsi(900),
@@ -230,7 +288,11 @@ mod tests {
                     ReferencePosition {
                         latitude: 486251958,
                         longitude: 22415093,
-                        altitude: 900,
+                        altitude: Altitude {
+                            value: 900,
+                            ..Default::default()
+                        },
+                        ..Default::default()
                     }
                     .as_position()
                 );
@@ -257,6 +319,7 @@ mod tests {
             }
         };
     }
+
     test_compute_position_from_mobile!(
         x_distance_only_position_from_mobile,
         1800,
@@ -267,6 +330,7 @@ mod tests {
             altitude: altitude_from_etsi(900),
         }
     );
+
     test_compute_position_from_mobile!(
         y_distance_only_position_from_mobile,
         0,
@@ -277,6 +341,7 @@ mod tests {
             altitude: altitude_from_etsi(900),
         }
     );
+
     test_compute_position_from_mobile!(
         x_and_y_distance_position_from_mobile,
         1800,
@@ -291,23 +356,33 @@ mod tests {
     #[test]
     fn it_can_compute_an_id() {
         //not too large, we concatenate
-        assert_eq!(compute_id(1, 100), 1001);
-        assert_eq!(compute_id(1, 400000000), 4000000001);
+        assert_eq!(compute_id(Some(1), 100), 1001);
+        assert_eq!(compute_id(Some(1), 400000000), 4000000001);
         //too large, we add
-        assert_eq!(compute_id(1, 500000000), 500000001);
+        assert_eq!(compute_id(Some(1), 500000000), 500000001);
     }
 
     #[test]
     fn constructor_from_mobile() {
         let perceived_object = PerceivedObject {
-            object_id: 1,
-            x_distance: 50000,
-            y_distance: 10000,
+            object_id: Some(101),
+            measurement_delta_time: 2047,
+            position: CartesianPosition3DWithConfidence {
+                x_coordinate: CartesianCoordinate {
+                    value: 50000,
+                    confidence: 4096,
+                },
+                y_coordinate: CartesianCoordinate {
+                    value: 10000,
+                    confidence: 1,
+                },
+                ..Default::default()
+            },
             ..Default::default()
         };
         let expected_mobile_perceived_object = MobilePerceivedObject {
             perceived_object: perceived_object.clone(),
-            mobile_id: 101,
+            mobile_id: 10101,
             position: Position {
                 latitude: coordinate_from_etsi(434622516),
                 longitude: coordinate_from_etsi(1218218),
@@ -323,20 +398,24 @@ mod tests {
             &CollectivePerceptionMessage {
                 station_id: 10,
                 management_container: ManagementContainer {
-                    station_type: 5,
+                    reference_time: 4398046511103,
                     reference_position: ReferencePosition {
                         latitude: 434667520,
                         longitude: 1205862,
-                        altitude: 220000,
+                        altitude: Altitude {
+                            value: 220000,
+                            ..Default::default()
+                        },
+                        ..Default::default()
                     },
                     ..Default::default()
                 },
-                station_data_container: Some(StationDataContainer {
-                    originating_vehicle_container: Some(OriginatingVehicleContainer {
-                        heading: 1800,
+                originating_vehicle_container: Some(OriginatingVehicleContainer {
+                    orientation_angle: Angle {
+                        value: 1800,
                         ..Default::default()
-                    }),
-                    originating_rsu_container: None,
+                    },
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -370,16 +449,38 @@ mod tests {
     #[test]
     fn constructor_from_rsu() {
         let perceived_object = PerceivedObject {
-            object_id: 1,
-            x_distance: 114,
-            y_distance: -2757,
-            x_speed: 480,
-            y_speed: -345,
+            object_id: Some(101),
+            measurement_delta_time: 2047,
+            position: CartesianPosition3DWithConfidence {
+                x_coordinate: CartesianCoordinate {
+                    value: 114,
+                    confidence: 4096,
+                },
+                y_coordinate: CartesianCoordinate {
+                    value: -2757,
+                    confidence: 1,
+                },
+                ..Default::default()
+            },
+            velocity: Some(Velocity3dWithConfidence {
+                cartesian_velocity: Some(CartesianVelocity {
+                    x_velocity: Velocity {
+                        value: 480,
+                        confidence: 127,
+                    },
+                    y_velocity: Velocity {
+                        value: -345,
+                        confidence: 1,
+                    },
+                    z_velocity: Default::default(),
+                }),
+                ..Default::default()
+            }),
             ..Default::default()
         };
         let expected_mobile_perceived_object = MobilePerceivedObject {
             perceived_object: perceived_object.clone(),
-            mobile_id: 101,
+            mobile_id: 10101,
             position: Position {
                 latitude: coordinate_from_etsi(488415432),
                 longitude: coordinate_from_etsi(23679076),
@@ -395,11 +496,15 @@ mod tests {
             &CollectivePerceptionMessage {
                 station_id: 10,
                 management_container: ManagementContainer {
-                    station_type: 15,
+                    reference_time: 4398046511103,
                     reference_position: ReferencePosition {
                         latitude: 488417860,
                         longitude: 23678940,
-                        altitude: 900,
+                        altitude: Altitude {
+                            value: 900,
+                            ..Default::default()
+                        },
+                        ..Default::default()
                     },
                     ..Default::default()
                 },
@@ -471,7 +576,17 @@ mod tests {
             fn $test_name() {
                 let _epsilon = 1e-11;
 
-                let heading = compute_heading_from_mobile(&$po, $mob_heading);
+                let cartesian_velocity = $po
+                    .velocity
+                    .as_ref()
+                    .and_then(|v| v.cartesian_velocity.as_ref())
+                    .map_or(CartesianVelocity::default(), |v| v.clone());
+
+                let heading = compute_heading_from_mobile(
+                    cartesian_velocity.x_velocity.value,
+                    cartesian_velocity.y_velocity.value,
+                    $mob_heading,
+                );
                 let delta = (heading - $expected).abs();
 
                 assert!(
@@ -483,30 +598,35 @@ mod tests {
             }
         };
     }
+
     test_mobile_heading_computation!(
         north_east_heading_mobile_mobile_heading_north,
         po! {360, 360},
         0f64.to_radians(),
         45f64.to_radians()
     );
+
     test_mobile_heading_computation!(
         north_west_heading_mobile_mobile_heading_north,
         po! {-360, 360},
         0f64.to_radians(),
         315f64.to_radians()
     );
+
     test_mobile_heading_computation!(
         south_east_heading_mobile_heading_east,
         po! {360, 360},
         90f64.to_radians(),
         135f64.to_radians()
     );
+
     test_mobile_heading_computation!(
         south_west_heading_mobile_heading_west,
         po! {-360, 360},
         270f64.to_radians(),
         225f64.to_radians()
     );
+
     test_mobile_heading_computation!(
         north_east_heading_mobile_heading_east,
         po! {-360, 360},
@@ -520,7 +640,16 @@ mod tests {
             fn $test_name() {
                 let _epsilon = 1e-11;
 
-                let heading = compute_heading_from_rsu(&$po);
+                let cartesian_velocity = $po
+                    .velocity
+                    .as_ref()
+                    .and_then(|v| v.cartesian_velocity.as_ref())
+                    .map_or(CartesianVelocity::default(), |v| v.clone());
+
+                let heading = compute_heading_from_rsu(
+                    cartesian_velocity.x_velocity.value,
+                    cartesian_velocity.y_velocity.value,
+                );
                 let delta = (heading - $expected).abs();
 
                 assert!(
@@ -532,6 +661,7 @@ mod tests {
             }
         };
     }
+
     test_rsu_heading_computation!(
         east_heading_rsu_computation,
         po! {90, 0},
@@ -542,16 +672,19 @@ mod tests {
         po! {-270, 0},
         270f64.to_radians()
     );
+
     test_rsu_heading_computation!(
         north_heading_rsu_computation,
         po! {0, 360},
         0f64.to_radians()
     );
+
     test_rsu_heading_computation!(
         south_heading_rsu_computation,
         po! {0,  -180},
         180f64.to_radians()
     );
+
     test_rsu_heading_computation!(
         north_east_heading_rsu_computation,
         po! {45, 45},
@@ -562,11 +695,13 @@ mod tests {
         po! {135, -135},
         135f64.to_radians()
     );
+
     test_rsu_heading_computation!(
         south_west_heading_rsu_computation,
         po! {-225, -225},
         225f64.to_radians()
     );
+
     test_rsu_heading_computation!(
         north_west_heading_rsu_computation,
         po! {-315, 315},

@@ -32,14 +32,15 @@ use std::hash::{Hash, Hasher};
 #[derive(Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct SignalPhaseAndTimingExtendedMessage {
-    /// Intersection id
-    pub id: u64,
+    pub protocol_version: u8,
+    pub station_id: u32,
+
     /// Reference time of the signal state timing present in the message
+    // FIXME check if it's realy a "minute_of_the_year". If yes...fix this code.
     pub timestamp: Option<u64>,
     pub sending_station_id: Option<u64>,
     pub region: Option<u64>,
     pub revision: Option<u32>,
-    pub protocol_version: Option<u16>,
     /// State list for each signal group ot the intersection
     pub states: Vec<State>,
 }
@@ -50,7 +51,7 @@ impl Content for SignalPhaseAndTimingExtendedMessage {
     }
 
     fn appropriate(&mut self, timestamp: u64, new_station_id: u32) {
-        self.id = new_station_id.into();
+        self.station_id = new_station_id;
         self.timestamp = Some(timestamp);
     }
 
@@ -72,12 +73,12 @@ impl fmt::Display for SignalPhaseAndTimingExtendedMessage {
         write!(
             f,
             "{{ {}, {}, {}, {}, {}, {}, [{}] }}",
-            self.id,
+            self.station_id,
             self.timestamp.unwrap_or_default(),
             self.sending_station_id.unwrap_or_default(),
             self.region.unwrap_or_default(),
             self.revision.unwrap_or_default(),
-            self.protocol_version.unwrap_or_default(),
+            self.protocol_version,
             self.states
                 .iter()
                 .map(|s| s.to_string())
@@ -95,13 +96,13 @@ impl fmt::Debug for SignalPhaseAndTimingExtendedMessage {
 
 impl PartialEq<Self> for SignalPhaseAndTimingExtendedMessage {
     fn eq(&self, other: &Self) -> bool {
-        self.id.eq(&other.id) && self.timestamp.eq(&other.timestamp)
+        self.station_id.eq(&other.station_id) && self.timestamp.eq(&other.timestamp)
     }
 }
 
 impl Hash for SignalPhaseAndTimingExtendedMessage {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
+        self.station_id.hash(state);
         self.timestamp.hash(state);
     }
 }
@@ -212,7 +213,8 @@ mod test {
     fn test_root_optional_fields() {
         let data = r#"
         {
-            "id": 11,
+            "stationId": 11,
+            "protocolVersion": 1,
             "states":
             [
                 {
@@ -233,12 +235,12 @@ mod test {
 
         match serde_json::from_str::<SignalPhaseAndTimingExtendedMessage>(data) {
             Ok(spat) => {
-                assert_eq!(spat.id, 11);
+                assert_eq!(spat.station_id, 11);
                 assert!(spat.timestamp.is_none());
                 assert!(spat.sending_station_id.is_none());
                 assert!(spat.region.is_none());
                 assert!(spat.revision.is_none());
-                assert!(spat.protocol_version.is_none());
+                assert_eq!(spat.protocol_version, 1);
                 assert_eq!(spat.states.len(), 1);
                 assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
@@ -261,7 +263,7 @@ mod test {
     fn test_ttc_is_optional_in_state() {
         let data = r#"
         {
-            "id": 11,
+            "stationId": 11,
             "timestamp": 123456789,
             "sendingStationId": 12,
             "region": 13,
@@ -287,12 +289,12 @@ mod test {
 
         match serde_json::from_str::<SignalPhaseAndTimingExtendedMessage>(data) {
             Ok(spat) => {
-                assert_eq!(spat.id, 11);
+                assert_eq!(spat.station_id, 11);
                 assert_eq!(spat.timestamp.unwrap(), 123456789);
                 assert_eq!(spat.sending_station_id.unwrap(), 12);
                 assert_eq!(spat.region.unwrap(), 13);
                 assert_eq!(spat.revision.unwrap(), 14);
-                assert_eq!(spat.protocol_version.unwrap(), 15);
+                assert_eq!(spat.protocol_version, 15);
                 assert_eq!(spat.states.len(), 1);
                 assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
@@ -315,7 +317,7 @@ mod test {
     fn test_next_changes_is_optional_in_state() {
         let data = r#"
         {
-            "id": 11,
+            "stationId": 11,
             "timestamp": 123456789,
             "sendingStationId": 12,
             "region": 13,
@@ -333,14 +335,18 @@ mod test {
         }
         "#;
 
+        assert_deserialisation(data);
+    }
+
+    fn assert_deserialisation(data: &str) {
         match serde_json::from_str::<SignalPhaseAndTimingExtendedMessage>(data) {
             Ok(spat) => {
-                assert_eq!(spat.id, 11);
+                assert_eq!(spat.station_id, 11);
                 assert_eq!(spat.timestamp.unwrap(), 123456789);
                 assert_eq!(spat.sending_station_id.unwrap(), 12);
                 assert_eq!(spat.region.unwrap(), 13);
                 assert_eq!(spat.revision.unwrap(), 14);
-                assert_eq!(spat.protocol_version.unwrap(), 15);
+                assert_eq!(spat.protocol_version, 15);
                 assert_eq!(spat.states.len(), 1);
                 assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
@@ -360,7 +366,7 @@ mod test {
     fn test_next_changes_can_be_empty_in_state() {
         let data = r#"
         {
-            "id": 11,
+            "stationId": 11,
             "timestamp": 123456789,
             "sendingStationId": 12,
             "region": 13,
@@ -379,34 +385,14 @@ mod test {
         }
         "#;
 
-        match serde_json::from_str::<SignalPhaseAndTimingExtendedMessage>(data) {
-            Ok(spat) => {
-                assert_eq!(spat.id, 11);
-                assert_eq!(spat.timestamp.unwrap(), 123456789);
-                assert_eq!(spat.sending_station_id.unwrap(), 12);
-                assert_eq!(spat.region.unwrap(), 13);
-                assert_eq!(spat.revision.unwrap(), 14);
-                assert_eq!(spat.protocol_version.unwrap(), 15);
-                assert_eq!(spat.states.len(), 1);
-                assert!(!spat.states.is_empty());
-                let state = spat.states.first().unwrap();
-                assert_eq!(state.id, 16);
-                assert_eq!(state.state, TrafficLightState::StopAndRemain);
-                assert_eq!(state.ttc.unwrap(), 30);
-                assert_eq!(state.next_change, 1000000000);
-                assert_eq!(state.next_changes.len(), 0);
-            }
-            Err(e) => {
-                panic!("{:?}", e);
-            }
-        }
+        assert_deserialisation(data);
     }
 
     #[test]
     fn test_ttc_is_optional_in_next_state() {
         let data = r#"
         {
-            "id": 11,
+            "stationId": 11,
             "timestamp": 123456789,
             "sendingStationId": 12,
             "region": 13,
@@ -433,12 +419,12 @@ mod test {
 
         match serde_json::from_str::<SignalPhaseAndTimingExtendedMessage>(data) {
             Ok(spat) => {
-                assert_eq!(spat.id, 11);
+                assert_eq!(spat.station_id, 11);
                 assert_eq!(spat.timestamp.unwrap(), 123456789);
                 assert_eq!(spat.sending_station_id.unwrap(), 12);
                 assert_eq!(spat.region.unwrap(), 13);
                 assert_eq!(spat.revision.unwrap(), 14);
-                assert_eq!(spat.protocol_version.unwrap(), 15);
+                assert_eq!(spat.protocol_version, 15);
                 assert_eq!(spat.states.len(), 1);
                 assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
@@ -461,7 +447,7 @@ mod test {
     fn test_complete_deserialization() {
         let data = r#"
         {
-            "id": 11,
+            "stationId": 11,
             "timestamp": 123456789,
             "sendingStationId": 12,
             "region": 13,
@@ -494,12 +480,12 @@ mod test {
 
         match serde_json::from_str::<SignalPhaseAndTimingExtendedMessage>(data) {
             Ok(spat) => {
-                assert_eq!(spat.id, 11);
+                assert_eq!(spat.station_id, 11);
                 assert_eq!(spat.timestamp.unwrap(), 123456789);
                 assert_eq!(spat.sending_station_id.unwrap(), 12);
                 assert_eq!(spat.region.unwrap(), 13);
                 assert_eq!(spat.revision.unwrap(), 14);
-                assert_eq!(spat.protocol_version.unwrap(), 15);
+                assert_eq!(spat.protocol_version, 15);
                 assert_eq!(spat.states.len(), 1);
                 assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
@@ -531,7 +517,7 @@ mod test {
         let data = r#"{
             "sendingStationId": 49828819,
             "protocolVersion": 1,
-            "id": 243,
+            "stationId": 243,
             "region": 751,
             "timestamp": 1661861522210,
             "revision": 1,
@@ -960,7 +946,7 @@ mod test {
 
         match serde_json::from_str::<SignalPhaseAndTimingExtendedMessage>(data) {
             Ok(spat) => {
-                assert_eq!(spat.id, 243);
+                assert_eq!(spat.station_id, 243);
             }
             Err(e) => {
                 panic!("Failed to deserialize SPATEM: '{:?}'", e);

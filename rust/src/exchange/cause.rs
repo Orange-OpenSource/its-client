@@ -40,12 +40,15 @@ impl Cause {
     pub fn from_exchange(exchange: &Exchange) -> Option<Cause> {
         match &exchange.message {
             Message::CAM(message) => Some(Cause::new(
-                exchange.type_field.clone(),
+                exchange.message_type.clone(),
                 format!("{}/{}", message.station_id, message.generation_delta_time),
             )),
             Message::CPM(message) => Some(Cause::new(
-                exchange.type_field.clone(),
-                format!("{}/{}", message.station_id, message.generation_delta_time),
+                exchange.message_type.clone(),
+                format!(
+                    "{}/{}",
+                    message.station_id, message.management_container.reference_time
+                ),
             )),
             _ => None,
         }
