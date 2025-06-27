@@ -29,7 +29,7 @@ use std::any::type_name;
 /// Represents a Collective Perception Message (CPM) according to an ETSI standard.
 ///
 /// This message is used to describe information around itself.
-/// It implements the schema defined in the CPM file version 2.1.0.
+/// It implements the schema defined in the CPM file version 2.1.1.
 ///
 /// # Fields
 ///
@@ -191,10 +191,11 @@ impl CollectivePerceptionMessage {
             .iter()
             .map(|perceived_object| {
                 MobilePerceivedObject::new(
+                    self,
                     // assumed clone : we store a copy into the MobilePerceivedObject container
                     // TODO use a lifetime to propage the lifecycle between PerceivedObject and MobilePerceivedObject instead of clone
                     perceived_object.clone(),
-                    self,
+                    None,
                 )
             })
             .collect()

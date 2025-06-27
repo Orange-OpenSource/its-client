@@ -46,14 +46,18 @@ pub struct Exchange {
     /// TODO study if the field detection_zones_to_event_position could be used instead.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub path: Vec<PathElement>,
+
+    /// Only used into the CPM message.
+    pub object_id_rotation_count: Option<u8>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PathElement {
-    pub mobile_id: u32,
     pub position: Position,
     pub message_type: String,
+
+    pub id: Option<u64>,
 }
 
 impl Exchange {
@@ -67,11 +71,12 @@ impl Exchange {
 
         Box::from(Exchange {
             message_type: content.get_type().to_string(),
-            version: "2".to_string(),
             source_uuid: component,
-            path,
+            version: "2".to_string(),
             timestamp,
             message,
+            path,
+            object_id_rotation_count: None,
         })
     }
 

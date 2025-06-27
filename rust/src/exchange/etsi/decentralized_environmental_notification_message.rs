@@ -29,7 +29,7 @@ use serde::{Deserialize, Serialize};
 /// Represents a Decentralized Environmental Notification Message (DENM) according to an ETSI standard.
 ///
 /// This message is used to describe detected road hazards and traffic conditions.
-/// It implements the schema defined in the DENM file version 2.2.0.
+/// It implements the schema defined in the DENM file version 2.2.1.
 ///
 /// # Fields
 ///
