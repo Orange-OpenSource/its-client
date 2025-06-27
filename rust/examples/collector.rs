@@ -24,7 +24,7 @@ use libits::transport::mqtt::mqtt_router::MqttRouter;
 use libits::transport::mqtt::str_topic::StrTopic;
 #[cfg(feature = "telemetry")]
 use libits::transport::telemetry::init_tracer;
-use log::{debug, error, info, warn};
+use log::{debug, error, info};
 use rumqttc::v5::mqttbytes::v5::{Publish, PublishProperties};
 use std::fs::{File, OpenOptions, create_dir_all};
 use std::io::Write;
@@ -266,7 +266,7 @@ impl TryFrom<&Configuration> for ExporterConfiguration {
                 Ok(true) => Some(StdoutExporterConfiguration {}),
                 Ok(false) => None,
                 Err(e) => {
-                    warn!(" Exporter stdout not configured: {}", e);
+                    info!(" Exporter stdout not configured: {}", e);
                     None
                 }
             },
@@ -281,7 +281,7 @@ impl TryFrom<&Configuration> for ExporterConfiguration {
                 }),
                 Ok(false) => None,
                 Err(e) => {
-                    warn!(" Exporter file not configured: {}", e);
+                    info!(" Exporter file not configured: {}", e);
                     None
                 }
             },
@@ -289,7 +289,7 @@ impl TryFrom<&Configuration> for ExporterConfiguration {
                 Ok(true) => Some(MQTTExporterConfiguration {}),
                 Ok(false) => None,
                 Err(e) => {
-                    warn!(" Exporter mqtt not configured: {}", e);
+                    info!(" Exporter mqtt not configured: {}", e);
                     None
                 }
             },
@@ -395,30 +395,16 @@ mod tests {
     }
 
     #[test]
-    fn get_exporter_configuration_defaults() {
-        //FIXME implements Default into Configuration
-        let mut ini = Ini::new();
-        ini.with_section(Some("mqtt"))
-            .set("host", "localhost")
-            .set("client_id", "client-id")
-            .set("port", "1883");
-        let configuration =
-            Configuration::try_from(ini).expect("Failed to create empty configuration");
-        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap();
-        assert!(!exporter_config.stdout.is_some());
-        assert!(!exporter_config.file.is_some());
-        assert!(!exporter_config.mqtt.is_some());
+    fn get_exporter_configuration_default() {
+        let exporter_configuration = ExporterConfiguration::default();
+        assert!(exporter_configuration.stdout.is_none());
+        assert!(exporter_configuration.file.is_none());
+        assert!(exporter_configuration.mqtt.is_none());
     }
 
     #[test]
-    fn get_exporter_configuration_from_valid_config() {
-        let mut ini = Ini::new();
-        ini.with_section(Some("mqtt"))
-            .set("host", "localhost")
-            .set("client_id", "client-id")
-            .set("port", "1883");
-        let mut configuration =
-            Configuration::try_from(ini).expect("Failed to create empty configuration");
+    fn get_exporter_configuration_with_all_the_sections() {
+        let mut configuration = Configuration::default();
         configuration.set(Some(EXPORTER_SECTION), "stdout", "true");
         configuration.set(Some(EXPORTER_SECTION), "file", "true");
         configuration.set(Some(EXPORTER_SECTION), "mqtt", "true");
@@ -429,14 +415,8 @@ mod tests {
     }
 
     #[test]
-    fn get_exporter_configuration_from_invalid_config() {
-        let mut ini = Ini::new();
-        ini.with_section(Some("mqtt"))
-            .set("host", "localhost")
-            .set("client_id", "client-id")
-            .set("port", "1883");
-        let mut configuration =
-            Configuration::try_from(ini).expect("Failed to create empty configuration");
+    fn get_exporter_configuration_with_invalid_sections() {
+        let mut configuration = Configuration::default();
         configuration.set(Some(EXPORTER_SECTION), "stdout", "invalid");
         configuration.set(Some(EXPORTER_SECTION), "file", "invalid");
         configuration.set(Some(EXPORTER_SECTION), "mqtt", "invalid");
@@ -445,30 +425,11 @@ mod tests {
         assert!(!exporter_config.file.is_some());
         assert!(!exporter_config.mqtt.is_some());
     }
-    #[test]
-    fn get_exporter_configuration_with_missing_section() {
-        let mut ini = Ini::new();
-        ini.with_section(Some("mqtt"))
-            .set("host", "localhost")
-            .set("client_id", "client-id")
-            .set("port", "1883");
-        let configuration = Configuration::try_from(ini).expect("Failed to create configuration");
-        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap();
-        assert!(!exporter_config.stdout.is_some());
-        assert!(!exporter_config.file.is_some());
-        assert!(!exporter_config.mqtt.is_some());
-    }
 
     #[test]
-    fn get_exporter_configuration_with_partial_section() {
-        let mut ini = Ini::new();
-        ini.with_section(Some("mqtt"))
-            .set("host", "localhost")
-            .set("client_id", "client-id")
-            .set("port", "1883");
-        ini.with_section(Some(EXPORTER_SECTION))
-            .set("stdout", "true");
-        let configuration = Configuration::try_from(ini).expect("Failed to create configuration");
+    fn get_exporter_configuration_with_stdout_section() {
+        let mut configuration = Configuration::default();
+        configuration.set(Some(EXPORTER_SECTION), "stdout", "true");
         let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap();
         assert!(exporter_config.stdout.is_some());
         assert!(!exporter_config.file.is_some());
@@ -476,33 +437,38 @@ mod tests {
     }
 
     #[test]
-    fn get_exporter_configuration_with_default_file_fields() {
-        let mut ini = Ini::new();
-        ini.with_section(Some("mqtt"))
-            .set("host", "localhost")
-            .set("client_id", "client-id")
-            .set("port", "1883");
-        ini.with_section(Some(EXPORTER_SECTION)).set("file", "true");
-        let configuration = Configuration::try_from(ini).expect("Failed to create configuration");
+    fn get_exporter_configuration_with_file_section() {
+        let mut configuration = Configuration::default();
+        configuration.set(Some(EXPORTER_SECTION), "file", "true");
         let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap();
+        assert!(!exporter_config.stdout.is_some());
+        assert!(exporter_config.file.is_some());
+        assert!(!exporter_config.mqtt.is_some());
         let file_exporter = exporter_config.file.unwrap();
         assert_eq!(file_exporter.directory, "/data/collector");
         assert_eq!(file_exporter.max_line_count, 10000);
     }
 
     #[test]
-    fn get_exporter_configuration_with_file_fields() {
-        let mut ini = Ini::new();
-        ini.with_section(Some("mqtt"))
-            .set("host", "localhost")
-            .set("client_id", "client-id")
-            .set("port", "1883");
-        ini.with_section(Some(EXPORTER_SECTION))
-            .set("file", "true")
-            .set("file_directory", "/custom/path")
-            .set("file_nb_line", "5000");
-        let configuration = Configuration::try_from(ini).expect("Failed to create configuration");
+    fn get_exporter_configuration_with_mqtt_section() {
+        let mut configuration = Configuration::default();
+        configuration.set(Some(EXPORTER_SECTION), "mqtt", "true");
         let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap();
+        assert!(!exporter_config.stdout.is_some());
+        assert!(!exporter_config.file.is_some());
+        assert!(exporter_config.mqtt.is_some());
+    }
+
+    #[test]
+    fn get_exporter_configuration_with_custom_file_section() {
+        let mut configuration = Configuration::default();
+        configuration.set(Some(EXPORTER_SECTION), "file", "true");
+        configuration.set(Some(EXPORTER_SECTION), "file_directory", "/custom/path");
+        configuration.set(Some(EXPORTER_SECTION), "file_nb_line", "5000");
+        let exporter_config = ExporterConfiguration::try_from(&configuration).unwrap();
+        assert!(!exporter_config.stdout.is_some());
+        assert!(exporter_config.file.is_some());
+        assert!(!exporter_config.mqtt.is_some());
         let file_exporter = exporter_config.file.unwrap();
         assert_eq!(file_exporter.directory, "/custom/path");
         assert_eq!(file_exporter.max_line_count, 5000);
