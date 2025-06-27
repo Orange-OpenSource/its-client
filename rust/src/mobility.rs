@@ -10,5 +10,6 @@
  */
 
 pub mod mobile;
+pub mod mobile_perceived_object;
 pub mod position;
 pub mod quadtree;
