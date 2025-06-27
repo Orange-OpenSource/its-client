@@ -11,12 +11,13 @@ For both of these use cases, telemetry is both automatically done and abstracted
 
 Features
 --------
+The following table provides the current status of features implementation in each language.
 
-|                       | Rust | Python | Java |
-|-----------------------|:----:|:------:|:----:|
-| **MQTTv5**            |  ✓   |   ✓    |  ✓   |
-| **Telemetry**         |  ✓   |   ✓    |  ✓   |
-| **Device Management** |      |        |      |
+|        Feature        | Rust | Python | Java | Swift |
+|:---------------------:|:----:|:------:|:----:|:-----:|
+|      **MQTTv5**       |  ✓   |   ✓    |  ✓   |       |
+|     **Telemetry**     |  ✓   |   ✓    |  ✓   |       |
+| **Device Management** |      |        |      |       |
 
 ### Message exchange
 
@@ -24,13 +25,15 @@ Each implementation provides a client implementation allowing to subscribe and p
 
 ### Telemetry
 
-Each implementation might provide an abstraction of Open Telemetry features.
+Each implementation might provide an abstraction of Open Telemetry (https://opentelemetry.io/) Signals concepts.
+The following table provides the current implementation status of telemetry in each language.
 
-| Language | Traces | Logs | Metrics |
-|----------|--------|------|---------|
-| Rust     | ✓      |      |         |
-| Python   | ✓      |      |         |
-| Java     | ✓      |      |         |
+|   Signal    | Rust | Python | Java | Swift |
+|:-----------:|:----:|:------:|:----:|:-----:|
+| **Traces**  |  ✓   |   ✓    |  ✓   |       |
+|  **Logs**   |      |        |      |       |
+| **Metrics** |      |        |      |       |
+| **Baggage** |      |        |      |       |
 
 #### Traces
 
@@ -57,12 +60,12 @@ _**Work in progress**_
 
 Each implementation is _intended_ to provide an implementation of LwM2M protocol to bootstrap the device or application,
 and to send periodical alive messages.
+The following table provides the current implementation status of LwM2M protocol in each language.
 
-| Language | Bootstrap | Run |
-|----------|-----------|-----|
-| Rust     |           |     |
-| Python   |           |     |
-| Java     |           |     |
+| Device Management | Rust | Python | Java | Swift |
+|:-----------------:|:----:|:------:|:----:|:-----:|
+|   **Bootstrap**   |      |        |      |       |
+|      **Run**      |      |        |      |       |
 
 JSON schemas
 ------------
@@ -73,20 +76,36 @@ As mentioned, you can find in the `schemas` directory a proposal of implementati
 - CooperativeAwarenessMessage (CAM)
 - CollectivePerceptionMessage (CPM)
 - DecentralizedEmergencyNotificationMessage (DENM)
+- MAPExtendedMessage (MAPEM)
+- SignalPhaseAndTimingExtendedMessage (SPATEM)
+- SignalRequestExtendedMessage (SREM)
+- SignalStatusExtendedMessage (SSEM)
 
 But also schemas of custom messages for V2X:
 
+- Bootstrap (startup of the device)
 - Information (information about service instance)
 - Status (status of an instance)
+- Neighbourhood (instances "around")
+- Region (geographic area)
 
 _Note: none of the provided implementation is able to use different versions of a schema,
-they are using the following versions:_
+they are using the following versions:
 
-- _[cam_schema_1-1-3](schema/cam_schema_1-1-3.json)_
-- _[cpm_schema_1-2-1](schema/cpm_schema_1-2-1.json)_
-- _[denm_schema_1-1-3](schema/denm_schema_1-1-3.json)_
-- _[information_schema_1-2-0](schema/information_schema_1-2-0.json)_
-- _[status_schema_1-2-0](schema/status_schema_1-2-0.json)_
+|      Schema       |                                        Rust                                         |                          Python                           |                    Java                     | Swift |
+|:-----------------:|:-----------------------------------------------------------------------------------:|:---------------------------------------------------------:|:-------------------------------------------:|:-----:|
+|   **Bootstrap**   |                                                                                     |                                                           |                                             |       |
+|      **CAM**      | [2.2.0](schema/cam/cam_schema_2-2-0.json) [1.1.3](schema/cam/cam_schema_1-1-3.json) |         [1.1.3](schema/cam/cam_schema_1-1-3.json)         |  [1.1.3](schema/cam/cam_schema_1-1-3.json)  |       |
+|      **CPM**      |                      [2.1.0](schema/cpm/cpm_schema_2-1-0.json)                      |         [1.2.1](schema/cpm/cpm_schema_1-2-1.json)         |  [1.2.1](schema/cpm/cpm_schema_1-2-1.json)  |       |
+|     **DENM**      |                     [2.2.0](schema/denm/denm_schema_2-2-0.json)                     |        [1.1.3](schema/denm/denm_schema_1-1-3.json)        | [1.1.3](schema/denm/denm_schema_1-1-3.json) |       |
+|  **Information**  |              [2.1.0](schema/information/information_schema_2-1-0.json)              | [1.2.0](schema/information/information_schema_1-2-0.json) |                                             |       |
+|     **MAPEM**     |                                                                                     |                                                           |                                             |       |
+| **Neighbourhood** |                                                                                     |                                                           |                                             |       |
+|    **Region**     |                                                                                     |                                                           |                                             |       |
+|    **SPATEM**     |                                                                                     |                                                           |                                             |       |
+|     **SREM**      |                                                                                     |                                                           |                                             |       |
+|     **SSEM**      |                                                                                     |                                                           |                                             |       |
+|    **Status**     |                                                                                     |      [1.2.0](schema/status/status_schema_1-2-0.json)      |                                             |       |
 
 Languages
 ---------
