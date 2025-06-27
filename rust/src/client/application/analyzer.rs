@@ -78,17 +78,14 @@ use std::sync::{Arc, RwLock};
 ///     fn analyze(&mut self, packet: Packet<StringTopic, Exchange>) -> Vec<Packet<StringTopic, Exchange>> {
 ///         match packet.payload.message {
 ///             Message::CAM(cam) => {
-///                 if let Some(station_type) = cam.basic_container.station_type {
-///                     match station_type {
-///                         1 => self.context.write().unwrap().pedestrians += 1,
-///                         5 | 6 | 7 => self.context.write().unwrap().vehicles += 1,
-///                         _ => ()
-///                     }
+///                 match cam.basic_container.station_type {
+///                     1 => self.context.write().unwrap().pedestrians += 1,
+///                     5 | 6 | 7 => self.context.write().unwrap().vehicles += 1,
+///                     _ => ()
 ///                 }
 ///             }
 ///             _ => ()
 ///         }
-///
 ///         Vec::new()
 ///     }
 /// }
