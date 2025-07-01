@@ -19,9 +19,9 @@ actor RoadUserCoordinator {
         Task { [weak self] in
             guard let self else { return }
 
-            await cache.setExpiredEntryHandler { [observer] entry in
+            await cache.setExpiredEntryHandler { [weak self] entry in
                 Task {
-                    await observer?.didDelete(entry.value)
+                    await self?.observer?.didDelete(entry.value)
                 }
             }
         }
