@@ -56,16 +56,17 @@ final class RegionOfInterestCoordinator {
         zoomLevel: Int,
         namespace: String,
         currentRegionOfInterest: inout RegionOfInterest?) -> TopicUpdateRequest? {
+        let separator = "/"
         let quadkey = quadkeyBuilder.quadkeyFrom(latitude: latitude,
                                                  longitude: longitude,
                                                  zoomLevel: zoomLevel,
-                                                 separator: "/")
+                                                 separator: separator)
 
         guard quadkey != currentRegionOfInterest?.quadkey else {
             return nil
         }
 
-        let neighborQuadkeys = quadkeyBuilder.neighborQuadkeys(for: quadkey)
+        let neighborQuadkeys = quadkeyBuilder.neighborQuadkeys(for: quadkey, separator: separator)
         let regionOfInterest = RegionOfInterest(quadkey: quadkey,
                                                 neighborQuadkeys: neighborQuadkeys)
         let topicUpdate = updateTopicSubscriptions(newRegionOfInterest: regionOfInterest,

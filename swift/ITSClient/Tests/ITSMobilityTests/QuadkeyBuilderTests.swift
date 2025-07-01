@@ -170,4 +170,22 @@ struct QuadkeyBuilderTests {
         #expect(neighborQuadkeys.contains("22"))
         #expect(neighborQuadkeys.contains("20"))
     }
+
+    @Test("Quadkey must have 5 neighbors if it is at the bottom right edge with separator")
+    func quadkey_must_have_5_neighbors_if_bottom_right_edge_with_separator() {
+        // Given
+        let builder = QuadkeyBuilder()
+        let quadkey = "33"
+
+        // When
+        let neighborQuadkeys = builder.neighborQuadkeys(for: quadkey, separator: "/")
+
+        // Then
+        #expect(neighborQuadkeys.count == 5)
+        #expect(neighborQuadkeys.contains("3/0"))
+        #expect(neighborQuadkeys.contains("3/1"))
+        #expect(neighborQuadkeys.contains("3/2"))
+        #expect(neighborQuadkeys.contains("2/2"))
+        #expect(neighborQuadkeys.contains("2/0"))
+    }
 }
