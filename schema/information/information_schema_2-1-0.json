@@ -40,7 +40,7 @@
     "version": {
       "type": "string",
       "description": "JSON message format version.",
-      "const": "2.1.0-dev"
+      "const": "2.1.0"
     },
     "instance_id": {
       "type": "string",
