@@ -16,32 +16,39 @@
   ],
   "properties": {
     "message_type": {
-      "description": "type of server",
       "type": "string",
-      "enum": [
-        "broker"
-      ]
+      "description": "Type of the message carried in root properties.",
+      "const": "information"
     },
     "source_uuid": {
-      "description": "unique id all over the world for the message sender",
-      "type": "string"
+      "type": "string",
+      "description": "Unique id all over the world for the message sender.",
+      "examples": [
+        "com_car_4294967295",
+        "com_message_42"
+      ]
     },
     "timestamp": {
-      "description": "generation timestamp of the information, millisecond since epoch (1970/01/01)",
-      "type": "integer"
+      "type": "integer",
+      "description": "Timestamp when the message was generated since Unix Epoch (millisecond).",
+      "examples": [
+        1574778515424
+      ],
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
     },
     "version": {
       "type": "string",
-      "description": "json message format version",
+      "description": "JSON message format version.",
       "const": "2.1.0-dev"
     },
     "instance_id": {
-      "description": "unique id all over the world for a server",
-      "type": "string"
+      "type": "string",
+      "description": "Unique id all over the world for a server."
     },
     "instance_type": {
-      "description": "type of instance",
       "type": "string",
+      "description": "Type of instance.",
       "enum": [
         "local",
         "edge",
@@ -49,37 +56,37 @@
       ]
     },
     "central_instance_id": {
-      "description": "unique id all over the world for the central server if the instance is of type edge",
-      "type": "string"
+      "type": "string",
+      "description": "Unique id all over the world for the central server if the instance is of type edge."
     },
     "running": {
-      "description": "state of the server: true id running, false else.",
       "type": "boolean",
+      "description": "State of the server: true id running, false else.",
       "default": false
     },
     "validity_duration": {
-      "description": "validity period of the information relatively to the timestamp in seconds",
-      "type": "integer"
+      "type": "integer",
+      "description": "Validity period of the information relatively to the timestamp (seconds)."
     },
     "public_ip_address": {
-      "description": "list of public IP address",
       "type": "array",
+      "description": "List of public IP address.",
       "examples": [
         "161.05.21.166",
         "190.14.19.50",
         "127.0.0.1"
       ],
       "items": {
-        "description": "public IP address",
-        "type": "string"
+        "type": "string",
+        "description": "Public IP address."
       }
     },
     "mqtt_ip": {
-      "description": "list of MQTT IP address and port separated by a colon",
       "type": "array",
+      "description": "List of MQTT IP address and port separated by a colon.",
       "items": {
-        "description": "MQTT IP address and port (classically 1883) separated by a colon",
         "type": "string",
+        "description": "MQTT IP address and port (classically 1883) separated by a colon.",
         "examples": [
           "84.188.43.159:1883",
           "172.116.12.182:11883"
@@ -87,23 +94,47 @@
       }
     },
     "mqtt_tls_ip": {
-      "description": "list of MQTT IP address and TLS port separated by a colon",
       "type": "array",
+      "description": "List of MQTT IP address and TLS port separated by a colon.",
       "items": {
-        "description": "MQTT IP address and TLS port (classically 8883) separated by a colon",
         "type": "string",
+        "description": "MQTT IP address and TLS port (classically 8883) separated by a colon.",
         "examples": [
           "84.188.43.159:8883",
           "172.116.82.124:18883"
         ]
       }
     },
-    "http_proxy": {
-      "description": "list of HTTP IP address and port separated by a colon",
+    "http_ip": {
       "type": "array",
+      "description": "List of HTTP IP address and port separated by a colon.",
       "items": {
-        "description": "HTTP IP address and port (classically 8080) separated by a colon",
         "type": "string",
+        "description": "HTTP IP address and port (classically 80) separated by a colon.",
+        "examples": [
+          "84.188.43.159:80",
+          "172.116.12.182:10080"
+        ]
+      }
+    },
+    "http_tls_ip": {
+      "type": "array",
+      "description": "List of HTTP IP address and TLS port separated by a colon.",
+      "items": {
+        "type": "string",
+        "description": "HTTP IP address and TLS port (classically 443) separated by a colon.",
+        "examples": [
+          "84.188.43.159:443",
+          "172.116.82.124:10443"
+        ]
+      }
+    },
+    "http_proxy": {
+      "type": "array",
+      "description": "List of HTTP IP address and port separated by a colon.",
+      "items": {
+        "type": "string",
+        "description": "HTTP IP address and port (classically 8080) separated by a colon.",
         "examples": [
           "84.188.43.159:8080",
           "172.116.82.124:1280"
@@ -111,11 +142,11 @@
       }
     },
     "ntp_servers": {
-      "description": "list of Network Time Protocol server",
       "type": "array",
+      "description": "List of Network Time Protocol server.",
       "items": {
-        "description": "Network Time Protocol server",
         "type": "string",
+        "description": "Network Time Protocol server",
         "examples": [
           "ntp-sop.inria.fr",
           "0.debian.pool.ntp.org",
@@ -124,8 +155,8 @@
       }
     },
     "domain_name_servers": {
-      "description": "list of Domain Name Server",
       "type": "array",
+      "description": "List of Domain Name Server.",
       "items": {
         "description": "Domain Name Server",
         "type": "string",
@@ -135,53 +166,16 @@
         ]
       }
     },
-    "gelf_loggers": {
-      "description": "list of Graylog Extended Log Format server and port separated by a colon",
-      "type": "array",
-      "items": {
-        "description": "Graylog Extended Log Format server and port (classically 2201) separated by a colon",
-        "type": "string",
-        "examples": [
-          "90.11.41.133:2201",
-          "81.169.166.64:12201"
-        ]
-      }
-    },
-    "udp_loggers": {
-      "description": "list of User Datagram Protocol server and port separated by a colon",
-      "type": "array",
-      "items": {
-        "description": "User Datagram Protocol server and port (classically 2202) separated by a colon",
-        "type": "string",
-        "examples": [
-          "90.11.41.133:2202",
-          "81.169.166.64:12202"
-        ]
-      }
-    },
-    "fbeat_loggers": {
-      "description": "list of Filebeat server and port separated by a colon",
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "description": "Filebeat server and port (classically 2203) separated by a colon",
-        "type": "string",
-        "examples": [
-          "90.11.41.133:2203",
-          "81.16.11.164:12203"
-        ]
-      }
-    },
     "service_area": {
-      "description": "handled service area of the server",
       "type": "object",
+      "description": "Handled service area of the server.",
       "required": [
         "type"
       ],
       "properties": {
         "type": {
-          "description": "type of service area",
           "type": "string",
+          "description": "type of service area",
           "enum": [
             "point",
             "polygon",
@@ -189,42 +183,38 @@
           ]
         },
         "coordinates": {
-          "description": "coordinates of the point",
           "type": "array",
+          "description": "Coordinates of the point.",
           "minItems": 2,
           "maxItems": 2,
           "items": {
-            "description": "coordinate of the point",
             "type": "number"
           }
         },
         "radius": {
-          "description": "radius of the point",
           "type": "integer",
+          "description": "Radius of the point.",
           "default": 0
         },
         "vertices": {
-          "description": "vertices (corners) of the polygon",
           "type": "array",
+          "description": "Vertices (corners) of the polygon.",
           "minItems": 3,
           "items": {
             "coordinates": {
-              "description": "coordinates for a vertex (corner) of the polygon",
               "type": "array",
               "minItems": 2,
               "maxItems": 2,
               "items": {
-                "description": "coordinate",
                 "type": "number"
               }
             }
           }
         },
         "quadkeys": {
-          "description": "list of quadkey of the tiles",
           "type": "array",
+          "description": "List of quadkey of the tiles.",
           "items": {
-            "description": "quadkey",
             "type": "string",
             "examples": [
               "12020322313211",
@@ -236,10 +226,9 @@
       }
     },
     "cells_id": {
-      "description": "list of cell id of the server",
       "type": "array",
+      "description": "List of cell id of the server.",
       "items": {
-        "description": "cell id",
         "type": "integer"
       }
     }
