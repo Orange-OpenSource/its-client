@@ -19,7 +19,7 @@ classifiers = [
 ]
 dependencies = [
     "paho-mqtt>=2.1.0",
-    "requests>=2.31.0",
+    "requests>=2.32.4",
     "its-quadkeys @ git+https://github.com/Orange-OpenSource/its-client@91b6508d743fa6b771f5a5480591ce554d52084c#subdirectory=python/its-quadkeys"
 ]
 
