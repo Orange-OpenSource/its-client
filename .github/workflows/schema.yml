@@ -59,7 +59,7 @@ jobs:
             jsonschema==4.16.0 \
             pyrsistent==0.18.1 \
             requests==2.32.4 \
-            urllib3==1.26.12
+            urllib3==2.5.0
       - name: Validate one schema
         run: |
           ./schema/validate ${{ matrix.schema }}
