@@ -31,7 +31,7 @@ pycparser==2.22
 Pygments==2.18.0
 pyproject_hooks==1.2.0
 readme_renderer==44.0
-requests==2.32.3
+requests==2.32.4
 requests-toolbelt==1.0.0
 rfc3986==2.0.0
 rich==13.9.4
