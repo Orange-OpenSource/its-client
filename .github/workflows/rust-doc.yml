@@ -3,7 +3,7 @@ name: Rust Doc
 on:
   push:
     tags:
-      - rust.*
+      - '*.*.*-rust'
 
 env:
   CARGO_TERM_COLOR: always

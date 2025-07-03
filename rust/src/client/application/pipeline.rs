@@ -75,9 +75,6 @@ pub async fn run<A, C, T>(
     T: Topic + 'static,
     C: Send + Sync + 'static,
 {
-    let thread_count = configuration.mobility.thread_count;
-    info!("Analysis thread count set to: {}", thread_count);
-
     let information = Arc::new(RwLock::new(Information::default()));
 
     loop {
@@ -97,6 +94,8 @@ pub async fn run<A, C, T>(
             monitoring_receiver,
         );
 
+        let thread_count = configuration.mobility.thread_count;
+        info!("Analysis thread count set to: {}", thread_count);
         let analysis_pool = threadpool::ThreadPool::with_name("Analysis".to_string(), thread_count);
 
         let (analyser_sender, analyser_receiver) = unbounded();
@@ -198,11 +197,15 @@ where
                         //assumed clone, we send to 2 channels
                         if let Err(error) = publish_sender.send(item.clone()) {
                             error!("Stopped to send publish: {}", error);
-                            break;
+                            // break is not enough here as it only exits the for when we
+                            // need to exit the loop it is in, so use return instead
+                            return;
                         }
                         if let Err(error) = monitoring_sender.send((item, cause)) {
                             error!("Stopped to send monitoring: {}", error);
-                            break;
+                            // break is not enough here as it only exits the for when we
+                            // need to exit the loop it is in, so use return instead
+                            return;
                         }
                         // }
                         trace!("Filter closure finished");
@@ -342,7 +345,6 @@ async fn mqtt_client_publish<T, P>(
             }
         }
     }
-
     info!("MQTT publishing thread stopped");
 }
 
@@ -397,14 +399,18 @@ where
                                                     "Stopped to send mqtt monitoring: {}",
                                                     error
                                                 );
-                                                break;
+                                                // break is not enough here as it only exits the for when we
+                                                // need to exit the loop it is in, so use return instead
+                                                return;
                                             }
                                         }
                                         match exchange_sender.send(item) {
                                             Ok(()) => trace!("MQTT exchange sent"),
                                             Err(error) => {
                                                 error!("Stopped to send mqtt exchange: {}", error);
-                                                break;
+                                                // break is not enough here as it only exits the for when we
+                                                // need to exit the loop it is in, so use return instead
+                                                return;
                                             }
                                         }
                                     }
@@ -421,7 +427,9 @@ where
                                                     "Stopped to send mqtt information: {}",
                                                     error
                                                 );
-                                                break;
+                                                // break is not enough here as it only exits the for when we
+                                                // need to exit the loop it is in, so use return instead
+                                                return;
                                             }
                                         }
                                     }

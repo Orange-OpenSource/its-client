@@ -27,6 +27,7 @@ pub(crate) const GEO_SECTION: &str = "geo";
 /// ```
 ///
 /// [1]: crate::transport::mqtt::geo_topic::GeoTopic
+#[derive(Clone, Debug, Default)]
 pub struct GeoConfiguration {
     pub prefix: String,
     pub suffix: String,
