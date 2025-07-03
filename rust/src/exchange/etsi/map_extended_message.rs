@@ -34,13 +34,14 @@ use std::hash::{Hash, Hasher};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MAPExtendedMessage {
-    pub protocol_version: u16,
-    pub id: u64,
+    pub protocol_version: u8,
+    pub station_id: u32,
+    pub msg_issue_revision: u8,
+
     /// Reference time of the geometry present in the message
     pub timestamp: Option<u64>,
     pub sending_station_id: Option<u64>,
     pub region: Option<u64>,
-    pub revision: Option<u16>,
     /// List of the lanes in the intersection
     pub lanes: Vec<Lane>,
 }
@@ -51,7 +52,7 @@ impl Content for MAPExtendedMessage {
     }
 
     fn appropriate(&mut self, timestamp: u64, new_station_id: u32) {
-        self.id = new_station_id.into();
+        self.station_id = new_station_id;
         self.timestamp = Some(timestamp);
     }
 
@@ -66,13 +67,13 @@ impl Content for MAPExtendedMessage {
 
 impl PartialEq<Self> for MAPExtendedMessage {
     fn eq(&self, other: &Self) -> bool {
-        self.id.eq(&other.id) && self.timestamp.eq(&other.timestamp)
+        self.station_id.eq(&other.station_id) && self.timestamp.eq(&other.timestamp)
     }
 }
 
 impl Hash for MAPExtendedMessage {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
+        self.station_id.hash(state);
         self.timestamp.hash(state);
     }
 }
@@ -151,7 +152,7 @@ pub struct Connection {
     pub lane_id: u64,
     /// Turn direction leading to the connected lane
     pub action: Action,
-    /// True if taking this pas has to be executed with caution
+    /// True if taking this path to be executed with caution
     /// (e.g. pedestrian crossing on a right or left turn)
     pub caution: Option<bool>,
 }
@@ -188,118 +189,31 @@ impl MAPExtendedMessage {
     }
 }
 
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RoadSegment {
+    pub id: u16,
+
+    pub region: Option<u16>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Intersection {
+    pub id: u16,
+
+    pub region: Option<u16>,
+}
+
 #[cfg(test)]
 mod test {
     use crate::exchange::etsi::map_extended_message::{Action, MAPExtendedMessage};
 
-    #[test]
-    fn test_complete_deserialization() {
-        let data = r#"
-        {
+    fn standard_mapem() -> &'static str {
+        r#"{
             "protocolVersion": 1,
-            "id": 10,
-            "timestamp": 123456789,
-            "sendingStationId": 11,
-            "region": 12,
-            "revision": 13,
-            "lanes":
-            [
-                {
-                    "id": 14,
-                    "signalId": 15,
-                    "approachId": 16,
-                    "left": true,
-                    "straight": true,
-                    "right": false,
-                    "speedLimit": 50,
-                    "ingress": false,
-                    "egress": false,
-                    "geom":
-                    [
-                        [11.1, 2.2],
-                        [33.3, 4.4],
-                        [55.5, 6.6]
-                    ],
-                    "isVehicleLane": true,
-                    "isBusLane": false,
-                    "isBikeLane": false,
-                    "connections":
-                    [
-                        {
-                            "intersectionId": 17,
-                            "laneId": 18,
-                            "action": 0,
-                            "id": 19,
-                            "caution": true
-                        },
-                        {
-                            "intersectionId": 20,
-                            "laneId": 21,
-                            "action": 1,
-                            "id": 22,
-                            "caution": false
-                        }
-                    ]
-                }
-            ]
-        }
-        "#;
-
-        match serde_json::from_str::<MAPExtendedMessage>(data) {
-            Ok(map) => {
-                assert_eq!(map.id, 10);
-                assert_eq!(map.protocol_version, 1);
-                assert_eq!(map.timestamp.unwrap(), 123456789);
-                assert_eq!(map.sending_station_id.unwrap(), 11);
-                assert_eq!(map.region.unwrap(), 12);
-                assert_eq!(map.revision.unwrap(), 13);
-                assert_eq!(map.lanes.len(), 1);
-                let lane = map.lanes.first().unwrap();
-                assert_eq!(lane.id, 14);
-                assert_eq!(lane.signal_id, 15);
-                assert_eq!(lane.approach_id.unwrap(), 16);
-                assert!(lane.left);
-                assert!(lane.straight);
-                assert!(!lane.right);
-                assert_eq!(lane.speed_limit, 50);
-                assert!(!lane.ingress);
-                assert!(!lane.egress);
-                assert_eq!(lane.geom.len(), 3);
-                assert_eq!(lane.geom[0][0], 11.1);
-                assert_eq!(lane.geom[0][1], 2.2);
-                assert_eq!(lane.geom[1][0], 33.3);
-                assert_eq!(lane.geom[1][1], 4.4);
-                assert_eq!(lane.geom[2][0], 55.5);
-                assert_eq!(lane.geom[2][1], 6.6);
-                assert!(lane.is_vehicle_lane.unwrap());
-                assert!(!lane.is_bus_lane.unwrap());
-                assert!(!lane.is_bike_lane.unwrap());
-                assert_eq!(lane.connections.len(), 2);
-                let connection_one = lane.connections.first().unwrap();
-                assert_eq!(connection_one.intersection_id, 17);
-                assert_eq!(connection_one.lane_id, 18);
-                assert_eq!(connection_one.action, Action::Left);
-                assert_eq!(connection_one.id.unwrap(), 19);
-                assert!(connection_one.caution.unwrap());
-                let connection_two = lane.connections.last().unwrap();
-                assert_eq!(connection_two.intersection_id, 20);
-                assert_eq!(connection_two.lane_id, 21);
-                assert_eq!(connection_two.action, Action::Straight);
-                assert_eq!(connection_two.id.unwrap(), 22);
-                assert!(!connection_two.caution.unwrap());
-            }
-            Err(e) => {
-                panic!("Failed to deserialize MAPEM from JSON: '{}'", e);
-            }
-        }
-    }
-
-    #[test]
-    fn test_optional_fields() {
-        let data = r#"
-        {
-            "protocolVersion": 1,
-            "id": 10,
+            "stationId": 10,
+            "msgIssueRevision": 127,
             "lanes":
             [
                 {
@@ -348,16 +262,124 @@ mod test {
                     ]
                 }
             ]
-        }
-        "#;
+        }"#
+    }
+
+    fn full_mapem() -> &'static str {
+        r#"{
+            "protocolVersion": 1,
+            "stationId": 10,
+            "timestamp": 123456789,
+            "sendingStationId": 11,
+            "region": 12,
+            "msgIssueRevision": 13,
+            "lanes":
+            [
+                {
+                    "id": 14,
+                    "signalId": 15,
+                    "approachId": 16,
+                    "left": true,
+                    "straight": true,
+                    "right": false,
+                    "speedLimit": 50,
+                    "ingress": false,
+                    "egress": false,
+                    "geom":
+                    [
+                        [11.1, 2.2],
+                        [33.3, 4.4],
+                        [55.5, 6.6]
+                    ],
+                    "isVehicleLane": true,
+                    "isBusLane": false,
+                    "isBikeLane": false,
+                    "connections":
+                    [
+                        {
+                            "intersectionId": 17,
+                            "laneId": 18,
+                            "action": 0,
+                            "id": 19,
+                            "caution": true
+                        },
+                        {
+                            "intersectionId": 20,
+                            "laneId": 21,
+                            "action": 1,
+                            "id": 22,
+                            "caution": false
+                        }
+                    ]
+                }
+            ]
+        }"#
+    }
+
+    #[test]
+    fn test_complete_deserialization() {
+        let data = full_mapem();
 
         match serde_json::from_str::<MAPExtendedMessage>(data) {
             Ok(map) => {
-                assert_eq!(map.id, 10);
+                assert_eq!(map.station_id, 10);
+                assert_eq!(map.protocol_version, 1);
+                assert_eq!(map.timestamp.unwrap(), 123456789);
+                assert_eq!(map.sending_station_id.unwrap(), 11);
+                assert_eq!(map.region.unwrap(), 12);
+                assert_eq!(map.msg_issue_revision, 13);
+                assert_eq!(map.lanes.len(), 1);
+                let lane = map.lanes.first().unwrap();
+                assert_eq!(lane.id, 14);
+                assert_eq!(lane.signal_id, 15);
+                assert_eq!(lane.approach_id.unwrap(), 16);
+                assert!(lane.left);
+                assert!(lane.straight);
+                assert!(!lane.right);
+                assert_eq!(lane.speed_limit, 50);
+                assert!(!lane.ingress);
+                assert!(!lane.egress);
+                assert_eq!(lane.geom.len(), 3);
+                assert_eq!(lane.geom[0][0], 11.1);
+                assert_eq!(lane.geom[0][1], 2.2);
+                assert_eq!(lane.geom[1][0], 33.3);
+                assert_eq!(lane.geom[1][1], 4.4);
+                assert_eq!(lane.geom[2][0], 55.5);
+                assert_eq!(lane.geom[2][1], 6.6);
+                assert!(lane.is_vehicle_lane.unwrap());
+                assert!(!lane.is_bus_lane.unwrap());
+                assert!(!lane.is_bike_lane.unwrap());
+                assert_eq!(lane.connections.len(), 2);
+                let connection_one = lane.connections.first().unwrap();
+                assert_eq!(connection_one.intersection_id, 17);
+                assert_eq!(connection_one.lane_id, 18);
+                assert_eq!(connection_one.action, Action::Left);
+                assert_eq!(connection_one.id.unwrap(), 19);
+                assert!(connection_one.caution.unwrap());
+                let connection_two = lane.connections.last().unwrap();
+                assert_eq!(connection_two.intersection_id, 20);
+                assert_eq!(connection_two.lane_id, 21);
+                assert_eq!(connection_two.action, Action::Straight);
+                assert_eq!(connection_two.id.unwrap(), 22);
+                assert!(!connection_two.caution.unwrap());
+            }
+            Err(e) => {
+                panic!("Failed to deserialize MAPEM from JSON: '{}'", e);
+            }
+        }
+    }
+
+    #[test]
+    fn test_optional_fields() {
+        let data = standard_mapem();
+
+        match serde_json::from_str::<MAPExtendedMessage>(data) {
+            Ok(map) => {
+                assert_eq!(map.station_id, 10);
                 assert_eq!(map.protocol_version, 1);
                 assert!(map.timestamp.is_none());
                 assert!(map.region.is_none());
-                assert!(map.revision.is_none());
+                assert_eq!(map.msg_issue_revision, 127);
                 assert!(map.sending_station_id.is_none());
                 assert_eq!(map.lanes.len(), 2);
                 let lane = map.lanes.first().unwrap();
@@ -424,7 +446,7 @@ mod test {
     #[test]
     fn test_real_map_extended_message() {
         let data = r#"{
-            "id": 243,
+            "stationId": 243,
             "lanes": [{
                 "approachId": 0,
                 "connections": [{
@@ -1191,13 +1213,13 @@ mod test {
             }],
             "protocolVersion": 1,
             "region": 751,
-            "revision": 11,
+            "msgIssueRevision": 11,
             "sendingStationId": 75000
         }"#;
 
         match serde_json::from_str::<MAPExtendedMessage>(data) {
             Ok(map) => {
-                assert_eq!(243, map.id);
+                assert_eq!(243, map.station_id);
             }
             Err(e) => {
                 panic!("Failed to deserialize MAPEM: '{}'", e);
