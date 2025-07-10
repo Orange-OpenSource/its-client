@@ -14,22 +14,12 @@ import com.orange.iot3mobility.quadkey.LatLng;
 public class RoadHazard {
 
     private final String uuid;
-    private final int cause;
-    private final int subcause;
-    private LatLng position;
-    private long timestamp;
-    private int lifetime;
     private HazardType hazardType;
     private DENM denm;
 
-    public RoadHazard(String uuid, int cause, int subcause, LatLng position, int lifetime, long timestamp, DENM denm) {
+    public RoadHazard(String uuid, DENM denm) {
         this.uuid = uuid;
-        this.cause = cause;
-        this.subcause = subcause;
-        this.position = position;
-        this.lifetime = lifetime;
         this.denm = denm;
-        this.timestamp = timestamp;
         findHazardType();
     }
 
@@ -38,30 +28,19 @@ public class RoadHazard {
     }
 
     public LatLng getPosition() {
-        return position;
-    }
-
-    public void setPosition(LatLng position) {
-        this.position = position;
+        return new LatLng(denm.getManagementContainer().getEventPosition().getLatitudeDegree(),
+                denm.getManagementContainer().getEventPosition().getLongitudeDegree());
     }
 
     public long getTimestamp() {
-        return timestamp;
-    }
-
-    public void updateTimestamp(long timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public void setLifetime(int lifetime) {
-        this.lifetime = lifetime;
+        return denm.getTimestamp();
     }
 
     public boolean stillLiving() {
-        return TrueTime.getAccurateTime() - timestamp < lifetime;
+        return TrueTime.getAccurateTime() - getTimestamp() < denm.getManagementContainer().getValidityDuration() * 1000L;
     }
 
-    public HazardType getHazardType() {
+    public HazardType getType() {
         return hazardType;
     }
 
@@ -74,6 +53,8 @@ public class RoadHazard {
     }
 
     private void findHazardType() {
+        int cause = denm.getSituationContainer().getEventType().getCause();
+        int subcause = denm.getSituationContainer().getEventType().getSubcause();
         for(HazardType hazard: HazardType.values()) {
             if(hazard.getCause() == cause && hazard.getSubcause() == subcause) {
                 hazardType = hazard;
