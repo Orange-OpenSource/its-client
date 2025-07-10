@@ -18,7 +18,7 @@ actor MQTTNIOClient: MQTTClient {
     private let client: MQTTNIO.MQTTClient
     private let listenerName = "MQTTNIOClientListener"
     private var messageReceivedHandler: (@Sendable (MQTTMessage) -> Void)?
-    private var topicSubscriptions = [String]()
+    private var topicSubscriptions = Set<String>()
     private var isReconnecting = false
     private var reconnectionTask: Task<Void, Never>?
     private var networkMonitoringTask: Task<Void, Never>?
@@ -109,31 +109,27 @@ actor MQTTNIOClient: MQTTClient {
     }
 
     func subscribe(to topic: String) async throws(MQTTClientError) {
-        // Only save subscription when reconnecting
-        guard !isReconnecting else {
-            addTopicToSubscriptions(topic)
-            return
-        }
+        // Save subscription even if an error occurs or we're reconnecting
+        addTopicToSubscriptions(topic)
+
+        guard !isReconnecting else { return }
 
         do {
             let subscriptions = [MQTTSubscribeInfoV5(topicFilter: topic, qos: .atLeastOnce)]
             _ = try await client.v5.subscribe(to: subscriptions)
-            addTopicToSubscriptions(topic)
         } catch {
             throw .subscriptionFailed
         }
     }
 
     func unsubscribe(from topic: String) async throws(MQTTClientError) {
-        // Only remove subsription when reconnecting
-        guard !isReconnecting else {
-            removeTopicFromSubscriptions(topic)
-            return
-        }
+        // Remove subscription even if an error occurs or we're reconnecting
+        removeTopicFromSubscriptions(topic)
+
+        guard !isReconnecting else { return }
 
         do {
             _ = try await client.v5.unsubscribe(from: [topic])
-            removeTopicFromSubscriptions(topic)
         } catch {
             throw .unsubscriptionFailed
         }
@@ -143,15 +139,14 @@ actor MQTTNIOClient: MQTTClient {
         stopReconnectionTask()
         stopNetworkMonitoring()
 
-        guard isConnected else {
-            removeAllSubscriptions()
-            return
-        }
+        // Remove all subscriptions
+        removeAllSubscriptions()
+
+        guard isConnected else { return }
 
         do {
             try await client.v5.disconnect()
             isDisconnectedFromUser = true
-            removeAllSubscriptions()
         } catch {
             throw .disconnectionFailed
         }
@@ -175,11 +170,11 @@ actor MQTTNIOClient: MQTTClient {
     }
 
     private func addTopicToSubscriptions(_ topic: String) {
-        topicSubscriptions.append(topic)
+        topicSubscriptions.insert(topic)
     }
 
     private func removeTopicFromSubscriptions(_ topic: String) {
-        topicSubscriptions.removeAll(where: { $0 == topic })
+        topicSubscriptions.remove(topic)
     }
 
     private func removeAllSubscriptions() {
