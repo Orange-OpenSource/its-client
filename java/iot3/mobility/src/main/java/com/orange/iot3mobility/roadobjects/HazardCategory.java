@@ -5,7 +5,7 @@
 
  @author Mathieu LEFEBVRE <mathieu1.lefebvre@orange.com>
  */
-package com.orange.iot3mobility.its;
+package com.orange.iot3mobility.roadobjects;
 
 public enum HazardCategory {
 

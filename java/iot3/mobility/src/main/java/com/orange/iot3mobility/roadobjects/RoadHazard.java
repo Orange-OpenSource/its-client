@@ -8,7 +8,6 @@
 package com.orange.iot3mobility.roadobjects;
 
 import com.orange.iot3mobility.TrueTime;
-import com.orange.iot3mobility.its.HazardType;
 import com.orange.iot3mobility.its.json.denm.DENM;
 import com.orange.iot3mobility.quadkey.LatLng;
 
