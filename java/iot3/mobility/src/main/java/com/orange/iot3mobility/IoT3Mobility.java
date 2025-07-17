@@ -15,7 +15,7 @@ import com.orange.iot3core.IoT3CoreCallback;
 import com.orange.iot3core.bootstrap.BootstrapConfig;
 import com.orange.iot3core.clients.lwm2m.model.*;
 import com.orange.iot3mobility.its.EtsiUtils;
-import com.orange.iot3mobility.its.HazardType;
+import com.orange.iot3mobility.roadobjects.HazardType;
 import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.its.json.JsonValue;
 import com.orange.iot3mobility.its.json.Position;
