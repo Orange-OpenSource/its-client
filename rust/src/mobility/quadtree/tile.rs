@@ -30,7 +30,7 @@ impl From<u8> for Tile {
             1 => Tile::One,
             2 => Tile::Two,
             3 => Tile::Three,
-            _ => panic!("Unable to convert the number {} as a Tile", tile),
+            _ => panic!("Unable to convert the number {tile} as a Tile"),
         }
     }
 }
@@ -43,7 +43,7 @@ impl From<char> for Tile {
                 let digit = tile.to_digit(4).unwrap();
                 Tile::from(digit as u8)
             }
-            _ => panic!("Unable to convert the char {} as a Tile", tile),
+            _ => panic!("Unable to convert the char {tile} as a Tile"),
         }
     }
 }

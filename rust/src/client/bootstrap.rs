@@ -62,7 +62,7 @@ impl TryFrom<Value> for Bootstrap {
                     protocols,
                 })
             } else {
-                warn!("Failed to convert {:?} as JSON object", protocols);
+                warn!("Failed to convert {protocols:?} as JSON object");
                 Err(InvalidResponse("'protocols' field is not a JSON object"))
             }
         } else {
@@ -126,8 +126,8 @@ pub async fn bootstrap(mut ini: Ini) -> Result<Configuration, ConfigurationError
             })
         }
         Err(e) => {
-            error!("Failed to proceed to bootstrap: {:?}", e);
-            Err(BootstrapFailure(format!("{}", e)))
+            error!("Failed to proceed to bootstrap: {e:?}");
+            Err(BootstrapFailure(format!("{e}")))
         }
     }
 }
@@ -163,8 +163,7 @@ fn mqtt_configuration_from_bootstrap(
             Ok(url)
         } else {
             Err(BootstrapFailure(format!(
-                "Failed to convert '{}' as Url",
-                uri
+                "Failed to convert '{uri}' as Url"
             )))
         }
     }?;
@@ -265,7 +264,7 @@ async fn do_bootstrap(
     {
         Ok(response) => match response.text().await {
             Ok(body) => {
-                trace!("Bootstrap body = {:?}", body);
+                trace!("Bootstrap body = {body:?}");
                 match serde_json::from_str::<Value>(body.as_str()) {
                     Ok(json_value) => Bootstrap::try_from(json_value),
                     Err(e) => {
@@ -276,12 +275,12 @@ async fn do_bootstrap(
                 }
             }
             Err(e) => {
-                debug!("Error: {:?}", e);
+                debug!("Error: {e:?}");
                 Err(BootstrapError::ContentError(e.to_string()))
             }
         },
         Err(e) => {
-            debug!("Request error: {:?}", e);
+            debug!("Request error: {e:?}");
             Err(BootstrapError::NetworkError(e.to_string()))
         }
     }

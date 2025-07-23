@@ -215,10 +215,7 @@ mod tests {
             let radians = coordinate_from_etsi(microdegree_tenths);
             assert!(
                 (radians - expected_radians).abs() <= 1e-9,
-                "Expected {} radians, but got {} from {} microdegree_tenths",
-                expected_radians,
-                radians,
-                microdegree_tenths
+                "Expected {expected_radians} radians, but got {radians} from {microdegree_tenths} microdegree_tenths"
             );
         }
     }
@@ -246,9 +243,7 @@ mod tests {
 
         assert!(
             (altitude_in_meters - expected_altitude).abs() <= 1e-11,
-            "Current: {} (Expected: {})",
-            altitude_in_meters,
-            expected_altitude,
+            "Current: {altitude_in_meters} (Expected: {expected_altitude})"
         );
     }
 
@@ -348,7 +343,7 @@ mod tests {
                 assert_eq!(position.semi_minor, 0);
                 assert_eq!(position.semi_major_orientation, 3601);
             }
-            Err(e) => panic!("Failed to deserialize a PositionConfidenceEllipse: '{}'", e),
+            Err(e) => panic!("Failed to deserialize a PositionConfidenceEllipse: '{e}'"),
         }
     }
 
@@ -364,7 +359,7 @@ mod tests {
                 assert_eq!(object.value, 800001);
                 assert_eq!(object.confidence, 15);
             }
-            Err(e) => panic!("Failed to deserialize an Altitude: '{}'", e),
+            Err(e) => panic!("Failed to deserialize an Altitude: '{e}'"),
         }
     }
 
@@ -404,7 +399,7 @@ mod tests {
                     }
                 );
             }
-            Err(e) => panic!("Failed to deserialize a ReferencePosition: '{}'", e),
+            Err(e) => panic!("Failed to deserialize a ReferencePosition: '{e}'"),
         }
     }
 
@@ -422,7 +417,7 @@ mod tests {
                 assert_eq!(object.delta_longitude, -131071);
                 assert_eq!(object.delta_altitude, 12800);
             }
-            Err(e) => panic!("Failed to deserialize a DeltaReferencePosition: '{}'", e),
+            Err(e) => panic!("Failed to deserialize a DeltaReferencePosition: '{e}'"),
         }
     }
 }

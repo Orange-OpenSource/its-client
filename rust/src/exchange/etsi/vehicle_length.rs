@@ -54,7 +54,7 @@ impl TrailerPresence {
             2 => Ok(TrailerPresence::TrailerPresentWithUnknownLength),
             3 => Ok(TrailerPresence::Unknown),
             4 => Ok(TrailerPresence::Unavailable),
-            _ => Err(format!("Invalid trailer presence value: {}", value)),
+            _ => Err(format!("Invalid trailer presence value: {value}")),
         }
     }
 }

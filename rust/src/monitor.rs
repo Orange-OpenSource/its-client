@@ -47,7 +47,7 @@ pub fn trace_exchange(
 }
 
 fn format_trace(station_id: u32, generation_delta_time: u16) -> String {
-    format!("{}/{}", station_id, generation_delta_time)
+    format!("{station_id}/{generation_delta_time}")
 }
 
 pub(crate) fn format_cam_trace(cam: &CooperativeAwarenessMessage) -> String {

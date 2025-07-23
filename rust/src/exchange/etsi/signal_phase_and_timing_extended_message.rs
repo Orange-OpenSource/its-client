@@ -90,7 +90,7 @@ impl fmt::Display for SignalPhaseAndTimingExtendedMessage {
 
 impl fmt::Debug for SignalPhaseAndTimingExtendedMessage {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{self}")
     }
 }
 
@@ -179,7 +179,7 @@ impl fmt::Display for State {
 
 impl fmt::Debug for State {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{self}")
     }
 }
 
@@ -254,7 +254,7 @@ mod test {
                 assert_eq!(state.next_changes[0].next_change, 1000000030);
             }
             Err(e) => {
-                panic!("{:?}", e);
+                panic!("{e:?}");
             }
         }
     }
@@ -308,7 +308,7 @@ mod test {
                 assert_eq!(state.next_changes[0].next_change, 1000000030);
             }
             Err(e) => {
-                panic!("{:?}", e);
+                panic!("{e:?}");
             }
         }
     }
@@ -357,7 +357,7 @@ mod test {
                 assert_eq!(state.next_changes.len(), 0);
             }
             Err(e) => {
-                panic!("{:?}", e);
+                panic!("{e:?}");
             }
         }
     }
@@ -438,7 +438,7 @@ mod test {
                 assert_eq!(state.next_changes[0].next_change, 1000000030);
             }
             Err(e) => {
-                panic!("{:?}", e);
+                panic!("{e:?}");
             }
         }
     }
@@ -507,7 +507,7 @@ mod test {
                 assert_eq!(state.next_changes[1].ttc.unwrap(), 30);
             }
             Err(e) => {
-                panic!("{:?}", e);
+                panic!("{e:?}");
             }
         }
     }
@@ -949,7 +949,7 @@ mod test {
                 assert_eq!(spat.station_id, 243);
             }
             Err(e) => {
-                panic!("Failed to deserialize SPATEM: '{:?}'", e);
+                panic!("Failed to deserialize SPATEM: '{e:?}'");
             }
         }
     }

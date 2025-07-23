@@ -364,7 +364,7 @@ mod test {
                 assert!(!connection_two.caution.unwrap());
             }
             Err(e) => {
-                panic!("Failed to deserialize MAPEM from JSON: '{}'", e);
+                panic!("Failed to deserialize MAPEM from JSON: '{e}'");
             }
         }
     }
@@ -438,7 +438,7 @@ mod test {
                 assert_eq!(lane2.connections.len(), 0);
             }
             Err(e) => {
-                panic!("Failed to deserialize MAPEM from JSON: '{}'", e);
+                panic!("Failed to deserialize MAPEM from JSON: '{e}'");
             }
         }
     }
@@ -1222,7 +1222,7 @@ mod test {
                 assert_eq!(243, map.station_id);
             }
             Err(e) => {
-                panic!("Failed to deserialize MAPEM: '{}'", e);
+                panic!("Failed to deserialize MAPEM: '{e}'");
             }
         }
     }

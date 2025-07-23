@@ -151,7 +151,7 @@ impl Hash for MobilePerceivedObject {
 /// FIXME this function does not create a unique id (issue [99](https://github.com/Orange-OpenSource/its-client/issues/99))
 fn compute_id(object_id: Option<u16>, cpm_station_id: u32) -> u32 {
     let object_id_basis = object_id.unwrap_or_else(|| rand::thread_rng().gen_range(0..=u16::MAX));
-    let string_id = format!("{}{}", cpm_station_id, object_id_basis);
+    let string_id = format!("{cpm_station_id}{object_id_basis}");
     match string_id.parse() {
         Ok(id) => id,
         Err(_err) => {

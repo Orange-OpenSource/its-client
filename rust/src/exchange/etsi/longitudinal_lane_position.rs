@@ -41,7 +41,7 @@ mod tests {
                 assert_eq!(object.value, 32767);
                 assert_eq!(object.confidence, 1023);
             }
-            Err(e) => panic!("Failed to deserialize a LongitudinalLanePosition: '{}'", e),
+            Err(e) => panic!("Failed to deserialize a LongitudinalLanePosition: '{e}'"),
         }
     }
 }

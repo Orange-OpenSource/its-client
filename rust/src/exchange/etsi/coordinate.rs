@@ -42,7 +42,7 @@ mod tests {
                 assert_eq!(object.value, 131071);
                 assert_eq!(object.confidence, 4096);
             }
-            Err(e) => panic!("Failed to deserialize a CartesianCoordinate: '{}'", e),
+            Err(e) => panic!("Failed to deserialize a CartesianCoordinate: '{e}'"),
         }
     }
 }

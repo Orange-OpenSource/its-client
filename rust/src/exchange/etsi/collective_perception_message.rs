@@ -262,7 +262,7 @@ impl SensorType {
             11 => Ok(SensorType::Acoustic),
             12 => Ok(SensorType::LocalAggregation),
             13 => Ok(SensorType::ItsAggregation),
-            _ => Err(format!("Invalid sensor type value: {}", value)),
+            _ => Err(format!("Invalid sensor type value: {value}")),
         }
     }
 }
@@ -1878,7 +1878,7 @@ mod tests {
                 assert_eq!(road_segment.id, 65535);
                 assert_eq!(road_segment.region, Some(65535));
             }
-            Err(e) => panic!("Failed to deserialize a road segment MapReference: '{}'", e),
+            Err(e) => panic!("Failed to deserialize a road segment MapReference: '{e}'"),
         }
     }
 
@@ -1897,10 +1897,7 @@ mod tests {
                 assert_eq!(intersection.id, 65535);
                 assert_eq!(intersection.region, Some(65535));
             }
-            Err(e) => panic!(
-                "Failed to deserialize an intersection MapReference: '{}'",
-                e
-            ),
+            Err(e) => panic!("Failed to deserialize an intersection MapReference: '{e}'"),
         }
     }
 

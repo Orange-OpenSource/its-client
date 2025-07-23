@@ -42,7 +42,7 @@ mod tests {
                 assert_eq!(object.value, 16383);
                 assert_eq!(object.confidence, 127);
             }
-            Err(e) => panic!("Failed to deserialize a Velocity: '{}'", e),
+            Err(e) => panic!("Failed to deserialize a Velocity: '{e}'"),
         }
     }
 }

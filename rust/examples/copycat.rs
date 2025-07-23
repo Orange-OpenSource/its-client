@@ -60,7 +60,7 @@ impl Analyzer<GeoTopic, NoContext> for CopyCat {
         &mut self,
         mut packet: Packet<GeoTopic, Exchange>,
     ) -> Vec<Packet<GeoTopic, Exchange>> {
-        debug!("Item received: {:?}", packet);
+        debug!("Item received: {packet:?}");
         let mut item_to_publish = Vec::new();
         let packet_clone = packet.clone();
         let content = packet.payload.message.as_content();

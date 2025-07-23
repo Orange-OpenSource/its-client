@@ -77,7 +77,7 @@ mod tests {
                 assert_eq!(object.value, 1023);
                 assert_eq!(object.confidence, CurvatureConfidence::Unavailable);
             }
-            Err(e) => panic!("Failed to deserialize a Curvature: '{}'", e),
+            Err(e) => panic!("Failed to deserialize a Curvature: '{e}'"),
         }
     }
 }

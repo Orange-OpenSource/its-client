@@ -123,7 +123,7 @@ async fn main() {
                     match result.0.downcast_ref::<String>() {
                         Some(payload) => {
                             if exporter.stdout.is_some() {
-                                println!("{}", payload);
+                                println!("{payload}");
                             }
                             if let Some(file_exporter) = &exporter.file {
                                 if let Some(ref mut current_log_file) = log_file {
@@ -149,7 +149,7 @@ async fn main() {
                 }
             }
             Err(e) => {
-                error!("Connection error received: {:?}", e);
+                error!("Connection error received: {e:?}");
                 info!("Exiting...");
                 break;
             }
@@ -172,7 +172,7 @@ impl LogFile {
         let file_dir = PathBuf::from(&exporter_file.directory);
         create_dir_all(&file_dir).expect("Failed to create log directory");
         let timestamp = Local::now().format("%Y%m%d_%H%M%S_%3f");
-        let file_path = file_dir.join(format!("collector_{}.log", timestamp));
+        let file_path = file_dir.join(format!("collector_{timestamp}.log"));
         let file = OpenOptions::new()
             .create(true)
             .append(true)
@@ -216,7 +216,7 @@ impl LogFile {
     }
 
     fn write(&mut self, payload: &str) {
-        writeln!(self.file, "{}", payload).expect("Failed to write to log file");
+        writeln!(self.file, "{payload}").expect("Failed to write to log file");
         self.inserted_line_number += 1;
     }
 }
@@ -266,7 +266,7 @@ impl TryFrom<&Configuration> for ExporterConfiguration {
                 Ok(true) => Some(StdoutExporterConfiguration {}),
                 Ok(false) => None,
                 Err(e) => {
-                    info!(" Exporter stdout not configured: {}", e);
+                    info!(" Exporter stdout not configured: {e}");
                     None
                 }
             },
@@ -281,7 +281,7 @@ impl TryFrom<&Configuration> for ExporterConfiguration {
                 }),
                 Ok(false) => None,
                 Err(e) => {
-                    info!(" Exporter file not configured: {}", e);
+                    info!(" Exporter file not configured: {e}");
                     None
                 }
             },
@@ -289,7 +289,7 @@ impl TryFrom<&Configuration> for ExporterConfiguration {
                 Ok(true) => Some(MQTTExporterConfiguration {}),
                 Ok(false) => None,
                 Err(e) => {
-                    info!(" Exporter mqtt not configured: {}", e);
+                    info!(" Exporter mqtt not configured: {e}");
                     None
                 }
             },

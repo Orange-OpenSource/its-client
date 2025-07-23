@@ -566,7 +566,7 @@ mod test {
                 assert_eq!(po.object_id, expected_id);
             }
             Err(e) => {
-                panic!("Failed to deserialize PO: '{}'", e);
+                panic!("Failed to deserialize PO: '{e}'");
             }
         }
     }

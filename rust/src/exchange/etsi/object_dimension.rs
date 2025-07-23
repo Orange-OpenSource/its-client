@@ -41,7 +41,7 @@ mod tests {
                 assert_eq!(object.value, 256);
                 assert_eq!(object.confidence, 32);
             }
-            Err(e) => panic!("Failed to deserialize an ObjectDimension: '{}'", e),
+            Err(e) => panic!("Failed to deserialize an ObjectDimension: '{e}'"),
         }
     }
 }

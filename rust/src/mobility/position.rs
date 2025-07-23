@@ -89,7 +89,7 @@ pub fn haversine_distance(first: &Position, second: &Position) -> f64 {
     EARTH_RADIUS * c
 }
 
-/// φ is latitude, λ is longitude, θ is the bearing (clockwise from north), δ is the angular distance d/R; d being the distance travelled, R the earth’s radius
+/// φ is a latitude, λ is a longitude, θ is the bearing (clockwise from north), δ is the angular distance d/R; d being the distance travelled, R the earth’s radius
 pub fn haversine_destination(position: &Position, bearing: f64, distance: f64) -> Position {
     let φ1 = position.latitude;
     let λ1 = position.longitude;
@@ -223,7 +223,7 @@ mod tests {
     };
 
     macro_rules! test_haversine_distance {
-        ($test_name:ident, $f:expr_2021, $s:expr_2021, $e:expr_2021) => {
+        ($test_name:ident, $f:expr, $s:expr, $e:expr) => {
             #[test]
             fn $test_name() {
                 let distance = haversine_distance(&$f, &$s);
@@ -253,7 +253,7 @@ mod tests {
     );
 
     macro_rules! test_enu_destination {
-        ($test_name:ident, $anchor:expr_2021, $e:expr_2021, $n:expr_2021, $u:expr_2021, $exp_dst:expr_2021) => {
+        ($test_name:ident, $anchor:expr, $e:expr, $n:expr, $u:expr, $exp_dst:expr) => {
             #[test]
             fn $test_name() {
                 let offset_destination = enu_destination(&$anchor, $e, $n, $u);
@@ -285,7 +285,7 @@ mod tests {
     );
 
     macro_rules! test_bearing {
-        ($test_name:ident, $dst:expr_2021, $exp_bearing:expr_2021) => {
+        ($test_name:ident, $dst:expr, $exp_bearing:expr) => {
             #[test]
             fn $test_name() {
                 let anchor = position_from_degrees(48.62519582726, 2.24150938995, 0.);
@@ -341,7 +341,7 @@ mod tests {
     );
 
     macro_rules! test_vincenty_destination {
-        ($test_name:ident, $bearing:expr_2021, $distance:expr_2021, $exp_dst:expr_2021) => {
+        ($test_name:ident, $bearing:expr, $distance:expr, $exp_dst:expr) => {
             #[test]
             fn $test_name() {
                 let position = position_from_degrees(48.62519582726, 2.24150938995, 0.);
@@ -427,7 +427,7 @@ mod tests {
     );
 
     macro_rules! test_haversine_destination {
-        ($test_name:ident, $bearing:expr_2021, $distance:expr_2021, $exp_dst:expr_2021) => {
+        ($test_name:ident, $bearing:expr, $distance:expr, $exp_dst:expr) => {
             #[test]
             fn $test_name() {
                 let position = position_from_degrees(48.62519582726, 2.24150938995, 0.);

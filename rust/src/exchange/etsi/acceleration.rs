@@ -56,7 +56,7 @@ mod tests {
                 assert_eq!(object.value, 161);
                 assert_eq!(object.confidence, 102);
             }
-            Err(e) => panic!("Failed to deserialize an Acceleration: '{}'", e),
+            Err(e) => panic!("Failed to deserialize an Acceleration: '{e}'"),
         }
     }
 
@@ -72,7 +72,7 @@ mod tests {
                 assert_eq!(object.value, 161);
                 assert_eq!(object.confidence, 102);
             }
-            Err(e) => panic!("Failed to deserialize an Acceleration Magnitude: '{}'", e),
+            Err(e) => panic!("Failed to deserialize an Acceleration Magnitude: '{e}'"),
         }
     }
 }

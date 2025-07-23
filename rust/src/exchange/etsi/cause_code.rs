@@ -43,7 +43,7 @@ mod tests {
                 assert_eq!(object.cause, 100);
                 assert_eq!(object.subcause, Some(255));
             }
-            Err(e) => panic!("Failed to deserialize a CauseCode: '{}'", e),
+            Err(e) => panic!("Failed to deserialize a CauseCode: '{e}'"),
         }
     }
 }

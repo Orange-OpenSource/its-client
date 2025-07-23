@@ -275,7 +275,7 @@ impl PerformanceClass {
             0 => Ok(PerformanceClass::Unavailable),
             1 => Ok(PerformanceClass::A),
             2 => Ok(PerformanceClass::B),
-            _ => Err(format!("Invalid performance class value: {}", value)),
+            _ => Err(format!("Invalid performance class value: {value}")),
         }
     }
 }

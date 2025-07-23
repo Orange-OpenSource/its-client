@@ -10,7 +10,7 @@
  */
 
 use crate::transport::mqtt::geo_topic::GeoTopicError;
-use std::{cmp, fmt, hash, str};
+use std::{fmt, hash, str};
 
 #[derive(Debug, Default, Clone)]
 pub(crate) enum Queue {
@@ -38,8 +38,7 @@ impl From<&str> for Queue {
             "inQueue" => Queue::In,
             "outQueue" => Queue::Out,
             element => panic!(
-                "Unable to convert from the element {} as a Queue, use from_str instead",
-                element
+                "Unable to convert from the element {element} as a Queue, use from_str instead"
             ),
         }
     }
@@ -57,7 +56,7 @@ impl hash::Hash for Queue {
     }
 }
 
-impl cmp::PartialEq for Queue {
+impl PartialEq for Queue {
     fn eq(&self, other: &Self) -> bool {
         self.to_string() == other.to_string()
     }

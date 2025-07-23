@@ -22,7 +22,7 @@ const MIN_LONGITUDE: f64 = -180.;
 const MAX_LONGITUDE: f64 = 180.;
 
 /// 26-char quadkey is the deepest quadkey that is needed
-/// to represent a region that is at most 1m×1m in size
+/// to represent a region that is at most 1m × 1m in size
 const DEFAULT_DEPTH: u16 = 26;
 
 /// Convenience struct to hold a list of quadkeys
@@ -196,7 +196,7 @@ mod tests {
     }
 
     macro_rules! test_quadtree_contains {
-        ($test_name:ident, $tree:expr_2021, $key:expr_2021) => {
+        ($test_name:ident, $tree:expr, $key:expr) => {
             #[test]
             fn $test_name() {
                 let contained = contains(&$tree, &$key);
@@ -227,7 +227,7 @@ mod tests {
     );
 
     macro_rules! test_quadtree_does_not_contain {
-        ($test_name:ident, $tree:expr_2021, $key:expr_2021) => {
+        ($test_name:ident, $tree:expr, $key:expr) => {
             #[test]
             fn $test_name() {
                 let contained = contains(&$tree, &$key);

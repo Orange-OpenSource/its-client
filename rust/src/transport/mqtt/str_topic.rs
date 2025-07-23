@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn str_topic_display() {
         let topic = create_str_topic("test/topic");
-        assert_eq!(format!("{}", topic), "test/topic");
+        assert_eq!(format!("{topic}"), "test/topic");
     }
 
     #[test]

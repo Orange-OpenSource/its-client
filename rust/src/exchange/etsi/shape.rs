@@ -119,7 +119,7 @@ fn test_deserialize_cartesian_position_3d() {
             assert_eq!(object.y_coordinate, -32768);
             assert_eq!(object.z_coordinate, Some(0));
         }
-        Err(e) => panic!("Failed to deserialize a CartesianPosition3D: '{}'", e),
+        Err(e) => panic!("Failed to deserialize a CartesianPosition3D: '{e}'"),
     }
 }
 
@@ -154,7 +154,7 @@ fn test_deserialize_radial() {
             assert_eq!(object.vertical_opening_angle_start, Some(1300));
             assert_eq!(object.vertical_opening_angle_end, Some(650));
         }
-        Err(e) => panic!("Failed to deserialize a Radial: '{}'", e),
+        Err(e) => panic!("Failed to deserialize a Radial: '{e}'"),
     }
 }
 
@@ -190,7 +190,7 @@ fn test_deserialize_rectangular_shape() {
             assert_eq!(rectangular.orientation, Some(3601));
             assert_eq!(rectangular.height, Some(4095));
         }
-        Err(e) => panic!("Failed to deserialize a rectangular Shape: '{}'", e),
+        Err(e) => panic!("Failed to deserialize a rectangular Shape: '{e}'"),
     }
 }
 
@@ -222,7 +222,7 @@ fn test_deserialize_circular_shape() {
             );
             assert_eq!(circular.height, Some(2048));
         }
-        Err(e) => panic!("Failed to deserialize a circular Shape: '{}'", e),
+        Err(e) => panic!("Failed to deserialize a circular Shape: '{e}'"),
     }
 }
 
@@ -281,7 +281,7 @@ fn test_deserialize_polygonal_shape() {
             );
             assert_eq!(polygonal.height, Some(2048));
         }
-        Err(e) => panic!("Failed to deserialize a polygonal Shape: '{}'", e),
+        Err(e) => panic!("Failed to deserialize a polygonal Shape: '{e}'"),
     }
 }
 
@@ -317,7 +317,7 @@ fn test_deserialize_elliptical_shape() {
             assert_eq!(elliptical.orientation, Some(3601));
             assert_eq!(elliptical.height, Some(1024));
         }
-        Err(e) => panic!("Failed to deserialize an elliptical Shape: '{}'", e),
+        Err(e) => panic!("Failed to deserialize an elliptical Shape: '{e}'"),
     }
 }
 
@@ -355,7 +355,7 @@ fn test_deserialize_radial_shape() {
             assert_eq!(radial.vertical_opening_angle_start, Some(1300));
             assert_eq!(radial.vertical_opening_angle_end, Some(650));
         }
-        Err(e) => panic!("Failed to deserialize a radial Shape: '{}'", e),
+        Err(e) => panic!("Failed to deserialize a radial Shape: '{e}'"),
     }
 }
 
@@ -409,6 +409,6 @@ fn test_deserialize_radial_shapes_shape() {
                 1800
             );
         }
-        Err(e) => panic!("Failed to deserialize a radial shapes Shape: '{}'", e),
+        Err(e) => panic!("Failed to deserialize a radial shapes Shape: '{e}'"),
     }
 }

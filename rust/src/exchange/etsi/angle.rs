@@ -42,7 +42,7 @@ mod tests {
                 assert_eq!(object.value, 3601);
                 assert_eq!(object.confidence, 127);
             }
-            Err(e) => panic!("Failed to deserialize an Angle: '{}'", e),
+            Err(e) => panic!("Failed to deserialize an Angle: '{e}'"),
         }
     }
 }

@@ -105,7 +105,7 @@ impl fmt::Display for Quadkey {
             self.tiles
                 .iter()
                 .fold(String::new(), |mut quadkey_string, &tile| {
-                    quadkey_string.push_str(format!("/{}", tile).as_str());
+                    quadkey_string.push_str(format!("/{tile}").as_str());
                     quadkey_string
                 })
         )
@@ -432,7 +432,7 @@ mod tests {
     }
 
     macro_rules! test_reduce {
-        ($test_name:ident, $k:expr_2021, $d:expr_2021, $e:expr_2021) => {
+        ($test_name:ident, $k:expr, $d:expr, $e:expr) => {
             #[test]
             fn $test_name() {
                 let mut quadkey = Quadkey::from_str($k).expect("Failed to convert '{}' to quadkey");
@@ -454,7 +454,7 @@ mod tests {
     );
 
     macro_rules! test_as_reduced {
-        ($test_name:ident, $k:expr_2021, $d:expr_2021, $e:expr_2021) => {
+        ($test_name:ident, $k:expr, $d:expr, $e:expr) => {
             #[test]
             fn $test_name() {
                 let quadkey = Quadkey::from_str($k).expect("Failed to convert '{}' to quadkey");
