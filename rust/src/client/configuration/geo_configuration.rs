@@ -10,7 +10,7 @@
  */
 
 use crate::client::configuration::configuration_error::ConfigurationError;
-use crate::client::configuration::get_mandatory_from_section;
+use crate::client::configuration::get_mandatory_from_properties;
 use ini::Properties;
 
 pub(crate) const GEO_SECTION: &str = "geo";
@@ -38,8 +38,8 @@ impl TryFrom<&Properties> for GeoConfiguration {
 
     fn try_from(properties: &Properties) -> Result<Self, Self::Error> {
         Ok(Self {
-            prefix: get_mandatory_from_section::<String>("prefix", ("geo", properties))?,
-            suffix: get_mandatory_from_section::<String>("suffix", ("geo", properties))?,
+            prefix: get_mandatory_from_properties::<String>("prefix", properties)?,
+            suffix: get_mandatory_from_properties::<String>("suffix", properties)?,
         })
     }
 }
