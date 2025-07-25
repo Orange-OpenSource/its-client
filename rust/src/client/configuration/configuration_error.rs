@@ -19,8 +19,8 @@ pub enum ConfigurationError {
     FieldNotFound(&'static str),
     #[error("Cannot parse '{0}' due to invalid file type")]
     InvalidFileType(String),
-    #[error("Configuration missing mandatory field {0} in section {1}")]
-    MissingMandatoryField(&'static str, &'static str),
+    #[error("Configuration missing mandatory field {0}")]
+    MissingMandatoryField(&'static str),
     #[error("Configuration missing mandatory section: {0}")]
     MissingMandatorySection(&'static str),
     #[error("No custom settings found in configuration")]
