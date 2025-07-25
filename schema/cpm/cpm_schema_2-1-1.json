@@ -53,6 +53,13 @@
       "description": "JSON message format version.",
       "const": "2.1.1-dev"
     },
+    "object_id_rotation_count": {
+      "type": "integer",
+      "description": "Each time a sensor reaches the maximum perceived object id value possible and goes back to 0, it increments this value.",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 255
+    },
     "message": {
       "type": "object",
       "required": [
