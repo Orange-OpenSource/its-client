@@ -34,16 +34,130 @@ use std::hash::{Hash, Hasher};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MAPExtendedMessage {
+    /// Version of the protocol used.
     pub protocol_version: u8,
+    /// Unique identifier for the station sending the message.
     pub station_id: u32,
+    /// Time difference since the last generation of the message.
     pub msg_issue_revision: u8,
 
-    /// Reference time of the geometry present in the message
+    // Optional fields
+    /// Reference time of the geometry present in the message.
     pub timestamp: Option<u64>,
+    /// ID of the station that sent this message.
     pub sending_station_id: Option<u64>,
+    /// Region ID of the intersection.
     pub region: Option<u64>,
-    /// List of the lanes in the intersection
+    /// List of the lanes in the intersection.
     pub lanes: Vec<Lane>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Lane {
+    /// Unique identifier for the lane.
+    pub id: u64,
+    /// ID of the signal, corresponding to the [SPAT][1] signal ID.
+    /// [1]: crate::exchange::etsi::signal_phase_and_timing_extended_message
+    pub signal_id: u64,
+    /// True if the lane allows a left turn at its end.
+    pub left: bool,
+    /// True if the lane allows to go straight ahead at its end.
+    ///
+    /// **Does not seem to be present in some MAPEM despite the documentation telling it is
+    ///   mandatory; Defaulting value ([as false][1])**
+    ///
+    /// FIXME defaulting to false if missing does not fit reality, replace it by an Option
+    ///
+    /// [1]: https://doc.rust-lang.org/std/primitive.bool.html#impl-Default-for-bool
+    #[serde(default)]
+    pub straight: bool,
+    /// True if this lane allows a right turn at its end.
+    pub right: bool,
+    /// Speed limit on this lane (km/h).
+    pub speed_limit: u16,
+    /// True if this lane is an ingress lane (i.e. a lane leading to the intersection).
+    pub ingress: bool,
+    /// True if this lane is an egress lane (i.e. a lane leading away from the intersection).
+    pub egress: bool,
+    /// List of points representing the lane.
+    ///
+    /// Each point is an array of numbers where the first value is the longitude
+    /// and the second value is the latitude.
+    ///
+    /// *Note: latitude and longitude refers to the [WGS84][1]*
+    ///
+    /// [1]: https://en.wikipedia.org/wiki/World_Geodetic_System#WGS84
+    pub geom: Vec<[f32; 2]>,
+
+    // Optional fields
+    /// ID of the approach (group of lanes).
+    pub approach_id: Option<u32>,
+    /// True if this lane is a pedestrian lane.
+    pub is_pedestrian_lane: Option<bool>,
+    /// True if this lane is a vehicle lane.
+    pub is_vehicle_lane: Option<bool>,
+    /// True if this lane is a bus lane.
+    pub is_bus_lane: Option<bool>,
+    /// True if this lane is a bike lane.
+    pub is_bike_lane: Option<bool>,
+    /// True if this lane is a tram lane.
+    #[serde(default)]
+    pub connections: Vec<Connection>,
+}
+
+#[derive(Serialize, Deserialize_repr, PartialEq, Eq, Debug, Clone)]
+#[repr(u8)]
+pub enum Action {
+    /// Turn left.
+    Left = 0,
+    /// Go straight ahead.
+    Straight = 1,
+    /// Turn right.
+    Right = 2,
+}
+
+/// Represents a connection between lanes
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Connection {
+    /// `intersection_id` of the connected lane
+    /// Value is 0 if the connected lane is in the same intersection.
+    pub intersection_id: u64,
+    /// `lane_id` of the connected lane
+    /// Value is 0 if the connected lane is unknown, but the action is still possible.
+    pub lane_id: u64,
+    /// Turn direction leading to the connected lane.
+    pub action: Action,
+
+    // Optional fields
+    /// Unique identifier for the connection.
+    pub id: Option<u64>,
+    /// True if taking this path to be executed with caution
+    /// (e.g. pedestrian crossing on a right or left turn).
+    pub caution: Option<bool>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RoadSegment {
+    /// Unique identifier for the road segment.
+    pub id: u16,
+
+    // Optional fields
+    /// Region ID of the road segment.
+    pub region: Option<u16>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Intersection {
+    /// Unique identifier for the intersection.
+    pub id: u16,
+
+    // Optional fields
+    /// Region ID of the intersection.
+    pub region: Option<u16>,
 }
 
 impl Content for MAPExtendedMessage {
@@ -78,83 +192,12 @@ impl Hash for MAPExtendedMessage {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct Lane {
-    pub id: u64,
-    /// ID of the signal, corresponding to the [SPAT][1] signal ID
-    ///
-    /// [1]: crate::exchange::etsi::signal_phase_and_timing_extended_message
-    pub signal_id: u64,
-    /// ID of the approach (group of lanes)
-    pub approach_id: Option<u32>,
-    /// True if the lane allows a left turn at its end
-    pub left: bool,
-    /// True if the lane allows to go straight ahead at its end
-    ///
-    /// **Does not seem to be present in some MAPEM despite the documentation telling it is
-    ///   mandatory; Defaulting value ([as false][1])**
-    ///
-    /// FIXME defaulting to false if missing does not fit reality, replace it by an Option
-    ///
-    /// [1]: https://doc.rust-lang.org/std/primitive.bool.html#impl-Default-for-bool
-    #[serde(default)]
-    pub straight: bool,
-    /// True if this lane allows a right turn at its end
-    pub right: bool,
-    /// Speed limit on this lane (km/h)
-    pub speed_limit: u16,
-    pub ingress: bool,
-    pub egress: bool,
-    /// List of points representing the lane
-    ///
-    /// Each point is an array of numbers where the first value is the longitude
-    /// and the second value is the latitude
-    ///
-    /// *Note: latitude and longitude refers to the [WGS84][1]*
-    ///
-    /// [1]: https://en.wikipedia.org/wiki/World_Geodetic_System#WGS84
-    pub geom: Vec<[f32; 2]>,
-    pub is_pedestrian_lane: Option<bool>,
-    pub is_vehicle_lane: Option<bool>,
-    pub is_bus_lane: Option<bool>,
-    pub is_bike_lane: Option<bool>,
-    #[serde(default)]
-    pub connections: Vec<Connection>,
-}
-
 impl Hash for Lane {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.id.hash(state);
         self.signal_id.hash(state);
         self.approach_id.hash(state);
     }
-}
-
-#[derive(Serialize, Deserialize_repr, PartialEq, Eq, Debug, Clone)]
-#[repr(u8)]
-pub enum Action {
-    Left = 0,
-    Straight = 1,
-    Right = 2,
-}
-
-/// Represents a connection between lanes
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct Connection {
-    pub id: Option<u64>,
-    /// `intersection_id` of the connected lane
-    /// Value is 0 if the connected lane is in the same intersection
-    pub intersection_id: u64,
-    /// `lane_id` of the connected lane
-    /// Value is 0 if the connected lane is unknown, but the action is still possible
-    pub lane_id: u64,
-    /// Turn direction leading to the connected lane
-    pub action: Action,
-    /// True if taking this path to be executed with caution
-    /// (e.g. pedestrian crossing on a right or left turn)
-    pub caution: Option<bool>,
 }
 
 impl MAPExtendedMessage {
@@ -187,22 +230,6 @@ impl MAPExtendedMessage {
 
         best_lane.map(|lane| lane.0)
     }
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct RoadSegment {
-    pub id: u16,
-
-    pub region: Option<u16>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Intersection {
-    pub id: u16,
-
-    pub region: Option<u16>,
 }
 
 #[cfg(test)]

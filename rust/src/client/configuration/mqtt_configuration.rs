@@ -40,7 +40,7 @@ impl TryFrom<&Properties> for MqttConfiguration {
     ///
     /// # Arguments
     ///
-    /// * `properties` - The properties to create the configuration from.
+    /// * `properties` - Properties to create the configuration from.
     ///
     /// # Returns
     ///

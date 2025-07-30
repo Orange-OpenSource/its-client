@@ -141,7 +141,7 @@ pub enum InstanceType {
 
 /// Represents the service area of an instance.
 ///
-/// The service area can be one of the following:
+/// Service area can be one of the following:
 /// - `Point`: A specific point with coordinates and an optional radius.
 /// - `Polygon`: A polygon defined by a list of vertices.
 /// - `Tiles`: A set of tiles identified by quadkeys.
@@ -178,7 +178,7 @@ impl Default for ServiceArea {
 #[serde_with::skip_serializing_none]
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Vertex {
-    /// The coordinates of the vertex.
+    /// Coordinates of the vertex.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     coordinates: Vec<f32>,
 }
@@ -191,7 +191,7 @@ impl Information {
     ///
     /// # Arguments
     ///
-    /// * `new_info` - The new `Information` instance to replace the current one.
+    /// * `new_info` - New `Information` instance to replace the current one.
     pub fn replace(&mut self, new_info: Information) {
         *self = new_info;
     }
@@ -200,7 +200,7 @@ impl Information {
 impl Mortal for Information {
     /// Calculates the timeout for the `Information` instance.
     ///
-    /// The timeout is calculated as the sum of the timestamp and the validity duration (in milliseconds).
+    /// Timeout is calculated as the sum of the timestamp and the validity duration (in milliseconds).
     fn timeout(&self) -> u64 {
         self.timestamp + u64::from(self.validity_duration) * 1000_u64
     }

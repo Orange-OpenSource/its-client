@@ -31,9 +31,9 @@ use serde::{Deserialize, Serialize};
 ///
 /// # Fields
 ///
-/// - `protocol_version`: The version of the protocol used
+/// - `protocol_version`: Version of the protocol used
 /// - `station_id`: Unique identifier for the station sending the message
-/// - `generation_delta_time`: The time difference since the last generation of the message
+/// - `generation_delta_time`: Time difference since the last generation of the message
 /// - `basic_container`: Contains basic information about the station
 /// - `high_frequency_container`: Contains high-frequency data such as speed, heading, and acceleration
 /// - `low_frequency_container`: Container for low-frequency data such as vehicle role and path history

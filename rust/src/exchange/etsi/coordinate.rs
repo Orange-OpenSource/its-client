@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Copy, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CartesianCoordinate {
-    /// coordinate value.
+    /// Coordinate value.
     pub value: i32,
     /// Confidence level for the coordinate.
     pub confidence: u16,

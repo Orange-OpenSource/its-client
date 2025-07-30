@@ -32,17 +32,83 @@ use std::hash::{Hash, Hasher};
 #[derive(Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct SignalPhaseAndTimingExtendedMessage {
+    /// Protocol version of the message.
     pub protocol_version: u8,
+    /// Station ID of the traffic light controller that sent the message.
     pub station_id: u32,
 
-    /// Reference time of the signal state timing present in the message
+    /// Optional fields
+    /// Reference time of the signal state timing present in the message.
     // FIXME check if it's realy a "minute_of_the_year". If yes...fix this code.
     pub timestamp: Option<u64>,
+    /// Optional ID of the station that sent the message.
     pub sending_station_id: Option<u64>,
+    /// Optional region ID of the traffic light controller that sent the message.
     pub region: Option<u64>,
+    /// Optional revision of the message.
     pub revision: Option<u32>,
-    /// State list for each signal group ot the intersection
+    /// State list for each signal group ot the intersection.
     pub states: Vec<State>,
+}
+
+#[derive(Serialize, Deserialize_repr, PartialEq, Eq, Debug, Clone, Hash, Copy)]
+#[repr(u8)]
+pub enum TrafficLightState {
+    /// The traffic light state is not available.
+    Unavailable = 0,
+    /// The traffic light is red.
+    Dark = 1,
+    /// The traffic light is red and the vehicle must stop.
+    StopThenProceed = 2,
+    /// The traffic light is red and the vehicle must stop and remain.
+    StopAndRemain = 3,
+    /// The traffic light is in the pre-movement phase, allowing vehicles to prepare to move.
+    PreMovement = 4,
+    /// The traffic light allows vehicles to move permissively.
+    PermissiveMovementAllowed = 5,
+    /// The traffic light allows vehicles to move with protected movement.
+    ProtectedMovementAllowed = 6,
+    /// The traffic light allows vehicles to move with permissive clearance.
+    PermissiveClearance = 7,
+    /// The traffic light allows vehicles to move with protected clearance.
+    ProtectedClearance = 8,
+    /// The traffic light is in a caution state, indicating potential conflicting traffic.
+    CautionConflictingTraffic = 9,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct State {
+    /// ID of the signal group this state belongs to.
+    pub id: u64,
+    /// State of the signal group.
+    pub state: TrafficLightState,
+    /// Absolute time of the next state change on this signal group (in milliseconds)
+    /// (this is a timestamp since 1st January 1970)
+    pub next_change: u64,
+
+    // optional fields
+    /// Time before change on this signal group based on the server clock (in milliseconds).
+    ///
+    /// - Present only if the timing is known
+    /// - Can be negative
+    pub ttc: Option<i32>,
+    /// List of the next phases **if supported by the traffic light controller**
+    #[serde(default)]
+    pub next_changes: Vec<NextChange>,
+}
+
+#[derive(Serialize, Deserialize, Hash, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct NextChange {
+    /// State of the next change.
+    pub state: TrafficLightState,
+    /// Time before change on this signal group based on the server clock (in milliseconds).
+    pub next_change: u64,
+
+    // optional fields
+    /// Time to change on this signal group based on the server clock (in milliseconds).
+    pub ttc: Option<i32>,
 }
 
 impl Content for SignalPhaseAndTimingExtendedMessage {
@@ -107,43 +173,10 @@ impl Hash for SignalPhaseAndTimingExtendedMessage {
     }
 }
 
-#[derive(Serialize, Deserialize_repr, PartialEq, Eq, Debug, Clone, Hash, Copy)]
-#[repr(u8)]
-pub enum TrafficLightState {
-    Unavailable = 0,
-    Dark = 1,
-    StopThenProceed = 2,
-    StopAndRemain = 3,
-    PreMovement = 4,
-    PermissiveMovementAllowed = 5,
-    ProtectedMovementAllowed = 6,
-    PermissiveClearance = 7,
-    ProtectedClearance = 8,
-    CautionConflictingTraffic = 9,
-}
-
 impl fmt::Display for TrafficLightState {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{:?}", *self)
     }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct State {
-    pub id: u64,
-    pub state: TrafficLightState,
-    /// Time before change on this signal group based on the server clock (in milliseconds)
-    ///
-    /// - Present only if the timing is known
-    /// - Can be negative
-    pub ttc: Option<i32>,
-    /// Absolute time of the next state change on this signal group (in milliseconds)
-    /// (this is a timestamp since 1st January 1970)
-    pub next_change: u64,
-    /// List of the next phases **if supported by the traffic light controller**
-    #[serde(default)]
-    pub next_changes: Vec<NextChange>,
 }
 
 impl PartialEq for State {
@@ -181,14 +214,6 @@ impl fmt::Debug for State {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{self}")
     }
-}
-
-#[derive(Serialize, Deserialize, Hash, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct NextChange {
-    pub state: TrafficLightState,
-    pub ttc: Option<i32>,
-    pub next_change: u64,
 }
 
 impl fmt::Display for NextChange {

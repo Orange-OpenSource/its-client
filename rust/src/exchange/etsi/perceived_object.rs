@@ -29,33 +29,34 @@ use serde::{Deserialize, Serialize};
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PerceivedObject {
-    /// The time difference since the last generation of the message.
+    /// Time difference since the last generation of the message.
     pub measurement_delta_time: i16,
-    /// The position of the perceived object in 3D Cartesian coordinates with confidence.
+    /// Position of the perceived object in 3D Cartesian coordinates with confidence.
     pub position: CartesianPosition3DWithConfidence,
 
+    // optional fields
     /// Unique identifier for the perceived object.
     pub object_id: Option<u16>,
-    /// The velocity of the perceived object in 3D with confidence.
+    /// Velocity of the perceived object in 3D with confidence.
     pub velocity: Option<Velocity3dWithConfidence>,
-    /// The acceleration of the perceived object in 3D with confidence.
+    /// Acceleration of the perceived object in 3D with confidence.
     pub acceleration: Option<Acceleration3dWithConfidence>,
-    /// The angles of the perceived object in Euler angle with confidence.
+    /// Angles of the perceived object in Euler angle with confidence.
     pub angles: Option<EulerAnglesWithConfidence>,
-    /// The angular velocity of the perceived object around the Z-axis with confidence.
+    /// Angular velocity of the perceived object around the Z-axis with confidence.
     pub z_angular_velocity: Option<CartesianAngularVelocityComponent>,
     /// List of lower triangular positive semidefinite matrices representing correlations.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub lower_triangular_correlation_matrices: Vec<LowerTriangularPositiveSemidefiniteMatrix>,
-    /// The dimensions of the perceived object in 3D with confidence.
+    /// Dimensions of the perceived object in 3D with confidence.
     pub object_dimension_z: Option<ObjectDimension>,
-    /// The dimensions of the perceived object in 2D with confidence.
+    /// Dimensions of the perceived object in 2D with confidence.
     pub object_dimension_y: Option<ObjectDimension>,
-    /// The dimensions of the perceived object in 1D with confidence.
+    /// Dimensions of the perceived object in 1D with confidence.
     pub object_dimension_x: Option<ObjectDimension>,
-    /// The age of the perceived object in milliseconds.
+    /// Age of the perceived object in milliseconds.
     pub object_age: Option<i16>,
-    /// The quality of the object perception, ranging from 0 to 255.
+    /// Quality of the object perception, ranging from 0 to 255.
     pub object_perception_quality: Option<u8>,
     /// List of sensor IDs that detected the perceived object.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
@@ -63,23 +64,32 @@ pub struct PerceivedObject {
     /// List of classifications for the perceived object.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub classification: Vec<ObjectClassification>,
-    /// The position of the perceived object on a map, if available.
+    /// Position of the perceived object on a map, if available.
     pub map_position: Option<MapPosition>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MapPosition {
+    // optional fields
+    /// Reference to the map segment where the perceived object is located.
     pub map_reference: Option<MapReference>,
+    /// Identifier for the lane where the perceived object is located.
     pub lane_id: Option<u8>,
+    /// Identifier for the connection associated with the perceived object.
     pub connection_id: Option<u8>,
+    /// Longitudinal lane position of the perceived object, if available.
     pub longitudinal_lane_position: Option<LongitudinalLanePosition>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LowerTriangularPositiveSemidefiniteMatrix {
+    /// Indicates which components are included in the matrix.
     pub components_included_in_the_matrix: ComponentIncludedInTheMatrix,
+
+    // optional fields
+    /// The matrix itself, represented as a vector of vectors of i8.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub matrix: Vec<Vec<i8>>,
 }
@@ -87,88 +97,138 @@ pub struct LowerTriangularPositiveSemidefiniteMatrix {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Copy, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ComponentIncludedInTheMatrix {
+    /// Indicates whether the X position is included in the matrix.
     x_position: bool,
+    /// Indicates whether the Y position is included in the matrix.
     y_position: bool,
+    /// Indicates whether the Z position is included in the matrix.
     z_position: bool,
+    /// Indicates whether the X velocity or velocity magnitude is included in the matrix.
     x_velocity_or_velocity_magnitude: bool,
+    /// Indicates whether the X velocity or velocity direction is included in the matrix.
     x_velocity_or_velocity_direction: bool,
+    /// Indicates whether the Z speed is included in the matrix.
     z_speed: bool,
+    /// Indicates whether the X acceleration or acceleration magnitude is included in the matrix.
     x_accel_or_accel_magnitude: bool,
+    /// Indicates whether the Y acceleration or acceleration direction is included in the matrix.
     y_accel_or_accel_direction: bool,
+    /// Indicates whether the Z acceleration is included in the matrix.
     z_acceleration: bool,
+    /// Indicates whether the Z angle is included in the matrix.
     z_angle: bool,
+    /// Indicates whether the Y angle is included in the matrix.
     y_angle: bool,
+    /// Indicates whether the X angle is included in the matrix.
     x_angle: bool,
+    /// Indicates whether the Z angular velocity is included in the matrix.
     z_angular_velocity: bool,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EulerAnglesWithConfidence {
+    /// Z angle in centidegrees with confidence.
     pub z_angle: Angle,
+
+    // optional fields
+    /// Y angle in centidegrees with confidence.
     pub y_angle: Option<Angle>,
+    /// X angle in centidegrees with confidence.
     pub x_angle: Option<Angle>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Acceleration3dWithConfidence {
+    // optional fields
+    /// Polar acceleration of the perceived object with confidence.
     pub polar_acceleration: Option<PolarAcceleration>,
+    /// Cartesian acceleration of the perceived object with confidence.
     pub cartesian_acceleration: Option<CartesianAcceleration>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PolarAcceleration {
+    /// Acceleration size of the perceived object.
     pub acceleration_magnitude: AccelerationMagnitude,
+    /// Acceleration direction of the perceived object in centidegrees.
     pub acceleration_direction: Angle,
+
+    // optional fields
+    /// Z acceleration of the perceived object with confidence.
     pub z_acceleration: Option<Acceleration>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CartesianAcceleration {
+    /// X acceleration of the perceived object with confidence.
     pub x_acceleration: Acceleration,
+    /// Y acceleration of the perceived object with confidence.
     pub y_acceleration: Acceleration,
+
+    // optional fields
+    /// Z acceleration of the perceived object with confidence.
     pub z_acceleration: Option<Acceleration>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CartesianAngularVelocityComponent {
+    /// Angular velocity value in centidegrees per second.
     pub value: i16,
+    /// Confidence level for the angular velocity.
     pub confidence: u8,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Velocity3dWithConfidence {
+    // optional fields
+    /// Polar velocity of the perceived object with confidence.
     pub polar_velocity: Option<PolarVelocity>,
+    /// Cartesian velocity of the perceived object with confidence.
     pub cartesian_velocity: Option<CartesianVelocity>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PolarVelocity {
+    /// Velocity magnitude of the perceived object.
     pub velocity_magnitude: Speed,
+    /// Velocity direction of the perceived object in centidegrees.
     pub velocity_direction: Angle,
+
+    // optional fields
+    /// Z velocity of the perceived object with confidence.
     pub z_velocity: Option<Velocity>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CartesianVelocity {
+    /// X velocity of the perceived object with confidence.
     pub x_velocity: Velocity,
+    /// Y velocity of the perceived object with confidence.
     pub y_velocity: Velocity,
+
+    // optional fields
+    /// Z velocity of the perceived object with confidence.
     pub z_velocity: Option<Velocity>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Copy, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CartesianPosition3DWithConfidence {
+    /// X coordinate of the perceived object in Cartesian coordinates with confidence.
     pub x_coordinate: CartesianCoordinate,
+    /// Y coordinate of the perceived object in Cartesian coordinates with confidence.
     pub y_coordinate: CartesianCoordinate,
 
+    // optional fields
+    /// Z coordinate of the perceived object in Cartesian coordinates with confidence.
     pub z_coordinate: Option<CartesianCoordinate>,
 }
 
@@ -177,9 +237,9 @@ pub struct CartesianPosition3DWithConfidence {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ObjectClassification {
-    /// The class of the object, such as vehicle, pedestrian, or other types.
+    /// Class of the object, such as vehicle, pedestrian, or other types.
     pub object_class: ObjectClass,
-    /// The confidence level of the classification ranging from 0 to 255.
+    /// Confidence level of the classification ranging from 0 to 255.
     pub confidence: u8,
 }
 
@@ -217,23 +277,28 @@ pub enum Vru {
     Animal(u8),
 }
 
-/// Represents a group of vulnerable road users (VRUs).
+/// Represents a group.
 /// This struct includes information about the group size, type, and an optional cluster identifier.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Group {
+    /// The shape of the bounding box that encloses the cluster.
     pub cluster_bounding_box_shape: Shape,
+    /// The size of the cluster, indicating the number in the group.
     pub cluster_cardinality_size: u8,
 
+    // optional fields
+    /// An identifier for the cluster.
     pub cluster_id: Option<u8>,
-    pub cluster_profiles: Option<CluserProfiles>,
+    /// Profiles of the cluster, indicating the presence of different types.
+    pub cluster_profiles: Option<ClusterProfiles>,
 }
 
-/// Represents the type of group of vulnerable road users (VRUs).
-/// This struct specifies the presence of different categories of VRUs within the group.
+/// Represents the type of group.
+/// This struct specifies the presence of different categories within the group.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct CluserProfiles {
+pub struct ClusterProfiles {
     /// Indicates whether the group contains pedestrians.
     pub pedestrian: bool,
     /// Indicates whether the group contains bicyclists.

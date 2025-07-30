@@ -20,10 +20,12 @@ use serde::{Deserialize, Serialize};
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CauseCode {
-    /// The cause code, represented as an unsigned 8-bit integer.
+    /// Cause code, represented as an unsigned 8-bit integer.
     // TODO create a CauseCode enum to represent the cause codes
     pub cause: u8,
-    /// The subcause code, represented as an optional unsigned 8-bit integer.
+
+    // Optional fields
+    /// Subcause code, represented as an optional unsigned 8-bit integer.
     pub subcause: Option<u8>,
 }
 

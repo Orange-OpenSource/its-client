@@ -255,7 +255,7 @@ impl TryFrom<&Configuration> for ExporterConfiguration {
     ///
     /// # Arguments
     ///
-    /// * `configuration` - The configuration to create the exporter configuration from.
+    /// * `configuration` - Configuration to create the exporter configuration from.
     ///
     /// # Returns
     ///
@@ -302,7 +302,7 @@ impl TryFrom<&Configuration> for ExporterConfiguration {
 ///
 /// # Arguments
 ///
-/// * `publish` - The MQTT publish message.
+/// * `publish` - MQTT publish message.
 ///
 /// # Returns
 ///

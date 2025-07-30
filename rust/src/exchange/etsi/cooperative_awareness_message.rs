@@ -41,59 +41,82 @@ use serde::{Deserialize, Serialize};
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CooperativeAwarenessMessage {
-    /// Protocol version (mandatory).
+    /// Protocol version.
     pub protocol_version: u8,
-    /// Unique identifier for the station (mandatory).
+    /// Unique identifier for the station.
     pub station_id: u32,
-    /// Time difference since the last generation of the message (mandatory).
+    /// Time difference since the last generation of the message.
     pub generation_delta_time: u16,
-    /// Basic container with basic information about the station (mandatory).
+    /// Basic container with basic information about the station.
     pub basic_container: BasicContainer,
-    /// High-frequency container with detailed vehicle information (mandatory).
+    /// High-frequency container with detailed vehicle information.
     pub high_frequency_container: HighFrequencyContainer,
 
-    /// Low-frequency container with less frequent data about the vehicle (optional).
+    // Optional fields
+    /// Low-frequency container with less frequent data about the vehicle.
     pub low_frequency_container: Option<LowFrequencyContainer>,
-    /// Special vehicle container for additional vehicle information (optional).
+    /// Special vehicle container for additional vehicle information.
     pub special_vehicle_container: Option<SpecialVehicleContainer>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BasicContainer {
+    /// Type of the station, represented as an unsigned 8-bit integer.
     // TODO: implement a StationType enum
     pub station_type: u8,
+    /// Reference position of the station, including latitude, longitude, altitude, and confidence.
     pub reference_position: ReferencePosition,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HighFrequencyContainer {
+    // Optional fields
+    /// Basic vehicle container with high-frequency data about the vehicle.
     pub basic_vehicle_container_high_frequency: Option<BasicVehicleContainerHighFrequency>,
+    /// RSU container with high-frequency data about the Road Side Unit (RSU).
     pub rsu_container_high_frequency: Option<RSUContainerHighFrequency>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BasicVehicleContainerHighFrequency {
+    /// Heading of the vehicle, represented as an angle in degrees.
     pub heading: Heading,
+    /// Speed of the vehicle, represented in centimeters per second.
     pub speed: Speed,
+    /// Drive direction of the vehicle, represented as an unsigned 8-bit integer.
     //TODO: implement a DriveDirection enum
     pub drive_direction: u8,
+    /// Length of the vehicle, represented in centimeters.
     pub vehicle_length: VehicleLength,
+    /// Width of the vehicle, represented in centimeters.
     pub vehicle_width: u16,
+    /// Longitudinal acceleration of the vehicle, represented in centimeters per second squared.
     pub longitudinal_acceleration: Acceleration,
+    /// Curvature of the vehicle's path, represented in a specific unit.
     pub curvature: Curvature,
+    /// Curvature calculation mode, represented as an unsigned 8-bit integer.
     //TODO: implement a CurvatureCalculationMode enum
     pub curvature_calculation_mode: u8,
+    /// Yaw rate of the vehicle, represented in radians per second.
     pub yaw_rate: YawRate,
 
+    // Optional fields
+    /// Acceleration control information for the vehicle.
     pub acceleration_control: Option<AccelerationControl>,
+    /// Lane position of the vehicle, represented as an optional signed 8-bit integer.
     pub lane_position: Option<i8>,
+    /// Steering wheel angle of the vehicle, represented as an optional angle in degrees.
     pub steering_wheel_angle: Option<SteeringWheelAngle>,
+    /// Lateral acceleration of the vehicle, represented in centimeters per second squared.
     pub lateral_acceleration: Option<Acceleration>,
+    /// Vertical acceleration of the vehicle, represented in centimeters per second squared.
     pub vertical_acceleration: Option<Acceleration>,
+    /// Performance class of the vehicle, represented as an optional enum.
     pub performance_class: Option<PerformanceClass>,
+    /// CEN DSRC tolling zone information, if applicable.
     pub cen_dsrc_tolling_zone: Option<CenDSRCTollingZone>,
 }
 
@@ -106,88 +129,123 @@ pub struct RSUContainerHighFrequency {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LowFrequencyContainer {
+    // Optional fields
+    /// Basic vehicle container with low-frequency data about the vehicle.
     pub basic_vehicle_container_low_frequency: Option<BasicVehicleContainerLowFrequency>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BasicVehicleContainerLowFrequency {
+    /// Role of the vehicle, represented as an unsigned 8-bit integer.
     // TODO: implement a VehicleRole enum
     pub vehicle_role: u8,
+    /// Exterior lights status of the vehicle.
     pub exterior_lights: ExteriorLights,
+    /// Path history of the vehicle, represented as a vector of path points.
     pub path_history: Vec<PathPoint>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SpecialVehicleContainer {
+    // Optional fields
+    /// Public transport container with specific information about public transport vehicles.
     pub public_transport_container: Option<PublicTransportContainer>,
+    /// Special transport container with specific information about special transport vehicles.
     pub special_transport_container: Option<SpecialTransportContainer>,
+    /// Dangerous goods container with specific information about vehicles carrying dangerous goods.
     pub dangerous_goods_container: Option<DangerousGoodsContainer>,
+    /// Road works container with specific information about road works.
     pub road_works_container_basic: Option<RoadWorksContainerBasic>,
+    /// Rescue container with specific information about rescue vehicles.
     pub rescue_container: Option<RescueContainer>,
+    /// Emergency container with specific information about emergency vehicles.
     pub emergency_container: Option<EmergencyContainer>,
+    /// Safety car container with specific information about safety vehicles.
     pub safety_car_container: Option<SafetyCarContainer>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SafetyCarContainer {
+    /// Light bar and siren status for the safety car.
     pub light_bar_siren_in_use: LightBarSirenInUse,
 
+    // Optional fields
+    /// Incident indication for the safety car, if applicable.
     pub incident_indication: Option<IncidentIndication>,
+    /// Traffic rule information for the safety car, if applicable.
     pub traffic_rule: Option<u8>,
+    /// Speed limit information for the safety car, if applicable.
     pub speed_limit: Option<u8>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EmergencyContainer {
+    /// Light bar and siren status for the emergency vehicle.
     pub light_bar_siren_in_use: LightBarSirenInUse,
 
+    // Optional fields
+    /// Incident indication for the emergency vehicle, if applicable.
     pub incident_indication: Option<IncidentIndication>,
+    /// Traffic rule information for the emergency vehicle, if applicable.
     pub emergency_priority: Option<EmergencyPriority>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EmergencyPriority {
+    /// Priority level of the emergency vehicle, represented as an unsigned 8-bit integer.
     pub request_for_right_of_way: bool,
+    /// Request for free crossing at a traffic light.
     pub request_for_free_crossing_at_a_traffic_light: bool,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IncidentIndication {
+    /// Cause code for the incident, represented as an unsigned 8-bit integer.
     pub cc_and_scc: CauseCode,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RescueContainer {
+    /// Light bar and siren status for the rescue vehicle.
     pub light_bar_siren_in_use: LightBarSirenInUse,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RoadWorksContainerBasic {
+    /// Cause code for the road works, represented as an unsigned 8-bit integer.
     pub light_bar_siren_in_use: LightBarSirenInUse,
 
+    // Optional fields
+    /// Cause code and subcause code for the road works, if applicable.
     pub road_works_sub_cause_code: Option<u8>,
+    /// Traffic rule information for the road works, if applicable.
     pub closed_lanes: Option<ClosedLanes>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClosedLanes {
+    // Optional fields
+    /// Inner hard shoulder status, represented as an optional unsigned 8-bit integer.
     pub inner_hard_shoulder_status: Option<u8>,
+    /// Outer hard shoulder status, represented as an optional unsigned 8-bit integer.
     pub outer_hard_shoulder_status: Option<u8>,
+    /// Driving lane status, represented as an optional DrivingLaneStatus struct.
     pub driving_lane_status: Option<DrivingLaneStatus>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DrivingLaneStatus {
+    /// Status of each lane, represented as boolean values.
     pub lane_1_closed: bool,
     pub lane_2_closed: bool,
     pub lane_3_closed: bool,
@@ -205,19 +263,23 @@ pub struct DrivingLaneStatus {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DangerousGoodsContainer {
+    /// Light bar and siren status for the dangerous goods vehicle.
     pub dangerous_goods_basic: u8,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SpecialTransportContainer {
+    /// Light bar and siren status for the special transport vehicle.
     pub special_transport_type: SpecialTransportType,
+    /// Light bar and siren status for the special transport vehicle.
     pub light_bar_siren_in_use: LightBarSirenInUse,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SpecialTransportType {
+    /// Type of the special transport, represented as boolean values.
     pub heavy_load: bool,
     pub excess_width: bool,
     pub excess_length: bool,
@@ -227,15 +289,20 @@ pub struct SpecialTransportType {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LightBarSirenInUse {
+    /// Light bar activation status, represented as a boolean value.
     pub light_bar_activated: bool,
+    /// Siren activation status, represented as a boolean value.
     pub siren_activated: bool,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PublicTransportContainer {
+    /// Light bar and siren status for the public transport vehicle.
     pub embarkation_status: bool,
 
+    // Optional fields
+    /// PT activation information for the public transport vehicle.
     pub pt_activation: Option<PTActivation>,
 }
 
@@ -249,6 +316,7 @@ pub struct PTActivation {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AccelerationControl {
+    /// Indicates whether the control is engaged, represented as boolean values.
     pub brake_pedal_engaged: bool,
     pub gas_pedal_engaged: bool,
     pub emergency_brake_engaged: bool,
@@ -261,9 +329,12 @@ pub struct AccelerationControl {
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(from = "u8", into = "u8")]
 pub enum PerformanceClass {
+    /// Represents an unavailable performance class.
     #[default]
     Unavailable = 0,
+    /// Represents performance class A.
     A = 1,
+    /// Represents performance class B.
     B = 2,
 }
 
@@ -280,31 +351,23 @@ impl PerformanceClass {
     }
 }
 
-impl From<u8> for PerformanceClass {
-    /// Converts a `u8` value into a `PerformanceClass` enum.
-    /// Defaults to `PerformanceClass::Unavailable` if the value is invalid.
-    fn from(value: u8) -> Self {
-        Self::try_from(value).unwrap_or(PerformanceClass::Unavailable)
-    }
-}
-
-impl From<PerformanceClass> for u8 {
-    fn from(performance_class: PerformanceClass) -> Self {
-        performance_class as u8
-    }
-}
-
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CenDSRCTollingZone {
+    /// Latitude of the protected zone, represented as an integer.
     pub protected_zone_latitude: i32,
+    /// Longitude of the protected zone, represented as an integer.
     pub protected_zone_longitude: i32,
+
+    // Optional fields
+    /// CEN DSRC tolling zone ID, represented as an optional unsigned 32-bit integer.
     pub cen_dsrc_tolling_zone_id: Option<u32>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExteriorLights {
+    /// Indicates the status of various exterior lights, represented as boolean values.
     pub low_beam_headlights_on: bool,
     pub high_beam_headlights_on: bool,
     pub left_turn_signal_on: bool,
@@ -352,6 +415,20 @@ impl CooperativeAwarenessMessage {
             },
             ..Default::default()
         }
+    }
+}
+
+impl From<u8> for PerformanceClass {
+    /// Converts a `u8` value into a `PerformanceClass` enum.
+    /// Defaults to `PerformanceClass::Unavailable` if the value is invalid.
+    fn from(value: u8) -> Self {
+        Self::try_from(value).unwrap_or(PerformanceClass::Unavailable)
+    }
+}
+
+impl From<PerformanceClass> for u8 {
+    fn from(performance_class: PerformanceClass) -> Self {
+        performance_class as u8
     }
 }
 

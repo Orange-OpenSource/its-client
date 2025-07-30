@@ -35,25 +35,26 @@ use std::any::type_name;
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CollectivePerceptionMessage {
-    /// Protocol version (mandatory).
+    /// Protocol version.
     pub protocol_version: u8,
-    /// Unique identifier for the station (mandatory).
+    /// Unique identifier for the station.
     pub station_id: u32,
-    /// Container with management information about the station (mandatory).
+    /// Container with management information about the station.
     pub management_container: ManagementContainer,
 
-    /// Container with originating vehicle specifications (optional).
+    // Optional fields
+    /// Container with originating vehicle specifications.
     pub originating_vehicle_container: Option<OriginatingVehicleContainer>,
-    /// List of originating rsu specifications (optional).
+    /// List of originating rsu specifications.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub originating_rsu_container: Vec<MapReference>,
-    /// List of sensor specifications (optional).
+    /// List of sensor specifications.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub sensor_information_container: Vec<SensorInformation>,
-    /// List of perception region information (optional).
+    /// List of perception region information.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub perception_region_container: Vec<PerceptionRegion>,
-    /// List of detected objects (optional).
+    /// List of detected objects.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub perceived_object_container: Vec<PerceivedObject>,
 }
@@ -62,14 +63,15 @@ pub struct CollectivePerceptionMessage {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ManagementContainer {
-    /// Reference time of the station (mandatory).
+    /// Reference time of the station.
     pub reference_time: u64,
-    /// Reference position of the station (mandatory).
+    /// Reference position of the station.
     pub reference_position: ReferencePosition,
 
-    /// Information regarding the message segmentation on the facility layer (optional).
+    // Optional fields
+    /// Information regarding the message segmentation on the facility layer.
     pub segmentation_info: Option<SegmentationInfo>,
-    /// The planned or expected range of the CPM generation rate (optional).
+    /// Planned or expected range of the CPM generation rate.
     pub message_rate_range: Option<MessageRateRange>,
 }
 
@@ -78,10 +80,15 @@ pub struct ManagementContainer {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OriginatingVehicleContainer {
+    /// Orientation angle of the vehicle.
     pub orientation_angle: Angle,
 
+    // Optional fields
+    /// Pitch angle of the vehicle.
     pub pitch_angle: Option<Angle>,
+    /// Roll angle of the vehicle.
     pub roll_angle: Option<Angle>,
+    /// List of trailers attached to the vehicle.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub trailer_data_set: Vec<Trailer>,
 }
@@ -89,12 +96,19 @@ pub struct OriginatingVehicleContainer {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PerceptionRegion {
+    /// Time difference between the last measurement and the current perception region.
     pub measurement_delta_time: i16,
+    /// Confidence level for the perception region.
     pub perception_region_confidence: u8,
+    /// Shape of the perception region.
     pub perception_region_shape: Shape,
+    /// Indicates if the standard shadowing approach applies to the described perception region.
     pub shadowing_applies: bool,
 
+    // Optional fields
+    /// List of sensor identifiers that contributed to this perception region.
     pub sensor_id_list: Vec<u8>,
+    /// List of perceived object identifiers that are within this perception region.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub perceived_object_ids: Vec<u16>,
 }
@@ -102,19 +116,29 @@ pub struct PerceptionRegion {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MapReference {
+    // Optional fields
+    /// Reference to a road segment.
     pub road_segment: Option<RoadSegment>,
+    /// Reference to an intersection.
     pub intersection: Option<Intersection>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Trailer {
+    /// Reference point identifier for the trailer.
     pub ref_point_id: u8,
+    /// Offset from the hitch point to the reference point.
     pub hitch_point_offset: u8,
+    /// Angle of the hitch point.
     pub hitch_angle: Angle,
 
+    // Optional fields
+    /// Front overhang of the trailer.
     pub front_overhang: Option<u8>,
+    /// Rear overhang of the trailer.
     pub rear_overhang: Option<u8>,
+    /// Width of the trailer.
     pub trailer_width: Option<u8>,
 }
 
@@ -122,16 +146,17 @@ pub struct Trailer {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SensorInformation {
-    /// Sensor identifier (mandatory).
+    /// Sensor identifier.
     pub sensor_id: u8,
-    /// Type of the sensor (mandatory).
+    /// Type of the sensor.
     pub sensor_type: SensorType,
-    /// Indicates if the standard shadowing approach applies to the described perception region (mandatory).
+    /// Indicates if the standard shadowing approach applies to the described perception region.
     pub shadowing_applies: bool,
 
-    /// The perception region of the sensor (optional).
+    // Optional fields
+    /// Perception region of the sensor.
     pub perception_region_shape: Option<Shape>,
-    ///The homogeneous perception region confidence that can be assumed for the entire perception region shape of this sensor (optional).
+    ///Homogeneous perception region confidence that can be assumed for the entire perception region shape of this sensor.
     pub perception_region_confidence: Option<u8>,
 }
 
@@ -158,21 +183,27 @@ pub enum SensorType {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SegmentationInfo {
+    /// Total number of messages in the segmentation.
     pub total_msg_no: u8,
+    /// Number of this message in the segmentation.
     pub this_msg_no: u8,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MessageRateRange {
+    /// Minimum message rate, represented as a mantissa and exponent.
     pub message_rate_min: MessageRateHz,
+    /// Maximum message rate, represented as a mantissa and exponent.
     pub message_rate_max: MessageRateHz,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MessageRateHz {
+    /// Mantissa of the message rate.
     pub mantissa: u8,
+    /// Exponent of the message rate.
     pub exponent: i8,
 }
 

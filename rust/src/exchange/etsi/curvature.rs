@@ -29,6 +29,7 @@ pub struct Curvature {
 #[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(from = "u8", into = "u8")]
 pub enum CurvatureConfidence {
+    /// Curvature confidence levels.
     OnePerMeter0_00002 = 0,
     OnePerMeter0_0001 = 1,
     OnePerMeter0_0005 = 2,

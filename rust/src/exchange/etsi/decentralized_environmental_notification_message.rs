@@ -35,18 +35,19 @@ use serde::{Deserialize, Serialize};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct DecentralizedEnvironmentalNotificationMessage {
-    /// Protocol version (mandatory).
+    /// Protocol version.
     pub protocol_version: u8,
-    /// Unique identifier for the station (mandatory).
+    /// Unique identifier for the station.
     pub station_id: u32,
-    /// Container with management information about the notification (mandatory)
+    /// Container with management information about the notification
     pub management: ManagementContainer,
 
-    /// Contains situation information about the detected event (optional)
+    // Optional fields
+    /// Contains situation information about the detected event
     pub situation: Option<SituationContainer>,
-    /// Contains location-related information about the event (optional)
+    /// Contains location-related information about the event
     pub location: Option<LocationContainer>,
-    /// Contains additional specific information (optional)
+    /// Contains additional specific information
     pub alacarte: Option<AlacarteContainer>,
 }
 
@@ -54,16 +55,27 @@ pub struct DecentralizedEnvironmentalNotificationMessage {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ManagementContainer {
+    /// Unique identifier for the action
     pub action_id: ActionId,
+    /// Time when the event was detected in ETSI timestamp format
     pub detection_time: u64,
+    /// Reference time for the event in ETSI timestamp format
     pub reference_time: u64,
+    /// Position of the event in reference to the station
     pub event_position: ReferencePosition,
+    /// Validity duration of the event in seconds
     pub station_type: u8,
 
+    // Optional fields
+    /// Termination flag for the event
     pub termination: Option<u8>,
+    /// Distance awareness for the event in meters
     pub awareness_distance: Option<Distance>,
+    /// Direction of traffic for the event
     pub traffic_direction: Option<TrafficDirection>,
+    /// Duration of the event validity in seconds
     pub validity_duration: Option<u32>,
+    /// Interval for transmission of the event in seconds
     pub transmission_interval: Option<u16>,
 }
 
@@ -71,24 +83,36 @@ pub struct ManagementContainer {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SituationContainer {
+    /// Information quality of the event
     pub information_quality: u8,
+    /// Type of the event, represented by a CauseCode
     pub event_type: CauseCode,
 
+    // Optional fields
+    /// Linked cause code for the event
     pub linked_cause: Option<CauseCode>,
+    /// List of event zones related to the event
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    /// List of event points that describe the event zones
     pub event_zone: Vec<EventPoint>,
+    /// List of linked DENMs related to the event
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub linked_denms: Vec<ActionId>,
+    /// Event end time in seconds
     pub event_end: Option<i16>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct EventPoint {
+    /// Position of the event in reference to the station
     pub event_position: DeltaReferencePosition,
+    /// Information quality of the event point
     // TODO: implements an InformationQuality enum
     pub information_quality: u8,
 
+    // Optional fields
+    /// Time delta for the event point in seconds
     pub event_delta_time: Option<u16>,
 }
 
@@ -96,6 +120,7 @@ pub struct EventPoint {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct LocationContainer {
+    // Optional fields
     /// Speed at the event location in cm/s
     pub event_speed: Option<Speed>,
     /// Heading at the event location in 0.1 degrees
@@ -111,7 +136,10 @@ pub struct LocationContainer {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct AlacarteContainer {
+    // Optional fields
+    /// Position of the lane where the event occurred
     pub lane_position: Option<i8>,
+    /// Positioning solution used for the event
     // TODO: implements a PositioningSolution enum
     pub positioning_solution: Option<u8>,
 }
@@ -119,18 +147,22 @@ pub struct AlacarteContainer {
 /// Represents an action identifier
 #[derive(Clone, Debug, Default, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ActionId {
+    /// Unique identifier for the originating station
     pub originating_station_id: u32,
+    /// Sequence number for the action
     pub sequence_number: u16,
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Trace {
+    /// Position of the trace in reference to the station
     pub path: Vec<PathPoint>,
 }
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(from = "u8", into = "u8")]
 pub enum TrafficDirection {
+    /// Represents the direction of traffic for the event.
     #[default]
     AllTrafficDirection = 0,
     UpstreamTraffic = 1,
@@ -141,6 +173,7 @@ pub enum TrafficDirection {
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(from = "u8", into = "u8")]
 pub enum Distance {
+    /// Represents the distance awareness for the event.
     #[default]
     LessThan50m = 0,
     LessThan100m = 1,

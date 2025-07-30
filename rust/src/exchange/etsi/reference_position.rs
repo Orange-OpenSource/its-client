@@ -37,19 +37,82 @@ pub struct ReferencePosition {
     pub position_confidence_ellipse: PositionConfidenceEllipse,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Altitude {
+    /// Altitude value in centimeters.
+    #[serde(default = "default_altitude")]
+    pub value: i32,
+    /// Confidence level for the altitude.
+    #[serde(default = "default_confidence")]
+    pub confidence: u8,
+}
+
+/// Represents the position confidence in a reference position
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct PositionConfidenceEllipse {
+    /// Semi-major axis of the ellipse in centimeters.
+    #[serde(default = "default_semi_major")]
+    pub semi_major: u16,
+    /// Semi-minor axis of the ellipse in centimeters.
+    #[serde(default = "default_semi_minor")]
+    pub semi_minor: u16,
+    /// Orientation of the semi-major axis in centidegrees.
+    #[serde(default = "default_semi_major_orientation")]
+    pub semi_major_orientation: u16,
+}
+
+#[derive(Clone, Default, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
+pub struct DeltaReferencePosition {
+    /// Delta latitude in tenths of microdegrees.
+    #[serde(default = "default_delta_latitude")]
+    pub delta_latitude: i32,
+    /// Delta longitude in tenths of microdegrees.
+    #[serde(default = "default_delta_longitude")]
+    pub delta_longitude: i32,
+    /// Delta altitude in centimeters.
+    #[serde(default = "default_delta_altitude")]
+    pub delta_altitude: i16,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PathPoint {
+    /// Reference position of the path point.
+    pub path_position: DeltaReferencePosition,
+
+    // optional fields
+    /// Delata time in milliseconds since the last path point.
+    pub path_delta_time: Option<u16>,
+}
+
+/// Converts a coordinate from tenths of microdegree to radians
+pub(crate) fn coordinate_from_etsi(microdegree_tenths: i32) -> f64 {
+    let degrees =
+        f64::from(microdegree_tenths) / 10f64.powf(f64::from(COORDINATE_SIGNIFICANT_DIGIT));
+    degrees.to_radians()
+}
+
+/// Converts a coordinate from radians to tenths of microdegree
+pub(crate) fn coordinate_to_etsi(radians: f64) -> i32 {
+    let degrees = radians.to_degrees();
+    (degrees * f64::from(10i32.pow(u32::from(COORDINATE_SIGNIFICANT_DIGIT)))) as i32
+}
+
+/// Converts altitude from centimeters to meters
+pub(crate) fn altitude_from_etsi(centimeters: i32) -> f64 {
+    f64::from(centimeters) / 10f64.powf(f64::from(ALTITUDE_SIGNIFICANT_DIGIT))
+}
+
+/// Converts altitude from meters to centimeters
+pub(crate) fn altitude_to_etsi(meters: f64) -> i32 {
+    (meters * 10_f64.powf(f64::from(ALTITUDE_SIGNIFICANT_DIGIT))) as i32
+}
+
 fn default_latitude() -> i32 {
     900000001
 }
 fn default_longitude() -> i32 {
     1800000001
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct Altitude {
-    #[serde(default = "default_altitude")]
-    pub value: i32,
-    #[serde(default = "default_confidence")]
-    pub confidence: u8,
 }
 
 fn default_altitude() -> i32 {
@@ -60,17 +123,6 @@ fn default_confidence() -> u8 {
     15
 }
 
-/// Represents the position confidence in a reference position
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct PositionConfidenceEllipse {
-    #[serde(default = "default_semi_major")]
-    pub semi_major: u16,
-    #[serde(default = "default_semi_minor")]
-    pub semi_minor: u16,
-    #[serde(default = "default_semi_major_orientation")]
-    pub semi_major_orientation: u16,
-}
-
 fn default_semi_major() -> u16 {
     4095
 }
@@ -79,16 +131,6 @@ fn default_semi_minor() -> u16 {
 }
 fn default_semi_major_orientation() -> u16 {
     3601
-}
-
-#[derive(Clone, Default, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
-pub struct DeltaReferencePosition {
-    #[serde(default = "default_delta_latitude")]
-    pub delta_latitude: i32,
-    #[serde(default = "default_delta_longitude")]
-    pub delta_longitude: i32,
-    #[serde(default = "default_delta_altitude")]
-    pub delta_altitude: i16,
 }
 
 fn default_delta_latitude() -> i32 {
@@ -139,36 +181,6 @@ impl fmt::Display for ReferencePosition {
             self.position_confidence_ellipse
         )
     }
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PathPoint {
-    pub path_position: DeltaReferencePosition,
-    pub path_delta_time: Option<u16>,
-}
-
-/// Converts a coordinate from tenths of microdegree to radians
-pub(crate) fn coordinate_from_etsi(microdegree_tenths: i32) -> f64 {
-    let degrees =
-        f64::from(microdegree_tenths) / 10f64.powf(f64::from(COORDINATE_SIGNIFICANT_DIGIT));
-    degrees.to_radians()
-}
-
-/// Converts a coordinate from radians to tenths of microdegree
-pub(crate) fn coordinate_to_etsi(radians: f64) -> i32 {
-    let degrees = radians.to_degrees();
-    (degrees * f64::from(10i32.pow(u32::from(COORDINATE_SIGNIFICANT_DIGIT)))) as i32
-}
-
-/// Converts altitude from centimeters to meters
-pub(crate) fn altitude_from_etsi(centimeters: i32) -> f64 {
-    f64::from(centimeters) / 10f64.powf(f64::from(ALTITUDE_SIGNIFICANT_DIGIT))
-}
-
-/// Converts altitude from meters to centimeters
-pub(crate) fn altitude_to_etsi(meters: f64) -> i32 {
-    (meters * 10_f64.powf(f64::from(ALTITUDE_SIGNIFICANT_DIGIT))) as i32
 }
 
 #[cfg(test)]
