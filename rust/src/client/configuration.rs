@@ -39,7 +39,7 @@ pub mod configuration_error;
 pub(crate) mod geo_configuration;
 #[cfg(feature = "mobility")]
 pub(crate) mod mobility_configuration;
-pub(crate) mod mqtt_configuration;
+pub mod mqtt_configuration;
 #[cfg(feature = "telemetry")]
 pub(crate) mod telemetry_configuration;
 
@@ -54,7 +54,7 @@ pub struct Configuration {
     pub telemetry: TelemetryConfiguration,
     #[cfg(feature = "mobility")]
     pub mobility: MobilityConfiguration,
-    pub(crate) custom_settings: Option<Ini>,
+    pub custom_settings: Option<Ini>,
 }
 
 impl Configuration {
@@ -105,7 +105,7 @@ pub(crate) fn get_optional<T: FromStr>(
     get_optional_from_properties(field, properties)
 }
 
-pub(crate) fn get_optional_from_properties<T: FromStr>(
+pub fn get_optional_from_properties<T: FromStr>(
     field: &'static str,
     properties: &Properties,
 ) -> Result<Option<T>, ConfigurationError> {
@@ -188,6 +188,7 @@ impl TryFrom<Ini> for Configuration {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::client::configuration::{
         Configuration, get_mandatory, get_optional, pick_mandatory_section,
     };
@@ -475,5 +476,63 @@ use_tls = false
 
         assert!(result.is_ok());
         assert!(result.unwrap().is_none());
+    }
+
+    #[test]
+    fn get_mandatory_ok() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let value = get_mandatory::<String>(Some("custom"), "test", &ini).unwrap();
+        assert_eq!(value, "success");
+    }
+
+    #[test]
+    fn get_mandatory_missing_section() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let result = get_mandatory::<String>(Some("missing"), "test", &ini);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn get_mandatory_missing_field() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let result = get_mandatory::<String>(Some("custom"), "missing", &ini);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn get_mandatory_type_error() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let result = get_mandatory::<u16>(Some("custom"), "test", &ini);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn get_optional_ok() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let value = get_optional::<String>(Some("custom"), "test", &ini)
+            .unwrap()
+            .unwrap();
+        assert_eq!(value, "success");
+    }
+
+    #[test]
+    fn get_optional_missing_section() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let result = get_optional::<String>(Some("missing"), "test", &ini).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn get_optional_missing_field() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let result = get_optional::<String>(Some("custom"), "missing", &ini).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn get_optional_type_error() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let result = get_optional::<u16>(Some("custom"), "test", &ini);
+        assert!(result.is_err());
     }
 }
