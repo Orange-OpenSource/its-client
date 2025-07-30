@@ -8,8 +8,9 @@
  *
  * Authors: see CONTRIBUTORS.md
  */
-
 use serde::Serialize;
 use std::fmt::Debug;
 
 pub trait Payload: Clone + Debug + PartialEq + Serialize {}
+
+impl Payload for String {}
