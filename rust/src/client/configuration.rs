@@ -39,7 +39,7 @@ pub mod configuration_error;
 pub(crate) mod geo_configuration;
 #[cfg(feature = "mobility")]
 pub(crate) mod mobility_configuration;
-pub(crate) mod mqtt_configuration;
+pub mod mqtt_configuration;
 #[cfg(feature = "telemetry")]
 pub(crate) mod telemetry_configuration;
 
@@ -54,7 +54,7 @@ pub struct Configuration {
     pub telemetry: TelemetryConfiguration,
     #[cfg(feature = "mobility")]
     pub mobility: MobilityConfiguration,
-    pub(crate) custom_settings: Option<Ini>,
+    pub custom_settings: Option<Ini>,
 }
 
 impl Configuration {
@@ -90,6 +90,25 @@ impl Configuration {
             .with_section(section)
             .set(key, value);
     }
+
+    /// Get a list of values from configuration, separated by commas
+    pub fn get_list<T: FromStr>(
+        &self,
+        section: Option<&'static str>,
+        key: &'static str,
+    ) -> Result<Vec<T>, ConfigurationError> {
+        if self.custom_settings.is_some() {
+            match get_optional_list(section, key, self.custom_settings.as_ref().unwrap()) {
+                Ok(result) => match result {
+                    Some(values) => Ok(values),
+                    None => Ok(Vec::new()), // Return empty vec if not found
+                },
+                Err(e) => Err(e),
+            }
+        } else {
+            Err(NoCustomSettings)
+        }
+    }
 }
 
 pub(crate) fn get_optional<T: FromStr>(
@@ -105,13 +124,57 @@ pub(crate) fn get_optional<T: FromStr>(
     get_optional_from_properties(field, properties)
 }
 
-pub(crate) fn get_optional_from_properties<T: FromStr>(
+pub fn get_optional_from_properties<T: FromStr>(
     field: &'static str,
     properties: &Properties,
 ) -> Result<Option<T>, ConfigurationError> {
     if let Some(value) = properties.get(field) {
         match T::from_str(value) {
             Ok(value) => Ok(Some(value)),
+            Err(_) => Err(TypeError(field, type_name::<T>())),
+        }
+    } else {
+        Ok(None)
+    }
+}
+
+pub(crate) fn get_optional_list<T: FromStr>(
+    section: Option<&'static str>,
+    field: &'static str,
+    ini_config: &Ini,
+) -> Result<Option<Vec<T>>, ConfigurationError> {
+    let properties = if let Some(properties) = ini_config.section(section) {
+        properties
+    } else {
+        ini_config.general_section()
+    };
+    get_optional_list_from_properties(field, properties)
+}
+
+pub fn get_optional_list_from_properties<T: FromStr>(
+    field: &'static str,
+    properties: &Properties,
+) -> Result<Option<Vec<T>>, ConfigurationError> {
+    if let Some(value) = properties.get(field) {
+        let cleaned_value = value.trim();
+
+        // Handle JSON array format [item1, item2, ...]
+        let items_str = if cleaned_value.starts_with('[') && cleaned_value.ends_with(']') {
+            &cleaned_value[1..cleaned_value.len() - 1]
+        } else {
+            cleaned_value
+        };
+
+        let parsed_values: Result<Vec<T>, _> = items_str
+            .split(',')
+            .map(|s| s.trim())
+            .map(|s| s.trim_matches('"')) // Remove quotes if present
+            .filter(|s| !s.is_empty())
+            .map(|item| T::from_str(item))
+            .collect();
+
+        match parsed_values {
+            Ok(values) => Ok(Some(values)),
             Err(_) => Err(TypeError(field, type_name::<T>())),
         }
     } else {
@@ -188,6 +251,7 @@ impl TryFrom<Ini> for Configuration {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::client::configuration::{
         Configuration, get_mandatory, get_optional, pick_mandatory_section,
     };
@@ -475,5 +539,197 @@ use_tls = false
 
         assert!(result.is_ok());
         assert!(result.unwrap().is_none());
+    }
+
+    #[test]
+    fn get_mandatory_ok() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let value = get_mandatory::<String>(Some("custom"), "test", &ini).unwrap();
+        assert_eq!(value, "success");
+    }
+
+    #[test]
+    fn get_mandatory_missing_section() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let result = get_mandatory::<String>(Some("missing"), "test", &ini);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn get_mandatory_missing_field() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let result = get_mandatory::<String>(Some("custom"), "missing", &ini);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn get_mandatory_type_error() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let result = get_mandatory::<u16>(Some("custom"), "test", &ini);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn get_optional_ok() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let value = get_optional::<String>(Some("custom"), "test", &ini)
+            .unwrap()
+            .unwrap();
+        assert_eq!(value, "success");
+    }
+
+    #[test]
+    fn get_optional_missing_section() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let result = get_optional::<String>(Some("missing"), "test", &ini).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn get_optional_missing_field() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let result = get_optional::<String>(Some("custom"), "missing", &ini).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn get_optional_type_error() {
+        let ini = Ini::load_from_str(EXHAUSTIVE_CUSTOM_INI_CONFIG).unwrap();
+        let result = get_optional::<u16>(Some("custom"), "test", &ini);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn get_list_with_comma_separated_values() {
+        let mut configuration = Configuration::default();
+        configuration.set(Some("test"), "list_field", "item1,item2,item3");
+        let result = configuration
+            .get_list::<String>(Some("test"), "list_field")
+            .unwrap();
+        assert_eq!(result, vec!["item1", "item2", "item3"]);
+    }
+
+    #[test]
+    fn get_list_no_custom_settings_error() {
+        let mut configuration = Configuration::default();
+        configuration.custom_settings = None;
+        let result = configuration.get_list::<String>(Some("test"), "list_field");
+        assert!(matches!(result, Err(NoCustomSettings)));
+    }
+
+    #[test]
+    fn get_list_with_spaces_and_trimming() {
+        let mut configuration = Configuration::default();
+        configuration.set(Some("test"), "list_field", " item1 , item2 , item3 ");
+        let result = configuration
+            .get_list::<String>(Some("test"), "list_field")
+            .unwrap();
+        assert_eq!(result, vec!["item1", "item2", "item3"]);
+    }
+
+    #[test]
+    fn get_list_with_empty_items_filtered() {
+        let mut configuration = Configuration::default();
+        configuration.set(Some("test"), "list_field", "item1,,item3,");
+        let result = configuration
+            .get_list::<String>(Some("test"), "list_field")
+            .unwrap();
+        assert_eq!(result, vec!["item1", "item3"]);
+    }
+
+    #[test]
+    fn get_list_type_conversion_error() {
+        let mut configuration = Configuration::default();
+        configuration.set(Some("test"), "list_field", "not_a_number,123");
+        let result = configuration.get_list::<u32>(Some("test"), "list_field");
+        assert!(result.is_err());
+    }
+
+    // Tests for get_optional_list functionality
+    #[test]
+    fn get_optional_list_ok() {
+        let mut properties = ini::Properties::new();
+        properties.insert("test_list", "a,b,c".to_string());
+        let result = get_optional_list_from_properties::<String>("test_list", &properties).unwrap();
+        assert_eq!(
+            result,
+            Some(vec!["a".to_string(), "b".to_string(), "c".to_string()])
+        );
+    }
+
+    #[test]
+    fn get_optional_list_missing_field() {
+        let properties = ini::Properties::new();
+        let result = get_optional_list_from_properties::<String>("missing", &properties).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn get_optional_list_type_error() {
+        let mut properties = ini::Properties::new();
+        properties.insert("test_list", "not_a_number,123".to_string());
+        let result = get_optional_list_from_properties::<u32>("test_list", &properties);
+        assert!(result.is_err());
+    }
+
+    // Tests for get_optional_list functionality with Ini
+    #[test]
+    fn get_optional_list_from_ini_ok() {
+        let ini_str = r#"
+        [test_section]
+        list_field = item1,item2,item3
+        "#;
+        let ini = Ini::load_from_str(ini_str).unwrap();
+        let result = get_optional_list::<String>(Some("test_section"), "list_field", &ini).unwrap();
+        assert_eq!(
+            result,
+            Some(vec![
+                "item1".to_string(),
+                "item2".to_string(),
+                "item3".to_string()
+            ])
+        );
+    }
+
+    #[test]
+    fn get_optional_list_from_ini_missing_section() {
+        let ini_str = r#"
+        [other_section]
+        list_field = item1,item2,item3
+        "#;
+        let ini = Ini::load_from_str(ini_str).unwrap();
+        let result =
+            get_optional_list::<String>(Some("missing_section"), "list_field", &ini).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn get_optional_list_from_general_section() {
+        let ini_str = r#"
+        list_field = item1,item2,item3
+        [other_section]
+        other = value
+        "#;
+        let ini = Ini::load_from_str(ini_str).unwrap();
+        let result = get_optional_list::<String>(None, "list_field", &ini).unwrap();
+        assert_eq!(
+            result,
+            Some(vec![
+                "item1".to_string(),
+                "item2".to_string(),
+                "item3".to_string()
+            ])
+        );
+    }
+
+    // Test for set_mqtt_credentials
+    #[test]
+    fn set_mqtt_credentials_test() {
+        let mut configuration = Configuration::default();
+        configuration.set_mqtt_credentials("testuser", "testpass");
+        assert_eq!(
+            configuration.mqtt.mqtt_options.credentials(),
+            Some(("testuser".to_string(), "testpass".to_string()))
+        );
     }
 }
