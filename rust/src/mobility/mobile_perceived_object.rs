@@ -11,38 +11,46 @@
 
 extern crate integer_sqrt;
 
-use std::f64::consts::PI;
-use std::hash::{Hash, Hasher};
-
 use self::integer_sqrt::IntegerSquareRoot;
 use crate::exchange::etsi::collective_perception_message::CollectivePerceptionMessage;
 use crate::exchange::etsi::perceived_object::{CartesianVelocity, PerceivedObject};
 use crate::exchange::etsi::speed_from_etsi;
 use crate::mobility::mobile::Mobile;
 use crate::mobility::position::{Position, enu_destination, haversine_destination};
-use log::trace;
 use rand::Rng;
+use std::f64::consts::PI;
+use std::fmt::{Debug, Display, Formatter};
+use std::hash::{Hash, Hasher};
 
 const PI2: f64 = 2. * PI;
 
 #[derive(Clone, Debug)]
 pub struct MobilePerceivedObject {
     pub perceived_object: PerceivedObject,
-    pub mobile_id: u32,
+    pub mobile_id: MobilePerceivedObjectId,
     pub position: Position,
     pub speed: f64,
     pub heading: f64,
     pub acceleration: f64,
 }
 
+#[derive(Clone, Debug)]
+pub struct MobilePerceivedObjectId {
+    pub station_id: u32,
+    pub object_id: u16,
+    pub object_id_rotation_count: u8,
+}
+
 impl MobilePerceivedObject {
-    // TODO FGA: check how to keep it private and manage end to end CPMs with natively
-    //           perceived object mobility
+    // TODO check how to keep it private and manage end to end CPMs with natively perceived object mobility
     pub(crate) fn new(
-        perceived_object: PerceivedObject,
         cpm: &CollectivePerceptionMessage,
+        perceived_object: PerceivedObject,
+        object_id_rotation_count: Option<u8>,
     ) -> Self {
-        let mobile_id = compute_id(perceived_object.object_id, cpm.station_id);
+        let object_id = perceived_object
+            .object_id
+            .unwrap_or_else(|| rand::rng().random_range(0..=u16::MAX));
         let cartesian_velocity = &perceived_object
             .velocity
             .as_ref()
@@ -97,7 +105,11 @@ impl MobilePerceivedObject {
 
         Self {
             perceived_object,
-            mobile_id,
+            mobile_id: MobilePerceivedObjectId {
+                station_id: cpm.station_id,
+                object_id,
+                object_id_rotation_count: object_id_rotation_count.unwrap_or(0),
+            },
             position,
             speed,
             heading,
@@ -108,7 +120,7 @@ impl MobilePerceivedObject {
 
 impl Mobile for MobilePerceivedObject {
     fn id(&self) -> u32 {
-        self.mobile_id
+        self.mobile_id.station_id
     }
 
     fn position(&self) -> Position {
@@ -148,16 +160,56 @@ impl Hash for MobilePerceivedObject {
     }
 }
 
-/// FIXME this function does not create a unique id (issue [99](https://github.com/Orange-OpenSource/its-client/issues/99))
-fn compute_id(object_id: Option<u16>, cpm_station_id: u32) -> u32 {
-    let object_id_basis = object_id.unwrap_or_else(|| rand::rng().random_range(0..=u16::MAX));
-    let string_id = format!("{cpm_station_id}{object_id_basis}");
-    match string_id.parse() {
-        Ok(id) => id,
-        Err(_err) => {
-            trace!("Unable to generate a mobile id with {string_id}, we create a short one");
-            cpm_station_id + object_id_basis as u32
+impl Display for MobilePerceivedObjectId {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}{:05}{:03}",
+            self.station_id, self.object_id, self.object_id_rotation_count
+        )
+    }
+}
+
+impl From<MobilePerceivedObjectId> for u64 {
+    fn from(mobile_perceived_object_id: MobilePerceivedObjectId) -> Self {
+        format!(
+            "{}{:05}{:03}",
+            mobile_perceived_object_id.station_id,
+            mobile_perceived_object_id.object_id,
+            mobile_perceived_object_id.object_id_rotation_count
+        )
+        .parse()
+        .unwrap_or(0)
+    }
+}
+
+impl From<u64> for MobilePerceivedObjectId {
+    fn from(id: u64) -> Self {
+        let station_id = (id / 100000000) as u32;
+        let object_id = ((id % 100000000) / 1000) as u16;
+        let object_id_rotation_count = (id % 1000) as u8;
+
+        MobilePerceivedObjectId {
+            station_id,
+            object_id,
+            object_id_rotation_count,
         }
+    }
+}
+
+impl PartialEq for MobilePerceivedObjectId {
+    fn eq(&self, other: &Self) -> bool {
+        self.station_id == other.station_id
+            && self.object_id == other.object_id
+            && self.object_id_rotation_count == other.object_id_rotation_count
+    }
+}
+
+impl Hash for MobilePerceivedObjectId {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.station_id.hash(state);
+        self.object_id.hash(state);
+        self.object_id_rotation_count.hash(state);
     }
 }
 
@@ -222,9 +274,11 @@ mod tests {
     };
     use crate::exchange::etsi::velocity::Velocity;
     use crate::exchange::etsi::{heading_from_etsi, speed_from_etsi};
-    use crate::mobility::mobile_perceived_object::compute_heading_from_mobile;
     use crate::mobility::mobile_perceived_object::{
-        MobilePerceivedObject, compute_heading_from_rsu, compute_id, compute_position_from_mobile,
+        MobilePerceivedObject, compute_heading_from_rsu, compute_position_from_mobile,
+    };
+    use crate::mobility::mobile_perceived_object::{
+        MobilePerceivedObjectId, compute_heading_from_mobile,
     };
     use crate::mobility::position::Position;
     use std::f64::consts::PI;
@@ -354,12 +408,241 @@ mod tests {
     );
 
     #[test]
-    fn it_can_compute_an_id() {
-        //not too large, we concatenate
-        assert_eq!(compute_id(Some(1), 100), 1001);
-        assert_eq!(compute_id(Some(1), 400000000), 4000000001);
-        //too large, we add
-        assert_eq!(compute_id(Some(1), 500000000), 500000001);
+    fn it_can_display_correctly_an_id() {
+        assert_eq!(
+            MobilePerceivedObjectId {
+                station_id: 0,
+                object_id: 0,
+                object_id_rotation_count: 0,
+            }
+            .to_string(),
+            "000000000"
+        );
+        assert_eq!(
+            MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 0,
+                object_id_rotation_count: 0,
+            }
+            .to_string(),
+            "100000000"
+        );
+        assert_eq!(
+            MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 1,
+                object_id_rotation_count: 0,
+            }
+            .to_string(),
+            "100001000"
+        );
+        assert_eq!(
+            MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 1,
+                object_id_rotation_count: 1,
+            }
+            .to_string(),
+            "100001001"
+        );
+        assert_eq!(
+            MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 0,
+                object_id_rotation_count: 1,
+            }
+            .to_string(),
+            "100000001"
+        );
+
+        assert_eq!(
+            MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 10000,
+                object_id_rotation_count: 0,
+            }
+            .to_string(),
+            "110000000"
+        );
+        assert_eq!(
+            MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 10000,
+                object_id_rotation_count: 100,
+            }
+            .to_string(),
+            "110000100"
+        );
+        assert_eq!(
+            MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 0,
+                object_id_rotation_count: 100,
+            }
+            .to_string(),
+            "100000100"
+        );
+        assert_eq!(
+            MobilePerceivedObjectId {
+                station_id: 4294967295,
+                object_id: 65535,
+                object_id_rotation_count: 255,
+            }
+            .to_string(),
+            "429496729565535255"
+        );
+    }
+
+    #[test]
+    fn it_can_convert_correctly_an_id_from_u64() {
+        assert_eq!(
+            MobilePerceivedObjectId::from(0u64),
+            MobilePerceivedObjectId {
+                station_id: 0,
+                object_id: 0,
+                object_id_rotation_count: 0,
+            }
+        );
+        assert_eq!(
+            MobilePerceivedObjectId::from(100000000u64),
+            MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 0,
+                object_id_rotation_count: 0,
+            }
+        );
+        assert_eq!(
+            MobilePerceivedObjectId::from(100001000u64),
+            MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 1,
+                object_id_rotation_count: 0,
+            }
+        );
+        assert_eq!(
+            MobilePerceivedObjectId::from(100001001u64),
+            MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 1,
+                object_id_rotation_count: 1,
+            }
+        );
+        assert_eq!(
+            MobilePerceivedObjectId::from(100000001u64),
+            MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 0,
+                object_id_rotation_count: 1,
+            }
+        );
+        assert_eq!(
+            MobilePerceivedObjectId::from(110000000u64),
+            MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 10000,
+                object_id_rotation_count: 0,
+            }
+        );
+        assert_eq!(
+            MobilePerceivedObjectId::from(110000100u64),
+            MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 10000,
+                object_id_rotation_count: 100,
+            }
+        );
+        assert_eq!(
+            MobilePerceivedObjectId::from(100000100u64),
+            MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 0,
+                object_id_rotation_count: 100,
+            }
+        );
+        assert_eq!(
+            MobilePerceivedObjectId::from(429496729565535255u64),
+            MobilePerceivedObjectId {
+                station_id: 4294967295,
+                object_id: 65535,
+                object_id_rotation_count: 255,
+            }
+        );
+    }
+
+    #[test]
+    fn it_can_convert_correctly_an_id_into_u64() {
+        assert_eq!(
+            u64::from(MobilePerceivedObjectId {
+                station_id: 0,
+                object_id: 0,
+                object_id_rotation_count: 0,
+            }),
+            0u64
+        );
+        assert_eq!(
+            u64::from(MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 0,
+                object_id_rotation_count: 0,
+            }),
+            100000000u64
+        );
+        assert_eq!(
+            u64::from(MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 1,
+                object_id_rotation_count: 0,
+            }),
+            100001000u64
+        );
+        assert_eq!(
+            u64::from(MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 1,
+                object_id_rotation_count: 1,
+            }),
+            100001001u64
+        );
+        assert_eq!(
+            u64::from(MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 0,
+                object_id_rotation_count: 1,
+            }),
+            100000001u64
+        );
+        assert_eq!(
+            u64::from(MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 10000,
+                object_id_rotation_count: 0,
+            }),
+            110000000u64
+        );
+        assert_eq!(
+            u64::from(MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 10000,
+                object_id_rotation_count: 100,
+            }),
+            110000100u64
+        );
+        assert_eq!(
+            u64::from(MobilePerceivedObjectId {
+                station_id: 1,
+                object_id: 0,
+                object_id_rotation_count: 100,
+            }),
+            100000100u64
+        );
+        assert_eq!(
+            u64::from(MobilePerceivedObjectId {
+                station_id: 4294967295,
+                object_id: 65535,
+                object_id_rotation_count: 255,
+            }),
+            429496729565535255u64
+        );
     }
 
     #[test]
@@ -382,7 +665,11 @@ mod tests {
         };
         let expected_mobile_perceived_object = MobilePerceivedObject {
             perceived_object: perceived_object.clone(),
-            mobile_id: 10101,
+            mobile_id: MobilePerceivedObjectId {
+                station_id: 10,
+                object_id: 101,
+                object_id_rotation_count: 0,
+            },
             position: Position {
                 latitude: coordinate_from_etsi(434622516),
                 longitude: coordinate_from_etsi(1218218),
@@ -394,7 +681,6 @@ mod tests {
         };
 
         let mobile_perceived_object = MobilePerceivedObject::new(
-            perceived_object,
             &CollectivePerceptionMessage {
                 station_id: 10,
                 management_container: ManagementContainer {
@@ -419,6 +705,8 @@ mod tests {
                 }),
                 ..Default::default()
             },
+            perceived_object,
+            None,
         );
 
         assert_eq!(
@@ -480,7 +768,11 @@ mod tests {
         };
         let expected_mobile_perceived_object = MobilePerceivedObject {
             perceived_object: perceived_object.clone(),
-            mobile_id: 10101,
+            mobile_id: MobilePerceivedObjectId {
+                station_id: 10,
+                object_id: 101,
+                object_id_rotation_count: 0,
+            },
             position: Position {
                 latitude: coordinate_from_etsi(488415432),
                 longitude: coordinate_from_etsi(23679076),
@@ -492,7 +784,6 @@ mod tests {
         };
 
         let mobile_perceived_object = MobilePerceivedObject::new(
-            perceived_object,
             &CollectivePerceptionMessage {
                 station_id: 10,
                 management_container: ManagementContainer {
@@ -510,6 +801,8 @@ mod tests {
                 },
                 ..Default::default()
             },
+            perceived_object,
+            None,
         );
 
         assert_eq!(
