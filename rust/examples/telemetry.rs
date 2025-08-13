@@ -207,10 +207,10 @@ async fn main() {
     drop(guard);
 
     if let Err(e) = send_handle.join() {
-        warn!("Sender thread failed to join: {:?}", e)
+        warn!("Sender thread failed to join: {e:?}")
     }
     if let Err(e) = recv_handle.join() {
-        warn!("Listener thread failed to join: {:?}", e)
+        warn!("Listener thread failed to join: {e:?}")
     }
 
     // Trace export is batched, shutting down the tracer provider will force the export

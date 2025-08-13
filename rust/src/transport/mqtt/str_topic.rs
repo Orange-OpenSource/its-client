@@ -24,7 +24,7 @@ impl Display for StrTopic {
     ///
     /// # Arguments
     ///
-    /// * `f` - The formatter.
+    /// * `f` - Formatter.
     ///
     /// # Returns
     ///
@@ -41,7 +41,7 @@ impl FromStr for StrTopic {
     ///
     /// # Arguments
     ///
-    /// * `s` - The string slice.
+    /// * `s` - String slice.
     ///
     /// # Returns
     ///
@@ -75,7 +75,7 @@ mod tests {
     ///
     /// # Arguments
     ///
-    /// * `topic` - The topic string.
+    /// * `topic` - Topic string.
     ///
     /// # Returns
     ///
@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn str_topic_display() {
         let topic = create_str_topic("test/topic");
-        assert_eq!(format!("{}", topic), "test/topic");
+        assert_eq!(format!("{topic}"), "test/topic");
     }
 
     #[test]

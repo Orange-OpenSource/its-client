@@ -75,11 +75,11 @@ async fn main() {
                 total += 1;
 
                 if total % 1000 == 0 {
-                    println!("Received {} messages including {} as JSON", total, json);
+                    println!("Received {total} messages including {json} as JSON");
                 }
             }
             Err(e) => {
-                error!("Connection error received: {:?}", e);
+                error!("Connection error received: {e:?}");
                 info!("Exiting...");
                 break;
             }

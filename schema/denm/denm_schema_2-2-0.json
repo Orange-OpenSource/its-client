@@ -1,0 +1,561 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/denm",
+  "description": "DENM JSON schema",
+  "$references": [
+    {
+      "$comment": "This technical specification file (TS) is hereby considered right over the European standard one (EN); meaning that for any difference that may be present between those files this schema will prefer what is defined in the technical specification",
+      "name": "DENM TS 103 831",
+      "version": "2.2.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/denm_ts103831/-/tree/v2.2.1"
+    },
+    {
+      "$comment": "This technical specification file (TS) is hereby considered right over the European standard one (EN); meaning that for any difference that may be present between those files this schema will prefer what is defined in the technical specification",
+      "name": "CDD TS 102 894-2",
+      "version": "2.2.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/cdd_ts102894_2/-/tree/V2.2.1"
+    }
+  ],
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "message_type",
+    "source_uuid",
+    "timestamp",
+    "version",
+    "message"
+  ],
+  "properties": {
+    "message_type": {
+      "type": "string",
+      "description": "Type of the message carried in message property.",
+      "const": "denm"
+    },
+    "source_uuid": {
+      "type": "string",
+      "description": "Unique id all over the world for the message sender.",
+      "examples": [
+        "com_car_4294967295",
+        "com_application_42"
+      ]
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Timestamp when the message was generated since Unix Epoch (millisecond).",
+      "examples": [
+        1574778515424
+      ],
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
+    },
+    "version": {
+      "type": "string",
+      "description": "JSON message format version",
+      "const": "2.2.0"
+    },
+    "path": {
+      "type": "array",
+      "description": "List of ordered elements root source of the message.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "position",
+          "message_type"
+        ],
+        "properties": {
+          "position": {
+            "type": "object",
+            "required": [
+              "latitude",
+              "longitude",
+              "altitude"
+            ],
+            "properties": {
+              "latitude": {
+                "$ref": "#/$defs/latitude_value"
+              },
+              "longitude": {
+                "$ref": "#/$defs/longitude_value"
+              },
+              "altitude": {
+                "type": "integer",
+                "description": "Unit: 0.01 meter. referenceEllipsoidSurface(0), oneCentimeter(1), unavailable(800001)",
+                "default": 800001,
+                "minimum": -100000,
+                "maximum": 800001
+              }
+            }
+          },
+          "message_type": {
+            "type": "string",
+            "description": "Root message type source of the element.",
+            "enum": [
+              "denm",
+              "cam",
+              "cpm",
+              "po"
+            ]
+          }
+        }
+      }
+    },
+    "message": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "station_id",
+        "management"
+      ],
+      "properties": {
+        "protocol_version": {
+          "type": "integer",
+          "description": "Version of the ITS message.",
+          "minimum": 0,
+          "maximum": 255,
+          "examples": [
+            1
+          ]
+        },
+        "station_id": {
+          "type": "integer",
+          "description": "Identifier for an ITS-S.",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "examples": [
+            4294967295,
+            42
+          ]
+        },
+        "management": {
+          "type": "object",
+          "required": [
+            "action_id",
+            "detection_time",
+            "reference_time",
+            "event_position",
+            "station_type"
+          ],
+          "properties": {
+            "action_id": {
+              "type": "object",
+              "required": [
+                "originating_station_id",
+                "sequence_number"
+              ],
+              "properties": {
+                "originating_station_id": {
+                  "type": "integer",
+                  "description": "Identifier of an its station.",
+                  "minimum": 0,
+                  "maximum": 4294967295
+                },
+                "sequence_number": {
+                  "type": "integer",
+                  "description": "Sequence number set each time a new DENM is created. It is used to differentiate from events detected by the same ITS-S.",
+                  "minimum": 0,
+                  "maximum": 65535
+                }
+              }
+            },
+            "detection_time": {
+              "type": "integer",
+              "description": "Time at which the event is detected by the originating ITS-S. Remains the same on repetition; updated if any value changed in the payload, meaning sequence_number remains unchanged but anything else has been updated; Unit: millisecond since ETSI epoch (2004/01/01, so 1072915200000); utcStartOf2004(0), oneMillisecAfterUTCStartOf2004(1).",
+              "minimum": 0,
+              "maximum": 4398046511103
+            },
+            "reference_time": {
+              "type": "integer",
+              "description": "Time at which a new DENM, an update DENM or a cancellation DENM is generated (different for each message, even for repetition); Unit: millisecond since ETSI epoch (2004/01/01, so 1072915200000). utcStartOf2004(0), oneMillisecAfterUTCStartOf2004(1).",
+              "minimum": 0,
+              "maximum": 4398046511103
+            },
+            "termination": {
+              "type": "integer",
+              "description": "isCancellation(0), isNegation(1).",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "event_position": {
+              "$ref": "#/$defs/reference_position"
+            },
+            "awareness_distance": {
+              "type": "integer",
+              "description": "Radius of the circular awareness area, with centre at the event position or at any of the event history points; lessThan50m(0), lessThan100m(1), lessThan200m(2), lessThan500m(3), lessThan1000m(4), lessThan5km(5), lessThan10km(6), over10km(7).",
+              "minimum": 0,
+              "maximum": 7
+            },
+            "traffic_direction": {
+              "type": "integer",
+              "description": "Traffic direction along which the receiving ITS-S may encounter the event; allTrafficDirections(0), upstreamTraffic(1), downstreamTraffic(2), oppositeTraffic(3).",
+              "minimum": 0,
+              "maximum": 3
+            },
+            "validity_duration": {
+              "type": "integer",
+              "description": "Duration after which the DENM can be considered invalid; Unit: second. timeOfDetection(0), oneSecondAfterDetection(1).",
+              "minimum": 0,
+              "maximum": 86400,
+              "default": 600
+            },
+            "transmission_interval": {
+              "type": "integer",
+              "description": "Unit: millisecond. oneMilliSecond(1), tenSeconds(10000).",
+              "minimum": 1,
+              "maximum": 10000
+            },
+            "station_type": {
+              "$ref": "#/$defs/traffic_participant_type"
+            }
+          }
+        },
+        "situation": {
+          "type": "object",
+          "required": [
+            "information_quality",
+            "event_type"
+          ],
+          "properties": {
+            "information_quality": {
+              "type": "integer",
+              "description": "Quality level of the information provided by the ITS-S application of the originating ITS-S. It indicates the probability of the detected event being truly existent at the event position.",
+              "$ref": "#/$defs/information_quality"
+            },
+            "event_type": {
+              "$comment": "Choice has been made not to use CauseCodeV2 object as defined in DENM TS CDD, because it would require a object definition for each cause just to hold the subcause code; Using the deprecated CauseCode instead",
+              "$ref": "#/$defs/cause_code"
+            },
+            "linked_cause": {
+              "$comment": "Choice has been made not to use CauseCodeV2 object as defined in DENM TS CDD, because it would require a object definition for each cause just to hold the subcause code; Using the deprecated CauseCode instead",
+              "$ref": "#/$defs/cause_code"
+            },
+            "event_zone": {
+              "type": "array",
+              "description": "List of relative position, using the position indicated in the component eventPosition of the Management container as the reference position for the first position",
+              "items": {
+                "type": "object",
+                "required": [
+                  "event_position",
+                  "information_quality"
+                ],
+                "properties": {
+                  "event_position": {
+                    "$ref": "#/$defs/delta_reference_position"
+                  },
+                  "event_delta_time": {
+                    "type": "integer",
+                    "description": "Recorded or estimated travel time between a position and a predefined reference position; Unit: 10 millisecond",
+                    "minimum": 0,
+                    "maximum": 65535
+                  },
+                  "information_quality": {
+                    "description": "Information quality of the detection for this event point",
+                    "$ref": "#/$defs/information_quality"
+                  }
+                }
+              }
+            },
+            "linked_denms": {
+              "type": "array",
+              "description": "List of action id pointing to DENMs that are semantically connected because applying to consecutive event zones at the same time",
+              "item": {
+                "type": "object",
+                "required": [
+                  "originating_station_id",
+                  "sequence_number"
+                ],
+                "properties": {
+                  "originating_station_id": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4294967295
+                  },
+                  "sequence_number": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 65535
+                  }
+                }
+              },
+              "minimum": 1,
+              "maximum": 8
+            },
+            "event_end": {
+              "type": "integer",
+              "description": "Unit: meter. outOfRange(8190), unavailable(8191).",
+              "minimum": -8190,
+              "maximum": 8191
+            }
+          }
+        },
+        "location": {
+          "type": "object",
+          "properties": {
+            "event_speed": {
+              "type": "object",
+              "required": [
+                "value",
+                "confidence"
+              ],
+              "properties": {
+                "value": {
+                  "description": "Speed value, i.e. the magnitude of the velocity-vector; Unit 0.01 m/s. standstill(0), oneCentimeterPerSec(1), unavailable(16383), outOfRange(16832).",
+                  "minimum": 0,
+                  "maximum": 16383
+                },
+                "confidence": {
+                  "type": "integer",
+                  "description": "Confidence value of the speed value; Unit: 0.01 m/s. equalOrWithinOneCentimeterPerSec(1), equalOrWithinOneMeterPerSec(100), outOfRange(126), unavailable(127).",
+                  "minimum": 1,
+                  "maximum": 127
+                }
+              }
+            },
+            "event_position_heading": {
+              "type": "object",
+              "required": [
+                "value",
+                "confidence"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer",
+                  "description": "Angle value, which can be estimated as the mean of the current distribution; Unit: 0.1 degree. wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), doNotUse(3600), unavailable(3601).",
+                  "minimum": 0,
+                  "maximum": 3601
+                },
+                "confidence": {
+                  "type": "integer",
+                  "description": "Angle confidence value which represents the estimated accuracy of an angle value with a default confidence level of 95%; Unit: 0.1 degree. equalOrWithinZeroPointOneDegree (1), equalOrWithinOneDegree (10), outOfRange(126), unavailable(127).",
+                  "minimum": 1,
+                  "maximum": 127
+                }
+              }
+            },
+            "detection_zones_to_event_position": {
+              "type": "array",
+              "description": "Detection zone information approaching the event position. Not required even mandatory into the specification: let's build an empty array if needed.",
+              "minItems": 1,
+              "maxItems": 7,
+              "items": {
+                "type": "object",
+                "required": [
+                  "path"
+                ],
+                "properties": {
+                  "path": {
+                    "type": "array",
+                    "description": "Path history, a path with a set of path points",
+                    "maxItems": 40,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "path_position"
+                      ],
+                      "properties": {
+                        "path_position": {
+                          "$ref": "#/$defs/delta_reference_position"
+                        },
+                        "path_delta_time": {
+                          "type": "integer",
+                          "description": "Time travelled by the detecting ITS-S since the previous detected event point (reference_time). tenMilliSecondsInPast(1).",
+                          "minimum": 1,
+                          "maximum": 65535
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "road_type": {
+              "type": "integer",
+              "description": "Type of a road segment. urban-NoStructuralSeparationToOppositeLanes(0), urban-WithStructuralSeparationToOppositeLanes(1), nonUrban-NoStructuralSeparationToOppositeLanes(2), nonUrban-WithStructuralSeparationToOppositeLanes(3).",
+              "minimum": 0,
+              "maximum": 3
+            }
+          }
+        },
+        "alacarte": {
+          "type": "object",
+          "properties": {
+            "lane_position": {
+              "type": "integer",
+              "description": "Transversal position on the carriageway at a specific longitudinal position, in resolution of lanes of the carriageway. offTheRoad(-1), innerHardShoulder(0), innermostDrivingLane(1), secondLaneFromInside(2), outterHardShoulder(14).",
+              "minimum": -1,
+              "maximum": 14
+            },
+            "positioning_solution": {
+              "type": "integer",
+              "description": "Positioning technology being used to estimate a geographical position. noPositioningSolution(0), sGNSS(1), dGNSS(2), sGNSSplusDR(3), dGNSSplusDR(4), dR(5), manuallyByOperator(6).",
+              "minimum": 0,
+              "maximum": 6
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "pos_confidence_ellipse": {
+      "type": "object",
+      "required": [
+        "semi_major",
+        "semi_minor",
+        "semi_major_orientation"
+      ],
+      "properties": {
+        "semi_major": {
+          "type": "integer",
+          "description": "Half of length of the major axis, i.e. distance between the centre point and major axis point of the position accuracy ellipse.",
+          "default": 4095,
+          "minimum": 0,
+          "maximum": 4095
+        },
+        "semi_minor": {
+          "type": "integer",
+          "description": "Half of length of the minor axis, i.e. distance between the centre point and minor axis point of the position accuracy ellipse.",
+          "default": 4095,
+          "minimum": 0,
+          "maximum": 4095
+        },
+        "semi_major_orientation": {
+          "type": "integer",
+          "description": "Orientation direction of the ellipse major axis of the position accuracy ellipse with regards to the WGS84 north.",
+          "default": 3601,
+          "minimum": 0,
+          "maximum": 3601
+        }
+      }
+    },
+    "latitude_value": {
+      "type": "integer",
+      "description": "Latitude of the geographical point.",
+      "default": 900000001,
+      "minimum": -900000000,
+      "maximum": 900000001
+    },
+    "longitude_value": {
+      "type": "integer",
+      "description": "Longitude of the geographical point.",
+      "default": 1800000001,
+      "minimum": -1800000000,
+      "maximum": 1800000001
+    },
+    "altitude": {
+      "type": "object",
+      "description": "Altitude and an altitude accuracy of the geographical point.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Altitude of a geographical point.",
+          "default": 800001,
+          "minimum": -100000,
+          "maximum": 800001
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Confidence level of the altitudeValue.",
+          "default": 15,
+          "minimum": 0,
+          "maximum": 15
+        }
+      }
+    },
+    "reference_position": {
+      "type": "object",
+      "description": "Position within a geographic coordinate system together with a confidence ellipse.",
+      "required": [
+        "latitude",
+        "longitude",
+        "position_confidence_ellipse",
+        "altitude"
+      ],
+      "properties": {
+        "latitude": {
+          "$ref": "#/$defs/latitude_value"
+        },
+        "longitude": {
+          "$ref": "#/$defs/longitude_value"
+        },
+        "position_confidence_ellipse": {
+          "$ref": "#/$defs/pos_confidence_ellipse"
+        },
+        "altitude": {
+          "$ref": "#/$defs/altitude"
+        }
+      }
+    },
+    "information_quality": {
+      "type": "integer",
+      "description": "unavailable(0), lowest(1), highest(7).",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 7
+    },
+    "delta_reference_position": {
+      "type": "object",
+      "required": [
+        "delta_latitude",
+        "delta_longitude",
+        "delta_altitude"
+      ],
+      "properties": {
+        "delta_latitude": {
+          "type": "integer",
+          "description": "Offset latitude with regards to a defined latitude value. It may be used to describe a geographical point with regards to a specific reference geographical position (0.1 micro degree (10^-7 degree)).",
+          "default": 131072,
+          "minimum": -131071,
+          "maximum": 131072
+        },
+        "delta_longitude": {
+          "type:": "integer",
+          "description": "Offset longitude with regards to a defined longitude value. It may be used to describe a geographical point with regards to a specific reference geographical position (0.1 micro degree (10^-7 degree)).",
+          "default": 131072,
+          "minimum": -131071,
+          "maximum": 131072
+        },
+        "delta_altitude": {
+          "type": "integer",
+          "description": "Offset altitude with regards to a defined altitude value. It may be used to describe a geographical point with regards to a specific reference geographical position; Unit: centimeter; negativeOutOfRange(-12700), positiveOutOfRange(12799), unavailable(12800).",
+          "default": 12800,
+          "minimum": -12700,
+          "maximum": 12800
+        }
+      }
+    },
+    "traffic_participant_type": {
+      "description": "Type of a traffic participant. unknown(0), pedestrian(1), cyclist(2), moped(3), motorcycle(4), passengerCar(5), bus(6), lightTruck(7), heavyTruck(8), trailer(9), specialVehicles(10), tram(11), roadSideUnit(15).",
+      "type": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 255
+    },
+    "cause_code": {
+      "type": "object",
+      "description": "Representation of the cause code value of a traffic event.",
+      "required": [
+        "cause"
+      ],
+      "properties": {
+        "cause": {
+          "type": "integer",
+          "description": "The main cause of a detected event. trafficCondition (1), accident (2), roadworks (3), impassability (5), adverseWeatherCondition-Adhesion (6), aquaplaning (7), hazardousLocation-SurfaceCondition (9), hazardousLocation-ObstacleOnTheRoad (10), hazardousLocation-AnimalOnTheRoad (11), humanPresenceOnTheRoad (12), wrongWayDriving (14), rescueAndRecoveryWorkInProgress (15), adverseWeatherCondition-ExtremeWeatherCondition (17), adverseWeatherCondition-Visibility (18), adverseWeatherCondition-Precipitation (19), violence (20), slowVehicle (26), dangerousEndOfQueue (27), publicTransportVehicleApproaching (28), vehicleBreakdown (91), postCrash (92), humanProblem (93), stationaryVehicle (94), emergencyVehicleApproaching (95), hazardousLocation-DangerousCurve (96), collisionRisk (97), signalViolation (98), dangerousSituation (99), railwayLevelCrossing (100).",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "subcause": {
+          "type": "integer",
+          "description": "Subordinate cause of a detected event. trafficCondition (1): unavailable (0), increasedVolumeOfTraffic (1), trafficJamSlowlyIncreasing (2), trafficJamIncreasing (3), trafficJamStronglyIncreasing (4), trafficJam (5), trafficJamSlightlyDecreasing (6), trafficJamDecreasing (7), trafficJamStronglyDecreasing (8), trafficJamStable (9). accident (2): unavailable (0), multiVehicleAccident (1), heavyAccident (2), accidentInvolvingLorry (3), accidentInvolvingBus (4), accidentInvolvingHazardousMaterials (5), accidentOnOppositeLane (6), unsecuredAccident (7), assistanceRequested (8). roadworks (3): unavailable (0), majorRoadworks (1), roadMarkingWork (2), slowMovingRoadMaintenance (3), shortTermStationaryRoadworks (4), streetCleaning (5), winterService (6), setupPhase (7), remodellingPhase (8), dismantlingPhase (9). impassability (5): unavailable (0), flooding (1), dangerOfAvalanches (2), blastingOfAvalanches (3), landslips (4), chemicalSpillage (5), winterClosure (6), sinkhole (7), earthquakeDamage (8), fallenTrees (9), rockfalls (10), sewerOverflow (11), stormDamage (12), subsidence (13), burstPipe (14), burstWaterMain (15), fallenPowerCables (16), snowDrifts (17). adverseWeatherCondition-Adhesion (6): unavailable (0), heavyFrostOnRoad (1), fuelOnRoad (2), mudOnRoad (3), snowOnRoad (4), iceOnRoad (5), blackIceOnRoad (6), oilOnRoad (7), looseChippings (8), instantBlackIce (9), roadsSalted (10). aquaplaning (7): none. hazardousLocation-SurfaceCondition (9): unavailable (0), rockfalls (1), earthquakeDamage (2), sewerCollapse (3), subsidence (4), snowDrifts (5), stormDamage (6), burstPipe (7), volcanoEruption (8), fallingIce (9), fire (10), flooding (11). hazardousLocation-ObstacleOnTheRoad (10): unavailable (0), shedLoad (1), partsOfVehicles (2), partsOfTyres (3), bigObjects (4), fallenTrees (5), hubCaps (6), waitingVehicles (7). hazardousLocation-AnimalOnTheRoad (11): unavailable (0), wildAnimals (1), herdOfAnimals (2), smallAnimals (3), largeAnimals (4), wildAnimalsSmall (5), wildAnimalsLarge (6), domesticAnimals (7), domesticAnimalsSmall (8), domesticAnimalsLarge (9). humanPresenceOnTheRoad (12): unavailable (0), childrenOnRoadway (1), cyclistOnRoadway (2), motorcyclistOnRoadway (3), pedestrian (4), ordinary-pedestrian (5), road-worker (6), first-responder (7), lightVruVehicle (8), bicyclist (9), wheelchair-user (10), horse-and-rider (11), rollerskater (12), e-scooter (13), personal-transporter (14), pedelec (15), speed-pedelec (16), ptw (17), moped (18), motorcycle (19), motorcycle-and-sidecar-right (20), motorcycle-and-sidecar-left (21). wrongWayDriving (14): unavailable (0), wrongLane (1), wrongDirection (2). rescueAndRecoveryWorkInProgress (15): unavailable (0), emergencyVehicles (1), rescueHelicopterLanding (2), policeActivityOngoing (3), medicalEmergencyOngoing (4), childAbductionInProgress (5), prioritizedVehicle (6), rescueAndRecoveryVehicle (7). adverseWeatherCondition-ExtremeWeatherCondition (17): unavailable (0), strongWinds (1), damagingHail (2), hurricane (3), thunderstorm (4), tornado (5), blizzard (6). adverseWeatherCondition-Visibility (18): unavailable (0), fog (1), smoke (2), heavySnowfall (3), heavyRain (4), heavyHail (5), lowSunGlare (6), sandstorms (7), swarmsOfInsects (8). adverseWeatherCondition-Precipitation (19): unavailable (0), heavyRain (1), heavySnowfall (2), softHail (3). violence (20): none. slowVehicle (26): none. dangerousEndOfQueue (27): unavailable (0), suddenEndOfQueue (1), queueOverHill (2), queueAroundBend (3), queueInTunnel (4). publicTransportVehicleApproaching (28): none. vehicleBreakdown (91): unavailable (0), lackOfFuel (1), lackOfBatteryPower (2), engineProblem (3), transmissionProblem (4), engineCoolingProblem (5), brakingSystemProblem (6), steeringProblem (7), tyrePuncture (8), tyrePressureProblem (9), vehicleOnFire (10). postCrash (92): unavailable (0), accidentWithoutECallTriggered (1), accidentWithECallManuallyTriggered (2), accidentWithECallAutomaticallyTriggered (3), accidentWithECallTriggeredWithoutAccessToCellularNetwork (4). humanProblem (93): unavailable (0), glycemiaProblem (1), heartProblem (2). stationaryVehicle (94): unavailable (0), humanProblem (1), vehicleBreakdown (2), postCrash (3), publicTransportStop (4), carryingDangerousGoods (5), vehicleOnFire (6). emergencyVehicleApproaching (95): unavailable (0), emergencyVehicleApproaching (1), prioritizedVehicleApproaching (2). hazardousLocation-DangerousCurve (96): unavailable (0), dangerousLeftTurnCurve (1), dangerousRightTurnCurve (2), multipleCurvesStartingWithUnknownTurningDirection (3), multipleCurvesStartingWithLeftTurn (4), multipleCurvesStartingWithRightTurn (5). collisionRisk (97): unavailable (0), longitudinalCollisionRisk (1), crossingCollisionRisk (2), lateralCollisionRisk (3), vulnerableRoadUser (4), collisionRiskWithPedestrian (5), collisionRiskWithCyclist (6), collisionRiskWithMotorVehicle (7). signalViolation (98): unavailable (0), stopSignViolation (1), trafficLightViolation (2), turningRegulationViolation (3). dangerousSituation (99): unavailable (0), emergencyElectronicBrakeEngaged (1), preCrashSystemEngaged (2), espEngaged (3), absEngaged (4), aebEngaged (5), brakeWarningEngaged (6), collisionRiskWarningEngaged (7). railwayLevelCrossing (100): unavailable (0), doNotCrossAbnormalSituation (1), closed (2), unguarded (3), nominal (4), trainApproaching (5).",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 255
+        }
+      }
+    }
+  }
+}

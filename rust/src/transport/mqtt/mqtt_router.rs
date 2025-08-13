@@ -75,7 +75,7 @@ impl MqttRouter {
                                             }
                                         }
                                         (None, None) => {
-                                            warn!("No route found for topic '{}'", topic)
+                                            warn!("No route found for topic '{topic}'")
                                         }
                                     }
                                 }
@@ -86,53 +86,53 @@ impl MqttRouter {
                             };
                         }
                         Err(e) => {
-                            warn!("Failed to parse topic as UTF-8: {:?}", e);
+                            warn!("Failed to parse topic as UTF-8: {e:?}");
                         }
                     }
                 }
                 Incoming::PubAck(packet) => {
-                    trace!("Publish Ack received for the packet {:?}", packet)
+                    trace!("Publish Ack received for the packet {packet:?}")
                 }
                 Incoming::PubRec(packet) => {
-                    trace!("Publish Rec received for the packet {:?}", packet)
+                    trace!("Publish Rec received for the packet {packet:?}")
                 }
                 Incoming::PubRel(packet) => {
-                    trace!("Publish Rel received for the packet {:?}", packet)
+                    trace!("Publish Rel received for the packet {packet:?}")
                 }
                 Incoming::PubComp(packet) => {
-                    trace!("Publish Comp received for the packet {:?}", packet)
+                    trace!("Publish Comp received for the packet {packet:?}")
                 }
                 Incoming::SubAck(suback) => trace!(
                     "Subscription Ack received for the packet {:?}: {:?}",
                     suback.pkid, suback.return_codes
                 ),
                 Incoming::UnsubAck(packet) => {
-                    trace!("Unsubscription Ack received for the packet {:?}", packet)
+                    trace!("Unsubscription Ack received for the packet {packet:?}")
                 }
                 Incoming::ConnAck(packet) => {
-                    trace!("Con Ack Ack received for the packet {:?}", packet)
+                    trace!("Con Ack Ack received for the packet {packet:?}")
                 }
                 Incoming::Subscribe(packet) => {
-                    trace!("Subscribe received for the packet {:?}", packet)
+                    trace!("Subscribe received for the packet {packet:?}")
                 }
                 Incoming::Unsubscribe(packet) => {
-                    trace!("Unsubscribe received for the packet {:?}", packet)
+                    trace!("Unsubscribe received for the packet {packet:?}")
                 }
                 Incoming::PingReq(packet) => {
-                    trace!("Ping request received: {:?}", packet)
+                    trace!("Ping request received: {packet:?}")
                 }
                 Incoming::PingResp(packet) => {
-                    trace!("Ping response received: {:?}", packet)
+                    trace!("Ping response received: {packet:?}")
                 }
                 // FIXME log about last will and login
                 Incoming::Connect(packet, _last_will, _login) => {
-                    info!("Connect received for the packet {:?}", packet)
+                    info!("Connect received for the packet {packet:?}")
                 }
                 Incoming::Disconnect(packet) => {
-                    info!("Disconnect received: {:?}", packet)
+                    info!("Disconnect received: {packet:?}")
                 }
             },
-            Event::Outgoing(outgoing) => trace!("Outgoing: {:?}", outgoing),
+            Event::Outgoing(outgoing) => trace!("Outgoing: {outgoing:?}"),
         }
         None
     }

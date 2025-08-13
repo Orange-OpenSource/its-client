@@ -20,8 +20,17 @@ use rumqttc::v5::MqttOptions;
 use std::ops::Deref;
 
 /// Represents the MQTT configuration.
+#[derive(Clone, Debug)]
 pub struct MqttConfiguration {
     pub mqtt_options: MqttOptions,
+}
+
+impl Default for MqttConfiguration {
+    fn default() -> Self {
+        Self {
+            mqtt_options: MqttOptions::new("default_client", "localhost", 1883),
+        }
+    }
 }
 
 impl TryFrom<&Properties> for MqttConfiguration {
@@ -31,7 +40,7 @@ impl TryFrom<&Properties> for MqttConfiguration {
     ///
     /// # Arguments
     ///
-    /// * `properties` - The properties to create the configuration from.
+    /// * `properties` - Properties to create the configuration from.
     ///
     /// # Returns
     ///
@@ -139,7 +148,7 @@ mod tests {
         let mut properties = create_properties();
         properties.insert("username", "user".to_string());
         let result = MqttConfiguration::try_from(&properties);
-        assert!(matches!(result, Err(ConfigurationError::NoPassword)));
+        assert!(matches!(result, Err(NoPassword)));
     }
 
     #[test]

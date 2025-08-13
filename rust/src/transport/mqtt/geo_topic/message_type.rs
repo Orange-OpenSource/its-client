@@ -60,8 +60,7 @@ impl From<&str> for MessageType {
             "map" => MessageType::MAP,
             "spat" => MessageType::SPAT,
             element => panic!(
-                "Unable to convert from the element {} as a MessageType, use from_str instead",
-                element
+                "Unable to convert from the element {element} as a MessageType, use from_str instead"
             ),
         }
     }

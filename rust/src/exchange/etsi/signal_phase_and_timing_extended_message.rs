@@ -32,16 +32,83 @@ use std::hash::{Hash, Hasher};
 #[derive(Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct SignalPhaseAndTimingExtendedMessage {
-    /// Intersection id
-    pub id: u64,
-    /// Reference time of the signal state timing present in the message
+    /// Protocol version of the message.
+    pub protocol_version: u8,
+    /// Station ID of the traffic light controller that sent the message.
+    pub station_id: u32,
+
+    /// Optional fields
+    /// Reference time of the signal state timing present in the message.
+    // FIXME check if it's realy a "minute_of_the_year". If yes...fix this code.
     pub timestamp: Option<u64>,
+    /// Optional ID of the station that sent the message.
     pub sending_station_id: Option<u64>,
+    /// Optional region ID of the traffic light controller that sent the message.
     pub region: Option<u64>,
+    /// Optional revision of the message.
     pub revision: Option<u32>,
-    pub protocol_version: Option<u16>,
-    /// State list for each signal group ot the intersection
+    /// State list for each signal group ot the intersection.
     pub states: Vec<State>,
+}
+
+#[derive(Serialize, Deserialize_repr, PartialEq, Eq, Debug, Clone, Hash, Copy)]
+#[repr(u8)]
+pub enum TrafficLightState {
+    /// The traffic light state is not available.
+    Unavailable = 0,
+    /// The traffic light is red.
+    Dark = 1,
+    /// The traffic light is red and the vehicle must stop.
+    StopThenProceed = 2,
+    /// The traffic light is red and the vehicle must stop and remain.
+    StopAndRemain = 3,
+    /// The traffic light is in the pre-movement phase, allowing vehicles to prepare to move.
+    PreMovement = 4,
+    /// The traffic light allows vehicles to move permissively.
+    PermissiveMovementAllowed = 5,
+    /// The traffic light allows vehicles to move with protected movement.
+    ProtectedMovementAllowed = 6,
+    /// The traffic light allows vehicles to move with permissive clearance.
+    PermissiveClearance = 7,
+    /// The traffic light allows vehicles to move with protected clearance.
+    ProtectedClearance = 8,
+    /// The traffic light is in a caution state, indicating potential conflicting traffic.
+    CautionConflictingTraffic = 9,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct State {
+    /// ID of the signal group this state belongs to.
+    pub id: u64,
+    /// State of the signal group.
+    pub state: TrafficLightState,
+    /// Absolute time of the next state change on this signal group (in milliseconds)
+    /// (this is a timestamp since 1st January 1970)
+    pub next_change: u64,
+
+    // optional fields
+    /// Time before change on this signal group based on the server clock (in milliseconds).
+    ///
+    /// - Present only if the timing is known
+    /// - Can be negative
+    pub ttc: Option<i32>,
+    /// List of the next phases **if supported by the traffic light controller**
+    #[serde(default)]
+    pub next_changes: Vec<NextChange>,
+}
+
+#[derive(Serialize, Deserialize, Hash, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct NextChange {
+    /// State of the next change.
+    pub state: TrafficLightState,
+    /// Time before change on this signal group based on the server clock (in milliseconds).
+    pub next_change: u64,
+
+    // optional fields
+    /// Time to change on this signal group based on the server clock (in milliseconds).
+    pub ttc: Option<i32>,
 }
 
 impl Content for SignalPhaseAndTimingExtendedMessage {
@@ -50,7 +117,7 @@ impl Content for SignalPhaseAndTimingExtendedMessage {
     }
 
     fn appropriate(&mut self, timestamp: u64, new_station_id: u32) {
-        self.id = new_station_id.into();
+        self.station_id = new_station_id;
         self.timestamp = Some(timestamp);
     }
 
@@ -72,12 +139,12 @@ impl fmt::Display for SignalPhaseAndTimingExtendedMessage {
         write!(
             f,
             "{{ {}, {}, {}, {}, {}, {}, [{}] }}",
-            self.id,
+            self.station_id,
             self.timestamp.unwrap_or_default(),
             self.sending_station_id.unwrap_or_default(),
             self.region.unwrap_or_default(),
             self.revision.unwrap_or_default(),
-            self.protocol_version.unwrap_or_default(),
+            self.protocol_version,
             self.states
                 .iter()
                 .map(|s| s.to_string())
@@ -89,60 +156,27 @@ impl fmt::Display for SignalPhaseAndTimingExtendedMessage {
 
 impl fmt::Debug for SignalPhaseAndTimingExtendedMessage {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{self}")
     }
 }
 
 impl PartialEq<Self> for SignalPhaseAndTimingExtendedMessage {
     fn eq(&self, other: &Self) -> bool {
-        self.id.eq(&other.id) && self.timestamp.eq(&other.timestamp)
+        self.station_id.eq(&other.station_id) && self.timestamp.eq(&other.timestamp)
     }
 }
 
 impl Hash for SignalPhaseAndTimingExtendedMessage {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
+        self.station_id.hash(state);
         self.timestamp.hash(state);
     }
-}
-
-#[derive(Serialize, Deserialize_repr, PartialEq, Eq, Debug, Clone, Hash, Copy)]
-#[repr(u8)]
-pub enum TrafficLightState {
-    Unavailable = 0,
-    Dark = 1,
-    StopThenProceed = 2,
-    StopAndRemain = 3,
-    PreMovement = 4,
-    PermissiveMovementAllowed = 5,
-    ProtectedMovementAllowed = 6,
-    PermissiveClearance = 7,
-    ProtectedClearance = 8,
-    CautionConflictingTraffic = 9,
 }
 
 impl fmt::Display for TrafficLightState {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{:?}", *self)
     }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct State {
-    pub id: u64,
-    pub state: TrafficLightState,
-    /// Time before change on this signal group based on the server clock (in milliseconds)
-    ///
-    /// - Present only if the timing is known
-    /// - Can be negative
-    pub ttc: Option<i32>,
-    /// Absolute time of the next state change on this signal group (in milliseconds)
-    /// (this is a timestamp since 1st January 1970)
-    pub next_change: u64,
-    /// List of the next phases **if supported by the traffic light controller**
-    #[serde(default)]
-    pub next_changes: Vec<NextChange>,
 }
 
 impl PartialEq for State {
@@ -178,16 +212,8 @@ impl fmt::Display for State {
 
 impl fmt::Debug for State {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{self}")
     }
-}
-
-#[derive(Serialize, Deserialize, Hash, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct NextChange {
-    pub state: TrafficLightState,
-    pub ttc: Option<i32>,
-    pub next_change: u64,
 }
 
 impl fmt::Display for NextChange {
@@ -212,7 +238,8 @@ mod test {
     fn test_root_optional_fields() {
         let data = r#"
         {
-            "id": 11,
+            "stationId": 11,
+            "protocolVersion": 1,
             "states":
             [
                 {
@@ -233,12 +260,12 @@ mod test {
 
         match serde_json::from_str::<SignalPhaseAndTimingExtendedMessage>(data) {
             Ok(spat) => {
-                assert_eq!(spat.id, 11);
+                assert_eq!(spat.station_id, 11);
                 assert!(spat.timestamp.is_none());
                 assert!(spat.sending_station_id.is_none());
                 assert!(spat.region.is_none());
                 assert!(spat.revision.is_none());
-                assert!(spat.protocol_version.is_none());
+                assert_eq!(spat.protocol_version, 1);
                 assert_eq!(spat.states.len(), 1);
                 assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
@@ -252,7 +279,7 @@ mod test {
                 assert_eq!(state.next_changes[0].next_change, 1000000030);
             }
             Err(e) => {
-                panic!("{:?}", e);
+                panic!("{e:?}");
             }
         }
     }
@@ -261,7 +288,7 @@ mod test {
     fn test_ttc_is_optional_in_state() {
         let data = r#"
         {
-            "id": 11,
+            "stationId": 11,
             "timestamp": 123456789,
             "sendingStationId": 12,
             "region": 13,
@@ -287,12 +314,12 @@ mod test {
 
         match serde_json::from_str::<SignalPhaseAndTimingExtendedMessage>(data) {
             Ok(spat) => {
-                assert_eq!(spat.id, 11);
+                assert_eq!(spat.station_id, 11);
                 assert_eq!(spat.timestamp.unwrap(), 123456789);
                 assert_eq!(spat.sending_station_id.unwrap(), 12);
                 assert_eq!(spat.region.unwrap(), 13);
                 assert_eq!(spat.revision.unwrap(), 14);
-                assert_eq!(spat.protocol_version.unwrap(), 15);
+                assert_eq!(spat.protocol_version, 15);
                 assert_eq!(spat.states.len(), 1);
                 assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
@@ -306,7 +333,7 @@ mod test {
                 assert_eq!(state.next_changes[0].next_change, 1000000030);
             }
             Err(e) => {
-                panic!("{:?}", e);
+                panic!("{e:?}");
             }
         }
     }
@@ -315,7 +342,7 @@ mod test {
     fn test_next_changes_is_optional_in_state() {
         let data = r#"
         {
-            "id": 11,
+            "stationId": 11,
             "timestamp": 123456789,
             "sendingStationId": 12,
             "region": 13,
@@ -333,14 +360,18 @@ mod test {
         }
         "#;
 
+        assert_deserialisation(data);
+    }
+
+    fn assert_deserialisation(data: &str) {
         match serde_json::from_str::<SignalPhaseAndTimingExtendedMessage>(data) {
             Ok(spat) => {
-                assert_eq!(spat.id, 11);
+                assert_eq!(spat.station_id, 11);
                 assert_eq!(spat.timestamp.unwrap(), 123456789);
                 assert_eq!(spat.sending_station_id.unwrap(), 12);
                 assert_eq!(spat.region.unwrap(), 13);
                 assert_eq!(spat.revision.unwrap(), 14);
-                assert_eq!(spat.protocol_version.unwrap(), 15);
+                assert_eq!(spat.protocol_version, 15);
                 assert_eq!(spat.states.len(), 1);
                 assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
@@ -351,7 +382,7 @@ mod test {
                 assert_eq!(state.next_changes.len(), 0);
             }
             Err(e) => {
-                panic!("{:?}", e);
+                panic!("{e:?}");
             }
         }
     }
@@ -360,7 +391,7 @@ mod test {
     fn test_next_changes_can_be_empty_in_state() {
         let data = r#"
         {
-            "id": 11,
+            "stationId": 11,
             "timestamp": 123456789,
             "sendingStationId": 12,
             "region": 13,
@@ -379,34 +410,14 @@ mod test {
         }
         "#;
 
-        match serde_json::from_str::<SignalPhaseAndTimingExtendedMessage>(data) {
-            Ok(spat) => {
-                assert_eq!(spat.id, 11);
-                assert_eq!(spat.timestamp.unwrap(), 123456789);
-                assert_eq!(spat.sending_station_id.unwrap(), 12);
-                assert_eq!(spat.region.unwrap(), 13);
-                assert_eq!(spat.revision.unwrap(), 14);
-                assert_eq!(spat.protocol_version.unwrap(), 15);
-                assert_eq!(spat.states.len(), 1);
-                assert!(!spat.states.is_empty());
-                let state = spat.states.first().unwrap();
-                assert_eq!(state.id, 16);
-                assert_eq!(state.state, TrafficLightState::StopAndRemain);
-                assert_eq!(state.ttc.unwrap(), 30);
-                assert_eq!(state.next_change, 1000000000);
-                assert_eq!(state.next_changes.len(), 0);
-            }
-            Err(e) => {
-                panic!("{:?}", e);
-            }
-        }
+        assert_deserialisation(data);
     }
 
     #[test]
     fn test_ttc_is_optional_in_next_state() {
         let data = r#"
         {
-            "id": 11,
+            "stationId": 11,
             "timestamp": 123456789,
             "sendingStationId": 12,
             "region": 13,
@@ -433,12 +444,12 @@ mod test {
 
         match serde_json::from_str::<SignalPhaseAndTimingExtendedMessage>(data) {
             Ok(spat) => {
-                assert_eq!(spat.id, 11);
+                assert_eq!(spat.station_id, 11);
                 assert_eq!(spat.timestamp.unwrap(), 123456789);
                 assert_eq!(spat.sending_station_id.unwrap(), 12);
                 assert_eq!(spat.region.unwrap(), 13);
                 assert_eq!(spat.revision.unwrap(), 14);
-                assert_eq!(spat.protocol_version.unwrap(), 15);
+                assert_eq!(spat.protocol_version, 15);
                 assert_eq!(spat.states.len(), 1);
                 assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
@@ -452,7 +463,7 @@ mod test {
                 assert_eq!(state.next_changes[0].next_change, 1000000030);
             }
             Err(e) => {
-                panic!("{:?}", e);
+                panic!("{e:?}");
             }
         }
     }
@@ -461,7 +472,7 @@ mod test {
     fn test_complete_deserialization() {
         let data = r#"
         {
-            "id": 11,
+            "stationId": 11,
             "timestamp": 123456789,
             "sendingStationId": 12,
             "region": 13,
@@ -494,12 +505,12 @@ mod test {
 
         match serde_json::from_str::<SignalPhaseAndTimingExtendedMessage>(data) {
             Ok(spat) => {
-                assert_eq!(spat.id, 11);
+                assert_eq!(spat.station_id, 11);
                 assert_eq!(spat.timestamp.unwrap(), 123456789);
                 assert_eq!(spat.sending_station_id.unwrap(), 12);
                 assert_eq!(spat.region.unwrap(), 13);
                 assert_eq!(spat.revision.unwrap(), 14);
-                assert_eq!(spat.protocol_version.unwrap(), 15);
+                assert_eq!(spat.protocol_version, 15);
                 assert_eq!(spat.states.len(), 1);
                 assert!(!spat.states.is_empty());
                 let state = spat.states.first().unwrap();
@@ -521,7 +532,7 @@ mod test {
                 assert_eq!(state.next_changes[1].ttc.unwrap(), 30);
             }
             Err(e) => {
-                panic!("{:?}", e);
+                panic!("{e:?}");
             }
         }
     }
@@ -531,7 +542,7 @@ mod test {
         let data = r#"{
             "sendingStationId": 49828819,
             "protocolVersion": 1,
-            "id": 243,
+            "stationId": 243,
             "region": 751,
             "timestamp": 1661861522210,
             "revision": 1,
@@ -960,10 +971,10 @@ mod test {
 
         match serde_json::from_str::<SignalPhaseAndTimingExtendedMessage>(data) {
             Ok(spat) => {
-                assert_eq!(spat.id, 243);
+                assert_eq!(spat.station_id, 243);
             }
             Err(e) => {
-                panic!("Failed to deserialize SPATEM: '{:?}'", e);
+                panic!("Failed to deserialize SPATEM: '{e:?}'");
             }
         }
     }

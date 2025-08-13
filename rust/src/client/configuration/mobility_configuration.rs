@@ -22,6 +22,7 @@ const USE_RESPONSIBILITY_FIELD: &str = "use_responsibility";
 
 const THREAD_COUNT_FIELD: &str = "thread_count";
 
+#[derive(Clone, Debug, Default)]
 pub struct MobilityConfiguration {
     pub source_uuid: String,
     pub station_id: u32,

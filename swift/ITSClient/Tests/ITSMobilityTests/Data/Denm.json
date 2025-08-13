@@ -1,40 +1,40 @@
 {
-    "type": "denm",
-    "origin": "mec_application",
-    "version": "1.1.1",
-    "source_uuid": "v2x_87654321",
-    "timestamp": 1742984503586,
-    "message": {
-        "protocol_version": 1,
-        "station_id": 654321,
-        "management_container": {
-            "action_id": {
-                "originating_station_id": 10000,
-                "sequence_number": 1
-            },
-            "detection_time": 670069303586,
-            "reference_time": 670069303586,
-            "event_position": {
-                "latitude": 435657439,
-                "longitude": 14681494,
-                "altitude": 4600
-            },
-            "relevance_distance": 0,
-            "relevance_traffic_direction": 1,
-            "validity_duration": 10,
-            "transmission_interval": 200,
-            "station_type": 5
-        },
-        "situation_container": {
-            "event_type": {
-                "cause": 26,
-                "subcause": 5,
-            }
-        },
-        "location_container": {
-            "event_speed": 14,
-            "event_position_heading": 1453,
-            "traces": []
-        }
+  "type": "denm",
+  "origin": "mec_application",
+  "version": "1.1.1",
+  "source_uuid": "v2x_87654321",
+  "timestamp": 1742984503586,
+  "message": {
+    "protocol_version": 1,
+    "station_id": 654321,
+    "management_container": {
+      "action_id": {
+        "originating_station_id": 10000,
+        "sequence_number": 1
+      },
+      "detection_time": 670069303586,
+      "reference_time": 670069303586,
+      "event_position": {
+        "latitude": 435657439,
+        "longitude": 14681494,
+        "altitude": 4600
+      },
+      "relevance_distance": 0,
+      "relevance_traffic_direction": 1,
+      "validity_duration": 10,
+      "transmission_interval": 200,
+      "station_type": 5
+    },
+    "situation_container": {
+      "event_type": {
+        "cause": 26,
+        "subcause": 5
+      }
+    },
+    "location_container": {
+      "event_speed": 14,
+      "event_position_heading": 1453,
+      "traces": []
     }
+  }
 }

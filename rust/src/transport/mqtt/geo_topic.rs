@@ -113,7 +113,7 @@ impl PartialEq<String> for GeoTopic {
         match GeoTopic::from_str(other) {
             Ok(topic) => self == &topic,
             Err(error) => {
-                error!("We can't compare the topic with a bad string: {}", error);
+                error!("We can't compare the topic with a bad string: {error}");
                 false
             }
         }
@@ -131,8 +131,7 @@ impl From<&str> for GeoTopic {
         match GeoTopic::from_str(topic) {
             Ok(topic) => topic,
             Err(error) => panic!(
-                "Unable to convert the String {} as a Topic: {}, use from_str instead",
-                topic, error
+                "Unable to convert the String {topic} as a Topic: {error}, use from_str instead"
             ),
         }
     }
@@ -162,7 +161,7 @@ impl FromStr for GeoTopic {
                         Ok(tile) => topic_struct.geo_extension.push(tile),
                         Err(e) => {
                             warn!("Unable to parse the tile {element}");
-                            debug!("Parsing error: {}", e);
+                            debug!("Parsing error: {e}");
                             return Err(GeoTopicError::InvalidTile(element.to_string()));
                         }
                     },
@@ -189,23 +188,44 @@ mod tests {
     use crate::transport::mqtt::geo_topic::message_type::MessageType;
     use crate::transport::mqtt::geo_topic::queue::Queue;
 
+    /// Helper function to verify common GeoTopic parsing assertions
+    fn assert_topic_parsed_correctly(
+        topic: &GeoTopic,
+        expected_prefix: &str,
+        expected_queue: Queue,
+        expected_suffix: &str,
+        expected_message_type: MessageType,
+        expected_uuid: &str,
+        expected_tiles_len: usize,
+    ) {
+        assert_eq!(topic.prefix, expected_prefix.to_string());
+        assert_eq!(topic.queue, expected_queue);
+        assert_eq!(topic.suffix, expected_suffix.to_string());
+        assert_eq!(topic.message_type, expected_message_type);
+        assert_eq!(topic.uuid, expected_uuid.to_string());
+        assert_eq!(topic.geo_extension.tiles.len(), expected_tiles_len);
+    }
+
     #[test]
     fn test_cam_topic_from_str() {
         let topic_string = "5GCroCo/outQueue/v2x/cam/car_1/0/1/2/3";
 
         match GeoTopic::from_str(topic_string) {
             Ok(topic) => {
-                assert_eq!(topic.prefix, "5GCroCo".to_string());
-                assert_eq!(topic.queue, Queue::Out);
-                assert_eq!(topic.suffix, "v2x".to_string());
-                assert_eq!(topic.message_type, MessageType::CAM);
-                assert_eq!(topic.uuid, "car_1".to_string());
-                assert_eq!(topic.geo_extension.tiles.len(), 4);
+                assert_topic_parsed_correctly(
+                    &topic,
+                    "5GCroCo",
+                    Queue::Out,
+                    "v2x",
+                    MessageType::CAM,
+                    "car_1",
+                    4,
+                );
                 for i in 0..4 {
                     assert_eq!(topic.geo_extension.tiles[i], Tile::from(i as u8));
                 }
             }
-            Err(e) => panic!("Failed to create GeoTopic from string: {}", e),
+            Err(e) => panic!("Failed to create GeoTopic from string: {e}"),
         }
     }
 
@@ -216,14 +236,17 @@ mod tests {
 
         match GeoTopic::from_str(topic_string) {
             Ok(topic) => {
-                assert_eq!(topic.prefix, "5GCroCo".to_string());
-                assert_eq!(topic.queue, Queue::Out);
-                assert_eq!(topic.suffix, "v2x".to_string());
-                assert_eq!(topic.message_type, MessageType::DENM);
-                assert_eq!(topic.uuid, "wse_app_bcn1".to_string());
-                assert_eq!(topic.geo_extension.tiles.len(), 22);
+                assert_topic_parsed_correctly(
+                    &topic,
+                    "5GCroCo",
+                    Queue::Out,
+                    "v2x",
+                    MessageType::DENM,
+                    "wse_app_bcn1",
+                    22,
+                );
             }
-            Err(e) => panic!("Failed to create GeoTopic from string: {}", e),
+            Err(e) => panic!("Failed to create GeoTopic from string: {e}"),
         }
     }
 
@@ -233,14 +256,17 @@ mod tests {
 
         match GeoTopic::from_str(topic_string) {
             Ok(topic) => {
-                assert_eq!(topic.prefix, "5GCroCo".to_string());
-                assert_eq!(topic.queue, Queue::Out);
-                assert_eq!(topic.suffix, "v2x".to_string());
-                assert_eq!(topic.message_type, MessageType::INFO);
-                assert_eq!(topic.uuid, "broker".to_string());
-                assert_eq!(topic.geo_extension.tiles.len(), 0);
+                assert_topic_parsed_correctly(
+                    &topic,
+                    "5GCroCo",
+                    Queue::Out,
+                    "v2x",
+                    MessageType::INFO,
+                    "broker",
+                    0,
+                );
             }
-            Err(e) => panic!("Failed to create GeoTopic from string: {}", e),
+            Err(e) => panic!("Failed to create GeoTopic from string: {e}"),
         }
     }
 
@@ -250,17 +276,20 @@ mod tests {
 
         match GeoTopic::from_str(topic_string) {
             Ok(topic) => {
-                assert_eq!(topic.prefix, "5GCroCo".to_string());
-                assert_eq!(topic.queue, Queue::In);
-                assert_eq!(topic.suffix, "v2x".to_string());
-                assert_eq!(topic.message_type, MessageType::CAM);
-                assert_eq!(topic.uuid, "car_1".to_string());
-                assert_eq!(topic.geo_extension.tiles.len(), 4);
+                assert_topic_parsed_correctly(
+                    &topic,
+                    "5GCroCo",
+                    Queue::In,
+                    "v2x",
+                    MessageType::CAM,
+                    "car_1",
+                    4,
+                );
                 for i in 0..4 {
                     assert_eq!(topic.geo_extension.tiles[i], Tile::from(i as u8));
                 }
             }
-            Err(e) => panic!("Failed to create GeoTopic from string: {}", e),
+            Err(e) => panic!("Failed to create GeoTopic from string: {e}"),
         }
     }
 }

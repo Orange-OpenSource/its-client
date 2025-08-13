@@ -9,101 +9,227 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+use crate::exchange::etsi::acceleration::{Acceleration, AccelerationMagnitude};
+use crate::exchange::etsi::angle::Angle;
+use crate::exchange::etsi::collective_perception_message::MapReference;
+use crate::exchange::etsi::coordinate::CartesianCoordinate;
+use crate::exchange::etsi::longitudinal_lane_position::LongitudinalLanePosition;
+use crate::exchange::etsi::object_dimension::ObjectDimension;
+use crate::exchange::etsi::shape::Shape;
+use crate::exchange::etsi::speed::Speed;
+use crate::exchange::etsi::velocity::Velocity;
 use serde::{Deserialize, Serialize};
 
-/// Represents a perceived object detected by sensors, including its position, speed,
-/// classification, and other attributes.
+/// Represents a Perceived Object (PO) according to an ETSI standard.
+///
+/// This message is used to describe information on a unique element around itself.
+/// It implements the schema defined in the [CPM version 2.1.0][1].
+///
+/// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/cpm/cpm_schema_2-1-0.json#L315
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PerceivedObject {
-    /// Unique identifier for the detected object (mandatory).
-    pub object_id: u8,
-    /// Time of measurement in milliseconds relative to the message's generation time (mandatory).
-    pub time_of_measurement: i16,
-    /// X distance from the reference point in decimeters (mandatory).
-    pub x_distance: i32,
-    /// Y distance from the reference point in decimeters (mandatory).
-    pub y_distance: i32,
-    /// Z distance from the reference point in decimeters (optional).
-    pub z_distance: Option<i32>,
-    /// X speed in decimeters per second (mandatory).
-    pub x_speed: i16,
-    /// Y speed in decimeters per second (mandatory).
-    pub y_speed: i16,
-    /// Z speed in decimeters per second (optional).
-    pub z_speed: Option<i16>,
-    /// Age of the object in milliseconds, indicating how long it has been observed (mandatory).
-    pub object_age: u16,
-    /// Confidence levels for various attributes of the object (mandatory).
-    pub confidence: ObjectConfidence,
+    /// Time difference since the last generation of the message.
+    pub measurement_delta_time: i16,
+    /// Position of the perceived object in 3D Cartesian coordinates with confidence.
+    pub position: CartesianPosition3DWithConfidence,
 
-    /// Reference point of the object (optional).
-    pub object_ref_point: Option<u8>,
-    /// X acceleration in decimeters per second squared (optional).
-    pub x_acceleration: Option<i16>,
-    /// Y acceleration in decimeters per second squared (optional).
-    pub y_acceleration: Option<i16>,
-    /// Z acceleration in decimeters per second squared (optional).
-    pub z_acceleration: Option<i16>,
-    /// Roll angle of the object in centidegrees (optional).
-    pub roll_angle: Option<u16>,
-    /// Pitch angle of the object in centidegrees (optional).
-    pub pitch_angle: Option<u16>,
-    /// Yaw angle of the object in centidegrees (optional).
-    pub yaw_angle: Option<u16>,
-    /// Roll rate of the object in centidegrees per second (optional).
-    pub roll_rate: Option<i16>,
-    /// Pitch rate of the object in centidegrees per second (optional).
-    pub pitch_rate: Option<i16>,
-    /// Yaw rate of the object in centidegrees per second (optional).
-    pub yaw_rate: Option<i16>,
-    /// Roll acceleration of the object in centidegrees per second squared (optional).
-    pub roll_acceleration: Option<i16>,
-    /// Pitch acceleration of the object in centidegrees per second squared (optional).
-    pub pitch_acceleration: Option<i16>,
-    /// Yaw acceleration of the object in centidegrees per second squared (optional).
-    pub yaw_acceleration: Option<i16>,
-    /// Lower triangular correlation matrix columns for the object (optional).
+    // optional fields
+    /// Unique identifier for the perceived object.
+    pub object_id: Option<u16>,
+    /// Velocity of the perceived object in 3D with confidence.
+    pub velocity: Option<Velocity3dWithConfidence>,
+    /// Acceleration of the perceived object in 3D with confidence.
+    pub acceleration: Option<Acceleration3dWithConfidence>,
+    /// Angles of the perceived object in Euler angle with confidence.
+    pub angles: Option<EulerAnglesWithConfidence>,
+    /// Angular velocity of the perceived object around the Z-axis with confidence.
+    pub z_angular_velocity: Option<CartesianAngularVelocityComponent>,
+    /// List of lower triangular positive semidefinite matrices representing correlations.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    pub lower_triangular_correlation_matrix_columns: Vec<Vec<i8>>,
-    /// First planar dimension of the object in decimeters (optional).
-    pub planar_object_dimension_1: Option<u16>,
-    /// Second planar dimension of the object in decimeters (optional).
-    pub planar_object_dimension_2: Option<u16>,
-    /// Vertical dimension of the object in decimeters (optional).
-    pub vertical_object_dimension: Option<u16>,
-    /// List of sensor IDs that detected the object (optional).
+    pub lower_triangular_correlation_matrices: Vec<LowerTriangularPositiveSemidefiniteMatrix>,
+    /// Dimensions of the perceived object in 3D with confidence.
+    pub object_dimension_z: Option<ObjectDimension>,
+    /// Dimensions of the perceived object in 2D with confidence.
+    pub object_dimension_y: Option<ObjectDimension>,
+    /// Dimensions of the perceived object in 1D with confidence.
+    pub object_dimension_x: Option<ObjectDimension>,
+    /// Age of the perceived object in milliseconds.
+    pub object_age: Option<i16>,
+    /// Quality of the object perception, ranging from 0 to 255.
+    pub object_perception_quality: Option<u8>,
+    /// List of sensor IDs that detected the perceived object.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub sensor_id_list: Vec<u8>,
-    /// Dynamic status of the object (optional).
-    pub dynamic_status: Option<u8>,
-    /// Classification of the object, including its type and confidence (optional).
+    /// List of classifications for the perceived object.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub classification: Vec<ObjectClassification>,
-    /// Matched position of the object, such as lane ID and longitudinal position (optional).
-    pub matched_position: Option<MatchedPosition>,
+    /// Position of the perceived object on a map, if available.
+    pub map_position: Option<MapPosition>,
 }
 
-/// Represents the confidence levels for various attributes of a detected object.
-/// Each field indicates the confidence in the corresponding measurement or property.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ObjectConfidence {
-    /// Confidence in the x-distance measurement.
-    /// Range: 0 to 65535
-    pub x_distance: u16,
-    /// Confidence in the y-distance measurement.
-    /// Range: 0 to 65535
-    pub y_distance: u16,
-    /// Confidence in the x-speed measurement.
-    /// Range: 0 to 255
-    pub x_speed: u8,
-    /// Confidence in the y-speed measurement.
-    /// Range: 0 to 255
-    pub y_speed: u8,
-    /// Confidence in the overall object detection (optional).
-    /// Range: 0 to 255
-    pub object: Option<u8>,
+pub struct MapPosition {
+    // optional fields
+    /// Reference to the map segment where the perceived object is located.
+    pub map_reference: Option<MapReference>,
+    /// Identifier for the lane where the perceived object is located.
+    pub lane_id: Option<u8>,
+    /// Identifier for the connection associated with the perceived object.
+    pub connection_id: Option<u8>,
+    /// Longitudinal lane position of the perceived object, if available.
+    pub longitudinal_lane_position: Option<LongitudinalLanePosition>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LowerTriangularPositiveSemidefiniteMatrix {
+    /// Indicates which components are included in the matrix.
+    pub components_included_in_the_matrix: ComponentIncludedInTheMatrix,
+
+    // optional fields
+    /// The matrix itself, represented as a vector of vectors of i8.
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub matrix: Vec<Vec<i8>>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Copy, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ComponentIncludedInTheMatrix {
+    /// Indicates whether the X position is included in the matrix.
+    x_position: bool,
+    /// Indicates whether the Y position is included in the matrix.
+    y_position: bool,
+    /// Indicates whether the Z position is included in the matrix.
+    z_position: bool,
+    /// Indicates whether the X velocity or velocity magnitude is included in the matrix.
+    x_velocity_or_velocity_magnitude: bool,
+    /// Indicates whether the X velocity or velocity direction is included in the matrix.
+    x_velocity_or_velocity_direction: bool,
+    /// Indicates whether the Z speed is included in the matrix.
+    z_speed: bool,
+    /// Indicates whether the X acceleration or acceleration magnitude is included in the matrix.
+    x_accel_or_accel_magnitude: bool,
+    /// Indicates whether the Y acceleration or acceleration direction is included in the matrix.
+    y_accel_or_accel_direction: bool,
+    /// Indicates whether the Z acceleration is included in the matrix.
+    z_acceleration: bool,
+    /// Indicates whether the Z angle is included in the matrix.
+    z_angle: bool,
+    /// Indicates whether the Y angle is included in the matrix.
+    y_angle: bool,
+    /// Indicates whether the X angle is included in the matrix.
+    x_angle: bool,
+    /// Indicates whether the Z angular velocity is included in the matrix.
+    z_angular_velocity: bool,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EulerAnglesWithConfidence {
+    /// Z angle in centidegrees with confidence.
+    pub z_angle: Angle,
+
+    // optional fields
+    /// Y angle in centidegrees with confidence.
+    pub y_angle: Option<Angle>,
+    /// X angle in centidegrees with confidence.
+    pub x_angle: Option<Angle>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Acceleration3dWithConfidence {
+    // optional fields
+    /// Polar acceleration of the perceived object with confidence.
+    pub polar_acceleration: Option<PolarAcceleration>,
+    /// Cartesian acceleration of the perceived object with confidence.
+    pub cartesian_acceleration: Option<CartesianAcceleration>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PolarAcceleration {
+    /// Acceleration size of the perceived object.
+    pub acceleration_magnitude: AccelerationMagnitude,
+    /// Acceleration direction of the perceived object in centidegrees.
+    pub acceleration_direction: Angle,
+
+    // optional fields
+    /// Z acceleration of the perceived object with confidence.
+    pub z_acceleration: Option<Acceleration>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CartesianAcceleration {
+    /// X acceleration of the perceived object with confidence.
+    pub x_acceleration: Acceleration,
+    /// Y acceleration of the perceived object with confidence.
+    pub y_acceleration: Acceleration,
+
+    // optional fields
+    /// Z acceleration of the perceived object with confidence.
+    pub z_acceleration: Option<Acceleration>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CartesianAngularVelocityComponent {
+    /// Angular velocity value in centidegrees per second.
+    pub value: i16,
+    /// Confidence level for the angular velocity.
+    pub confidence: u8,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Velocity3dWithConfidence {
+    // optional fields
+    /// Polar velocity of the perceived object with confidence.
+    pub polar_velocity: Option<PolarVelocity>,
+    /// Cartesian velocity of the perceived object with confidence.
+    pub cartesian_velocity: Option<CartesianVelocity>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PolarVelocity {
+    /// Velocity magnitude of the perceived object.
+    pub velocity_magnitude: Speed,
+    /// Velocity direction of the perceived object in centidegrees.
+    pub velocity_direction: Angle,
+
+    // optional fields
+    /// Z velocity of the perceived object with confidence.
+    pub z_velocity: Option<Velocity>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CartesianVelocity {
+    /// X velocity of the perceived object with confidence.
+    pub x_velocity: Velocity,
+    /// Y velocity of the perceived object with confidence.
+    pub y_velocity: Velocity,
+
+    // optional fields
+    /// Z velocity of the perceived object with confidence.
+    pub z_velocity: Option<Velocity>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Copy, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CartesianPosition3DWithConfidence {
+    /// X coordinate of the perceived object in Cartesian coordinates with confidence.
+    pub x_coordinate: CartesianCoordinate,
+    /// Y coordinate of the perceived object in Cartesian coordinates with confidence.
+    pub y_coordinate: CartesianCoordinate,
+
+    // optional fields
+    /// Z coordinate of the perceived object in Cartesian coordinates with confidence.
+    pub z_coordinate: Option<CartesianCoordinate>,
 }
 
 /// Represents the classification of a detected object.
@@ -111,9 +237,9 @@ pub struct ObjectConfidence {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ObjectClassification {
-    /// The class of the object, such as vehicle, pedestrian, or other types.
+    /// Class of the object, such as vehicle, pedestrian, or other types.
     pub object_class: ObjectClass,
-    /// The confidence level of the classification, ranging from 0 to 255.
+    /// Confidence level of the classification ranging from 0 to 255.
     pub confidence: u8,
 }
 
@@ -127,9 +253,9 @@ pub enum ObjectClass {
     /// Represents a vehicle with an associated identifier.
     Vehicle(u8),
     /// Represents a single vulnerable road user (VRU), such as a pedestrian or bicyclist.
-    SingleVru(SingleVruClass),
+    Vru(Vru),
     /// Represents a group of vulnerable road users (VRUs), including group size and type.
-    VruGroup(VruGroupClass),
+    Group(Group),
     /// Represents an object of another type with an associated identifier.
     Other(u8),
 }
@@ -140,35 +266,39 @@ pub enum ObjectClass {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum SingleVruClass {
+pub enum Vru {
     /// Represents a pedestrian with an associated identifier.
     Pedestrian(u8),
     /// Represents a bicyclist with an associated identifier.
-    Bicyclist(u8),
+    BicyclistAndLightVruVehicle(u8),
     /// Represents a motorcyclist with an associated identifier.
     Motorcyclist(u8),
     /// Represents an animal with an associated identifier.
     Animal(u8),
 }
 
-/// Represents a group of vulnerable road users (VRUs).
+/// Represents a group.
 /// This struct includes information about the group size, type, and an optional cluster identifier.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct VruGroupClass {
-    /// The size of the group, indicating the number of VRUs in the group.
-    pub group_size: u8,
-    /// The type of the group, specifying the categories of VRUs present (e.g., pedestrians, bicyclists).
-    pub group_type: VruGroupType,
-    /// An optional identifier for the cluster to which the group belongs.
+pub struct Group {
+    /// The shape of the bounding box that encloses the cluster.
+    pub cluster_bounding_box_shape: Shape,
+    /// The size of the cluster, indicating the number in the group.
+    pub cluster_cardinality_size: u8,
+
+    // optional fields
+    /// An identifier for the cluster.
     pub cluster_id: Option<u8>,
+    /// Profiles of the cluster, indicating the presence of different types.
+    pub cluster_profiles: Option<ClusterProfiles>,
 }
 
-/// Represents the type of group of vulnerable road users (VRUs).
-/// This struct specifies the presence of different categories of VRUs within the group.
+/// Represents the type of group.
+/// This struct specifies the presence of different categories within the group.
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct VruGroupType {
+pub struct ClusterProfiles {
     /// Indicates whether the group contains pedestrians.
     pub pedestrian: bool,
     /// Indicates whether the group contains bicyclists.
@@ -179,24 +309,12 @@ pub struct VruGroupType {
     pub animal: bool,
 }
 
-/// Represents the matched position of an object within a specific context,
-/// such as a lane on a road. This includes the lane ID and the longitudinal
-/// position within the lane.
-#[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct MatchedPosition {
-    /// The identifier of the lane where the object is located.
-    pub lane_id: u8,
-    /// The longitudinal position of the object within the lane, measured in decimeters.
-    pub longitudinal_lane_position: u16,
-}
-
 impl PerceivedObject {
     pub fn is_pedestrian(&self) -> bool {
         self.classification.iter().any(|object_classification| {
             matches!(
                 object_classification.object_class,
-                ObjectClass::SingleVru(SingleVruClass::Pedestrian(_))
+                ObjectClass::Vru(Vru::Pedestrian(_))
             )
         })
     }
@@ -212,157 +330,324 @@ impl PerceivedObject {
 mod test {
     use crate::exchange::etsi::perceived_object::PerceivedObject;
 
-    #[test]
-    fn test_deserialize() {
-        let data = r#"{
-                "object_id": 5,
-                "time_of_measurement": 2,
-                "x_distance": 804,
-                "y_distance": 400,
-                "x_speed": 401,
-                "y_speed": 401,
-                "object_age": 1500,
-                "object_ref_point": 0,
-                "dynamic_status": 0,
-                "classification": [
-                  {
-                    "object_class": {
-                      "single_vru": {
-                        "pedestrian": 1
-                      }
-                    },
-                    "confidence": 40
-                  }
-                ],
-                "confidence": {
-                  "x_distance": 4095,
-                  "y_distance": 4095,
-                  "x_speed": 0,
-                  "y_speed": 0,
-                  "object": 10
+    fn minimal_po() -> &'static str {
+        r#"{
+            "measurement_delta_time": 2047,
+            "position": {
+                "x_coordinate": {
+                    "value": 131071,
+                    "confidence": 4096
+                },
+                "y_coordinate": {
+                    "value": -131072,
+                    "confidence": 1
                 }
-              }"#;
-
-        match serde_json::from_str::<PerceivedObject>(data) {
-            Ok(po) => {
-                assert_eq!(5, po.object_id);
             }
-            Err(e) => {
-                panic!("Failed to deserialize PO: '{}'", e);
-            }
-        }
+        }"#
     }
 
-    #[test]
-    fn test_deserialize_full_po() {
-        let data = r#"{
-            "object_id": 0,
-            "time_of_measurement": 50,
-            "x_distance": 400,
-            "y_distance": 100,
-            "z_distance": 50,
-            "x_speed": 1400,
-            "y_speed": 500,
-            "z_speed": 0,
-            "x_acceleration": -160,
-            "y_acceleration": 0,
-            "z_acceleration": 161,
-            "roll_angle": 0,
-            "pitch_angle": 3600,
-            "yaw_angle": 3601,
-            "roll_rate": -32766,
-            "pitch_rate": 0,
-            "yaw_rate": 32767,
-            "roll_acceleration": -32766,
-            "pitch_acceleration": 0,
-            "yaw_acceleration": 32767,
-            "lower_triangular_correlation_matrix_columns": [
-                [-100, -99, -98],
-                [0, 1, 2],
-                [98, 99, 100]
-            ],
-            "planar_object_dimension_1": 1023,
-            "planar_object_dimension_2": 1023,
-            "vertical_object_dimension": 1023,
-            "object_ref_point": 8,
-            "confidence": {
-                "x_distance": 102,
-                "y_distance": 102,
-                "z_distance": 102,
-                "x_speed": 7,
-                "y_speed": 7,
-                "z_speed": 7,
-                "x_acceleration": 102,
-                "y_acceleration": 102,
-                "z_acceleration": 102,
-                "roll_angle": 127,
-                "pitch_angle": 127,
-                "yaw_angle": 127,
-                "roll_rate": 8,
-                "pitch_rate": 8,
-                "yaw_rate": 8,
-                "roll_acceleration": 8,
-                "pitch_acceleration": 8,
-                "yaw_acceleration": 8,
-                "planar_object_dimension_1": 102,
-                "planar_object_dimension_2": 102,
-                "vertical_object_dimension": 102,
-                "longitudinal_lane_position": 102,
-                "object": 10
+    fn standard_po() -> &'static str {
+        r#"{
+            "measurement_delta_time": 2047,
+            "position": {
+                "x_coordinate": {
+                    "value": 131071,
+                    "confidence": 4096
+                },
+                "y_coordinate": {
+                    "value": -131072,
+                    "confidence": 1
+                }
             },
-            "object_age": 1500,
-            "sensor_id_list": [1, 2, 10, 100, 255],
-            "dynamic_status": 2,
-            "classification": [{
+            "object_id": 65535,
+            "velocity": {
+                "cartesian_velocity": {
+                    "x_velocity": {
+                        "value": 16383,
+                        "confidence": 127
+                    },
+                    "y_velocity": {
+                        "value": -16383,
+                        "confidence": 1
+                    }
+                }
+            },
+            "acceleration": {
+                "cartesian_acceleration": {
+                    "x_acceleration": {
+                        "value": 161,
+                        "confidence": 102
+                    },
+                    "y_acceleration": {
+                        "value": -160,
+                        "confidence": 0
+                    }
+                }
+            },            
+            "object_dimension_z": {
+                "value": 256,
+                "confidence": 32
+            },
+            "object_dimension_y": {
+                "value": 1,
+                "confidence": 1
+            },
+            "object_dimension_x": {
+                "value": 128,
+                "confidence": 17
+            },
+            "object_age": 2047,
+            "object_perception_quality": 15,
+            "classification": [
+                {
                     "object_class": {
-                        "vehicle": 10
+                        "vehicle": 255
+                    },
+                    "confidence": 101
+                }
+            ]
+        }"#
+    }
+
+    fn full_po() -> &'static str {
+        r#"{
+            "measurement_delta_time": 2047,
+            "position": {
+                "x_coordinate": {
+                    "value": 131071,
+                    "confidence": 4096
+                },
+                "y_coordinate": {
+                    "value": -131072,
+                    "confidence": 1
+                },
+                "z_coordinate": {
+                    "value": 0,
+                    "confidence": 2048
+                }
+            },
+            "object_id": 65535,
+            "velocity": {
+                "cartesian_velocity": {
+                    "x_velocity": {
+                        "value": 16383,
+                        "confidence": 127
+                    },
+                    "y_velocity": {
+                        "value": -16383,
+                        "confidence": 1
+                    },
+                    "z_velocity": {
+                        "value": 0,
+                        "confidence": 64
+                    }
+                }
+            },
+            "acceleration": {
+                "cartesian_acceleration": {
+                    "x_acceleration": {
+                        "value": 161,
+                        "confidence": 102
+                    },
+                    "y_acceleration": {
+                        "value": -160,
+                        "confidence": 0
+                    },
+                    "z_acceleration": {
+                        "value": 0,
+                        "confidence": 61
+                    }
+                }
+            },
+            "angles": {
+                "z_angle": {
+                    "value": 3601,
+                    "confidence": 127
+                },
+                "y_angle": {
+                    "value": 0,
+                    "confidence": 1
+                },
+                "x_angle": {
+                    "value": 1800,
+                    "confidence": 64
+                }
+            },
+            "z_angular_velocity": {
+                "value": 256,
+                "confidence": 7
+            },
+            "lower_triangular_correlation_matrices": [
+                {
+                    "components_included_in_the_matrix": {
+                        "x_position": true,
+                        "y_position": true,
+                        "z_position": true,
+                        "x_velocity_or_velocity_magnitude": true,
+                        "x_velocity_or_velocity_direction": true,
+                        "z_speed": true,
+                        "x_accel_or_accel_magnitude": true,
+                        "y_accel_or_accel_direction": true,
+                        "z_acceleration": true,
+                        "z_angle": true,
+                        "y_angle": true,
+                        "x_angle": true,
+                        "z_angular_velocity": true
+                    },
+                    "matrix": [
+                        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+                    ]
+                },
+                {
+                    "components_included_in_the_matrix": {
+                        "x_position": false,
+                        "y_position": false,
+                        "z_position": false,
+                        "x_velocity_or_velocity_magnitude": false,
+                        "x_velocity_or_velocity_direction": false,
+                        "z_speed": false,
+                        "x_accel_or_accel_magnitude": false,
+                        "y_accel_or_accel_direction": false,
+                        "z_acceleration": false,
+                        "z_angle": false,
+                        "y_angle": false,
+                        "x_angle": false,
+                        "z_angular_velocity": false
+                    },
+                    "matrix": [
+                        [],
+                        [],
+                        [],
+                        [],
+                        [],
+                        [],
+                        [],
+                        [],
+                        [],
+                        [],
+                        [],
+                        [],
+                        []
+                    ]
+                }
+            ],
+            "object_dimension_z": {
+                "value": 256,
+                "confidence": 32
+            },
+            "object_dimension_y": {
+                "value": 1,
+                "confidence": 1
+            },
+            "object_dimension_x": {
+                "value": 128,
+                "confidence": 17
+            },
+            "object_age": 2047,
+            "object_perception_quality": 15,
+            "sensor_id_list": [1, 2, 3],
+            "classification": [
+                {
+                    "object_class": {
+                        "vehicle": 255
                     },
                     "confidence": 101
                 },
                 {
                     "object_class": {
-                        "single_vru": {
-                            "pedestrian": 2
+                        "vru": {
+                            "pedestrian": 15
                         }
+                    },
+                    "confidence": 1
+                },
+                {
+                    "object_class": {
+                        "group": {
+                            "cluster_bounding_box_shape": {
+                                "rectangle": {
+                                        "center_point": {
+                                            "x_coordinate": 32767,
+                                            "y_coordinate": -32768,
+                                            "z_coordinate": 0
+                                        },
+                                        "semi_length": 102,
+                                        "semi_breadth": 0,
+                                        "orientation": 3601,
+                                        "height": 4095
+                                    }
+                            },
+                            "cluster_cardinality_size": 255,
+                            "cluster_id": 255,
+                            "cluster_profiles": {
+                                "pedestrian": true,
+                                "bicyclist": true,
+                                "motorcyclist": true,
+                                "animal": true
+                            }
+                        }
+                    },
+                    "confidence": 50
+                },
+                {
+                    "object_class": {
+                        "other": 255
                     },
                     "confidence": 25
-                },
-                {
-                    "object_class": {
-                        "vru_group": {
-                            "group_type": {
-                                "pedestrian": true,
-                                "bicyclist": false,
-                                "motorcyclist": false,
-                                "animal": true
-                            },
-                            "group_size": 12,
-                            "cluster_id": 255
-                        }
-                    },
-                    "confidence": 64
-                },
-                {
-                    "object_class": {
-                        "other": 1
-                    },
-                    "confidence": 0
                 }
             ],
-            "matched_position": {
+            "map_position": {
+                "map_reference": {
+                    "road_segment": {
+                        "id": 65535,
+                        "region": 0
+                    }
+                },
                 "lane_id": 255,
-                "longitudinal_lane_position": 32767
+                "connection_id": 255,
+                "longitudinal_lane_position": {
+                    "value": 32767,
+                    "confidence": 1023
+                }
             }
-        }"#;
+        }"#
+    }
 
+    fn parse_and_verify_po(data: &str, expected_id: Option<u16>) {
         match serde_json::from_str::<PerceivedObject>(data) {
             Ok(po) => {
-                assert_eq!(0, po.object_id);
+                assert_eq!(po.object_id, expected_id);
             }
             Err(e) => {
-                panic!("Failed to deserialize PO: '{}'", e);
+                panic!("Failed to deserialize PO: '{e}'");
             }
         }
     }
+
+    #[test]
+    fn test_deserialize_minimal_po() {
+        parse_and_verify_po(minimal_po(), None);
+    }
+
+    #[test]
+    fn test_deserialize_standard_po() {
+        parse_and_verify_po(standard_po(), Some(65535));
+    }
+
+    #[test]
+    fn test_deserialize_full_po() {
+        parse_and_verify_po(full_po(), Some(65535));
+    }
 }
-mod tests {}

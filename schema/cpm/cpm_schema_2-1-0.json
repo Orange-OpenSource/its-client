@@ -1,0 +1,1466 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/cpm",
+  "description": "CPM JSON schema",
+  "$references": [
+    {
+      "$comment": "This technical specification file (TS) is hereby considered right over the European standard one (EN); meaning that for any difference that may be present between those files this schema will prefer what is defined in the technical specification",
+      "name": "CPM TS 103 324",
+      "version": "2.1.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/cpm_ts103324/-/tree/v2.1.1"
+    },
+    {
+      "$comment": "This technical specification file (TS) is hereby considered right over the European standard one (EN); meaning that for any difference that may be present between those files this schema will prefer what is defined in the technical specification",
+      "name": "CDD TS 102 894-2",
+      "version": "2.1.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/cdd_ts102894_2/-/tree/v2.1.1"
+    }
+  ],
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "message_type",
+    "source_uuid",
+    "timestamp",
+    "version",
+    "message"
+  ],
+  "properties": {
+    "message_type": {
+      "type": "string",
+      "description": "Type of the message carried in message property.",
+      "const": "cpm"
+    },
+    "source_uuid": {
+      "type": "string",
+      "description": "Unique id all over the world for the message sender.",
+      "examples": [
+        "com_car_4294967295",
+        "com_application_42"
+      ]
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Timestamp when the message was generated since Unix Epoch (millisecond).",
+      "examples": [
+        1574778515424
+      ],
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
+    },
+    "version": {
+      "type": "string",
+      "description": "JSON message format version.",
+      "const": "2.1.0"
+    },
+    "message": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "station_id",
+        "management_container"
+      ],
+      "properties": {
+        "protocol_version": {
+          "type": "integer",
+          "description": "Version of the ITS message.",
+          "minimum": 0,
+          "maximum": 255,
+          "examples": [
+            1
+          ]
+        },
+        "station_id": {
+          "type": "integer",
+          "description": "Identifier for an ITS-S.",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "examples": [
+            4294967295,
+            42
+          ]
+        },
+        "management_container": {
+          "type": "object",
+          "required": [
+            "reference_time",
+            "reference_position"
+          ],
+          "properties": {
+            "reference_time": {
+              "type": "integer",
+              "description": "Reference time for all time related information in the CPM.",
+              "default": 0,
+              "minimum": 0,
+              "maximum": 4398046511103
+            },
+            "reference_position": {
+              "$ref": "#/$defs/reference_position"
+            },
+            "segmentation_info": {
+              "type": "object",
+              "description": "Information regarding the message segmentation on the facility layer.",
+              "required": [
+                "total_msg_no",
+                "this_msg_no"
+              ],
+              "properties": {
+                "total_msg_no": {
+                  "type": "integer",
+                  "description": "Total number of messages that has been used on the transmitter side to encode the information.",
+                  "minimum": 1,
+                  "maximum": 8
+                },
+                "this_msg_no": {
+                  "type": "integer",
+                  "description": "Position of the message within of the total set of messages.",
+                  "minimum": 1,
+                  "maximum": 8
+                }
+              }
+            },
+            "message_rate_range": {
+              "type": "object",
+              "description": "Planned or expected range of the CPM generation rate.",
+              "required": [
+                "message_rate_min",
+                "message_rate_max"
+              ],
+              "properties": {
+                "message_rate_min": {
+                  "$ref": "#/$defs/message_rate_hz"
+                },
+                "message_rate_max": {
+                  "$ref": "#/$defs/message_rate_hz"
+                }
+              }
+            }
+          }
+        },
+        "originating_vehicle_container": {
+          "type": "object",
+          "required": [
+            "orientation_angle"
+          ],
+          "properties": {
+            "orientation_angle": {
+              "$ref": "#/$defs/angle"
+            },
+            "pitch_angle": {
+              "$ref": "#/$defs/angle"
+            },
+            "roll_angle": {
+              "$ref": "#/$defs/angle"
+            },
+            "trailer_data_set": {
+              "type": "array",
+              "description": "Information about the trailer dimensions and orientation in case a trailer is present.",
+              "items": {
+                "type": "object",
+                "required": [
+                  "ref_point_id",
+                  "hitch_point_offset",
+                  "hitch_angle"
+                ],
+                "properties": {
+                  "ref_point_id": {
+                    "type": "integer",
+                    "description": "Identifier of the reference point of the trailer.",
+                    "minimum": 0,
+                    "maximum": 255
+                  },
+                  "hitch_point_offset": {
+                    "type": "integer",
+                    "description": "Position of the hitch point in negative x-direction (according to ISO 8855) from the vehicle Reference Point.",
+                    "minimum": 0,
+                    "maximum": 255
+                  },
+                  "hitch_angle": {
+                    "$ref": "#/$defs/angle"
+                  },
+                  "front_overhang": {
+                    "type": "integer",
+                    "description": "Length of the trailer overhang in the positive x direction (according to ISO 8855) from the trailer Reference Point indicated by the refPointID.",
+                    "minimum": 0,
+                    "maximum": 255
+                  },
+                  "rear_overhang": {
+                    "type": "integer",
+                    "description": "Length of the trailer overhang in the negative x direction (according to ISO 8855) from the trailer Reference Point indicated by the refPointID.",
+                    "minimum": 0,
+                    "maximum": 255
+                  },
+                  "trailer_width": {
+                    "type": "integer",
+                    "description": "Width of the trailer. Unit: 0.1 metre. outOfRange (61), unavailable (62).",
+                    "default": 62,
+                    "minimum": 1,
+                    "maximum": 62
+                  }
+                }
+              }
+            }
+          }
+        },
+        "originating_rsu_container": {
+          "type": "array",
+          "description": "Identifies the MAPEM containing the topology information reference in the Perceived Object Container.",
+          "items": {
+            "$ref": "#/$defs/map_reference"
+          }
+        },
+        "sensor_information_container": {
+          "type": "array",
+          "description": "List of information for individual sensor(s) which are mounted to a a vehicle or roadside.",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {
+            "type": "object",
+            "required": [
+              "sensor_id",
+              "sensor_type",
+              "shadowing_applies"
+            ],
+            "properties": {
+              "sensor_id": {
+                "type": "integer",
+                "description": "Sensor identifier.",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "sensor_type": {
+                "type": "integer",
+                "description": "Type of attached sensor. undefined(0), radar(1), lidar(2), monovideo(3), stereovision(4), nightvision(5), ultrasonic(6), pmd(7), inductionloop(8), sphericalCamera(9), uwb (10), acoustic (11), localAggregation (12), itsAggregation (13).",
+                "minimum": 0,
+                "maximum": 31
+              },
+              "perception_region_shape": {
+                "$ref": "#/$defs/shape"
+              },
+              "perception_region_confidence": {
+                "type": "integer",
+                "description": "Homogeneous perception region confidence that can be assumed for the entire perception region shape of this sensor.",
+                "minimum": 1,
+                "maximum": 101,
+                "default": 101
+              },
+              "shadowing_applies": {
+                "type": "boolean",
+                "description": "Indicates if the standard shadowing approach applies to the described perception region."
+              }
+            }
+          }
+        },
+        "perception_region_container": {
+          "type": "array",
+          "description": "Perception Region Container as a list of perception region information objects.",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {
+            "type": "object",
+            "required": [
+              "measurement_delta_time",
+              "perception_region_confidence",
+              "perception_region_shape",
+              "shadowing_applies"
+            ],
+            "properties": {
+              "measurement_delta_time": {
+                "type": "integer",
+                "description": "Difference between the time of estimation of the perception region and the reference time. Positive values indicates that the provided information refers to a point in time after the reference time.",
+                "minimum": -2048,
+                "maximum": 2047
+              },
+              "perception_region_confidence": {
+                "type": "integer",
+                "description": "Perception confidence.",
+                "minimum": 1,
+                "maximum": 101,
+                "default": 101
+              },
+              "perception_region_shape": {
+                "$ref": "#/$defs/shape"
+              },
+              "shadowing_applies": {
+                "type": "boolean",
+                "description": "Indicates if the standard shadowing approach applies to the described perception region."
+              },
+              "sensor_id_list": {
+                "type": "array",
+                "description": "Optional list of identifiers of the sensors which are involved in perceiving the region.",
+                "minItems": 1,
+                "maxItems": 128,
+                "items": {
+                  "type": "integer",
+                  "description": "Sensor identifier.",
+                  "minimum": 0,
+                  "maximum": 255
+                }
+              },
+              "perceived_object_ids": {
+                "type": "array",
+                "description": "Optional list of identifiers of the objects specified in the Perceived Object Container that are contained in the perception region specified in the component perceptionRegionShape.",
+                "minItems": 0,
+                "maxItems": 255,
+                "items": {
+                  "type": "integer",
+                  "description": "Object identifier",
+                  "minimum": 0,
+                  "maximum": 65535
+                }
+              }
+            }
+          }
+        },
+        "perceived_object_container": {
+          "type": "array",
+          "description": "List of information for individual perceived object. The total number of detected objects by the station at the time of generating the message. Due to the dynamic message generation rules, this number does not have to reflect the number of objects included in this message but states the number of objects known to the sender at the time of generating the message.",
+          "minItems": 0,
+          "maxItems": 255,
+          "items": {
+            "type": "object",
+            "required": [
+              "measurement_delta_time",
+              "position"
+            ],
+            "properties": {
+              "measurement_delta_time": {
+                "type": "integer",
+                "description": "Time difference from a reference time to the time of the  measurement of the object.",
+                "minimum": -2048,
+                "maximum": 2047
+              },
+              "position": {
+                "$ref": "#/$defs/cartesian_position_3d_with_confidence"
+              },
+              "object_id": {
+                "type": "integer",
+                "description": "Optional identifier assigned to a detected object.",
+                "minimum": 0,
+                "maximum": 65535
+              },
+              "velocity": {
+                "type": "object",
+                "description": "Velocity vector of the object within the pre-defined coordinate system.",
+                "oneOf": [
+                  {
+                    "required": [
+                      "polar_velocity"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "cartesian_velocity"
+                    ]
+                  }
+                ],
+                "properties": {
+                  "polar_velocity": {
+                    "type": "object",
+                    "description": "Representation of the velocity vector in a polar or cylindrical coordinate system.",
+                    "required": [
+                      "velocity_magnitude",
+                      "velocity_direction"
+                    ],
+                    "properties": {
+                      "velocity_magnitude": {
+                        "$ref": "#/$defs/speed"
+                      },
+                      "velocity_direction": {
+                        "$ref": "#/$defs/angle"
+                      },
+                      "z_velocity": {
+                        "$ref": "#/$defs/velocity_component"
+                      }
+                    }
+                  },
+                  "cartesian_velocity": {
+                    "type": "object",
+                    "description": "Representation of the velocity vector in a cartesian coordinate system.",
+                    "required": [
+                      "x_velocity",
+                      "y_velocity"
+                    ],
+                    "properties": {
+                      "x_velocity": {
+                        "$ref": "#/$defs/velocity_component"
+                      },
+                      "y_velocity": {
+                        "$ref": "#/$defs/velocity_component"
+                      },
+                      "z_velocity": {
+                        "$ref": "#/$defs/velocity_component"
+                      }
+                    }
+                  }
+                }
+              },
+              "acceleration": {
+                "type": "object",
+                "description": "Acceleration vector of the object within the pre-defined coordinate system.",
+                "oneOf": [
+                  {
+                    "required": [
+                      "polar_acceleration"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "cartesian_acceleration"
+                    ]
+                  }
+                ],
+                "properties": {
+                  "polar_acceleration": {
+                    "type": "object",
+                    "description": "Representation of the acceleration vector in a polar or cylindrical coordinate system.",
+                    "required": [
+                      "acceleration_magnitude",
+                      "acceleration_direction"
+                    ],
+                    "properties": {
+                      "acceleration_magnitude": {
+                        "type": "object",
+                        "description": "Acceleration vector in a polar or cylindrical coordinate system.",
+                        "required": [
+                          "value",
+                          "confidence"
+                        ],
+                        "properties": {
+                          "value": {
+                            "type": "integer",
+                            "description": "Magnitude of the acceleration vector.",
+                            "minimum": 0,
+                            "maximum": 161,
+                            "default": 161
+                          },
+                          "confidence": {
+                            "type": "integer",
+                            "description": "Confidence value of the magnitude value.",
+                            "minimum": 0,
+                            "maximum": 102,
+                            "default": 102
+                          }
+                        }
+                      },
+                      "acceleration_direction": {
+                        "$ref": "#/$defs/angle"
+                      },
+                      "z_acceleration": {
+                        "$ref": "#/$defs/acceleration_component"
+                      }
+                    }
+                  },
+                  "cartesian_acceleration": {
+                    "type": "object",
+                    "description": "Representation of the acceleration vector in a cartesian coordinate system.",
+                    "required": [
+                      "x_acceleration",
+                      "y_acceleration"
+                    ],
+                    "properties": {
+                      "x_acceleration": {
+                        "$ref": "#/$defs/acceleration_component"
+                      },
+                      "y_acceleration": {
+                        "$ref": "#/$defs/acceleration_component"
+                      },
+                      "z_acceleration": {
+                        "$ref": "#/$defs/acceleration_component"
+                      }
+                    }
+                  }
+                }
+              },
+              "angles": {
+                "type": "object",
+                "description": "Optional Euler angles of the object bounding box at the time of measurement.",
+                "required": [
+                  "z_angle"
+                ],
+                "properties": {
+                  "z_angle": {
+                    "$ref": "#/$defs/angle"
+                  },
+                  "y_angle": {
+                    "$ref": "#/$defs/angle"
+                  },
+                  "x_angle": {
+                    "$ref": "#/$defs/angle"
+                  }
+                }
+              },
+              "z_angular_velocity": {
+                "$ref": "#/$defs/cartesian_angular_velocity_component"
+              },
+              "lower_triangular_correlation_matrices": {
+                "type": "array",
+                "description": "Optional set of lower triangular correlation matrices for selected components of the provided kinematic state and attitude vector.",
+                "minItems": 1,
+                "maxItems": 4,
+                "items": {
+                  "type": "object",
+                  "description": "Lower triangular positive semi-definite matrix.",
+                  "required": [
+                    "components_included_in_the_matrix",
+                    "matrix"
+                  ],
+                  "properties": {
+                    "components_included_in_the_matrix": {
+                      "type": "object",
+                      "description": "Indication of which components of a PerceivedObject are included in the matrix.",
+                      "required": [
+                        "x_position",
+                        "y_position",
+                        "z_position",
+                        "x_velocity_or_velocity_magnitude",
+                        "y_velocity_or_velocity_direction",
+                        "z_speed",
+                        "x_accel_or_accel_magnitude",
+                        "y_accel_or_accel_direction",
+                        "z_acceleration",
+                        "z_angle",
+                        "y_angle",
+                        "x_angle",
+                        "z_angular_velocity"
+                      ],
+                      "properties": {
+                        "x_position": {
+                          "type": "boolean"
+                        },
+                        "y_position": {
+                          "type": "boolean"
+                        },
+                        "z_position": {
+                          "type": "boolean"
+                        },
+                        "x_velocity_or_velocity_magnitude": {
+                          "type": "boolean"
+                        },
+                        "y_velocity_or_velocity_direction": {
+                          "type": "boolean"
+                        },
+                        "z_speed": {
+                          "type": "boolean"
+                        },
+                        "x_accel_or_accel_magnitude": {
+                          "type": "boolean"
+                        },
+                        "y_accel_or_accel_direction": {
+                          "type": "boolean"
+                        },
+                        "z_acceleration": {
+                          "type": "boolean"
+                        },
+                        "z_angle": {
+                          "type": "boolean"
+                        },
+                        "y_angle": {
+                          "type": "boolean"
+                        },
+                        "x_angle": {
+                          "type": "boolean"
+                        },
+                        "z_angular_velocity": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "matrix": {
+                      "type": "array",
+                      "description": "List of cells of the lower triangular positive semi-definite matrix ordered by columns and by rows.",
+                      "minItems": 1,
+                      "maxItems": 13,
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 13,
+                          "items": {
+                            "type": "integer",
+                            "description": "Bravais-Pearson correlation value for each cell of a lower triangular correlation matrix.",
+                            "minimum": -100,
+                            "maximum": 101,
+                            "default": 101
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "object_dimension_z": {
+                "$ref": "#/$defs/object_dimension"
+              },
+              "object_dimension_y": {
+                "$ref": "#/$defs/object_dimension"
+              },
+              "object_dimension_x": {
+                "$ref": "#/$defs/object_dimension"
+              },
+              "object_age": {
+                "type": "integer",
+                "description": "Optional age of the detected and described object, i.e. the difference in time between the moment t has been first detected and the reference time of the message.",
+                "minimum": -2048,
+                "maximum": 2047
+              },
+              "object_perception_quality": {
+                "type": "integer",
+                "description": "Optional confidence associated to the object.",
+                "minimum": 0,
+                "maximum": 15
+              },
+              "sensor_id_list": {
+                "type": "array",
+                "description": "Optional list of sensor-IDs which provided the measurement data.",
+                "minItems": 1,
+                "maxItems": 128,
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                }
+              },
+              "classification": {
+                "type": "array",
+                "description": "Optional classification of the described object.",
+                "minItems": 1,
+                "maxItems": 8,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "object_class",
+                    "confidence"
+                  ],
+                  "properties": {
+                    "object_class": {
+                      "type": "object",
+                      "oneOf": [
+                        {
+                          "required": [
+                            "vehicle"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "vru"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "group"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "other"
+                          ]
+                        }
+                      ],
+                      "properties": {
+                        "vehicle": {
+                          "type": "integer",
+                          "description": "Object is a road vehicle and the specific subclass is specified. unknown (0), pedestrian (1), cyclist (2), moped (3), motorcycle (4), passengerCar (5), bus (6), lightTruck (7), heavyTruck (8), trailer (9), specialVehicle (10), tram 11), lightVruVehicle (12), animal (13), agricultural (14), roadSideUnit (15).",
+                          "minimum": 0,
+                          "maximum": 255
+                        },
+                        "vru": {
+                          "type": "object",
+                          "description": "Object is a VRU and the specific subclass is specified.",
+                          "oneOf": [
+                            {
+                              "required": [
+                                "pedestrian"
+                              ]
+                            },
+                            {
+                              "required": [
+                                "bicyclist_and_light_vru_vehicle"
+                              ]
+                            },
+                            {
+                              "required": [
+                                "motorcylist"
+                              ]
+                            },
+                            {
+                              "required": [
+                                "animal"
+                              ]
+                            }
+                          ],
+                          "properties": {
+                            "pedestrian": {
+                              "type": "integer",
+                              "description": "unavailable(0), ordinary-pedestrian(1), road-worker(2), first-responder(3), max(15).",
+                              "minimum": 0,
+                              "maximum": 15,
+                              "default": 0
+                            },
+                            "bicyclist_and_light_vru_vehicle": {
+                              "type": "integer",
+                              "description": "unavailable(0), bicyclist(1), wheelchair-user(2), horse-and-rider(3), rollerskater(4), e-scooter(5), personal-transporter(6), pedelec(7), speed-pedelec(8), max(15).",
+                              "minimum": 0,
+                              "maximum": 15,
+                              "default": 0
+                            },
+                            "motorcylist": {
+                              "type": "integer",
+                              "description": "unavailable(0), moped(1), motorcycle(2), motorcycle-and-sidecar-right(3), motorcycle-and-sidecar-left(4), max(15).",
+                              "minimum": 0,
+                              "maximum": 15,
+                              "default": 0
+                            },
+                            "animal": {
+                              "type": "integer",
+                              "description": "unavailable(0), wild-animal(1), farm-animal(2), service-animal(3), max(15).",
+                              "minimum": 0,
+                              "maximum": 15,
+                              "default": 0
+                            }
+                          }
+                        },
+                        "group": {
+                          "type": "object",
+                          "description": "Object is a VRU group or cluster and the cluster information is specified.",
+                          "required": [
+                            "cluster_bounding_box_shape",
+                            "cluster_cardinality_size"
+                          ],
+                          "properties": {
+                            "cluster_bounding_box_shape": {
+                              "$ref": "#/$defs/shape"
+                            },
+                            "cluster_cardinality_size": {
+                              "type": "integer",
+                              "description": "Indicates an estimation of the number of VRUs in the group. unavailable(0), onlyLeader(1).",
+                              "minimum": 0,
+                              "maximum": 255
+                            },
+                            "cluster_id": {
+                              "type": "integer",
+                              "description": "Optional identifier of a VRU cluster.",
+                              "minimum": 0,
+                              "maximum": 255
+                            },
+                            "cluster_profiles": {
+                              "type": "object",
+                              "description": "Optionally identifies all the VRU profile types that are known to be within the cluster.",
+                              "required": [
+                                "pedestrian",
+                                "bicyclist",
+                                "motorcyclist",
+                                "animal"
+                              ],
+                              "properties": {
+                                "pedestrian": {
+                                  "type": "boolean",
+                                  "description": "Indicates that the VRU cluster contains at least one pedestrian VRU."
+                                },
+                                "bicyclist": {
+                                  "type": "boolean",
+                                  "description": "Indicates that the VRU cluster contains at least one bicycle VRU member."
+                                },
+                                "motorcyclist": {
+                                  "type": "boolean",
+                                  "description": "Indicates that the VRU cluster contains at least one motorcycle VRU member."
+                                },
+                                "animal": {
+                                  "type": "boolean",
+                                  "description": "Indicates that the VRU cluster contains at least one animal VRU member."
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "other": {
+                          "type": "integer",
+                          "description": "Object is of a different type than the above and the specific subclass is specified. unknown (0), singleObject (1), multipleObjects (2), bulkMaterial (3).",
+                          "minimum": 0,
+                          "maximum": 255
+                        }
+                      }
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "Confidence value of the classification.",
+                      "minimum": 1,
+                      "maximum": 101,
+                      "default": 101
+                    }
+                  }
+                }
+              },
+              "map_position": {
+                "type": "object",
+                "description": "Optional map-matched position of an object.",
+                "properties": {
+                  "map_reference": {
+                    "$ref": "#/$defs/map_reference"
+                  },
+                  "lane_id": {
+                    "type": "integer",
+                    "description": "Optionally identifies the lane in the road segment or intersection topology on which the position is located.",
+                    "minimum": 0,
+                    "maximum": 255
+                  },
+                  "connection_id": {
+                    "type": "integer",
+                    "description": "Optionally identifies the connection inside the conflict area of an intersection, i.e. it identifies a trajectory for travelling through the conflict area of an intersection which connects e.g an ingress with an egress lane.",
+                    "minimum": 0,
+                    "maximum": 255
+                  },
+                  "longitudinal_lane_position": {
+                    "$ref": "#/$defs/longitudinal_lane_position"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "pos_confidence_ellipse": {
+      "type": "object",
+      "required": [
+        "semi_major",
+        "semi_minor",
+        "semi_major_orientation"
+      ],
+      "properties": {
+        "semi_major": {
+          "type": "integer",
+          "description": "Half of length of the major axis, i.e. distance between the centre point and major axis point of the position accuracy ellipse.",
+          "default": 4095,
+          "minimum": 0,
+          "maximum": 4095
+        },
+        "semi_minor": {
+          "type": "integer",
+          "description": "Half of length of the minor axis, i.e. distance between the centre point and minor axis point of the position accuracy ellipse.",
+          "default": 4095,
+          "minimum": 0,
+          "maximum": 4095
+        },
+        "semi_major_orientation": {
+          "type": "integer",
+          "description": "Orientation direction of the ellipse major axis of the position accuracy ellipse with regards to the WGS84 north.",
+          "default": 3601,
+          "minimum": 0,
+          "maximum": 3601
+        }
+      }
+    },
+    "altitude": {
+      "type": "object",
+      "description": "Altitude and an altitude accuracy of the geographical point.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Altitude of a geographical point.",
+          "default": 800001,
+          "minimum": -100000,
+          "maximum": 800001
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Confidence level of the altitudeValue.",
+          "default": 15,
+          "minimum": 0,
+          "maximum": 15
+        }
+      }
+    },
+    "latitude_value": {
+      "type": "integer",
+      "description": "Latitude of the geographical point.",
+      "default": 900000001,
+      "minimum": -900000000,
+      "maximum": 900000001
+    },
+    "longitude_value": {
+      "type": "integer",
+      "description": "Longitude of the geographical point.",
+      "default": 1800000001,
+      "minimum": -1800000000,
+      "maximum": 1800000001
+    },
+    "reference_position": {
+      "type": "object",
+      "required": [
+        "latitude",
+        "longitude",
+        "position_confidence_ellipse",
+        "altitude"
+      ],
+      "properties": {
+        "latitude": {
+          "$ref": "#/$defs/latitude_value"
+        },
+        "longitude": {
+          "$ref": "#/$defs/longitude_value"
+        },
+        "position_confidence_ellipse": {
+          "$ref": "#/$defs/pos_confidence_ellipse"
+        },
+        "altitude": {
+          "$ref": "#/$defs/altitude"
+        }
+      }
+    },
+    "angle_value": {
+      "type": "integer",
+      "description": "Angle value in degrees described in the WGS84 reference system with respect to the WGS84 north.",
+      "default": 3601,
+      "minimum": 0,
+      "maximum": 3601
+    },
+    "angle": {
+      "type": "object",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "$ref": "#/$defs/angle_value"
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Unit: 0.1 degrees. outOfRange (126), unavailable (127).",
+          "minimum": 1,
+          "maximum": 127,
+          "default": 127
+        }
+      }
+    },
+    "map_reference": {
+      "type": "object",
+      "oneOf": [
+        {
+          "required": [
+            "road_segment"
+          ]
+        },
+        {
+          "required": [
+            "intersection"
+          ]
+        }
+      ],
+      "properties": {
+        "road_segment": {
+          "type": "object",
+          "description": "Option that identifies the description of a road segment contained in a MAPEM.",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer",
+              "description": "Identifier of the road segment.",
+              "minimum": 0,
+              "maximum": 65535
+            },
+            "region": {
+              "type": "integer",
+              "description": "Optional identifier of the entity that is responsible for the region in which the road segment is placed.",
+              "minimum": 0,
+              "maximum": 65535
+            }
+          }
+        },
+        "intersection": {
+          "type": "object",
+          "description": "Option that identifies the description of an intersection contained in a MAPEM.",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer",
+              "description": "Identifier of the intersection.",
+              "minimum": 0,
+              "maximum": 65535
+            },
+            "region": {
+              "type": "integer",
+              "description": "Optional identifier of the entity that is responsible for the region in which the intersection is placed.",
+              "minimum": 0,
+              "maximum": 65535
+            }
+          }
+        }
+      }
+    },
+    "cartesian_coordinate_with_confidence": {
+      "type": "object",
+      "description": "Coordinate along with a confidence value in a cartesian reference system.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Coordinate value, which can be estimated as the mean of the current distribution.",
+          "minimum": -131072,
+          "maximum": 131071
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Coordinate confidence value associated to the provided value.",
+          "minimum": 1,
+          "maximum": 4096,
+          "default": 4096
+        }
+      }
+    },
+    "cartesian_position_3d": {
+      "type": "object",
+      "description": "Position in a two or three dimensional cartesian coordinate system.",
+      "required": [
+        "x_coordinate",
+        "y_coordinate"
+      ],
+      "properties": {
+        "x_coordinate": {
+          "type": "integer",
+          "description": "X coordinate value.",
+          "minimum": -32768,
+          "maximum": 32767
+        },
+        "y_coordinate": {
+          "type": "integer",
+          "description": "Y coordinate value.",
+          "minimum": -32768,
+          "maximum": 32767
+        },
+        "z_coordinate": {
+          "type": "integer",
+          "description": "Optional Z coordinate value.",
+          "minimum": -32768,
+          "maximum": 32767
+        }
+      }
+    },
+    "cartesian_position_3d_with_confidence": {
+      "type": "object",
+      "description": "Position in a two or three dimensional cartesian coordinate system with an associated confidence level for each coordinate.",
+      "required": [
+        "x_coordinate",
+        "y_coordinate"
+      ],
+      "properties": {
+        "x_coordinate": {
+          "$ref": "#/$defs/cartesian_coordinate_with_confidence"
+        },
+        "y_coordinate": {
+          "$ref": "#/$defs/cartesian_coordinate_with_confidence"
+        },
+        "z_coordinate": {
+          "$ref": "#/$defs/cartesian_coordinate_with_confidence"
+        }
+      }
+    },
+    "radial": {
+      "type": "object",
+      "required": [
+        "range",
+        "stationary_horizontal_opening_angle_start",
+        "stationary_horizontal_opening_angle_end"
+      ],
+      "properties": {
+        "range": {
+          "type": "integer",
+          "description": "Radial range of the shape from the shape's reference point.",
+          "minimum": 0,
+          "maximum": 4095
+        },
+        "stationary_horizontal_opening_angle_start": {
+          "$ref": "#/$defs/angle_value"
+        },
+        "stationary_horizontal_opening_angle_end": {
+          "$ref": "#/$defs/angle_value"
+        },
+        "shape_reference_point": {
+          "$ref": "#/$defs/cartesian_position_3d"
+        },
+        "vertical_opening_angle_start": {
+          "$ref": "#/$defs/angle_value"
+        },
+        "vertical_opening_angle_end": {
+          "$ref": "#/$defs/angle_value"
+        }
+      }
+    },
+    "shape": {
+      "type": "object",
+      "description": "Definition of a geographical area or volume, based on different options.",
+      "oneOf": [
+        {
+          "required": [
+            "rectangular"
+          ]
+        },
+        {
+          "required": [
+            "circular"
+          ]
+        },
+        {
+          "required": [
+            "polygonal"
+          ]
+        },
+        {
+          "required": [
+            "elliptical"
+          ]
+        },
+        {
+          "required": [
+            "radial"
+          ]
+        },
+        {
+          "required": [
+            "radial_shapes"
+          ]
+        }
+      ],
+      "properties": {
+        "rectangular": {
+          "type": "object",
+          "required": [
+            "semi_length",
+            "semi_breadth"
+          ],
+          "properties": {
+            "center_point": {
+              "$ref": "#/$defs/cartesian_position_3d"
+            },
+            "semi_length": {
+              "type": "integer",
+              "description": "Half the length of the rectangle.",
+              "minimum": 0,
+              "maximum": 102
+            },
+            "semi_breadth": {
+              "type": "integer",
+              "description": "Half the breadth of the rectangle.",
+              "minimum": 0,
+              "maximum": 102
+            },
+            "orientation": {
+              "$ref": "#/$defs/angle_value"
+            },
+            "height": {
+              "type": "integer",
+              "description": "Optional height, present if the shape is a right rectangular prism with height extending in the positive z-axis.",
+              "minimum": 0,
+              "maximum": 4095
+            }
+          }
+        },
+        "circular": {
+          "type": "object",
+          "required": [
+            "radius"
+          ],
+          "properties": {
+            "radius": {
+              "type": "integer",
+              "description": "Radius of the circular area.",
+              "minimum": 0,
+              "maximum": 4095
+            },
+            "shape_reference_point": {
+              "$ref": "#/$defs/cartesian_position_3d"
+            },
+            "height": {
+              "type": "integer",
+              "description": "Optional height, present if the shape is a right cylinder extending in the positive z-axis.",
+              "minimum": 0,
+              "maximum": 4095
+            }
+          }
+        },
+        "polygonal": {
+          "type": "object",
+          "required": [
+            "polygon"
+          ],
+          "properties": {
+            "polygon": {
+              "type": "array",
+              "description": "List of relative position, using the position indicated in the component eventPosition of the Management container as the reference position for the first position.",
+              "items": {
+                "$ref": "#/$defs/cartesian_position_3d"
+              }
+            },
+            "shape_reference_point": {
+              "$ref": "#/$defs/cartesian_position_3d"
+            },
+            "height": {
+              "type": "integer",
+              "description": "Optional height, present if the shape is a right prism extending in the positive z-axis.",
+              "minimum": 0,
+              "maximum": 4095
+            }
+          }
+        },
+        "elliptical": {
+          "type": "object",
+          "required": [
+            "semi_major_axis_length",
+            "semi_minor_axis_length"
+          ],
+          "properties": {
+            "semi_major_axis_length": {
+              "type": "integer",
+              "description": "Half length of the major axis of the ellipse.",
+              "minimum": 0,
+              "maximum": 4095
+            },
+            "semi_minor_axis_length": {
+              "type": "integer",
+              "description": "Half length of the minor axis of the ellipse.",
+              "minimum": 0,
+              "maximum": 4095
+            },
+            "shape_reference_point": {
+              "$ref": "#/$defs/cartesian_position_3d"
+            },
+            "orientation": {
+              "$ref": "#/$defs/angle_value"
+            },
+            "height": {
+              "type": "integer",
+              "description": "Optional height, present if the shape is a right elliptical cylinder extending in the positive z-axis.",
+              "minimum": 0,
+              "maximum": 4095
+            }
+          }
+        },
+        "radial": {
+          "$ref": "#/$defs/radial"
+        },
+        "radial_shapes": {
+          "type": "object",
+          "required": [
+            "ref_point_id",
+            "x_coordinate",
+            "y_coordinate",
+            "radial_shapes_list"
+          ],
+          "properties": {
+            "ref_point_id": {
+              "type": "integer",
+              "description": "Identification of the reference point in case of a sensor mounted to trailer. Defaults to ITS ReferencePoint (0).",
+              "minimum": 0,
+              "maximum": 255
+            },
+            "x_coordinate": {
+              "type": "integer",
+              "description": "X coordinate of the offset point.",
+              "minimum": -3094,
+              "maximum": 1001
+            },
+            "y_coordinate": {
+              "type": "integer",
+              "description": "Y coordinate of the offset point.",
+              "minimum": -3094,
+              "maximum": 1001
+            },
+            "z_coordinate": {
+              "type": "integer",
+              "description": "Optional z coordinate of the offset point.",
+              "minimum": -3094,
+              "maximum": 1001
+            },
+            "radial_shapes_list": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/radial"
+              }
+            }
+          }
+        }
+      }
+    },
+    "speed": {
+      "type": "object",
+      "description": "Speed and associated confidence value.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Speed value.",
+          "minimum": 0,
+          "maximum": 16383,
+          "default": 16383
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Confidence value of the speed value.",
+          "minimum": 1,
+          "maximum": 127,
+          "default": 127
+        }
+      }
+    },
+    "velocity_component": {
+      "type": "object",
+      "description": "Component of the velocity vector and the associated confidence value.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Value of the component.",
+          "minimum": -16383,
+          "maximum": 16383,
+          "default": 16383
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Confidence value of the value.",
+          "minimum": 1,
+          "maximum": 127,
+          "default": 127
+        }
+      }
+    },
+    "acceleration_component": {
+      "type": "object",
+      "description": "Acceleration component along with a confidence value.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Value of the component.",
+          "minimum": -160,
+          "maximum": 161,
+          "default": 161
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Confidence value of the value.",
+          "minimum": 0,
+          "maximum": 102,
+          "default": 102
+        }
+      }
+    },
+    "cartesian_angular_velocity_component": {
+      "type": "object",
+      "description": "Angular velocity component along with a confidence value in a cartesian coordinate system.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Angular velocity component.",
+          "minimum": -255,
+          "maximum": 256,
+          "default": 256
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Confidence value associated to the provided value. degSec-01 (0), degSec-02 (1), degSec-05 (2), degSec-10 (3), degSec-20 (4), degSec-50 (5), outOfRange (6), unavailable (7).",
+          "minimum": 0,
+          "maximum": 7,
+          "default": 7
+        }
+      }
+    },
+    "object_dimension": {
+      "type": "object",
+      "description": "Dimension of an object together with a confidence value.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Object dimension value which can be estimated as the mean of the current distribution.",
+          "minimum": 1,
+          "maximum": 256,
+          "default": 256
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Associated confidence value.",
+          "minimum": 1,
+          "maximum": 32,
+          "default": 32
+        }
+      }
+    },
+    "message_rate_hz": {
+      "type": "object",
+      "description": "Message rate. The specified message rate is: mantissa*(10^exponent).",
+      "required": [
+        "mantissa",
+        "exponent"
+      ],
+      "properties": {
+        "mantissa": {
+          "type": "integer",
+          "description": "Mantissa.",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "exponent": {
+          "type": "integer",
+          "description": "Exponent.",
+          "minimum": -5,
+          "maximum": 2
+        }
+      }
+    },
+    "longitudinal_lane_position": {
+      "type": "object",
+      "description": "Optional map-matched position of an object.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Mean value of the longitudinal position within a particular length.",
+          "minimum": 0,
+          "maximum": 32767,
+          "default": 32767
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Confidence value associated to the value.",
+          "minimum": 0,
+          "maximum": 1023,
+          "default": 1023
+        }
+      }
+    }
+  }
+}

@@ -50,10 +50,9 @@ impl MqttClient {
             .await
         {
             Ok(()) => debug!("Sent subscriptions"),
-            Err(e) => error!(
-                "Failed to send subscriptions, is the connection close? \nError: {:?}",
-                e
-            ),
+            Err(e) => {
+                error!("Failed to send subscriptions, is the connection close? \nError: {e:?}")
+            }
         };
     }
 
@@ -100,10 +99,7 @@ impl MqttClient {
             Ok(()) => {
                 trace!("Sent publish");
             }
-            Err(e) => error!(
-                "Failed to send publish, is the connection close? \nError: {:?}",
-                e
-            ),
+            Err(e) => error!("Failed to send publish, is the connection close? \nError: {e:?}"),
         }
     }
 }
@@ -116,12 +112,12 @@ pub async fn listen(mut event_loop: EventLoop, sender: Sender<Event>) {
             Ok(event) => match sender.send(event) {
                 Ok(()) => trace!("Item sent"),
                 Err(error) => {
-                    error!("Stopped to send item: {}", error);
+                    error!("Stopped to send item: {error}");
                     listening = false;
                 }
             },
             Err(error) => {
-                error!("Stopped to receive event: {:?}", error);
+                error!("Stopped to receive event: {error:?}");
                 listening = false;
             }
         }

@@ -76,8 +76,7 @@ pub async fn run<A, C, T>(
     C: Send + Sync + 'static,
 {
     let thread_count = configuration.mobility.thread_count;
-    info!("Analysis thread count set to: {}", thread_count);
-
+    info!("Analysis thread count set to: {thread_count}");
     let information = Arc::new(RwLock::new(Information::default()));
 
     loop {
@@ -116,7 +115,7 @@ pub async fn run<A, C, T>(
                             for publish_item in analyser.analyze(item.clone()) {
                                 let cause = Cause::from_exchange(&(item.payload));
                                 if let Err(error) = tx.send((publish_item, cause)) {
-                                    error!("Stopped to send analyser: {}", error);
+                                    error!("Stopped to send analyser: {error}");
                                     // break is not enough here as it only exits the for when we
                                     // need to exit the loop it is in, so use return instead
                                     return;
@@ -125,7 +124,7 @@ pub async fn run<A, C, T>(
                             trace!("Analyser generation closure finished");
                         }
                         Err(recv_error) => {
-                            info!("Exiting analysis thread: {}", recv_error);
+                            info!("Exiting analysis thread: {recv_error}");
                             break;
                         }
                     }
@@ -197,18 +196,21 @@ where
                         // if configuration.is_in_region_of_responsibility(item.topic.geo_extension.clone()) {
                         //assumed clone, we send to 2 channels
                         if let Err(error) = publish_sender.send(item.clone()) {
-                            error!("Stopped to send publish: {}", error);
-                            break;
+                            error!("Stopped to send publish: {error}");
+                            // Use return instead of break as we need to exit
+                            // the entire thread function, not just the loop
+                            return;
                         }
                         if let Err(error) = monitoring_sender.send((item, cause)) {
-                            error!("Stopped to send monitoring: {}", error);
-                            break;
+                            error!("Stopped to send monitoring: {error}");
+                            // Use return instead of break as we need to exit
+                            // the entire thread function, not just the loop
+                            return;
                         }
-                        // }
                         trace!("Filter closure finished");
                     }
                     Err(recv_error) => {
-                        info!("Exiting filter thread: {}", recv_error);
+                        info!("Exiting filter thread: {recv_error}");
                         break;
                     }
                 }
@@ -337,12 +339,11 @@ async fn mqtt_client_publish<T, P>(
                 debug!("Packet published");
             }
             Err(recv_err) => {
-                info!("Exiting MQTT publish thread: {}", recv_err);
+                info!("Exiting MQTT publish thread: {recv_err}");
                 break;
             }
         }
     }
-
     info!("MQTT publishing thread stopped");
 }
 
@@ -393,18 +394,19 @@ where
                                         match monitoring_sender.send((item.clone(), None)) {
                                             Ok(()) => trace!("MQTT monitoring sent"),
                                             Err(error) => {
-                                                error!(
-                                                    "Stopped to send mqtt monitoring: {}",
-                                                    error
-                                                );
-                                                break;
+                                                error!("Stopped to send mqtt monitoring: {error}");
+                                                // Use return instead of break as we need to exit
+                                                // the entire thread function, not just the loop
+                                                return;
                                             }
                                         }
                                         match exchange_sender.send(item) {
                                             Ok(()) => trace!("MQTT exchange sent"),
                                             Err(error) => {
-                                                error!("Stopped to send mqtt exchange: {}", error);
-                                                break;
+                                                error!("Stopped to send mqtt exchange: {error}");
+                                                // Use return instead of break as we need to exit
+                                                // the entire thread function, not just the loop
+                                                return;
                                             }
                                         }
                                     }
@@ -417,23 +419,22 @@ where
                                         }) {
                                             Ok(()) => trace!("MQTT information sent"),
                                             Err(error) => {
-                                                error!(
-                                                    "Stopped to send mqtt information: {}",
-                                                    error
-                                                );
-                                                break;
+                                                error!("Stopped to send mqtt information: {error}");
+                                                // Use return instead of break as we need to exit
+                                                // the entire thread function, not just the loop
+                                                return;
                                             }
                                         }
                                     }
                                 } else {
-                                    trace!("Unknown reception: {:?}", reception);
+                                    trace!("Unknown reception: {reception:?}");
                                 }
                             }
                             None => trace!("No mqtt response to send"),
                         }
                     }
                     Err(recv_err) => {
-                        info!("Exiting MQTT routing thread: {}", recv_err);
+                        info!("Exiting MQTT routing thread: {recv_err}");
                         break;
                     }
                 }
@@ -463,10 +464,10 @@ where
                     trace!("Message parsed");
                     return Some((Box::new(message), publish.properties.unwrap_or_default()));
                 }
-                Err(e) => warn!("Parse error({}) on: {}", e, message_str),
+                Err(e) => warn!("Parse error({e}) on: {message_str}"),
             }
         }
-        Err(e) => warn!("Format error: {}", e),
+        Err(e) => warn!("Format error: {e}"),
     }
     None
 }

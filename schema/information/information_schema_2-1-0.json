@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/info",
+  "description": "Information JSON schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "message_type",
+    "source_uuid",
+    "timestamp",
+    "version",
+    "instance_id",
+    "instance_type",
+    "running",
+    "validity_duration"
+  ],
+  "properties": {
+    "message_type": {
+      "type": "string",
+      "description": "Type of the message carried in root properties.",
+      "const": "information"
+    },
+    "source_uuid": {
+      "type": "string",
+      "description": "Unique id all over the world for the message sender.",
+      "examples": [
+        "com_car_4294967295",
+        "com_message_42"
+      ]
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Timestamp when the message was generated since Unix Epoch (millisecond).",
+      "examples": [
+        1574778515424
+      ],
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
+    },
+    "version": {
+      "type": "string",
+      "description": "JSON message format version.",
+      "const": "2.1.0"
+    },
+    "instance_id": {
+      "type": "string",
+      "description": "Unique id all over the world for a server."
+    },
+    "instance_type": {
+      "type": "string",
+      "description": "Type of instance.",
+      "enum": [
+        "local",
+        "edge",
+        "central"
+      ]
+    },
+    "central_instance_id": {
+      "type": "string",
+      "description": "Unique id all over the world for the central server if the instance is of type edge."
+    },
+    "running": {
+      "type": "boolean",
+      "description": "State of the server: true id running, false else.",
+      "default": false
+    },
+    "validity_duration": {
+      "type": "integer",
+      "description": "Validity period of the information relatively to the timestamp (seconds)."
+    },
+    "public_ip_address": {
+      "type": "array",
+      "description": "List of public IP address.",
+      "examples": [
+        "161.05.21.166",
+        "190.14.19.50",
+        "127.0.0.1"
+      ],
+      "items": {
+        "type": "string",
+        "description": "Public IP address."
+      }
+    },
+    "mqtt_ip": {
+      "type": "array",
+      "description": "List of MQTT IP address and port separated by a colon.",
+      "items": {
+        "type": "string",
+        "description": "MQTT IP address and port (classically 1883) separated by a colon.",
+        "examples": [
+          "84.188.43.159:1883",
+          "172.116.12.182:11883"
+        ]
+      }
+    },
+    "mqtt_tls_ip": {
+      "type": "array",
+      "description": "List of MQTT IP address and TLS port separated by a colon.",
+      "items": {
+        "type": "string",
+        "description": "MQTT IP address and TLS port (classically 8883) separated by a colon.",
+        "examples": [
+          "84.188.43.159:8883",
+          "172.116.82.124:18883"
+        ]
+      }
+    },
+    "http_ip": {
+      "type": "array",
+      "description": "List of HTTP IP address and port separated by a colon.",
+      "items": {
+        "type": "string",
+        "description": "HTTP IP address and port (classically 80) separated by a colon.",
+        "examples": [
+          "84.188.43.159:80",
+          "172.116.12.182:10080"
+        ]
+      }
+    },
+    "http_tls_ip": {
+      "type": "array",
+      "description": "List of HTTP IP address and TLS port separated by a colon.",
+      "items": {
+        "type": "string",
+        "description": "HTTP IP address and TLS port (classically 443) separated by a colon.",
+        "examples": [
+          "84.188.43.159:443",
+          "172.116.82.124:10443"
+        ]
+      }
+    },
+    "http_proxy": {
+      "type": "array",
+      "description": "List of HTTP IP address and port separated by a colon.",
+      "items": {
+        "type": "string",
+        "description": "HTTP IP address and port (classically 8080) separated by a colon.",
+        "examples": [
+          "84.188.43.159:8080",
+          "172.116.82.124:1280"
+        ]
+      }
+    },
+    "ntp_servers": {
+      "type": "array",
+      "description": "List of Network Time Protocol server.",
+      "items": {
+        "type": "string",
+        "description": "Network Time Protocol server",
+        "examples": [
+          "ntp-sop.inria.fr",
+          "0.debian.pool.ntp.org",
+          "1.pool.ntp.org"
+        ]
+      }
+    },
+    "domain_name_servers": {
+      "type": "array",
+      "description": "List of Domain Name Server.",
+      "items": {
+        "description": "Domain Name Server",
+        "type": "string",
+        "examples": [
+          "1.1.1.1",
+          "194.28.10.20"
+        ]
+      }
+    },
+    "service_area": {
+      "type": "object",
+      "description": "Handled service area of the server.",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "type of service area",
+          "enum": [
+            "point",
+            "polygon",
+            "tiles"
+          ]
+        },
+        "coordinates": {
+          "type": "array",
+          "description": "Coordinates of the point.",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number"
+          }
+        },
+        "radius": {
+          "type": "integer",
+          "description": "Radius of the point.",
+          "default": 0
+        },
+        "vertices": {
+          "type": "array",
+          "description": "Vertices (corners) of the polygon.",
+          "minItems": 3,
+          "items": {
+            "coordinates": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "quadkeys": {
+          "type": "array",
+          "description": "List of quadkey of the tiles.",
+          "items": {
+            "type": "string",
+            "examples": [
+              "12020322313211",
+              "12020322313213",
+              "1203"
+            ]
+          }
+        }
+      }
+    },
+    "cells_id": {
+      "type": "array",
+      "description": "List of cell id of the server.",
+      "items": {
+        "type": "integer"
+      }
+    }
+  }
+}

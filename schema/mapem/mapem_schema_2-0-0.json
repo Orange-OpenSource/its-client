@@ -78,7 +78,7 @@
           ]
         },
         "timestamp": {
-          "$ref": "../dsrc/dsrc_schema_2-0-0.json#/definitions/minute_of_the_year"
+          "$ref": "/schema/dsrc/dsrc_schema_2-0-0.json#/definitions/minute_of_the_year"
         },
         "msg_issue_revision": {
           "type": "integer",

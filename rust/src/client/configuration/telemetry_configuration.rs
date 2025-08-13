@@ -48,9 +48,9 @@ pub struct TelemetryConfiguration {
 impl TelemetryConfiguration {
     pub(crate) fn basic_auth_header(&self) -> Option<String> {
         if let (Some(username), Some(password)) = (&self.username, &self.password) {
-            let raw = format!("{}:{}", username, password);
+            let raw = format!("{username}:{password}");
             let as_b64 = base64::prelude::BASE64_STANDARD.encode(raw.as_bytes());
-            Some(format!("Basic {}", as_b64))
+            Some(format!("Basic {as_b64}"))
         } else {
             None
         }

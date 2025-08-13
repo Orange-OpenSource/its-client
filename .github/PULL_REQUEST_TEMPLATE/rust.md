@@ -22,4 +22,4 @@ Test
 How to test
 -------
 
-1. Execute each example following the documentation into the [README file](rust/README.md).
+1. Execute each example following the documentation into the [README file](/rust/README.md).
