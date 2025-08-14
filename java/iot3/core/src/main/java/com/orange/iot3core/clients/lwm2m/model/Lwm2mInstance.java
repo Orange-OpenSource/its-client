@@ -13,10 +13,11 @@ import io.reactivex.annotations.Nullable;
 import org.eclipse.leshan.client.resource.BaseInstanceEnabler;
 import org.eclipse.leshan.client.resource.BaseInstanceEnablerFactory;
 import org.eclipse.leshan.client.resource.LwM2mInstanceEnabler;
-import org.eclipse.leshan.client.servers.ServerIdentity;
+import org.eclipse.leshan.client.servers.LwM2mServer;
 import org.eclipse.leshan.core.LwM2mId;
 import org.eclipse.leshan.core.node.LwM2mResource;
 import org.eclipse.leshan.core.node.LwM2mSingleResource;
+import org.eclipse.leshan.core.request.argument.Arguments;
 import org.eclipse.leshan.core.response.ExecuteResponse;
 import org.eclipse.leshan.core.response.ReadResponse;
 import org.eclipse.leshan.core.response.WriteResponse;
@@ -92,14 +93,16 @@ public abstract class Lwm2mInstance {
     protected ResponseValue execute(
             int resourceId,
             @Nullable
-            String params
+            Arguments arguments
     ) {
         return null;
     }
 
     protected boolean onResourcesChange(int... resourceIds) {
         if (instanceEnabler != null) {
-            instanceEnabler.fireResourcesChange(resourceIds);
+            for (int resourceId : resourceIds) {
+                instanceEnabler.fireResourceChange(resourceId);
+            }
             return true;
         } else {
             return false;
@@ -190,7 +193,7 @@ public abstract class Lwm2mInstance {
     private class InternalInstanceEnabler extends BaseInstanceEnabler {
 
         @Override
-        public ReadResponse read(ServerIdentity identity, int resourceId) {
+        public ReadResponse read(LwM2mServer identity, int resourceId) {
             ResponseValue responseValue = Lwm2mInstance.this.read(resourceId);
             if (responseValue != null) {
                 ResponseType type = responseValue.getType();
@@ -205,7 +208,7 @@ public abstract class Lwm2mInstance {
         }
 
         @Override
-        public WriteResponse write(ServerIdentity identity, int resourceId, LwM2mResource value) {
+        public WriteResponse write(LwM2mServer identity, boolean replace, int resourceId, LwM2mResource value) {
             ResponseValue responseValue = Lwm2mInstance.this.write(resourceId, value.getValue());
             if (responseValue != null) {
                 ResponseType type = responseValue.getType();
@@ -214,13 +217,13 @@ public abstract class Lwm2mInstance {
                     case NOT_FOUND -> WriteResponse.notFound();
                 };
             } else {
-                return super.write(identity, resourceId, value);
+                return super.write(identity, replace, resourceId, value);
             }
         }
 
         @Override
-        public ExecuteResponse execute(ServerIdentity identity, int resourceId, String params) {
-            ResponseValue responseValue = Lwm2mInstance.this.execute(resourceId, params);
+        public ExecuteResponse execute(LwM2mServer identity, int resourceId, Arguments arguments) {
+            ResponseValue responseValue = Lwm2mInstance.this.execute(resourceId, arguments);
             if (responseValue != null) {
                 ResponseType type = responseValue.getType();
                 return switch (type) {
@@ -228,12 +231,12 @@ public abstract class Lwm2mInstance {
                     case NOT_FOUND -> ExecuteResponse.notFound();
                 };
             } else {
-                return super.execute(identity, resourceId, params);
+                return super.execute(identity, resourceId, arguments);
             }
         }
 
         @Override
-        public void onDelete(ServerIdentity identity) {
+        public void onDelete(LwM2mServer identity) {
             super.onDelete(identity);
         }
 

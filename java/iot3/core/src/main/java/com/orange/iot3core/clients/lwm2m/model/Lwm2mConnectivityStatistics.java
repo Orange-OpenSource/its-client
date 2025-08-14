@@ -9,6 +9,7 @@
 package com.orange.iot3core.clients.lwm2m.model;
 
 import io.reactivex.annotations.Nullable;
+import org.eclipse.leshan.core.request.argument.Arguments;
 
 public abstract class Lwm2mConnectivityStatistics extends Lwm2mInstance {
     @Nullable // 0 [R] optional
@@ -87,7 +88,7 @@ public abstract class Lwm2mConnectivityStatistics extends Lwm2mInstance {
     protected ResponseValue execute(
             int resourceId,
             @Nullable
-            String params
+            Arguments arguments
     ) {
         switch (resourceId) {
             case START_RES_ID -> actionStart();
