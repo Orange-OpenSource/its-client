@@ -11,9 +11,7 @@
 
 use crate::client::configuration::configuration_error::ConfigurationError;
 use crate::client::configuration::configuration_error::ConfigurationError::NoPassword;
-use crate::client::configuration::{
-    MQTT_SECTION, get_mandatory_from_section, get_optional_from_section,
-};
+use crate::client::configuration::{get_mandatory_from_properties, get_optional_from_properties};
 use crate::transport::mqtt::configure_transport;
 use ini::Properties;
 use rumqttc::v5::MqttOptions;
@@ -46,27 +44,31 @@ impl TryFrom<&Properties> for MqttConfiguration {
     ///
     /// A result containing the `MqttConfiguration` or an error.
     fn try_from(properties: &Properties) -> Result<Self, Self::Error> {
-        let section = (MQTT_SECTION, properties);
         let mut mqtt_options = MqttOptions::new(
-            get_mandatory_from_section::<String>("client_id", section)?,
-            get_mandatory_from_section::<String>("host", section)?,
-            get_mandatory_from_section::<u16>("port", section)?,
+            get_mandatory_from_properties::<String>("client_id", properties)?,
+            get_mandatory_from_properties::<String>("host", properties)?,
+            get_mandatory_from_properties::<u16>("port", properties)?,
         );
 
-        if let Ok(Some(username)) = get_optional_from_section::<String>("username", section.1) {
-            if let Ok(Some(password)) = get_optional_from_section::<String>("password", section.1) {
+        if let Ok(Some(username)) = get_optional_from_properties::<String>("username", properties) {
+            if let Ok(Some(password)) =
+                get_optional_from_properties::<String>("password", properties)
+            {
                 mqtt_options.set_credentials(username, password);
             } else {
                 return Err(NoPassword);
             }
         }
+        if let Ok(Some(connection_timeout)) =
+            get_optional_from_properties::<u64>("connection_timeout", properties)
+        {
+            mqtt_options.set_connection_timeout(connection_timeout);
+        }
 
-        // TODO manage other optional
-
-        let use_tls = get_optional_from_section::<bool>("use_tls", properties)
+        let use_tls = get_optional_from_properties::<bool>("use_tls", properties)
             .unwrap_or_default()
             .unwrap_or_default();
-        let use_websocket = get_optional_from_section::<bool>("use_websocket", properties)
+        let use_websocket = get_optional_from_properties::<bool>("use_websocket", properties)
             .unwrap_or_default()
             .unwrap_or_default();
 
@@ -92,6 +94,7 @@ impl Deref for MqttConfiguration {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::client::configuration::MQTT_SECTION;
     use ini::Ini;
 
     /// Creates properties for testing.
