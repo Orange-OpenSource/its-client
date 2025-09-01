@@ -17,7 +17,7 @@ use crate::client::configuration::geo_configuration::GeoConfiguration;
 use crate::client::configuration::mqtt_configuration::MqttConfiguration;
 #[cfg(feature = "telemetry")]
 use crate::client::configuration::telemetry_configuration::TelemetryConfiguration;
-use crate::client::configuration::{Configuration, get_optional_from_section};
+use crate::client::configuration::{Configuration, get_optional_from_properties};
 #[cfg(feature = "mobility")]
 use crate::client::configuration::{
     mobility_configuration::MOBILITY_SECTION, mobility_configuration::MobilityConfiguration,
@@ -134,28 +134,28 @@ pub async fn bootstrap(mut ini: Ini) -> Result<Configuration, ConfigurationError
 
 fn mqtt_configuration_from_bootstrap(
     bootstrap: &Bootstrap,
-    mut mqtt_section: Properties,
+    mut mqtt_properties: Properties,
 ) -> Result<MqttConfiguration, ConfigurationError> {
-    let tls = get_optional_from_section("use_tls", &mqtt_section)?.unwrap_or_default();
-    let ws = get_optional_from_section("use_websocket", &mqtt_section)?.unwrap_or_default();
+    let tls = get_optional_from_properties("use_tls", &mqtt_properties)?.unwrap_or_default();
+    let ws = get_optional_from_properties("use_websocket", &mqtt_properties)?.unwrap_or_default();
 
     let uri = match (tls, ws) {
         (true, true) => bootstrap
             .protocols
             .get("mqtt-wss")
-            .ok_or(MissingMandatoryField("mqtt-wss", "protocols")),
+            .ok_or(MissingMandatoryField("mqtt-wss")),
         (false, true) => bootstrap
             .protocols
             .get("mqtt-ws")
-            .ok_or(MissingMandatoryField("mqtt-ws", "protocols")),
+            .ok_or(MissingMandatoryField("mqtt-ws")),
         (true, false) => bootstrap
             .protocols
             .get("mqtts")
-            .ok_or(MissingMandatoryField("mqtts", "protocols")),
+            .ok_or(MissingMandatoryField("mqtts")),
         (false, false) => bootstrap
             .protocols
             .get("mqtt")
-            .ok_or(MissingMandatoryField("mqtt", "protocols")),
+            .ok_or(MissingMandatoryField("mqtt")),
     }?;
 
     let url: Url = {
@@ -169,26 +169,26 @@ fn mqtt_configuration_from_bootstrap(
     }?;
 
     if ws {
-        mqtt_section.insert("host", url.authority());
+        mqtt_properties.insert("host", url.authority());
     } else {
-        mqtt_section.insert(
+        mqtt_properties.insert(
             "host",
             url.host_str()
                 .ok_or(BootstrapFailure("URL must have a host".to_string()))?,
         );
     }
 
-    mqtt_section.insert(
+    mqtt_properties.insert(
         "port",
         url.port()
             .ok_or(BootstrapFailure("URL must have a port".to_string()))?
             .to_string(),
     );
-    mqtt_section.insert("client_id", &bootstrap.id);
-    mqtt_section.insert("username", &bootstrap.username);
-    mqtt_section.insert("password", &bootstrap.password);
+    mqtt_properties.insert("client_id", &bootstrap.id);
+    mqtt_properties.insert("username", &bootstrap.username);
+    mqtt_properties.insert("password", &bootstrap.password);
 
-    MqttConfiguration::try_from(&mqtt_section)
+    MqttConfiguration::try_from(&mqtt_properties)
 }
 
 #[cfg(feature = "telemetry")]
@@ -196,18 +196,18 @@ fn telemetry_configuration_from_bootstrap(
     bootstrap: &Bootstrap,
     mut telemetry_section: Properties,
 ) -> Result<TelemetryConfiguration, ConfigurationError> {
-    let tls = get_optional_from_section("use_tls", &telemetry_section)?.unwrap_or_default();
+    let tls = get_optional_from_properties("use_tls", &telemetry_section)?.unwrap_or_default();
 
     let uri = if tls {
         bootstrap
             .protocols
             .get("otlp-https")
-            .ok_or(MissingMandatoryField("otlp-https", "protocols"))
+            .ok_or(MissingMandatoryField("otlp-https"))
     } else {
         bootstrap
             .protocols
             .get("otlp-http")
-            .ok_or(MissingMandatoryField("otlp-http", "protocols"))
+            .ok_or(MissingMandatoryField("otlp-http"))
     }?;
 
     let url = Url::parse(uri).expect("Not an URL");
@@ -322,9 +322,9 @@ mod tests {
                 "psk_run_password": "!s3CuR3",
                 "protocols": {
                     "mqtt": "mqtt://mqtt.domain.com:1884",
-                    "mqtt-ws": "http://domain.com:8000/message",
-                    "otlp-http": "http://domain.com:8000/collector",
-                    "jaeger-http": "http://domain.com:8000/jaeger"
+                    "mqtt-ws": "https://domain.com:8000/message",
+                    "otlp-http": "https://domain.com:8000/collector",
+                    "jaeger-http": "https://domain.com:8000/jaeger"
                 }
             }"#,
         )
@@ -357,9 +357,9 @@ mod tests {
             "psk_run_password": "!s3CuR3",
             "protocols": {
                 "mqtt": "mqtt://mqtt.domain.com:1884",
-                "mqtt-ws": "http://domain.com:8000/message",
-                "otlp-http": "http://domain.com:8000/collector",
-                "jaeger-http": "http://domain.com:8000/jaeger"
+                "mqtt-ws": "https://domain.com:8000/message",
+                "otlp-http": "https://domain.com:8000/collector",
+                "jaeger-http": "https://domain.com:8000/jaeger"
             }
         }"#
     );
@@ -372,9 +372,9 @@ mod tests {
             "psk_run_password": "!s3CuR3",
             "protocols": {
                 "mqtt": "mqtt://mqtt.domain.com:1884",
-                "mqtt-ws": "http://domain.com:8000/message",
-                "otlp-http": "http://domain.com:8000/collector",
-                "jaeger-http": "http://domain.com:8000/jaeger"
+                "mqtt-ws": "https://domain.com:8000/message",
+                "otlp-http": "https://domain.com:8000/collector",
+                "jaeger-http": "https://domain.com:8000/jaeger"
             }
         }"#
     );
@@ -387,9 +387,9 @@ mod tests {
             "psk_run_password": {"plain": "!s3CuR3"},
             "protocols": {
                 "mqtt": "mqtt://mqtt.domain.com:1884",
-                "mqtt-ws": "http://domain.com:8000/message",
-                "otlp-http": "http://domain.com:8000/collector",
-                "jaeger-http": "http://domain.com:8000/jaeger"
+                "mqtt-ws": "https://domain.com:8000/message",
+                "otlp-http": "https://domain.com:8000/collector",
+                "jaeger-http": "https://domain.com:8000/jaeger"
             }
         }"#
     );
@@ -402,9 +402,9 @@ mod tests {
             "psk_run_password": "!s3CuR3",
             "protocol": {
                 "mqtt": "mqtt://mqtt.domain.com:1884",
-                "mqtt-ws": "http://domain.com:8000/message",
-                "otlp-http": "http://domain.com:8000/collector",
-                "jaeger-http": "http://domain.com:8000/jaeger"
+                "mqtt-ws": "https://domain.com:8000/message",
+                "otlp-http": "https://domain.com:8000/collector",
+                "jaeger-http": "https://domain.com:8000/jaeger"
             }
         }"#
     );
@@ -417,9 +417,9 @@ mod tests {
             "psk_run_password": "!s3CuR3",
             "protocols": [
                 "mqtt://mqtt.domain.com:1884",
-                "http://domain.com:8000/message",
-                "http://domain.com:8000/collector",
-                "http://domain.com:8000/jaeger"
+                "https://domain.com:8000/message",
+                "https://domain.com:8000/collector",
+                "https://domain.com:8000/jaeger"
             ]
         }"#
     );
