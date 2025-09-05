@@ -184,8 +184,14 @@ public actor Mobility {
                         timestamp: now)
 
         // Publish DENM
-        let quadkey = QuadkeyBuilder().quadkeyFrom(latitude: latitude,
-                                                   longitude: longitude,
+        try await sendDENM(denm)
+    }
+
+    /// Sends a `DENM` to share it.
+    /// - Parameter denm: The `DENM` to send.
+    public func sendDENM(_ denm: DENM) async throws(MobilityError) {
+        let quadkey = QuadkeyBuilder().quadkeyFrom(latitude: denm.message.managementContainer.eventPosition.latitude,
+                                                   longitude: denm.message.managementContainer.eventPosition.longitude,
                                                    zoomLevel: reportZoomLevel,
                                                    separator: "/")
         try await publish(denm, topic: try topic(for: .denm, in: quadkey))
