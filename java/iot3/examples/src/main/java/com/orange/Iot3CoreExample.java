@@ -45,7 +45,8 @@ public class Iot3CoreExample {
             "your_psk_id",
             "your_private_key_in_hex",
             EXAMPLE_SHORT_SERVER_ID,
-            EXAMPLE_LWM2M_SERVER
+            EXAMPLE_LWM2M_SERVER,
+            false
     );
 
     private static IoT3Core ioT3Core;

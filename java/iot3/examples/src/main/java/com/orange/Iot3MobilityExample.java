@@ -68,7 +68,8 @@ public class Iot3MobilityExample {
             "your_psk_id",
             "your_private_key_in_hex",
             EXAMPLE_SHORT_SERVER_ID,
-            EXAMPLE_LWM2M_SERVER
+            EXAMPLE_LWM2M_SERVER,
+            false
     );
     private static IoT3Mobility ioT3Mobility;
     private static final CustomLwm2mConnectivityStatisticsExample lwm2mConnectivityStatistics =
