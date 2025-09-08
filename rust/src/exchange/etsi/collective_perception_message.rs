@@ -208,7 +208,10 @@ pub struct MessageRateHz {
 }
 
 impl CollectivePerceptionMessage {
-    pub fn mobile_perceived_object_list(&self) -> Vec<MobilePerceivedObject> {
+    pub fn mobile_perceived_object_list(
+        &self,
+        object_id_rotation_count: Option<u8>,
+    ) -> Vec<MobilePerceivedObject> {
         self.perceived_object_container
             .iter()
             .map(|perceived_object| {
@@ -217,7 +220,7 @@ impl CollectivePerceptionMessage {
                     // assumed clone : we store a copy into the MobilePerceivedObject container
                     // TODO use a lifetime to propage the lifecycle between PerceivedObject and MobilePerceivedObject instead of clone
                     perceived_object.clone(),
-                    None,
+                    object_id_rotation_count,
                 )
             })
             .collect()
