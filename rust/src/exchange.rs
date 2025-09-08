@@ -42,11 +42,20 @@ pub struct Exchange {
     pub version: String,
     pub message: Message,
 
+    /// The path of the object that generated the message.
+    /// It is a list of PathElement, each one containing the position of the object
+    /// when it sent a message, the type of the message and optionally the id of the
+    /// message (e.g. the sequence number for CAM and DENM).
     /// Only used into the DENM message.
     /// TODO study if the field detection_zones_to_event_position could be used instead.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub path: Vec<PathElement>,
 
+    /// The rotation count of the object ID.
+    /// Each time  the max value of the object ID is reached,
+    /// the object ID is reset to 0 and the rotation count is incremented by 1.
+    /// It allows to keep track of the number of times the object ID has been reset.
+    /// If not provided, it is assumed each new occurrence o an object ID is a different object.
     /// Only used into the CPM message.
     pub object_id_rotation_count: Option<u8>,
 }
@@ -61,22 +70,31 @@ pub struct PathElement {
 }
 
 impl Exchange {
+    /// Create a new Exchange instance.
+    /// - `source_uuid`: The UUID of the source application.
+    /// - `timestamp`: The timestamp of the message in milliseconds since epoch.
+    /// - `version`: The version of the message.
+    /// - `path`: The path of elements included into the DENM.
+    /// - `object_id_rotation_count`: The rotation count of the object ID included into the CPM.
+    /// - `message`: The message content.
     pub fn new(
-        component: String,
+        source_uuid: String,
         timestamp: u64,
+        version: String,
         path: Vec<PathElement>,
+        object_id_rotation_count: Option<u8>,
         message: Message,
     ) -> Box<Exchange> {
         let content: &dyn Content = &message;
 
         Box::from(Exchange {
             message_type: content.get_type().to_string(),
-            version: "2".to_string(),
-            source_uuid: component,
+            version,
+            source_uuid,
             path,
             timestamp,
             message,
-            object_id_rotation_count: None,
+            object_id_rotation_count,
         })
     }
 
@@ -699,7 +717,7 @@ mod tests {
     fn bad_denm_with_string_timestamp() -> &'static str {
         r#"{
             "message_type": "denm",
-            "version": "2.3.0",
+            "version": "2.2.0",
             "source_uuid": "uuid14",
             "timestamp": "1574778515425",
             "message": {
@@ -724,7 +742,7 @@ mod tests {
     fn bad_denm_with_protocol_version_u32() -> &'static str {
         r#"{
             "message_type": "denm",
-            "version": "2.3.0",
+            "version": "2.2.0",
             "source_uuid": "uuid14",
             "timestamp": 1574778515425,
             "message": {
