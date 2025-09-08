@@ -39,7 +39,14 @@ public struct DecentralizedEnvironmentalNotificationMessage: Codable, Sendable {
         case millisecondsTimestamp = "timestamp"
     }
 
-    init(
+    /// Initializes a `DENM`.
+    /// - Parameters:
+    ///   - message: The DENM message.
+    ///   - origin: The entity responsible for this message.
+    ///   - sourceUUID: The identifier of the entity responsible for emitting the message.
+    ///   - timestamp: The timestamp when the message was generated since Unix Epoch in seconds.
+    ///   - path: The list of ordered elements root source of the message.
+    public init(
         message: DENMMessage,
         origin: Origin = .originSelf,
         sourceUUID: String,
