@@ -15,7 +15,7 @@ use log::warn;
 use std::string::ToString;
 
 use crate::client::configuration::configuration_error::ConfigurationError;
-use crate::client::configuration::{get_mandatory_from_section, get_optional_from_section};
+use crate::client::configuration::{get_mandatory_from_properties, get_optional_from_properties};
 
 pub(crate) const TELEMETRY_SECTION: &str = "telemetry";
 pub(crate) const DEFAULT_PATH: &str = "v1/traces";
@@ -61,10 +61,8 @@ impl TryFrom<&Properties> for TelemetryConfiguration {
     type Error = ConfigurationError;
 
     fn try_from(properties: &Properties) -> Result<Self, Self::Error> {
-        let section = ("telemetry", properties);
-
         // optionals
-        let path = match get_optional_from_section::<String>("path", properties) {
+        let path = match get_optional_from_properties::<String>("path", properties) {
             Ok(value) => value.unwrap_or(DEFAULT_PATH.to_string()),
             Err(e) => {
                 warn!(
@@ -74,7 +72,7 @@ impl TryFrom<&Properties> for TelemetryConfiguration {
             }
         };
 
-        let batch_size = match get_optional_from_section::<usize>("batch_size", properties) {
+        let batch_size = match get_optional_from_properties::<usize>("batch_size", properties) {
             Ok(value) => value.unwrap_or(2048),
             Err(e) => {
                 if let ConfigurationError::TypeError(_, _) = e {
@@ -85,18 +83,18 @@ impl TryFrom<&Properties> for TelemetryConfiguration {
         };
 
         let (username, password) =
-            match get_optional_from_section::<String>("username", properties)? {
+            match get_optional_from_properties::<String>("username", properties)? {
                 Some(username) => {
-                    let password = get_mandatory_from_section::<String>("password", section)?;
-                    (Some(username), Some(password))
+                    let password = get_optional_from_properties::<String>("password", properties)?;
+                    (Some(username), password)
                 }
                 None => (None, None),
             };
 
         let s = TelemetryConfiguration {
-            host: get_mandatory_from_section::<String>("host", section)?,
-            port: get_mandatory_from_section::<u16>("port", section)?,
-            use_tls: get_mandatory_from_section::<bool>("use_tls", section)?,
+            host: get_mandatory_from_properties::<String>("host", properties)?,
+            port: get_mandatory_from_properties::<u16>("port", properties)?,
+            use_tls: get_mandatory_from_properties::<bool>("use_tls", properties)?,
             path,
             batch_size,
             username,
