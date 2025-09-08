@@ -17,7 +17,7 @@ public struct CAMMessage: Codable, Sendable {
     public let protocolVersion: UInt8
     /// The identifier for an ITS-S.
     public let stationID: UInt32
-    /// The time of the reference position in the CAM, considered as time of the CAM generation.
+    /// The time of the CAM generation in seconds.
     public let etsiGenerationDeltaTime: Int
     /// The basic container.
     public let basicContainer: BasicContainer
@@ -37,7 +37,15 @@ public struct CAMMessage: Codable, Sendable {
         case lowFrequencyContainer = "low_frequency_container"
     }
 
-    init(
+    /// Initializes a `CAMMessage`.
+    /// - Parameters:
+    ///   - protocolVersion: The version of the ITS message and/or communication protocol (Default: 1).
+    ///   - stationID: The identifier for an ITS-S.
+    ///   - generationDeltaTime: The time of the CAM generation in seconds.
+    ///   - basicContainer: The basic container.
+    ///   - highFrequencyContainer: The high frequency container.
+    ///   - lowFrequencyContainer: The low frequency container.
+    public init(
         protocolVersion: UInt8 = 1,
         stationID: UInt32,
         generationDeltaTime: TimeInterval,

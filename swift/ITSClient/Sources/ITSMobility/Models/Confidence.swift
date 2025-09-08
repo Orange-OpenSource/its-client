@@ -23,7 +23,11 @@ public struct Confidence: Codable, Sendable {
         case positionConfidenceEllipse = "position_confidence_ellipse"
     }
 
-    init(altitude: AltitudeConfidence? = nil, positionConfidenceEllipse: PositionConfidenceEllipse?) {
+    /// Initializes a `Confidence`.
+    /// - Parameters:
+    ///   - altitude: The altitude confidence.
+    ///   - positionConfidenceEllipse: The position confidence ellipse.
+    public init(altitude: AltitudeConfidence? = nil, positionConfidenceEllipse: PositionConfidenceEllipse?) {
         self.altitude = altitude
         self.positionConfidenceEllipse = positionConfidenceEllipse
     }
@@ -68,37 +72,58 @@ public enum AltitudeConfidence: Int, Codable, Sendable {
 
 /// The position confidence ellipse.
 public struct PositionConfidenceEllipse: Codable, Sendable {
-    /// The semi major confidence.
-    public let semiMajorConfidence: Int?
-    /// The semi minor confidence.
-    public let semiMinorConfidence: Int?
-    /// The semi major orientation.
-    public let semiMajorOrientation: Int?
-
-    private static let minConfidence: Int = 0
-    private static let minOrientation: Int = 0
-    private static let unavailableConfidence: Int = 4_095
-    private static let unavailableOrientation: Int = 3_601
-
-    enum CodingKeys: String, CodingKey {
-        case semiMajorConfidence = "semi_major_confidence"
-        case semiMajorOrientation = "semi_major_orientation"
-        case semiMinorConfidence = "semi_minor_confidence"
+    /// The semi major confidence in centimeters.
+    public let etsiSemiMajorConfidence: Int?
+    /// The semi minor confidence in centimeters.
+    public let etsiSemiMinorConfidence: Int?
+    /// The semi major orientation in decidegrees.
+    public let etsiSemiMajorOrientation: Int?
+    /// The semi major confidence in meters.
+    public var semiMajorConfidence: Double? {
+        etsiSemiMajorConfidence.map { ETSI.centimetersToMeters($0) }
+    }
+    /// The semi minor confidence in meters.
+    public var semiMinorConfidence: Double? {
+        etsiSemiMinorConfidence.map { ETSI.centimetersToMeters($0) }
+    }
+    /// The semi major confidence in degrees.
+    public var semiMajorOrientation: Double? {
+        etsiSemiMajorOrientation.map { ETSI.deciDegreesToDegrees($0) }
     }
 
-    init(
-        semiMajorConfidence: Int? = Self.unavailableConfidence,
-        semiMajorOrientation: Int? = Self.unavailableOrientation,
-        semiMinorConfidence: Int? = Self.unavailableConfidence
+    private static let minConfidence = 0
+    private static let minOrientation = 0
+    private static let maxConfidence = 4_095
+    private static let maxOrientation = 3_601
+    /// The unavailable confidence value.
+    public static let unavailableConfidence = ETSI.centimetersToMeters(Self.maxConfidence)
+    /// The unavailable orientation value.
+    public static let unavailableOrientation = ETSI.deciDegreesToDegrees(Self.maxOrientation)
+
+    enum CodingKeys: String, CodingKey {
+        case etsiSemiMajorConfidence = "semi_major_confidence"
+        case etsiSemiMinorConfidence = "semi_minor_confidence"
+        case etsiSemiMajorOrientation = "semi_major_orientation"
+    }
+
+    /// Initializes a `PositionConfidenceEllipse`.
+    /// - Parameters:
+    ///   - semiMajorConfidence: The semi major confidence in meters.
+    ///   - semiMinorConfidence: The semi minor confidence in meters.
+    ///   - semiMajorOrientation: The semi major orientation in degrees.
+    public init(
+        semiMajorConfidence: Double? = Self.unavailableConfidence,
+        semiMinorConfidence: Double? = Self.unavailableConfidence,
+        semiMajorOrientation: Double? = Self.unavailableOrientation
     ) {
-        self.semiMajorConfidence = semiMajorConfidence.map {
-            clip($0, Self.minConfidence, Self.unavailableConfidence)
+        self.etsiSemiMajorConfidence = semiMajorConfidence.map {
+            clip(ETSI.metersToCentimeters($0), Self.minConfidence, Self.maxConfidence)
         }
-        self.semiMinorConfidence = semiMinorConfidence.map {
-            clip($0, Self.minConfidence, Self.unavailableConfidence)
+        self.etsiSemiMinorConfidence = semiMinorConfidence.map {
+            clip(ETSI.metersToCentimeters($0), Self.minConfidence, Self.maxConfidence)
         }
-        self.semiMajorOrientation = semiMajorOrientation.map {
-            clip($0, Self.minOrientation, Self.unavailableOrientation)
+        self.etsiSemiMajorOrientation = semiMajorOrientation.map {
+            clip(ETSI.degreesToDeciDegrees($0), Self.minOrientation, Self.maxOrientation)
         }
     }
 }

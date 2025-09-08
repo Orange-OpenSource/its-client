@@ -36,7 +36,16 @@ public struct DENMMessage: Codable, Sendable {
         case stationID = "station_id"
     }
 
-    init(
+    /// Initializes a `DENMMessage`.
+    /// - Parameters:
+    ///   - protocolVersion: The version of the ITS message and/or communication protocol.
+    ///   - stationID: The identifier for an ITS-S.
+    ///   - managementContainer: Contains information related to the DENM management and the DENM protocol.
+    ///   - situationContainer: Contains information related to the type of the detected event.
+    ///   - locationContainer: Contains information specific to the use case which requires the transmission of
+    ///     additional information that is not included in the three previous containers.
+    ///   - alacarteContainer: Contains information of the event location, and the location referencing.
+    public init(
         protocolVersion: UInt8 = 1,
         stationID: UInt32,
         managementContainer: ManagementContainer,

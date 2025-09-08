@@ -18,14 +18,14 @@ struct CAMTests {
     private let latitude = 44.7758076
     private let longitude = -0.6528173
     private let altitude = 81.44
-    private let semiMajorConfidence = 10
-    private let semiMajorOrientation = 1
-    private let semiMinorConfidence = 50
+    private let semiMajorConfidence = 0.1
+    private let semiMinorConfidence = 0.5
+    private let semiMajorOrientation = 0.1
     private let altitudeConfidence = AltitudeConfidence.alt_000_02
     private let stationType = StationType.passengerCar
     private let headingConfidence = 0.2
     private let speedConfidence = 0.03
-    private let vehiculeLengthConfidence = VehiculeLengthConfidence.noTrailerPresent
+    private let vehiculeConfidence = VehiculeLengthConfidence.noTrailerPresent
     private let heading = 303.7
     private let speed = 0.21
     private let driveDirection = DriveDirection.forward
@@ -61,8 +61,8 @@ struct CAMTests {
         // Given
         let position = Position(latitude: latitude, longitude: longitude, altitude: altitude)
         let positionConfidence = PositionConfidenceEllipse(semiMajorConfidence: semiMajorConfidence,
-                                                           semiMajorOrientation: semiMajorOrientation,
-                                                           semiMinorConfidence: semiMinorConfidence)
+                                                           semiMinorConfidence: semiMinorConfidence,
+                                                           semiMajorOrientation: semiMajorOrientation)
         let confidence = Confidence(altitude: altitudeConfidence,
                                     positionConfidenceEllipse: positionConfidence)
         let basicContainer = BasicContainer(stationType: stationType,
@@ -70,7 +70,7 @@ struct CAMTests {
                                             confidence: confidence)
         let highFrequencyConfidence = HighFrequencyContainerConfidence(heading: headingConfidence,
                                                                        speed: speedConfidence,
-                                                                       vehicleLength: vehiculeLengthConfidence)
+                                                                       vehicleLengthConfidence: vehiculeConfidence)
         let highFrequencyContainer = HighFrequencyContainer(heading: heading,
                                                             speed: speed,
                                                             driveDirection: driveDirection,
@@ -121,7 +121,7 @@ struct CAMTests {
         #expect(highFrequencyContainer?.vehicleWidth == vehicleWidth)
         #expect(highFrequencyContainer?.confidence?.heading == headingConfidence)
         #expect(highFrequencyContainer?.confidence?.speed == speedConfidence)
-        #expect(highFrequencyContainer?.confidence?.vehicleLength == vehiculeLengthConfidence)
+        #expect(highFrequencyContainer?.confidence?.vehicleLengthConfidence == vehiculeConfidence)
         #expect(cam.message.lowFrequencyContainer == nil)
     }
 }

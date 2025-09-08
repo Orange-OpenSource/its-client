@@ -15,9 +15,9 @@ import Foundation
 public struct LocationContainer: Codable, Sendable {
     /// The traces, 1 or more path history.
     public let traces: [Trace]
-    /// The event speed in 0.01 m/s.
+    /// The event speed in centimeters per second.
     public let etsiEventSpeed: Int?
-    /// The event heading in 0.1 degrees.
+    /// The event heading in decidegrees.
     public let etsiEventPositionHeading: Int?
     /// The road type.
     public let roadType: RoadType?
@@ -27,7 +27,7 @@ public struct LocationContainer: Codable, Sendable {
     public var eventPositionHeading: Double? {
         etsiEventPositionHeading.map { ETSI.deciDegreesToDegrees($0) }
     }
-    /// The event speed in m/s.
+    /// The event speed in meters per second.
     public var eventSpeed: Double? {
         etsiEventSpeed.map { ETSI.centimetersPerSecondToMetersPerSecond($0) }
     }
@@ -44,7 +44,14 @@ public struct LocationContainer: Codable, Sendable {
         case traces
     }
 
-    init(
+    /// Initializes a `LocationContainer`.
+    /// - Parameters:
+    ///   - traces: The traces, 1 or more path history.
+    ///   - eventSpeed: The event speed in meters per second.
+    ///   - eventPositionHeading: The event heading in degrees.
+    ///   - roadType: The road type.
+    ///   - confidence: The location container confidence.
+    public init(
         traces: [Trace] = [],
         eventSpeed: Double? = nil,
         eventPositionHeading: Double? = nil,
@@ -65,7 +72,7 @@ public struct LocationContainer: Codable, Sendable {
 
 /// The trace.
 public struct Trace: Codable, Sendable {
-    /// The path history, a path with a set of path points
+    /// The path history, a path with a set of path points.
     public let pathHistory: [PathHistory]
 
     private static let maxPathHistory = 40
@@ -74,7 +81,9 @@ public struct Trace: Codable, Sendable {
         case pathHistory = "path_history"
     }
 
-    init(pathHistory: [PathHistory]) {
+    /// Initializes a `Trace`.
+    /// - Parameter pathHistory: The path history, a path with a set of path points.
+    public init(pathHistory: [PathHistory]) {
         self.pathHistory = Array(pathHistory.prefix(Self.maxPathHistory))
     }
 }
@@ -96,13 +105,15 @@ public enum RoadType: Int, Codable, Sendable {
 
 /// The location container confidence.
 public struct LocationContainerConfidence: Codable, Sendable {
-    /// The event speed in  0.01 m/s.
+    /// The event speed in centimeters per second.
     public let etsiEventSpeed: Int?
-    /// The event position heading in 0.1 degrees.
+    /// The event position heading in decidegrees.
     public let etsiEventPositionHeading: Int?
+    /// The event speed in meters per second.
     public var eventSpeed: Double? {
         etsiEventSpeed.map { ETSI.centimetersPerSecondToMetersPerSecond($0) }
     }
+    /// The event position in degrees.
     public var eventPositionHeading: Double? {
         etsiEventPositionHeading.map { ETSI.deciDegreesToDegrees($0) }
     }
@@ -112,7 +123,11 @@ public struct LocationContainerConfidence: Codable, Sendable {
         case etsiEventPositionHeading = "event_position_heading"
     }
 
-    init(eventSpeed: Double?, eventPositionHeading: Double?) {
+    /// Initializes  a `LocationContainerConfidence`.
+    /// - Parameters:
+    ///   - eventSpeed: The event speed in meters per second.
+    ///   - eventPositionHeading: The event position in degrees.
+    public init(eventSpeed: Double?, eventPositionHeading: Double?) {
         self.etsiEventSpeed = eventSpeed.map {
             ETSI.metersPerSecondToCentimetersPerSecond($0)
         }
