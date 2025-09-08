@@ -16,10 +16,11 @@ import ITSCore
 public actor Mobility {
     private let core: Core
     private let regionOfInterestCoordinator: RegionOfInterestCoordinator
-    private var mobilityConfiguration: MobilityConfiguration?
     private let roadAlarmCoordinator: RoadAlarmCoordinator
     private let roadUserCoordinator: RoadUserCoordinator
     private var reportZoomLevel: Int
+    /// The mobility configuration.
+    public private(set) var mobilityConfiguration: MobilityConfiguration?
 
     /// Initializes a `Mobility`.
     public init() {
