@@ -17,6 +17,7 @@ public abstract class Lwm2mConfig implements Serializable {
     public abstract String getPskIdentity();
     public abstract String getPrivateKey();
     public abstract Lwm2mServer getServerConfig();
+    public abstract boolean isQueueMode();
 
     /**
      * Configuration for a Bootstrap PSK setup.
@@ -24,7 +25,6 @@ public abstract class Lwm2mConfig implements Serializable {
      * This configuration is used when the LwM2M client needs to start its lifecycle
      * by communicating with a bootstrap server. The bootstrap server provides the client
      * with configuration details (e.g., security and server information) for the main LwM2M server.
-     *
      */
     public static class Lwm2mBootstrapConfig extends Lwm2mConfig {
         private final String endpointName;
@@ -32,6 +32,7 @@ public abstract class Lwm2mConfig implements Serializable {
         private final String pskIdentity;
         private final String privateKey;
         private final Lwm2mServer serverConfig;
+        private final boolean isQueueMode;
 
         /**
          * Constructor for a Bootstrap PSK setup.
@@ -40,13 +41,33 @@ public abstract class Lwm2mConfig implements Serializable {
          * @param uri The URI of the bootstrap server. Example: `coaps://bootstrap.lwm2m.liveobjects.orange-business.com:5684`.
          * @param pskIdentity The PSK identity for authenticating with the bootstrap server.
          * @param privateKey The PSK private key for securing the connection with the bootstrap server.
+         * @param serverConfig Configuration for the LwM2M Server (1) Object.
+         * @param isQueueMode specifies whether to enable Queue Mode
          */
-        public Lwm2mBootstrapConfig(String endpointName, String uri, String pskIdentity, String privateKey, Lwm2mServer serverConfig) {
+        public Lwm2mBootstrapConfig(
+                String endpointName,
+                String uri,
+                String pskIdentity,
+                String privateKey,
+                Lwm2mServer serverConfig,
+                boolean isQueueMode
+        ) {
             this.endpointName = endpointName;
             this.uri = uri;
             this.pskIdentity = pskIdentity;
             this.privateKey = privateKey;
             this.serverConfig = serverConfig;
+            this.isQueueMode = isQueueMode;
+        }
+
+        public Lwm2mBootstrapConfig(
+                String endpointName,
+                String uri,
+                String pskIdentity,
+                String privateKey,
+                Lwm2mServer serverConfig
+        ) {
+            this(endpointName, uri, pskIdentity, privateKey, serverConfig, false);
         }
 
         @Override
@@ -73,6 +94,11 @@ public abstract class Lwm2mConfig implements Serializable {
         public Lwm2mServer getServerConfig() {
             return serverConfig;
         }
+
+        @Override
+        public boolean isQueueMode() {
+            return isQueueMode;
+        }
     }
 
     /**
@@ -90,6 +116,7 @@ public abstract class Lwm2mConfig implements Serializable {
         private final String privateKey;
         private final int shortServerId;
         private final Lwm2mServer serverConfig;
+        private final boolean isQueueMode;
 
         /**
          * Configuration for a Classic PSK (non-bootstrap) setup.
@@ -104,14 +131,36 @@ public abstract class Lwm2mConfig implements Serializable {
          * @param privateKey The PSK private key for securing the connection with the server.
          * @param shortServerId The short server ID assigned to the target server. This value is required
          *                         by the LwM2M protocol to identify the server in a multi-server setup.
+         * @param serverConfig Configuration for the LwM2M Server (1) Object.
+         * @param isQueueMode specifies whether to enable Queue Mode
          */
-        public Lwm2mClassicConfig(String endpointName, String uri, String pskIdentity, String privateKey, int shortServerId, Lwm2mServer serverConfig) {
+        public Lwm2mClassicConfig(
+                String endpointName,
+                String uri,
+                String pskIdentity,
+                String privateKey,
+                int shortServerId,
+                Lwm2mServer serverConfig,
+                boolean isQueueMode
+        ) {
             this.endpointName = endpointName;
             this.uri = uri;
             this.pskIdentity = pskIdentity;
             this.privateKey = privateKey;
             this.shortServerId = shortServerId;
             this.serverConfig = serverConfig;
+            this.isQueueMode = isQueueMode;
+        }
+
+        public Lwm2mClassicConfig(
+                String endpointName,
+                String uri,
+                String pskIdentity,
+                String privateKey,
+                int shortServerId,
+                Lwm2mServer serverConfig
+        ) {
+            this(endpointName, uri, pskIdentity, privateKey, shortServerId, serverConfig, false);
         }
 
         @Override
@@ -141,6 +190,11 @@ public abstract class Lwm2mConfig implements Serializable {
         @Override
         public Lwm2mServer getServerConfig() {
             return serverConfig;
+        }
+
+        @Override
+        public boolean isQueueMode() {
+            return isQueueMode;
         }
     }
 }
