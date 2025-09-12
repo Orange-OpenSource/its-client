@@ -26,7 +26,11 @@ public struct AlacarteContainer: Codable, Sendable {
         case positioningSolution = "positioning_solution"
     }
 
-    init(lanePosition: Int8?, positioningSolution: PositioningSolution?) {
+    /// Initializes a `AlacarteContainer`.
+    /// - Parameters:
+    ///   - lanePosition: The lane position.
+    ///   - positioningSolution: The positioning solution.
+    public init(lanePosition: Int8?, positioningSolution: PositioningSolution?) {
         self.lanePosition = lanePosition.map {
             clip($0, Self.minLanePosition, Self.maxLanePosition)
         }

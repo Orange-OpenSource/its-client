@@ -37,7 +37,13 @@ public struct CooperativeAwarenessMessage: Codable, Sendable {
         case millisecondsTimestamp = "timestamp"
     }
 
-    init(
+    /// Initializes a `CAM`.
+    /// - Parameters:
+    ///   - message: The CAM message.
+    ///   - origin: The entity responsible for this message.
+    ///   - sourceUUID: The identifier of the entity responsible for emitting the message.
+    ///   - timestamp: The timestamp when the message was generated since Unix Epoch in seconds.
+    public init(
         message: CAMMessage,
         origin: Origin = .originSelf,
         sourceUUID: String,

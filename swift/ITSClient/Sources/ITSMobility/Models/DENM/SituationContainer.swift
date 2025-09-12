@@ -28,7 +28,12 @@ public struct SituationContainer: Codable, Sendable {
         case linkedCause = "linked_cause"
     }
 
-    init(
+    /// Initializes a `SituationContainer`.
+    /// - Parameters:
+    ///   - eventType: The event type.
+    ///   - informationQuality: The information quality.
+    ///   - linkedCause: The linked cause.
+    public init(
         eventType: Cause,
         informationQuality: Int? = nil,
         linkedCause: Cause? = nil
