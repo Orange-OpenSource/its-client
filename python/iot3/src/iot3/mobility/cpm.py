@@ -55,9 +55,7 @@ class CollectivePerceptionMessage(etsi.Message):
 
         self._message = dict(
             {
-                "type": "cpm",
-                "origin": "self",
-                "version": "1.2.2",
+                "message_type": "cpm",
                 "source_uuid": uuid,
                 "timestamp": (
                     etsi.ETSI.si2etsi(
@@ -65,14 +63,13 @@ class CollectivePerceptionMessage(etsi.Message):
                         etsi.ETSI.MILLI_SECOND,
                     )
                 ),
+                "version": "2.1.1",
                 "message": {
                     "protocol_version": 1,
                     "station_id": self.station_id(uuid),
-                    "generation_delta_time": (
-                        etsi.ETSI.generation_delta_time(gnss_report.timestamp)
-                    ),
                     "management_container": {
                         "station_type": station_type,
+                        "reference_time": etsi.ETSI.unix2etsi_time(self._timestamp),
                         "reference_position": {
                             "latitude": etsi.ETSI.si2etsi(
                                 gnss_report.latitude,
@@ -84,25 +81,32 @@ class CollectivePerceptionMessage(etsi.Message):
                                 etsi.ETSI.DECI_MICRO_DEGREE,
                                 1800000001,
                             ),
-                            "altitude": etsi.ETSI.si2etsi(
-                                gnss_report.altitude,
-                                etsi.ETSI.CENTI_METER,
-                                800001,
-                            ),
-                        },
-                        "confidence": {
+                            "altitude": {
+                                "value": etsi.ETSI.si2etsi(
+                                    gnss_report.altitude,
+                                    etsi.ETSI.CENTI_METER,
+                                    800001,
+                                ),
+                                # Encoding the altitude error is a non-linear search in
+                                # an array... Let's consider it unavailable for now.
+                                "confidence": etsi.ETSI.si2etsi(
+                                    None,
+                                    etsi.ETSI.CENTI_METER,
+                                    15,
+                                ),
+                            },
                             "position_confidence_ellipse": {
                                 # We treat the 2D error as a circle, so semi-major
                                 # and semi-minor are eqal, and thus the orientation
                                 # of the elipse does not matter.
-                                "semi_major_confidence": etsi.ETSI.si2etsi(
+                                "semi_major": etsi.ETSI.si2etsi(
                                     gnss_report.horizontal_error,
                                     etsi.ETSI.CENTI_METER,
                                     4095,
                                     {"min": 0, "max": 4093},
                                     4094,
                                 ),
-                                "semi_minor_confidence": etsi.ETSI.si2etsi(
+                                "semi_minor": etsi.ETSI.si2etsi(
                                     gnss_report.horizontal_error,
                                     etsi.ETSI.CENTI_METER,
                                     4095,
@@ -116,13 +120,6 @@ class CollectivePerceptionMessage(etsi.Message):
                                     3601,
                                 ),
                             },
-                            # Encoding the altitude error is a non-linear search in
-                            # an array... Let's consider it unavailable for now.
-                            "altitude": etsi.ETSI.si2etsi(
-                                None,
-                                etsi.ETSI.CENTI_METER,
-                                15,
-                            ),
                         },
                     },
                     "perceived_object_container": [],
@@ -258,7 +255,7 @@ class CollectivePerceptionMessage(etsi.Message):
         return etsi.ETSI.etsi2si(
             self._message["message"]["management_container"]["reference_position"][
                 "altitude"
-            ],
+            ]["value"],
             etsi.ETSI.CENTI_METER,
             800001,
         )
@@ -267,7 +264,7 @@ class CollectivePerceptionMessage(etsi.Message):
     def altitude(self, altitude):
         self._message["message"]["management_container"]["reference_position"][
             "altitude"
-        ] = etsi.ETSI.si2etsi(
+        ]["value"] = etsi.ETSI.si2etsi(
             altitude,
             etsi.ETSI.CENTI_METER,
             800001,
