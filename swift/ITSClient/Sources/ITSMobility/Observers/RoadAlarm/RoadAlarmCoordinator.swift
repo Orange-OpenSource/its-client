@@ -31,6 +31,13 @@ actor RoadAlarmCoordinator {
         self.observer = observer
     }
 
+    func reset() async {
+        let entriesRemoved = await cache.clear()
+        for entryRemoved in entriesRemoved {
+            await observer?.didDelete(entryRemoved.value)
+        }
+    }
+
     func handleRoadAlarm(withPayload payload: Data) async {
         guard let observer,
               let denm = try? JSONDecoder().decode(DENM.self, from: payload) else { return }

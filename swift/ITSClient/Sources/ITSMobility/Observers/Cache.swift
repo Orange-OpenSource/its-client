@@ -44,8 +44,10 @@ actor Cache<K: Hashable, V: Sendable> {
         cache.removeValue(forKey: key)
     }
 
-    func clear() {
+    func clear() -> [Entry] {
+        let entriesRemoved = Array(cache.values)
         cache.removeAll()
+        return entriesRemoved
     }
 
     private func startRemovingExpiredEntries() {
