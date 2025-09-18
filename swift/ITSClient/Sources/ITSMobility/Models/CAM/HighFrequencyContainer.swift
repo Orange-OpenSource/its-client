@@ -59,7 +59,7 @@ public struct HighFrequencyContainer: Codable, Sendable {
     }
     /// The longitudinal acceleration in meters per second squared.
     public var longitudinalAcceleration: Double? {
-        etsiLongitudinalAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
+        etsiLongitudinalAcceleration.map { ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared($0) }
     }
     /// The yaw rate in degrees per second.
     public var yawRate: Double? {
@@ -71,11 +71,11 @@ public struct HighFrequencyContainer: Codable, Sendable {
     }
     /// The lateral acceleration in meters per second squared.
     public var lateralAcceleration: Double? {
-        etsiLateralAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
+        etsiLateralAcceleration.map { ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared($0) }
     }
     /// The vertical acceleration in meters per second squared.
     public var verticalAcceleration: Double? {
-        etsiVerticalAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
+        etsiVerticalAcceleration.map { ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared($0) }
     }
 
     private static let minHeading = 0
@@ -98,7 +98,7 @@ public struct HighFrequencyContainer: Codable, Sendable {
     static let unavailableVehiculeLength = ETSI.decimetersToMeters(Self.maxVehiculeLength)
     static let unavailableVehiculeWidth = ETSI.decimetersToMeters(Self.maxVehiculeWidth)
     static let unavailableCurvature = 1_023
-    static let unavailableAcceleration = ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond(Self.maxAcceleration)
+    static let unavailableAcceleration = ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared(Self.maxAcceleration)
 
     enum CodingKeys: String, CodingKey {
         case etsiHeading = "heading"
@@ -172,7 +172,7 @@ public struct HighFrequencyContainer: Codable, Sendable {
         self.curvature = curvature.map { clip($0, Self.minCurvature, Self.maxCurvature) }
         self.curvatureCalculationMode = curvatureCalculationMode
         self.etsiLongitudinalAcceleration = longitudinalAcceleration.map {
-            clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
+            clip(ETSI.metersPerSecondSquaredToDecimetersPerSecondSquared($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
         }
@@ -184,12 +184,12 @@ public struct HighFrequencyContainer: Codable, Sendable {
         self.etsiAccelerationControl = accelerationControl.map { String($0.rawValue, radix: 2) }
         self.lanePosition = lanePosition
         self.etsiLateralAcceleration = lateralAcceleration.map {
-            clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
+            clip(ETSI.metersPerSecondSquaredToDecimetersPerSecondSquared($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
         }
         self.etsiVerticalAcceleration = verticalAcceleration.map {
-            clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
+            clip(ETSI.metersPerSecondSquaredToDecimetersPerSecondSquared($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
         }
@@ -275,15 +275,15 @@ public struct HighFrequencyContainerConfidence: Codable, Sendable {
     }
     /// The longitudinal acceleration in meters per second squared.
     public var longitudinalAcceleration: Double? {
-        etsiLongitudinalAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
+        etsiLongitudinalAcceleration.map { ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared($0) }
     }
     /// The lateral acceleration in meters per second squared.
     public var lateralAcceleration: Double? {
-        etsiLateralAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
+        etsiLateralAcceleration.map { ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared($0) }
     }
     /// The vertical acceleration in meters per second squared.
     public var verticalAcceleration: Double? {
-        etsiVerticalAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
+        etsiVerticalAcceleration.map { ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared($0) }
     }
 
     private static let minHeading = 1
@@ -294,7 +294,7 @@ public struct HighFrequencyContainerConfidence: Codable, Sendable {
     private static let maxAcceleration = 102
     static let unavailableHeading = ETSI.deciDegreesToDegrees(Self.maxHeading)
     static let unavailableSpeed = ETSI.centimetersPerSecondToMetersPerSecond(Self.maxSpeed)
-    static let unavailableAcceleration = ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond(Self.maxAcceleration)
+    static let unavailableAcceleration = ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared(Self.maxAcceleration)
 
     enum CodingKeys: String, CodingKey {
         case etsiHeading = "heading"
@@ -340,18 +340,18 @@ public struct HighFrequencyContainerConfidence: Codable, Sendable {
         self.vehicleLengthConfidence = vehicleLengthConfidence
         self.yawRateConfidence = yawRateConfidence
         self.etsiLongitudinalAcceleration = longitudinalAcceleration.map {
-            clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
+            clip(ETSI.metersPerSecondSquaredToDecimetersPerSecondSquared($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
         }
         self.etsiLateralAcceleration = lateralAcceleration.map {
-            clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
+            clip(ETSI.metersPerSecondSquaredToDecimetersPerSecondSquared($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
         }
         self.curvatureConfidence = curvatureConfidence
         self.etsiVerticalAcceleration = verticalAcceleration.map {
-            clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
+            clip(ETSI.metersPerSecondSquaredToDecimetersPerSecondSquared($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
         }
