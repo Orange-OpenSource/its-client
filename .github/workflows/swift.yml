@@ -29,6 +29,7 @@ jobs:
           cd swift/ITSClient
           swift build
           cd ..
+          xcrun simctl list
           xcodebuild -workspace ITSClient.xcworkspace -scheme SampleApp -destination "name=iPhone 16"
 
   test:
@@ -44,4 +45,5 @@ jobs:
       - name: Build
         run: |
           cd swift/ITSClient
+          xcrun simctl list
           xcodebuild -scheme ITSClient test -testPlan ITSClient-UnitTests -destination "name=iPhone 16"

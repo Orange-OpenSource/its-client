@@ -72,7 +72,20 @@ public struct ManagementContainer: Codable, Sendable {
         case etsiValidityDuration = "validity_duration"
     }
 
-    init(
+    /// Initializes a `ManagementContainer`.
+    /// - Parameters:
+    ///   - actionID: The action identifier.
+    ///   - detectionTime: The detection time since Unix Epoch in seconds.
+    ///   - referenceTime: The reference time since Unix Epoch in seconds.
+    ///   - eventPosition: The event position.
+    ///   - termination: The termination.
+    ///   - relevanceDistance: The relevance distance.
+    ///   - relevanceTrafficDirection: The relevance traffic direction.
+    ///   - validityDuration: The validity duration in seconds (default value: 600 seconds).
+    ///   - transmissionInterval: The transmission interval in seconds.
+    ///   - stationType: The station type.
+    ///   - confidence: The management container confidence.
+    public init(
         actionID: ActionID,
         detectionTime: TimeInterval,
         referenceTime: TimeInterval,
@@ -103,7 +116,7 @@ public struct ManagementContainer: Codable, Sendable {
 
 /// The action identifier.
 public struct ActionID: Codable, Sendable {
-    /// The identifier of an its station.
+    /// The identifier of an ITS station.
     public let originatingStationID: UInt32
     /// The sequence number is set each time a new DENM is created. It is used to differentiate
     /// from events detected by the same ITS-S.
@@ -118,7 +131,12 @@ public struct ActionID: Codable, Sendable {
         case sequenceNumber = "sequence_number"
     }
 
-    init(originatingStationID: UInt32, sequenceNumber: UInt16 = SequenceNumberGenerator.next()) {
+    /// Initializes an `ActionID`.
+    /// - Parameters:
+    ///   - originatingStationID: The identifier of an ITS station.
+    ///   - sequenceNumber: The sequence number is set each time a new DENM is created. It is used to differentiate
+    ///     from events detected by the same ITS-S.
+    public init(originatingStationID: UInt32, sequenceNumber: UInt16 = SequenceNumberGenerator.next()) {
         self.originatingStationID = originatingStationID
         self.sequenceNumber = sequenceNumber
     }

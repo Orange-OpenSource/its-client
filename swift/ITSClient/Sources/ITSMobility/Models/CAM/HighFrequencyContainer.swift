@@ -13,9 +13,9 @@ import Foundation
 
 /// The high frequency container.
 public struct HighFrequencyContainer: Codable, Sendable {
-    /// The heading in 0.1 degree.
+    /// The heading in decidegrees.
     public let etsiHeading: Int?
-    /// The  speed in 0.01 m/s.
+    /// The speed in centimeters per second.
     public let etsiSpeed: Int?
     /// The drive direction.
     public let driveDirection: DriveDirection?
@@ -27,25 +27,25 @@ public struct HighFrequencyContainer: Codable, Sendable {
     public let curvature: Int?
     /// The curvature calculation mode.
     public let curvatureCalculationMode: CurvatureCalculationMode?
-    /// The longitudinal acceleration in 0.1 m/s2
+    /// The longitudinal acceleration in decimeters per second squared.
     public let etsiLongitudinalAcceleration: Int?
-    /// The yaw rate in 0.01 degrees/s
+    /// The yaw rate in centidegrees per second.
     public let etsiYawRate: Int?
     /// The acceleration control with a bit representation in a string.
     public let etsiAccelerationControl: String?
     /// The lane position.
     public let lanePosition: LanePosition?
-    /// The lateral acceleration in 0.1 m/s2.
+    /// The lateral acceleration in decimeters per second squared.
     public let etsiLateralAcceleration: Int?
-    /// The vertical acceleration in 0.1 m/s2.
+    /// The vertical acceleration in decimeters per second squared.
     public let etsiVerticalAcceleration: Int?
     /// The high frequency confidence.
     public let confidence: HighFrequencyContainerConfidence?
-    /// The heading in degree.
+    /// The heading in degrees.
     public var heading: Double? {
         etsiHeading.map { ETSI.deciDegreesToDegrees($0) }
     }
-    // The speed in m/s.
+    /// The speed in meters per second.
     public var speed: Double? {
         etsiSpeed.map { ETSI.centimetersPerSecondToMetersPerSecond($0) }
     }
@@ -57,11 +57,11 @@ public struct HighFrequencyContainer: Codable, Sendable {
     public var vehicleWidth: Double? {
         etsiVehicleWidth.map { ETSI.decimetersToMeters($0) }
     }
-    /// The longitudinal acceleration in m/s2.
+    /// The longitudinal acceleration in meters per second squared.
     public var longitudinalAcceleration: Double? {
-        etsiLongitudinalAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
+        etsiLongitudinalAcceleration.map { ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared($0) }
     }
-    /// The yaw rate in degrees/s
+    /// The yaw rate in degrees per second.
     public var yawRate: Double? {
         etsiYawRate.map { ETSI.centiDegreesPerSecondToDegreesPerSecond($0) }
     }
@@ -69,13 +69,13 @@ public struct HighFrequencyContainer: Codable, Sendable {
     public var accelerationControl: AccelerationControl? {
         etsiAccelerationControl.map { AccelerationControl(rawValue: strtoul($0, nil, 2)) }
     }
-    /// The lateral acceleration in m/s2.
+    /// The lateral acceleration in meters per second squared.
     public var lateralAcceleration: Double? {
-        etsiLateralAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
+        etsiLateralAcceleration.map { ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared($0) }
     }
-    /// The vertical acceleration in m/s2.
+    /// The vertical acceleration in meters per second squared.
     public var verticalAcceleration: Double? {
-        etsiVerticalAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
+        etsiVerticalAcceleration.map { ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared($0) }
     }
 
     private static let minHeading = 0
@@ -98,7 +98,7 @@ public struct HighFrequencyContainer: Codable, Sendable {
     static let unavailableVehiculeLength = ETSI.decimetersToMeters(Self.maxVehiculeLength)
     static let unavailableVehiculeWidth = ETSI.decimetersToMeters(Self.maxVehiculeWidth)
     static let unavailableCurvature = 1_023
-    static let unavailableAcceleration = ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond(Self.maxAcceleration)
+    static let unavailableAcceleration = ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared(Self.maxAcceleration)
 
     enum CodingKeys: String, CodingKey {
         case etsiHeading = "heading"
@@ -116,7 +116,23 @@ public struct HighFrequencyContainer: Codable, Sendable {
         case etsiVerticalAcceleration = "vertical_acceleration"
     }
 
-    init(
+    /// Initializes a `HighFrequencyContainer`.
+    /// - Parameters:
+    ///   - heading: The heading in degrees.
+    ///   - speed: The speed in meters per second.
+    ///   - driveDirection: The drive direction.
+    ///   - vehicleLength: The vehicule length in meters.
+    ///   - vehicleWidth: The vehicule width in meters.
+    ///   - curvature: The curvature.
+    ///   - curvatureCalculationMode: The curvature calculation mode.
+    ///   - longitudinalAcceleration: The longitudinal acceleration in meters per second squared.
+    ///   - yawRate: The yaw rate in degrees per second.
+    ///   - accelerationControl: The acceleration control.
+    ///   - lanePosition: The lane position.
+    ///   - lateralAcceleration: The lateral acceleration in meters per second squared.
+    ///   - verticalAcceleration: The vertical acceleration in meters per second squared.
+    ///   - confidence: The high frequency confidence.
+    public init(
         heading: Double?,
         speed: Double?,
         driveDirection: DriveDirection? = nil,
@@ -156,7 +172,7 @@ public struct HighFrequencyContainer: Codable, Sendable {
         self.curvature = curvature.map { clip($0, Self.minCurvature, Self.maxCurvature) }
         self.curvatureCalculationMode = curvatureCalculationMode
         self.etsiLongitudinalAcceleration = longitudinalAcceleration.map {
-            clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
+            clip(ETSI.metersPerSecondSquaredToDecimetersPerSecondSquared($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
         }
@@ -168,12 +184,12 @@ public struct HighFrequencyContainer: Codable, Sendable {
         self.etsiAccelerationControl = accelerationControl.map { String($0.rawValue, radix: 2) }
         self.lanePosition = lanePosition
         self.etsiLateralAcceleration = lateralAcceleration.map {
-            clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
+            clip(ETSI.metersPerSecondSquaredToDecimetersPerSecondSquared($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
         }
         self.etsiVerticalAcceleration = verticalAcceleration.map {
-            clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
+            clip(ETSI.metersPerSecondSquaredToDecimetersPerSecondSquared($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
         }
@@ -197,19 +213,29 @@ public enum CurvatureCalculationMode: Int, Codable, Sendable {
 
 /// The acceleration control.
 public struct AccelerationControl: OptionSet, Sendable {
+    /// The raw value.
     public let rawValue: UInt
 
+    /// Initializes a `AccelerationControl`.
+    /// - Parameter rawValue: The raw value.
     public init(rawValue: UInt) {
         self.rawValue = rawValue
     }
 
-    static let brakePedalEngaged = AccelerationControl(rawValue: 1 << 0)
-    static let gasPedalEngaged = AccelerationControl(rawValue: 1 << 1)
-    static let emergencyBrakeEngaged = AccelerationControl(rawValue: 1 << 2)
-    static let collisionWarningEngaged = AccelerationControl(rawValue: 1 << 3)
-    static let accEngaged = AccelerationControl(rawValue: 1 << 4)
-    static let cruiseControlEngaged = AccelerationControl(rawValue: 1 << 5)
-    static let speedLimiterEngaged = AccelerationControl(rawValue: 1 << 6)
+    /// The brake pedal engaged acceleration control.
+    public static let brakePedalEngaged = AccelerationControl(rawValue: 1 << 0)
+    /// The gas pedal engaged acceleration control.
+    public static let gasPedalEngaged = AccelerationControl(rawValue: 1 << 1)
+    /// The emergency brake engaged acceleration control.
+    public static let emergencyBrakeEngaged = AccelerationControl(rawValue: 1 << 2)
+    /// The collision warning engaged acceleration control.
+    public static let collisionWarningEngaged = AccelerationControl(rawValue: 1 << 3)
+    /// The ACC engaged acceleration control.
+    public static let accEngaged = AccelerationControl(rawValue: 1 << 4)
+    /// The cruise control engaged acceleration control.
+    public static let cruiseControlEngaged = AccelerationControl(rawValue: 1 << 5)
+    /// The speed limiter engaged acceleration control.
+    public static let speedLimiterEngaged = AccelerationControl(rawValue: 1 << 6)
 }
 
 /// The lane position.
@@ -223,41 +249,41 @@ public enum LanePosition: Int, Codable, Sendable {
 
 /// The high frequency confidence.
 public struct HighFrequencyContainerConfidence: Codable, Sendable {
-    /// The heading in 0.1 degree.
+    /// The heading in decidegrees.
     public let etsiHeading: Int?
-    /// The  speed in 0.01 m/s.
+    /// The speed in centimeters per second.
     public let etsiSpeed: Int?
-    /// The vehicule length.
-    public let vehicleLength: VehiculeLengthConfidence?
-    /// The yaw rate.
-    public let yawRate: YawRateConfidence?
-    /// The longitudinal acceleration in 0.1 m/s2
+    /// The vehicule length confidence.
+    public let vehicleLengthConfidence: VehiculeLengthConfidence?
+    /// The yaw rate confidence.
+    public let yawRateConfidence: YawRateConfidence?
+    /// The longitudinal acceleration in decimeters per second squared.
     public let etsiLongitudinalAcceleration: Int?
-    /// The lateral acceleration in 0.1 m/s2.
+    /// The lateral acceleration in decimeters per second squared.
     public let etsiLateralAcceleration: Int?
-    /// The curvature.
-    public let curvature: CurvatureConfidence?
-    /// The vertical acceleration in 0.1 m/s2.
+    /// The curvature confidence.
+    public let curvatureConfidence: CurvatureConfidence?
+    /// The vertical acceleration in decimeters per second squared.
     public let etsiVerticalAcceleration: Int?
-    /// The heading in degree.
+    /// The heading in degrees.
     public var heading: Double? {
         etsiHeading.map { ETSI.deciDegreesToDegrees($0) }
     }
-    // The speed in m/s.
+    // The speed in meters per second.
     public var speed: Double? {
         etsiSpeed.map { ETSI.centimetersPerSecondToMetersPerSecond($0) }
     }
-    /// The longitudinal acceleration in m/s2
+    /// The longitudinal acceleration in meters per second squared.
     public var longitudinalAcceleration: Double? {
-        etsiLongitudinalAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
+        etsiLongitudinalAcceleration.map { ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared($0) }
     }
-    /// The lateral acceleration in m/s2
+    /// The lateral acceleration in meters per second squared.
     public var lateralAcceleration: Double? {
-        etsiLateralAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
+        etsiLateralAcceleration.map { ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared($0) }
     }
-    /// The vertical acceleration in m/s2
+    /// The vertical acceleration in meters per second squared.
     public var verticalAcceleration: Double? {
-        etsiVerticalAcceleration.map { ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond($0) }
+        etsiVerticalAcceleration.map { ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared($0) }
     }
 
     private static let minHeading = 1
@@ -268,27 +294,37 @@ public struct HighFrequencyContainerConfidence: Codable, Sendable {
     private static let maxAcceleration = 102
     static let unavailableHeading = ETSI.deciDegreesToDegrees(Self.maxHeading)
     static let unavailableSpeed = ETSI.centimetersPerSecondToMetersPerSecond(Self.maxSpeed)
-    static let unavailableAcceleration = ETSI.decimetersPerSquaredSecondToMetersPerSquaredSecond(Self.maxAcceleration)
+    static let unavailableAcceleration = ETSI.decimetersPerSecondSquaredToMetersPerSecondSquared(Self.maxAcceleration)
 
     enum CodingKeys: String, CodingKey {
         case etsiHeading = "heading"
         case etsiSpeed = "speed"
-        case vehicleLength = "vehicle_length"
-        case yawRate = "yaw_rate"
+        case vehicleLengthConfidence = "vehicle_length"
+        case yawRateConfidence = "yaw_rate"
         case etsiLongitudinalAcceleration = "longitudinal_acceleration"
         case etsiLateralAcceleration = "lateral_acceleration"
-        case curvature
+        case curvatureConfidence = "curvature"
         case etsiVerticalAcceleration = "vertical_acceleration"
     }
 
-    init(
+    /// Initializes a `HighFrequencyContainerConfidence`.
+    /// - Parameters:
+    ///   - heading: The heading in degrees.
+    ///   - speed: The speed in meters per second.
+    ///   - vehicleLengthConfidence: The vehicule length confidence.
+    ///   - yawRateConfidence: The yaw rate confidence.
+    ///   - curvatureConfidence: The curvature confidence.
+    ///   - longitudinalAcceleration: The longitudinal acceleration in meters per second squared.
+    ///   - lateralAcceleration: The lateral acceleration in meters per second squared.
+    ///   - verticalAcceleration: The vertical acceleration in meters per second squared.
+    public init(
         heading: Double?,
         speed: Double?,
-        vehicleLength: VehiculeLengthConfidence? = nil,
-        yawRate: YawRateConfidence? = nil,
+        vehicleLengthConfidence: VehiculeLengthConfidence? = nil,
+        yawRateConfidence: YawRateConfidence? = nil,
+        curvatureConfidence: CurvatureConfidence? = nil,
         longitudinalAcceleration: Double? = nil,
         lateralAcceleration: Double? = nil,
-        curvature: CurvatureConfidence? = nil,
         verticalAcceleration: Double? = nil
     ) {
         self.etsiHeading = heading.map {
@@ -301,21 +337,21 @@ public struct HighFrequencyContainerConfidence: Codable, Sendable {
                  Self.minSpeed,
                  Self.maxSpeed)
         }
-        self.vehicleLength = vehicleLength
-        self.yawRate = yawRate
+        self.vehicleLengthConfidence = vehicleLengthConfidence
+        self.yawRateConfidence = yawRateConfidence
         self.etsiLongitudinalAcceleration = longitudinalAcceleration.map {
-            clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
+            clip(ETSI.metersPerSecondSquaredToDecimetersPerSecondSquared($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
         }
         self.etsiLateralAcceleration = lateralAcceleration.map {
-            clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
+            clip(ETSI.metersPerSecondSquaredToDecimetersPerSecondSquared($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
         }
-        self.curvature = curvature
+        self.curvatureConfidence = curvatureConfidence
         self.etsiVerticalAcceleration = verticalAcceleration.map {
-            clip(ETSI.metersPerSquaredSecondToDecimetersPerSquaredSecond($0),
+            clip(ETSI.metersPerSecondSquaredToDecimetersPerSecondSquared($0),
                  Self.minAcceleration,
                  Self.maxAcceleration)
         }

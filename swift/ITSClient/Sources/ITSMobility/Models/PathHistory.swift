@@ -13,7 +13,7 @@ import Foundation
 
 /// The path history.
 public struct PathHistory: Codable, Sendable {
-    /// The offset position of a detected event point with regards to the previous detected event point.
+    /// The offset position of a detected event point with regards to the previous event point.
     public let pathPosition: PathPosition
     /// The time travelled by the detecting ITS-S since the previous detected event point in centiseconds.
     public let etsiPathDeltaTime: Int16?
@@ -27,7 +27,11 @@ public struct PathHistory: Codable, Sendable {
         case pathPosition = "path_position"
     }
 
-    init(pathPosition: PathPosition, pathDeltaTime: TimeInterval?) {
+    /// Initializes a `PathHistory`.
+    /// - Parameters:
+    ///   - pathPosition: The offset position of a detected event point with regards to the previous  event point.
+    ///   - pathDeltaTime: The time travelled by the detecting ITS-S since the previous detected event point in seconds.
+    public init(pathPosition: PathPosition, pathDeltaTime: TimeInterval?) {
         self.pathPosition = pathPosition
         self.etsiPathDeltaTime = pathDeltaTime.map { Int16(ETSI.secondsToCentiSeconds($0)) }
     }
@@ -35,11 +39,11 @@ public struct PathHistory: Codable, Sendable {
 
 /// The path position.
 public struct PathPosition: Codable, Sendable {
-    /// The delta latitude in 0.1 microdegree.
+    /// The delta latitude in decimicrodegrees.
     public let etsiDeltaLatitude: Int?
-    /// The delta longitude in 0.1 microdegree.
+    /// The delta longitude in decimicrodegrees.
     public let etsiDeltaLongitude: Int?
-    /// The delta altitude in 0.01 meter.
+    /// The delta altitude in centimeters.
     public let etsiDeltaAltitude: Int?
     /// The delta latitiude in degrees.
     public var deltaLatitude: Double? {
@@ -67,7 +71,12 @@ public struct PathPosition: Codable, Sendable {
         case etsiDeltaLongitude = "delta_longitude"
     }
 
-    init(deltaLatitude: Double?, deltaLongitude: Double?, deltaAltitude: Double?) {
+    /// Initializes a `PathPosition`.
+    /// - Parameters:
+    ///   - deltaLatitude: The delta latitude in degrees.
+    ///   - deltaLongitude: The delta longitude in degrees.
+    ///   - deltaAltitude: The delta altitude in meters.
+    public init(deltaLatitude: Double?, deltaLongitude: Double?, deltaAltitude: Double?) {
         self.etsiDeltaLatitude = deltaLatitude.map {
             clip(ETSI.degreesToDeciMicroDegrees($0),
                  Self.minDeltaPosition,

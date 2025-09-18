@@ -23,7 +23,7 @@ enum ETSI {
     private static let centimetersPerSecondFactor: Double = 100
     private static let deciDegreesFactor: Double = 10
     private static let centiDegreesPerSecondFactor: Double = 100
-    private static let decimetersPerSquaredSecondFactor: Double = 10
+    private static let decimetersPerSecondSquaredFactor: Double = 10
 
     static func degreesToDeciMicroDegrees(_ degrees: Double) -> Int {
         Int(degrees * deciMicroDegreesFactor)
@@ -93,12 +93,12 @@ enum ETSI {
         Double(centiDegreesPerSecond) / centiDegreesPerSecondFactor
     }
 
-    static func metersPerSquaredSecondToDecimetersPerSquaredSecond(_ metersPerSquaredSecond: Double) -> Int {
-        Int(metersPerSquaredSecond * decimetersPerSquaredSecondFactor)
+    static func metersPerSecondSquaredToDecimetersPerSecondSquared(_ metersPerSecondSquared: Double) -> Int {
+        Int(metersPerSecondSquared * decimetersPerSecondSquaredFactor)
     }
 
-    static func decimetersPerSquaredSecondToMetersPerSquaredSecond(_ decimetersPerSquaredSecond: Int) -> Double {
-        Double(decimetersPerSquaredSecond) / decimetersPerSquaredSecondFactor
+    static func decimetersPerSecondSquaredToMetersPerSecondSquared(_ decimetersPerSecondSquared: Int) -> Double {
+        Double(decimetersPerSecondSquared) / decimetersPerSecondSquaredFactor
     }
 }
 

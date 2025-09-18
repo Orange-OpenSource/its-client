@@ -20,8 +20,8 @@ public struct MobilityConfiguration: Sendable {
     public let stationID: UInt32
     /// The namespace used in the MQTT topic.
     public let namespace: String
-
-    var userIdentifier: String {
+    /// The user identifier.
+    public var userIdentifier: String {
         coreConfiguration.mqttClientConfiguration.clientIdentifier
     }
 

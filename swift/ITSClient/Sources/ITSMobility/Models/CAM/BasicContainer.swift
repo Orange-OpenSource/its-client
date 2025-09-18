@@ -13,8 +13,11 @@ import Foundation
 
 /// The basic container.
 public struct BasicContainer: Codable, Sendable {
+    /// The confidence.
     public let confidence: Confidence?
+    /// The reference position.
     public let referencePosition: Position
+    /// The station type.
     public let stationType: StationType?
 
     enum CodingKeys: String, CodingKey {
@@ -23,7 +26,12 @@ public struct BasicContainer: Codable, Sendable {
         case confidence
     }
 
-    init(
+    /// Initializes a `BasicContainer`.
+    /// - Parameters:
+    ///   - stationType: The station type.
+    ///   - referencePosition: The reference position.
+    ///   - confidence: The confidence.
+    public init(
         stationType: StationType? = .unknown,
         referencePosition: Position,
         confidence: Confidence? = nil

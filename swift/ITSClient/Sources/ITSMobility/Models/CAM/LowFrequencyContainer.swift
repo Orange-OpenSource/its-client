@@ -32,7 +32,12 @@ public struct LowFrequencyContainer: Codable, Sendable {
         case pathHistory = "path_history"
     }
 
-    init(vehicleRole: VehicleRole?, exteriorLights: ExteriorLightStatus, pathHistory: [PathHistory]) {
+    /// Initializes a `LowFrequencyContainer`.
+    /// - Parameters:
+    ///   - vehicleRole: The vehicle role.
+    ///   - exteriorLights: The exterior lights status.
+    ///   - pathHistory: The path history, a path with a set of path points.
+    public init(vehicleRole: VehicleRole?, exteriorLights: ExteriorLightStatus, pathHistory: [PathHistory]) {
         self.vehicleRole = vehicleRole
         self.etsiExteriorLights = String(exteriorLights.rawValue, radix: 2)
         self.pathHistory = Array(pathHistory.prefix(Self.maxPathHistory))
@@ -61,18 +66,29 @@ public enum VehicleRole: Int, Codable, Sendable {
 
 /// The exterior light status.
 public struct ExteriorLightStatus: OptionSet, Sendable {
+    /// The raw value.
     public let rawValue: UInt
 
+    /// Initializes a `ExteriorLightStatus`.
+    /// - Parameter rawValue: The raw value.
     public init(rawValue: UInt) {
         self.rawValue = rawValue
     }
 
-    static let lowBeamHeadlightsOn = AccelerationControl(rawValue: 1 << 0)
-    static let highBeamHeadlightsOn = AccelerationControl(rawValue: 1 << 1)
-    static let leftTurnSignalOn = AccelerationControl(rawValue: 1 << 2)
-    static let rightTurnSignalOn = AccelerationControl(rawValue: 1 << 3)
-    static let daytimeRunningLightsOn = AccelerationControl(rawValue: 1 << 4)
-    static let reverseLightOn = AccelerationControl(rawValue: 1 << 5)
-    static let fogLightOn = AccelerationControl(rawValue: 1 << 6)
-    static let parkingLightsOn = AccelerationControl(rawValue: 1 << 7)
+    /// The low beamed headlights on status.
+    public static let lowBeamHeadlightsOn = ExteriorLightStatus(rawValue: 1 << 0)
+    /// The high beamed headlights on status.
+    public static let highBeamHeadlightsOn = ExteriorLightStatus(rawValue: 1 << 1)
+    /// The left turn signal on status.
+    public static let leftTurnSignalOn = ExteriorLightStatus(rawValue: 1 << 2)
+    /// The right turn signal on status.
+    public static let rightTurnSignalOn = ExteriorLightStatus(rawValue: 1 << 3)
+    /// The daytime running lights on status.
+    public static let daytimeRunningLightsOn = ExteriorLightStatus(rawValue: 1 << 4)
+    /// The reverse light on status.
+    public static let reverseLightOn = ExteriorLightStatus(rawValue: 1 << 5)
+    /// The fog light on status.
+    public static let fogLightOn = ExteriorLightStatus(rawValue: 1 << 6)
+    /// The parking lights on status.
+    public static let parkingLightsOn = ExteriorLightStatus(rawValue: 1 << 7)
 }

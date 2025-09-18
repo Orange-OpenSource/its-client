@@ -13,11 +13,11 @@ import Foundation
 
 /// The position with coordinates and altitude.
 public struct Position: Codable, Sendable {
-    /// The latitude in 0.1 microdegree.
+    /// The latitude in decimicrodegrees.
     public let etsiLatitude: Int
-    /// The longitude in 0.1 microdegree.
+    /// The longitude in decimicrodegrees.
     public let etsiLongitude: Int
-    /// The altitude in 0.01 meter.
+    /// The altitude in centimeters.
     public let etsiAltitude: Int
     /// The latitiude in degrees.
     public var latitude: Double { ETSI.deciMicroDegreesToDegrees(etsiLatitude) }
@@ -32,7 +32,12 @@ public struct Position: Codable, Sendable {
         case etsiAltitude = "altitude"
     }
 
-    init(latitude: Double, longitude: Double, altitude: Double) {
+    /// Initializes a `Position`.
+    /// - Parameters:
+    ///   - latitude: The latitiude in degrees.
+    ///   - longitude: The longitude in degrees.
+    ///   - altitude: The altitude in meters.
+    public init(latitude: Double, longitude: Double, altitude: Double) {
         self.etsiLatitude = ETSI.degreesToDeciMicroDegrees(latitude)
         self.etsiLongitude = ETSI.degreesToDeciMicroDegrees(longitude)
         self.etsiAltitude = ETSI.metersToCentimeters(altitude)

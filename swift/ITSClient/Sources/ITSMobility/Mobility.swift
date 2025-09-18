@@ -16,10 +16,11 @@ import ITSCore
 public actor Mobility {
     private let core: Core
     private let regionOfInterestCoordinator: RegionOfInterestCoordinator
-    private var mobilityConfiguration: MobilityConfiguration?
     private let roadAlarmCoordinator: RoadAlarmCoordinator
     private let roadUserCoordinator: RoadUserCoordinator
     private var reportZoomLevel: Int
+    /// The mobility configuration.
+    public private(set) var mobilityConfiguration: MobilityConfiguration?
 
     /// Initializes a `Mobility`.
     public init() {
@@ -137,8 +138,14 @@ public actor Mobility {
                       timestamp: now)
 
         // Publish CAM
-        let quadkey = QuadkeyBuilder().quadkeyFrom(latitude: latitude,
-                                                   longitude: longitude,
+        try await sendCAM(cam)
+    }
+
+    /// Sends a `CAM` to share it.
+    /// - Parameter cam: The `CAM` to send.
+    public func sendCAM(_ cam: CAM) async throws(MobilityError)  {
+        let quadkey = QuadkeyBuilder().quadkeyFrom(latitude: cam.message.basicContainer.referencePosition.latitude,
+                                                   longitude: cam.message.basicContainer.referencePosition.longitude,
                                                    zoomLevel: reportZoomLevel,
                                                    separator: "/")
         try await publish(cam, topic: try topic(for: .cam, in: quadkey))
@@ -178,8 +185,14 @@ public actor Mobility {
                         timestamp: now)
 
         // Publish DENM
-        let quadkey = QuadkeyBuilder().quadkeyFrom(latitude: latitude,
-                                                   longitude: longitude,
+        try await sendDENM(denm)
+    }
+
+    /// Sends a `DENM` to share it.
+    /// - Parameter denm: The `DENM` to send.
+    public func sendDENM(_ denm: DENM) async throws(MobilityError) {
+        let quadkey = QuadkeyBuilder().quadkeyFrom(latitude: denm.message.managementContainer.eventPosition.latitude,
+                                                   longitude: denm.message.managementContainer.eventPosition.longitude,
                                                    zoomLevel: reportZoomLevel,
                                                    separator: "/")
         try await publish(denm, topic: try topic(for: .denm, in: quadkey))
