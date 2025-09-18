@@ -79,6 +79,8 @@ public actor Mobility {
     public func stop() async {
         await core.stop()
         regionOfInterestCoordinator.reset()
+        await roadAlarmCoordinator.reset()
+        await roadUserCoordinator.reset()
     }
 
     /// Sets an observer to observe changes on road alarms.
