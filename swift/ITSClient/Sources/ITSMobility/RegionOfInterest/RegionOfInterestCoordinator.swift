@@ -49,6 +49,11 @@ final class RegionOfInterestCoordinator {
                                currentRegionOfInterest: &currentCAMRegionOfInterest)
     }
 
+    func reset() {
+        currentDENMRegionOfInterest = nil
+        currentCAMRegionOfInterest = nil
+    }
+
     private func updateRegionOfInterest(
         for messageType: MessageType,
         latitude: Double,

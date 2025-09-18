@@ -78,6 +78,7 @@ public actor Mobility {
     /// Stops the `Mobility` disconnecting the MQTT client and stopping the telemetry client.
     public func stop() async {
         await core.stop()
+        regionOfInterestCoordinator.reset()
     }
 
     /// Sets an observer to observe changes on road alarms.
