@@ -203,9 +203,9 @@ public class IoT3Mobility {
     }
 
     /**
-     * Disconnect from the server.
+     * Disconnect from the server permanently.
      */
-    public void disconnect() {
+    public void close() {
         if(ioT3Core != null) ioT3Core.close();
     }
 
