@@ -162,36 +162,6 @@ public class IoT3Core {
     }
 
     /**
-     * Reconnect the 3 clients (MQTT, LwM2M and OpenTelemetry)
-     */
-    public void reconnectAll() {
-        reconnectMqtt();
-        reconnectOpenTelemetry();
-        reconnectLwM2M();
-    }
-
-    /**
-     * Reconnect the MQTT client
-     */
-    public void reconnectMqtt() {
-        if(mqttClient != null) mqttClient.connect();
-    }
-
-    /**
-     * Reconnect the OpenTelemetry client
-     */
-    public void reconnectOpenTelemetry() {
-        if(openTelemetryClient != null) openTelemetryClient.connect();
-    }
-
-    /**
-     * Reconnect the LwM2M client
-     */
-    public void reconnectLwM2M() {
-        if(lwm2mClient != null) lwm2mClient.connect();
-    }
-
-    /**
      * Subscribe to a MQTT topic
      */
     public void mqttSubscribe(String topic) {

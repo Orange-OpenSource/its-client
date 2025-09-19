@@ -123,8 +123,4 @@ public class OpenTelemetryClient {
         tracerProvider.shutdown();
     }
 
-    public void connect() {
-        initialize();
-    }
-
 }

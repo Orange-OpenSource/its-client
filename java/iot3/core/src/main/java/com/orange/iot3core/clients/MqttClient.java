@@ -9,8 +9,7 @@ package com.orange.iot3core.clients;
 
 import com.hivemq.client.mqtt.MqttGlobalPublishFilter;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
-import com.hivemq.client.mqtt.lifecycle.MqttClientAutoReconnect;
-import com.hivemq.client.mqtt.lifecycle.MqttClientAutoReconnectBuilder;
+import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5ClientBuilder;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
@@ -61,15 +60,18 @@ public class MqttClient {
                 .serverHost(serverHost)
                 .serverPort(serverPort)
                 .automaticReconnect()
-                        .initialDelay(500, TimeUnit.MILLISECONDS)
+                        .initialDelay(1, TimeUnit.SECONDS)
                         .maxDelay(5, TimeUnit.SECONDS)
                         .applyAutomaticReconnect()
-                .addDisconnectedListener(context1 -> {
-                    LOGGER.log(Level.INFO, "Disconnected from MQTT broker " + serverHost);
-                    callback.connectionLost(context1.getCause());
+                .addDisconnectedListener(disconnectContext -> {
+                    LOGGER.log(Level.INFO, "Disconnected from the MQTT broker by " + disconnectContext.getSource());
+                    // when the disconnection was initiated by the user, disable auto-reconnect
+                    if(disconnectContext.getSource().equals(MqttDisconnectSource.USER))
+                        disconnectContext.getReconnector().reconnect(false);
+                    callback.connectionLost(disconnectContext.getCause());
                 })
-                .addConnectedListener(context12 -> {
-                    LOGGER.log(Level.INFO, "Connected to MQTT broker " + serverHost);
+                .addConnectedListener(connectContext -> {
+                    LOGGER.log(Level.INFO, "Connected to the MQTT broker");
                     callback.connectComplete(true, serverHost);
                 });
 
@@ -92,19 +94,7 @@ public class MqttClient {
         connect();
     }
 
-    public void disconnect() {
-        if(mqttClient != null) {
-            mqttClient.disconnect().whenComplete((mqtt5DisconnectResult, throwable) -> {
-                if(throwable != null) {
-                    LOGGER.log(Level.WARNING, "Error during disconnection: " + throwable.getMessage());
-                } else {
-                    LOGGER.log(Level.INFO, "Disconnected");
-                }
-            });
-        }
-    }
-
-    public void connect() {
+    private void connect() {
         mqttClient.connectWith()
                 .cleanStart(true)
                 .send()
@@ -115,6 +105,20 @@ public class MqttClient {
                         LOGGER.log(Level.INFO, "Success connecting to the server");
                     }
                 });
+    }
+
+    public void disconnect() {
+        if(mqttClient != null) {
+            mqttClient.disconnect()
+                    .orTimeout(500, TimeUnit.MILLISECONDS) // don't wait more than 500 milliseconds
+                    .whenComplete((mqtt5DisconnectResult, throwable) -> {
+                        if(throwable != null) {
+                            LOGGER.log(Level.WARNING, "Error during disconnection: " + throwable.getMessage());
+                        } else {
+                            LOGGER.log(Level.INFO, "Disconnected");
+                        }
+                    });
+        }
     }
 
     public void subscribeToTopic(String topic) {
