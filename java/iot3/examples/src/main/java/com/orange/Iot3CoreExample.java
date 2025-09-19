@@ -130,7 +130,7 @@ public class Iot3CoreExample {
                             "This is an iot3 core test message, it should also come back"),
                     8, TimeUnit.SECONDS);
             // disconnect the clients of IoT3Core
-            executorService.schedule(ioT3Core::disconnectAll, 10, TimeUnit.SECONDS);
+            executorService.schedule(ioT3Core::close, 10, TimeUnit.SECONDS);
         } catch (Exception e) {
             System.out.println("Error: " + e);
         }

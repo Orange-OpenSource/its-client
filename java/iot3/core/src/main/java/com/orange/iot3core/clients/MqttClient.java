@@ -107,7 +107,7 @@ public class MqttClient {
                 });
     }
 
-    public void disconnect() {
+    public void close() {
         if(mqttClient != null) {
             mqttClient.disconnect()
                     .orTimeout(500, TimeUnit.MILLISECONDS) // don't wait more than 500 milliseconds

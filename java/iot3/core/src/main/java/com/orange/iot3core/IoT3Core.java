@@ -134,31 +134,31 @@ public class IoT3Core {
     /**
      * Disconnect the 3 clients (MQTT, LwM2M and OpenTelemetry)
      */
-    public void disconnectAll() {
-        disconnectMqtt();
-        disconnectOpenTelemetry();
-        disconnectLwM2M();
+    public void close() {
+        closeMqtt();
+        closeOpenTelemetry();
+        closeLwM2M();
     }
 
     /**
      * Disconnect the MQTT client
      */
-    public void disconnectMqtt() {
-        if(mqttClient != null) mqttClient.disconnect();
+    private void closeMqtt() {
+        if(mqttClient != null) mqttClient.close();
     }
 
     /**
      * Disconnect the OpenTelemetry client
      */
-    public void disconnectOpenTelemetry() {
-        if(openTelemetryClient != null) openTelemetryClient.disconnect();
+    private void closeOpenTelemetry() {
+        if(openTelemetryClient != null) openTelemetryClient.close();
     }
 
     /**
      * Disconnect the LwM2M client
      */
-    public void disconnectLwM2M() {
-        if(lwm2mClient != null) lwm2mClient.disconnect();
+    private void closeLwM2M() {
+        if(lwm2mClient != null) lwm2mClient.close();
     }
 
     /**
