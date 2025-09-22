@@ -7,6 +7,7 @@
  */
 package com.orange.iot3core.clients;
 
+import com.hivemq.client.mqtt.MqttClientState;
 import com.hivemq.client.mqtt.MqttGlobalPublishFilter;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource;
@@ -14,7 +15,9 @@ import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5ClientBuilder;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperty;
+import com.hivemq.client.mqtt.mqtt5.message.Mqtt5ReasonCode;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
+import com.hivemq.client.mqtt.mqtt5.message.unsubscribe.unsuback.Mqtt5UnsubAckReasonCode;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
@@ -25,8 +28,8 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,6 +42,14 @@ public class MqttClient {
     private final Mqtt5AsyncClient mqttClient;
     private final MqttCallback callback;
     private final OpenTelemetryClient openTelemetryClient;
+
+    // Source of truth: topics we want subscribed after each connect
+    private final Set<String> desiredTopics = ConcurrentHashMap.newKeySet();
+    // Keep track of subscribe and unsubscribe calls
+    private final Set<String> inflightSub = ConcurrentHashMap.newKeySet();
+    private final Set<String> inflightUnsub = ConcurrentHashMap.newKeySet();
+    // Filter out pending unsubscribes
+    private final Set<String> pendingUnsub = ConcurrentHashMap.newKeySet();
 
     private final boolean useTls;
 
@@ -72,6 +83,10 @@ public class MqttClient {
                 })
                 .addConnectedListener(connectContext -> {
                     LOGGER.log(Level.INFO, "Connected to the MQTT broker");
+                    pendingUnsub.clear();
+                    inflightUnsub.clear();
+                    inflightSub.clear();
+                    resubscribeAll();
                     callback.connectComplete(true, serverHost);
                 });
 
@@ -122,40 +137,92 @@ public class MqttClient {
     }
 
     public void subscribeToTopic(String topic) {
-        LOGGER.log(Level.INFO, "Subscribing to topic: " + topic);
-        if(mqttClient != null) {
+        desiredTopics.add(topic);
+        if(mqttClient == null) {
+            LOGGER.log(Level.INFO, NULL_CLIENT);
+            return;
+        }
+        if(mqttClient.getState() == MqttClientState.CONNECTED && inflightSub.add(topic)) {
+            LOGGER.log(Level.INFO, "Subscribing to topic: " + topic);
             mqttClient.subscribeWith()
                     .topicFilter(topic)
                     .send()
                     .whenComplete((subAck, throwable) -> {
+                        inflightSub.remove(topic);
+
                         if (throwable != null) {
                             LOGGER.log(Level.WARNING, "Subscription failed: " + throwable.getMessage());
-                        } else {
-                            LOGGER.log(Level.FINE, "Subscribed!");
+                            callback.subscriptionComplete(throwable);
+                            return;
                         }
-                        callback.subscriptionComplete(throwable);
+
+                        // MQTT 5: reason codes can signal refusal even when no exception is thrown
+                        boolean ok = subAck.getReasonCodes().stream().noneMatch(Mqtt5ReasonCode::isError);
+
+                        if (!ok) {
+                            LOGGER.log(Level.WARNING, "Subscription refused by broker: " + subAck.getReasonCodes());
+                            callback.subscriptionComplete(new RuntimeException("SUBACK: " + subAck.getReasonCodes()));
+                            return;
+                        }
+
+                        // if user tried to unsubscribe while this was inflight, unsubscribe
+                        if (!desiredTopics.contains(topic)) {
+                            LOGGER.log(Level.FINE, "Subscribe completed but topic no longer desired; unsubscribing…");
+                            unsubscribeFromTopic(topic);
+                            callback.subscriptionComplete(null);
+                            return;
+                        }
+
+                        LOGGER.log(Level.FINE, "Subscribed!");
+                        callback.subscriptionComplete(null);
                     });
-        } else {
-            LOGGER.log(Level.INFO, NULL_CLIENT);
         }
     }
 
     public void unsubscribeFromTopic(String topic) {
-        LOGGER.log(Level.INFO, "Unsubscribing from topic: " + topic);
-        if(mqttClient != null) {
+        desiredTopics.remove(topic);
+        pendingUnsub.add(topic);
+        if(mqttClient == null) {
+            LOGGER.log(Level.INFO, NULL_CLIENT);
+            return;
+        }
+        if(mqttClient.getState() == MqttClientState.CONNECTED && inflightUnsub.add(topic)) {
+            LOGGER.log(Level.INFO, "Unsubscribing from topic: " + topic);
             mqttClient.unsubscribeWith()
                     .topicFilter(topic)
                     .send()
-                    .whenComplete((subAck, throwable) -> {
+                    .whenComplete((unsubAck, throwable) -> {
+                        inflightUnsub.remove(topic);
+
                         if (throwable != null) {
-                            LOGGER.log(Level.WARNING, "Unsubscription failed: " + throwable.getMessage());
-                        } else {
-                            LOGGER.log(Level.INFO, "Unsubscribed!");
+                            LOGGER.log(Level.WARNING, "Unsubscribe failed: " + throwable.getMessage());
+                            callback.unsubscriptionComplete(throwable);
+                            return;
                         }
-                        callback.unsubscriptionComplete(throwable);
+
+                        boolean ok = unsubAck.getReasonCodes().stream().allMatch(rc ->
+                                rc == Mqtt5UnsubAckReasonCode.SUCCESS ||
+                                        rc == Mqtt5UnsubAckReasonCode.NO_SUBSCRIPTIONS_EXISTED);
+
+                        if (ok) {
+                            pendingUnsub.remove(topic);
+                            LOGGER.log(Level.INFO, "Unsubscribed!");
+                            callback.unsubscriptionComplete(null);
+                        } else {
+                            LOGGER.log(Level.WARNING, "Unsubscribe not accepted: " + unsubAck.getReasonCodes());
+                            // we keep pendingUnsub so messages stay filtered locally for this topic
+                            callback.unsubscriptionComplete(new RuntimeException("UNSUBACK: " + unsubAck.getReasonCodes()));
+                        }
                     });
-        } else {
-            LOGGER.log(Level.INFO, NULL_CLIENT);
+        }
+    }
+
+    private void resubscribeAll() {
+        if (desiredTopics.isEmpty()) return;
+
+        List<String> topics = new ArrayList<>(desiredTopics);
+        for(String topic: topics) {
+            subscribeToTopic(topic);
         }
     }
 
