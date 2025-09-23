@@ -176,17 +176,39 @@ public class IoT3Core {
     }
 
     /**
-     * Publish a message on the specified MQTT topic
+     * Publish a message on the specified MQTT topic with the following parameters:
+     * <ul>
+     * <li>retained false</li>
+     * <li>QoS 0 (fire and forget)</li>
+     * <li>no expiry interval</li>
+     * </ul>
      */
     public void mqttPublish(String topic, String message) {
-        mqttPublish(topic, message, false);
+        mqttPublish(topic, message, false, 0, 0);
     }
 
     /**
-     * Publish a message on the specified MQTT topic with the indicated retained value
+     * Publish a message on the specified MQTT topic with the indicated retained value and the following parameters:
+     * <ul>
+     * <li>QoS 0 (fire and forget)</li>
+     * <li>no expiry interval</li>
+     * </ul>
      */
     public void mqttPublish(String topic, String message, boolean retain) {
-        if(mqttClient != null) mqttClient.publishMessage(topic, message, retain);
+        mqttPublish(topic, message, retain, 0, 0);
+    }
+
+    /**
+     * Publish a message on the specified MQTT topic and set all parameters:
+     *
+     * @param retain whether the broker should retain this message in memory for future subscribers
+     *               (can be combined with the expiry parameter to set a retain time limit)
+     * @param qos delivery quality of service: 0 at most once (default), 1 at least once, 2 exactly once
+     * @param expiry expiry interval: how long the client and broker will keep this message in cache for
+     *               current subscribers in case of disconnection
+     */
+    public void mqttPublish(String topic, String message, boolean retain, int qos, int expiry) {
+        if(mqttClient != null) mqttClient.publishMessage(topic, message, retain, qos, expiry);
     }
 
     /**

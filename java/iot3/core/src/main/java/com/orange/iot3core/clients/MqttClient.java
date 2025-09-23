@@ -243,7 +243,7 @@ public class MqttClient {
         }
     }
 
-    public void publishMessage(String topic, String message, boolean retained, int qos) {
+    public void publishMessage(String topic, String message, boolean retained, int qos, int expiry) {
         LOGGER.log(Level.FINE, "Sending message: " + topic + " | "+ message);
 
         MqttQos mqttQos = MqttQos.AT_MOST_ONCE;
@@ -264,6 +264,8 @@ public class MqttClient {
                     .payload(message.getBytes())
                     .qos(mqttQos)
                     .retain(retained);
+
+            if(expiry > 0) publishBuilder = publishBuilder.messageExpiryInterval(expiry);
 
             if(openTelemetryClient == null) {
                 // send message without user properties
@@ -311,14 +313,6 @@ public class MqttClient {
             LOGGER.log(Level.FINE, "Success publishing message");
         }
         callback.messagePublished(throwable);
-    }
-
-    public void publishMessage(String topic, String message, boolean retained) {
-        publishMessage(topic, message, retained, 0);
-    }
-
-    public void publishMessage(String topic, String message) {
-        publishMessage(topic, message, false, 0);
     }
 
     private void processPublish(Mqtt5Publish publish) {
