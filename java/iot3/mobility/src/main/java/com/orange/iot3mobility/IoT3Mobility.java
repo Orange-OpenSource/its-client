@@ -331,14 +331,6 @@ public class IoT3Mobility {
         acceleration = Utils.clamp(acceleration, -16, 16);
         yawRate = Utils.clamp(yawRate, -327, 327);
 
-        LocationUpdate locationUpdate = new LocationUpdate.Builder(
-                position.getLatitude(),
-                position.getLongitude()
-        ).altitude((double) altitude)
-                .speed((double) speed)
-                .build();
-        lwm2mLocation.update(locationUpdate);
-
         // build the CAM
         CAM cam = new CAM.CAMBuilder()
                 .header(
