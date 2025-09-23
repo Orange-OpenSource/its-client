@@ -416,7 +416,7 @@ mod tests {
             message_type: "new_type".to_string(),
             source_uuid: "new_uuid".to_string(),
             timestamp: 12345,
-            version: "3.0.0".to_string(),
+            version: "2.1.0".to_string(),
             instance_id: "new_instance".to_string(),
             instance_type: InstanceType::Edge,
             central_instance_id: Some("central_id".to_string()),
