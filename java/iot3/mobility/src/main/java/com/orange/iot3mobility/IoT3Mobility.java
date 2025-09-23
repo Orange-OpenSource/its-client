@@ -382,7 +382,7 @@ public class IoT3Mobility {
         String topic = context + "/inQueue/v2x/cam/" + uuid + geoExtension;
 
         // send the message only if the client is connected
-        if(isConnected()) ioT3Core.mqttPublish(topic, cam.getJsonCAM().toString());
+        if(isConnected()) ioT3Core.mqttPublish(topic, cam.getJsonCAM().toString(), false, 0, 1);
     }
 
     /**
@@ -468,7 +468,7 @@ public class IoT3Mobility {
         String topic = context + "/inQueue/v2x/cpm/" + uuid + geoExtension;
 
         // send the message only if the client is connected
-        if(isConnected()) ioT3Core.mqttPublish(topic, cpm.getJson().toString());
+        if(isConnected()) ioT3Core.mqttPublish(topic, cpm.getJson().toString(), false, 0, 1);
     }
 
     /**
