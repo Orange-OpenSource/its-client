@@ -24,12 +24,17 @@ import org.eclipse.leshan.client.object.Security;
 import org.eclipse.leshan.client.object.Server;
 import org.eclipse.leshan.client.resource.BaseInstanceEnablerFactory;
 import org.eclipse.leshan.client.resource.ObjectsInitializer;
+import org.eclipse.leshan.client.resource.listener.ObjectsListenerAdapter;
 import org.eclipse.leshan.core.LwM2mId;
+import org.eclipse.leshan.core.node.LwM2mPath;
 import org.eclipse.leshan.core.util.Hex;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.logging.Logger;
+
 public class Lwm2mClient {
 
+    private static final Logger logger = Logger.getLogger(Lwm2mClient.class.getName());
     private final LeshanClient client;
     private final Lwm2mConfig lwm2mConfig;
 
@@ -64,6 +69,8 @@ public class Lwm2mClient {
 
         client = builder.build();
 
+        setupObservationLogging();
+
         if (autoConnect) connect();
     }
 
@@ -91,7 +98,7 @@ public class Lwm2mClient {
     }
 
     public void connect() {
-        System.out.println("LwM2M connecting with: " + lwm2mConfig.getUri());
+        logger.info("LwM2M connecting with: " + lwm2mConfig.getUri());
         client.start();
     }
 
@@ -118,6 +125,20 @@ public class Lwm2mClient {
             }
         }
         return initializer;
+    }
+
+    private void setupObservationLogging() {
+        client.getObjectTree().addListener(
+                new ObjectsListenerAdapter() {
+                    @Override
+                    public void resourceChanged(LwM2mPath... paths) {
+                        super.resourceChanged(paths);
+                        for (LwM2mPath path : paths) {
+                            logger.fine("Resource changed: " + path.getObjectId() + "/" + path.getObjectInstanceId() + "/" + path.getResourceId());
+                        }
+                    }
+                }
+        );
     }
 
     @Nullable
