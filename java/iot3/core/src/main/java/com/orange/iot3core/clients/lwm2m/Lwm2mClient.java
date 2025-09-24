@@ -14,19 +14,27 @@ import com.orange.iot3core.clients.lwm2m.model.Lwm2mConfig;
 import com.orange.iot3core.clients.lwm2m.model.Lwm2mDevice;
 import com.orange.iot3core.clients.lwm2m.model.Lwm2mInstance;
 import io.reactivex.annotations.Nullable;
-import org.eclipse.leshan.client.californium.LeshanClient;
-import org.eclipse.leshan.client.californium.LeshanClientBuilder;
+import org.eclipse.leshan.client.LeshanClient;
+import org.eclipse.leshan.client.LeshanClientBuilder;
+import org.eclipse.leshan.client.californium.endpoint.CaliforniumClientEndpointsProvider;
+import org.eclipse.leshan.client.californium.endpoint.coap.CoapClientProtocolProvider;
+import org.eclipse.leshan.client.californium.endpoint.coaps.CoapsClientProtocolProvider;
+import org.eclipse.leshan.client.engine.DefaultRegistrationEngineFactory;
 import org.eclipse.leshan.client.object.Security;
 import org.eclipse.leshan.client.object.Server;
 import org.eclipse.leshan.client.resource.BaseInstanceEnablerFactory;
 import org.eclipse.leshan.client.resource.ObjectsInitializer;
+import org.eclipse.leshan.client.resource.listener.ObjectsListenerAdapter;
 import org.eclipse.leshan.core.LwM2mId;
-import org.eclipse.leshan.core.request.BindingMode;
+import org.eclipse.leshan.core.node.LwM2mPath;
 import org.eclipse.leshan.core.util.Hex;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.logging.Logger;
+
 public class Lwm2mClient {
 
+    private static final Logger logger = Logger.getLogger(Lwm2mClient.class.getName());
     private final LeshanClient client;
     private final Lwm2mConfig lwm2mConfig;
 
@@ -48,7 +56,20 @@ public class Lwm2mClient {
         LeshanClientBuilder builder = new LeshanClientBuilder(lwm2mConfig.getEndpointName());
         builder.setObjects(initializer.createAll());
 
+        CaliforniumClientEndpointsProvider.Builder endpointsBuilder =
+                new CaliforniumClientEndpointsProvider.Builder(
+                        new CoapClientProtocolProvider(),
+                        new CoapsClientProtocolProvider()
+                );
+        builder.setEndpointsProviders(endpointsBuilder.build());
+
+        DefaultRegistrationEngineFactory engineFactory = new DefaultRegistrationEngineFactory();
+        engineFactory.setQueueMode(lwm2mConfig.isQueueMode());
+        builder.setRegistrationEngineFactory(engineFactory);
+
         client = builder.build();
+
+        setupObservationLogging();
 
         if (autoConnect) connect();
     }
@@ -70,14 +91,14 @@ public class Lwm2mClient {
      * The client can be restarted later using {@link #connect()}.
      *
      * @param deregister If {true}, the client sends a DEREGISTER request to the LwM2M server before stopping,
-     *         informing the server that it is intentionally disconnecting.
+     *                   informing the server that it is intentionally disconnecting.
      */
     public void disconnect(boolean deregister) {
         client.stop(deregister);
     }
 
     public void connect() {
-        System.out.println("LwM2M connecting with: " + lwm2mConfig.getUri());
+        logger.info("LwM2M connecting with: " + lwm2mConfig.getUri());
         client.start();
     }
 
@@ -106,6 +127,20 @@ public class Lwm2mClient {
         return initializer;
     }
 
+    private void setupObservationLogging() {
+        client.getObjectTree().addListener(
+                new ObjectsListenerAdapter() {
+                    @Override
+                    public void resourceChanged(LwM2mPath... paths) {
+                        super.resourceChanged(paths);
+                        for (LwM2mPath path : paths) {
+                            logger.fine("Resource changed: " + path.getObjectId() + "/" + path.getObjectInstanceId() + "/" + path.getResourceId());
+                        }
+                    }
+                }
+        );
+    }
+
     @Nullable
     private Security getSecurity(Lwm2mConfig lwm2mConfig) {
         if (lwm2mConfig instanceof Lwm2mConfig.Lwm2mBootstrapConfig lwm2mBootstrapConfig) {
@@ -131,8 +166,9 @@ public class Lwm2mClient {
         return new Server(
                 lwm2mConfig.getServerConfig().getShortServerId(),
                 lwm2mConfig.getServerConfig().getLifetime(),
-                BindingMode.valueOf(lwm2mConfig.getServerConfig().getBindingMode()),
-                lwm2mConfig.getServerConfig().isNotifyWhenDisable()
+                lwm2mConfig.getServerConfig().getBindingModes(),
+                lwm2mConfig.getServerConfig().isNotifyWhenDisable(),
+                lwm2mConfig.getServerConfig().getPreferredTransport()
         );
     }
 
