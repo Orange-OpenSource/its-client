@@ -137,6 +137,7 @@ public class IoT3Mobility {
                         mqttPassword,
                         uuid,
                         mqttUseTls)
+                .mqttKeepAlive(10)
                 .callback(ioT3CoreCallback);
 
         if (lwm2mConfig != null && lwm2mDevice != null){
