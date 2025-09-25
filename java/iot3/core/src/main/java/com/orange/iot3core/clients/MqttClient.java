@@ -7,15 +7,17 @@
  */
 package com.orange.iot3core.clients;
 
+import com.hivemq.client.mqtt.MqttClientState;
 import com.hivemq.client.mqtt.MqttGlobalPublishFilter;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
-import com.hivemq.client.mqtt.lifecycle.MqttClientAutoReconnect;
-import com.hivemq.client.mqtt.lifecycle.MqttClientAutoReconnectBuilder;
+import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5ClientBuilder;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperty;
+import com.hivemq.client.mqtt.mqtt5.message.Mqtt5ReasonCode;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
+import com.hivemq.client.mqtt.mqtt5.message.unsubscribe.unsuback.Mqtt5UnsubAckReasonCode;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
@@ -26,8 +28,8 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,13 +37,23 @@ import java.util.logging.Logger;
 public class MqttClient {
 
     private static final Logger LOGGER = Logger.getLogger(MqttClient.class.getName());
-    private static final String NULL_CLIENT = "Null MQTT client...";
+    private static final String CLOSED = "MQTT client has been closed…";
+    private static final String NOT_CONNECTED = "MQTT client not connected…";
 
     private final Mqtt5AsyncClient mqttClient;
     private final MqttCallback callback;
     private final OpenTelemetryClient openTelemetryClient;
 
-    private final boolean useTls;
+    // topics source of truth
+    private final Set<String> desiredTopics = ConcurrentHashMap.newKeySet();
+    // subscribe and unsubscribe calls tracking
+    private final Set<String> inflightSub = ConcurrentHashMap.newKeySet();
+    private final Set<String> inflightUnsub = ConcurrentHashMap.newKeySet();
+    // pending unsubscribes filtering
+    private final Set<String> pendingUnsub = ConcurrentHashMap.newKeySet();
+
+    // client state
+    private volatile boolean closed;
 
     public MqttClient(String serverHost,
                       int serverPort,
@@ -49,11 +61,11 @@ public class MqttClient {
                       String password,
                       String clientId,
                       boolean useTls,
+                      int keepAlive,
                       MqttCallback callback,
                       OpenTelemetryClient openTelemetryClient) {
         this.callback = callback;
         this.openTelemetryClient = openTelemetryClient;
-        this.useTls = useTls;
 
         Mqtt5ClientBuilder mqttClientBuilder = com.hivemq.client.mqtt.MqttClient.builder()
                 .useMqttVersion5()
@@ -61,15 +73,25 @@ public class MqttClient {
                 .serverHost(serverHost)
                 .serverPort(serverPort)
                 .automaticReconnect()
-                        .initialDelay(500, TimeUnit.MILLISECONDS)
+                        .initialDelay(1, TimeUnit.SECONDS)
                         .maxDelay(5, TimeUnit.SECONDS)
                         .applyAutomaticReconnect()
-                .addDisconnectedListener(context1 -> {
-                    LOGGER.log(Level.INFO, "Disconnected from MQTT broker " + serverHost);
-                    callback.connectionLost(context1.getCause());
+                .addDisconnectedListener(disconnectContext -> {
+                    // when the disconnection was initiated by the user, disable auto-reconnect
+                    if(closed || disconnectContext.getSource() == MqttDisconnectSource.USER) {
+                        LOGGER.log(Level.FINE, "User-initiated disconnection from the MQTT broker");
+                        disconnectContext.getReconnector().reconnect(false);
+                    } else {
+                        LOGGER.log(Level.INFO, "Disconnected from the MQTT broker by " + disconnectContext.getSource());
+                    }
+                    callback.connectionLost(disconnectContext.getCause());
                 })
-                .addConnectedListener(context12 -> {
-                    LOGGER.log(Level.INFO, "Connected to MQTT broker " + serverHost);
+                .addConnectedListener(connectContext -> {
+                    LOGGER.log(Level.INFO, "Connected to the MQTT broker");
+                    pendingUnsub.clear();
+                    inflightUnsub.clear();
+                    inflightSub.clear();
+                    resubscribeAll();
                     callback.connectComplete(true, serverHost);
                 });
 
@@ -86,90 +108,174 @@ public class MqttClient {
             mqttClient = mqttClientBuilder.buildAsync();
         }
 
+        closed = false;
+
         // single callback for processing messages received on subscribed topics
         mqttClient.publishes(MqttGlobalPublishFilter.SUBSCRIBED, this::processPublish);
 
-        connect();
+        connect(keepAlive);
     }
 
-    public void disconnect() {
-        if(mqttClient != null) {
-            mqttClient.disconnect().whenComplete((mqtt5DisconnectResult, throwable) -> {
-                if(throwable != null) {
-                    LOGGER.log(Level.WARNING, "Error during disconnection: " + throwable.getMessage());
-                } else {
-                    LOGGER.log(Level.INFO, "Disconnected");
-                }
-            });
-        }
-    }
-
-    public void connect() {
+    private void connect(int keepAlive) {
         mqttClient.connectWith()
                 .cleanStart(true)
+                .keepAlive(keepAlive)
                 .send()
                 .whenComplete((connAck, throwable) -> {
                     if(throwable != null) {
-                        LOGGER.log(Level.INFO, "Error during connection to the server: " + throwable.getMessage());
+                        LOGGER.log(Level.WARNING, "Error during connection to the server: " + throwable.getMessage());
                     } else {
                         LOGGER.log(Level.INFO, "Success connecting to the server");
                     }
                 });
     }
 
+    public void close() {
+        if(closed) {
+            LOGGER.log(Level.INFO, "Client is already closed");
+            return;
+        }
+        closed = true;
+        mqttClient.disconnect()
+                .orTimeout(500, TimeUnit.MILLISECONDS) // don't wait more than 500 milliseconds
+                .whenComplete((mqtt5DisconnectResult, throwable) -> {
+                    if(throwable != null) {
+                        LOGGER.log(Level.WARNING, "Error during disconnection: " + throwable.getMessage());
+                    } else {
+                        LOGGER.log(Level.INFO, "Disconnected");
+                    }
+                });
+    }
+
     public void subscribeToTopic(String topic) {
-        LOGGER.log(Level.INFO, "Subscribing to topic: " + topic);
-        if(mqttClient != null) {
+        desiredTopics.add(topic);
+        if(closed) {
+            LOGGER.log(Level.WARNING, "Cannot subscribe: " + CLOSED);
+            return;
+        }
+        if(mqttClient.getState() != MqttClientState.CONNECTED) {
+            LOGGER.log(Level.INFO, "Subscribe pending: " + NOT_CONNECTED);
+            return;
+        }
+        if(inflightSub.add(topic)) {
+            LOGGER.log(Level.FINE, "Subscribing to topic: " + topic);
             mqttClient.subscribeWith()
                     .topicFilter(topic)
                     .send()
                     .whenComplete((subAck, throwable) -> {
+                        inflightSub.remove(topic);
+
                         if (throwable != null) {
                             LOGGER.log(Level.WARNING, "Subscription failed: " + throwable.getMessage());
-                        } else {
-                            LOGGER.log(Level.FINE, "Subscribed!");
+                            callback.subscriptionComplete(throwable);
+                            return;
                         }
-                        callback.subscriptionComplete(throwable);
+
+                        // MQTT 5: reason codes can signal refusal even when no exception is thrown
+                        boolean ok = subAck.getReasonCodes().stream().noneMatch(Mqtt5ReasonCode::isError);
+
+                        if (!ok) {
+                            LOGGER.log(Level.WARNING, "Subscription refused by broker: " + subAck.getReasonCodes());
+                            callback.subscriptionComplete(new RuntimeException("SUBACK: " + subAck.getReasonCodes()));
+                            return;
+                        }
+
+                        // if user tried to unsubscribe while this was inflight, unsubscribe
+                        if (!desiredTopics.contains(topic)) {
+                            LOGGER.log(Level.FINE, "Subscribe completed but topic no longer desired; unsubscribing…");
+                            unsubscribeFromTopic(topic);
+                            callback.subscriptionComplete(null);
+                            return;
+                        }
+
+                        LOGGER.log(Level.FINE, "Subscribed!");
+                        callback.subscriptionComplete(null);
                     });
-        } else {
-            LOGGER.log(Level.INFO, NULL_CLIENT);
         }
     }
 
     public void unsubscribeFromTopic(String topic) {
-        LOGGER.log(Level.INFO, "Unsubscribing from topic: " + topic);
-        if(mqttClient != null) {
+        desiredTopics.remove(topic);
+        pendingUnsub.add(topic);
+        if(closed) {
+            LOGGER.log(Level.WARNING, "Cannot unsubscribe: " + CLOSED);
+            return;
+        }
+        if(mqttClient.getState() != MqttClientState.CONNECTED) {
+            LOGGER.log(Level.INFO, "Unsubscribe pending: " + NOT_CONNECTED);
+            return;
+        }
+        if(inflightUnsub.add(topic)) {
+            LOGGER.log(Level.FINE, "Unsubscribing from topic: " + topic);
             mqttClient.unsubscribeWith()
                     .topicFilter(topic)
                     .send()
-                    .whenComplete((subAck, throwable) -> {
+                    .whenComplete((unsubAck, throwable) -> {
+                        inflightUnsub.remove(topic);
+
                         if (throwable != null) {
-                            LOGGER.log(Level.WARNING, "Unsubscription failed: " + throwable.getMessage());
-                        } else {
-                            LOGGER.log(Level.INFO, "Unsubscribed!");
+                            LOGGER.log(Level.WARNING, "Unsubscribe failed: " + throwable.getMessage());
+                            callback.unsubscriptionComplete(throwable);
+                            return;
                         }
-                        callback.unsubscriptionComplete(throwable);
+
+                        boolean ok = unsubAck.getReasonCodes().stream().allMatch(rc ->
+                                rc == Mqtt5UnsubAckReasonCode.SUCCESS ||
+                                        rc == Mqtt5UnsubAckReasonCode.NO_SUBSCRIPTIONS_EXISTED);
+
+                        if (ok) {
+                            pendingUnsub.remove(topic);
+                            LOGGER.log(Level.FINE, "Unsubscribed!");
+                            callback.unsubscriptionComplete(null);
+                        } else {
+                            LOGGER.log(Level.WARNING, "Unsubscribe not accepted: " + unsubAck.getReasonCodes());
+                            // we keep pendingUnsub so messages stay filtered locally for this topic
+                            callback.unsubscriptionComplete(new RuntimeException("UNSUBACK: " + unsubAck.getReasonCodes()));
+                        }
                     });
-        } else {
-            LOGGER.log(Level.INFO, NULL_CLIENT);
         }
     }
 
-    public void publishMessage(String topic, String message, boolean retained, int qos) {
-        LOGGER.log(Level.INFO, "Sending message: " + topic + " | "+ message);
+    private void resubscribeAll() {
+        if (desiredTopics.isEmpty()) return;
+
+        List<String> topics = new ArrayList<>(desiredTopics);
+        for(String topic: topics) {
+            subscribeToTopic(topic);
+        }
+    }
+
+    public void publishMessage(String topic, String message, boolean retained, int qos, int expiry) {
+        LOGGER.log(Level.FINE, "Sending message: " + topic + " | "+ message);
 
         MqttQos mqttQos = MqttQos.AT_MOST_ONCE;
         if(qos == 1) mqttQos = MqttQos.AT_LEAST_ONCE;
         if(qos == 2) mqttQos = MqttQos.EXACTLY_ONCE;
 
-        if(isValidMqttPubTopic(topic) && mqttClient != null) {
+        if(closed) {
+            LOGGER.log(Level.WARNING, "Cannot publish: " + CLOSED);
+            return;
+        }
+        // do not attempt to publish QoS 0 messages if the client is disconnected (only QoS 1 and 2 will be queued)
+        if(mqttClient.getState() != MqttClientState.CONNECTED && qos == 0) {
+            LOGGER.log(Level.INFO, "QoS 0 publish dropped: " + NOT_CONNECTED);
+            return;
+        }
+        if(isValidMqttPubTopic(topic)) {
             var publishBuilder = mqttClient.publishWith()
                     .topic(topic)
                     .payload(message.getBytes())
                     .qos(mqttQos)
                     .retain(retained);
 
-            if(openTelemetryClient != null) {
+            if(expiry > 0) publishBuilder = publishBuilder.messageExpiryInterval(expiry);
+
+            if(openTelemetryClient == null) {
+                // send message without user properties
+                publishBuilder.send()
+                        .whenComplete((mqtt5Publish, throwable)
+                                -> onPublishComplete(null, throwable));
+            } else {
                 Span span = openTelemetryClient.startSpan("IoT3 Core MQTT Message", SpanKind.PRODUCER);
                 span.setAttribute(AttributeKey.stringKey("iot3.core.mqtt.topic"), topic);
                 span.setAttribute(AttributeKey.stringKey("iot3.core.mqtt.payload_size"),
@@ -194,14 +300,7 @@ public class MqttClient {
                         .send()
                         .whenComplete((mqtt5Publish, throwable)
                                 -> onPublishComplete(span, throwable));
-            } else {
-                // send message without user properties
-                publishBuilder.send()
-                        .whenComplete((mqtt5Publish, throwable)
-                                -> onPublishComplete(null, throwable));
             }
-        } else if(mqttClient == null) {
-            LOGGER.log(Level.INFO, NULL_CLIENT);
         }
     }
 
@@ -214,17 +313,9 @@ public class MqttClient {
             LOGGER.log(Level.WARNING, "Failed publishing message... " + throwable.getMessage());
         } else {
             if(span != null) span.end();
-            LOGGER.log(Level.INFO, "Success publishing message: ");
+            LOGGER.log(Level.FINE, "Success publishing message");
         }
         callback.messagePublished(throwable);
-    }
-
-    public void publishMessage(String topic, String message, boolean retained) {
-        publishMessage(topic, message, retained, 0);
-    }
-
-    public void publishMessage(String topic, String message) {
-        publishMessage(topic, message, false, 0);
     }
 
     private void processPublish(Mqtt5Publish publish) {
@@ -275,22 +366,22 @@ public class MqttClient {
             receivedSpan.end();
         }
 
-        LOGGER.log(Level.INFO, "MQTT message arrived on: " + publish.getTopic() + " | " + message);
+        LOGGER.log(Level.FINE, "MQTT message arrived on: " + publish.getTopic() + " | " + message);
         callback.messageArrived(publish.getTopic().toString(), message);
     }
 
     public boolean isConnected() {
-        return mqttClient != null && mqttClient.getState().isConnected();
+        return mqttClient != null && mqttClient.getState() == MqttClientState.CONNECTED;
     }
 
     public boolean isConnectionSecured() {
-        return isConnected() && useTls;
+        return isConnected() && mqttClient.getConfig().getSslConfig().isPresent();
     }
 
     public boolean isValidMqttPubTopic(String topic) {
         // Check for null or empty string
         if (topic == null || topic.isEmpty()) {
-            LOGGER.log(Level.FINE, "Publication topic cannot be null or empty!");
+            LOGGER.log(Level.FINER, "Publication topic cannot be null or empty!");
             return false;
         }
 
@@ -298,30 +389,30 @@ public class MqttClient {
         try {
             topic.getBytes(StandardCharsets.UTF_8);
         } catch (Exception e) {
-            LOGGER.log(Level.FINE, "Publication topic encoding is not valid, should be UTF-8!");
+            LOGGER.log(Level.FINER, "Publication topic encoding is not valid, should be UTF-8!");
             return false;
         }
 
         // Check for forbidden characters
         if (topic.contains("#") || topic.contains("+")) {
-            LOGGER.log(Level.FINE, "Publication topic cannot use wildcard + or #!");
+            LOGGER.log(Level.FINER, "Publication topic cannot use wildcard + or #!");
             return false;
         }
 
         // Check for leading or trailing spaces
         if (topic.startsWith(" ") || topic.endsWith(" ")) {
-            LOGGER.log(Level.FINE, "Publication topic cannot have white spaces!");
+            LOGGER.log(Level.FINER, "Publication topic cannot have white spaces!");
             return false;
         }
 
         // Check for length limitations (adjust the limit as needed)
         if (topic.length() > 65535) {
-            LOGGER.log(Level.FINE, "Publication topic is too long!");
+            LOGGER.log(Level.FINER, "Publication topic is too long!");
             return false;
         }
 
         // If all checks pass, the topic is valid
-        LOGGER.log(Level.FINE, "Publication topic is valid!");
+        LOGGER.log(Level.FINER, "Publication topic is valid!");
         return true;
     }
     

@@ -137,6 +137,7 @@ public class IoT3Mobility {
                         mqttPassword,
                         uuid,
                         mqttUseTls)
+                .mqttKeepAlive(10)
                 .callback(ioT3CoreCallback);
 
         if (lwm2mConfig != null && lwm2mDevice != null){
@@ -203,10 +204,10 @@ public class IoT3Mobility {
     }
 
     /**
-     * Disconnect from the server.
+     * Disconnect from the server permanently.
      */
-    public void disconnect() {
-        if(ioT3Core != null) ioT3Core.disconnectAll();
+    public void close() {
+        if(ioT3Core != null) ioT3Core.close();
     }
 
     /**
@@ -331,14 +332,6 @@ public class IoT3Mobility {
         acceleration = Utils.clamp(acceleration, -16, 16);
         yawRate = Utils.clamp(yawRate, -327, 327);
 
-        LocationUpdate locationUpdate = new LocationUpdate.Builder(
-                position.getLatitude(),
-                position.getLongitude()
-        ).altitude((double) altitude)
-                .speed((double) speed)
-                .build();
-        lwm2mLocation.update(locationUpdate);
-
         // build the CAM
         CAM cam = new CAM.CAMBuilder()
                 .header(
@@ -382,7 +375,7 @@ public class IoT3Mobility {
         String topic = context + "/inQueue/v2x/cam/" + uuid + geoExtension;
 
         // send the message only if the client is connected
-        if(isConnected()) ioT3Core.mqttPublish(topic, cam.getJsonCAM().toString());
+        if(isConnected()) ioT3Core.mqttPublish(topic, cam.getJsonCAM().toString(), false, 0, 1);
     }
 
     /**
@@ -468,7 +461,7 @@ public class IoT3Mobility {
         String topic = context + "/inQueue/v2x/cpm/" + uuid + geoExtension;
 
         // send the message only if the client is connected
-        if(isConnected()) ioT3Core.mqttPublish(topic, cpm.getJson().toString());
+        if(isConnected()) ioT3Core.mqttPublish(topic, cpm.getJson().toString(), false, 0, 1);
     }
 
     /**

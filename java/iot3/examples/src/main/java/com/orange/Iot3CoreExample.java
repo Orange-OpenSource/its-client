@@ -19,6 +19,7 @@ public class Iot3CoreExample {
     private static final String EXAMPLE_MQTT_PASSWORD = "mqtt_password";
     private static final String EXAMPLE_MQTT_CLIENT_ID = "mqtt_client_id";
     private static final boolean EXAMPLE_MQTT_USE_TLS = true;
+    private static final int EXAMPLE_MQTT_KEEP_ALIVE = 30;
     // OpenTelemetry parameters
     private static final String EXAMPLE_OTL_SCHEME = "http";
     private static final String EXAMPLE_OTL_HOST = "telemetry_host";
@@ -60,6 +61,7 @@ public class Iot3CoreExample {
                         EXAMPLE_MQTT_PASSWORD,
                         EXAMPLE_MQTT_CLIENT_ID,
                         EXAMPLE_MQTT_USE_TLS)
+                .mqttKeepAlive(EXAMPLE_MQTT_KEEP_ALIVE) // optional, default is 60 seconds
                 .telemetryParams(EXAMPLE_OTL_SCHEME,
                         EXAMPLE_OTL_HOST,
                         EXAMPLE_OTL_PORT,
@@ -130,7 +132,7 @@ public class Iot3CoreExample {
                             "This is an iot3 core test message, it should also come back"),
                     8, TimeUnit.SECONDS);
             // disconnect the clients of IoT3Core
-            executorService.schedule(ioT3Core::disconnectAll, 10, TimeUnit.SECONDS);
+            executorService.schedule(ioT3Core::close, 10, TimeUnit.SECONDS);
         } catch (Exception e) {
             System.out.println("Error: " + e);
         }

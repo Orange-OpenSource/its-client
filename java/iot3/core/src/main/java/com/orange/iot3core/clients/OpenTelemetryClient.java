@@ -119,12 +119,9 @@ public class OpenTelemetryClient {
         return span.getSpanContext().getTraceId();
     }
 
-    public void disconnect() {
+    public void close() {
         tracerProvider.shutdown();
-    }
-
-    public void connect() {
-        initialize();
+        GlobalOpenTelemetry.resetForTest();
     }
 
 }

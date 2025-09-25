@@ -82,8 +82,8 @@ public class Lwm2mClient {
         this(lwm2mConfig, lwm2mDevice, lwm2mInstances, true);
     }
 
-    public void disconnect() {
-        disconnect(true);
+    public void close() {
+        close(true);
     }
 
     /**
@@ -93,7 +93,7 @@ public class Lwm2mClient {
      * @param deregister If {true}, the client sends a DEREGISTER request to the LwM2M server before stopping,
      *                   informing the server that it is intentionally disconnecting.
      */
-    public void disconnect(boolean deregister) {
+    public void close(boolean deregister) {
         client.stop(deregister);
     }
 
