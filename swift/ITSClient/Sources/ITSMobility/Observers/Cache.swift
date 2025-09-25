@@ -44,6 +44,7 @@ actor Cache<K: Hashable, V: Sendable> {
         cache.removeValue(forKey: key)
     }
 
+    @discardableResult
     func clear() -> [Entry] {
         let entriesRemoved = Array(cache.values)
         cache.removeAll()
@@ -54,7 +55,7 @@ actor Cache<K: Hashable, V: Sendable> {
         expirationTask = Task { [weak self] in
             while !Task.isCancelled {
                 await self?.removeExpiredEntries()
-                try? await Task.sleep(for: .seconds(1.0))
+                try? await Task.sleep(seconds: 1.0)
             }
         }
     }

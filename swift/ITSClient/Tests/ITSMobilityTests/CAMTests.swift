@@ -34,7 +34,7 @@ struct CAMTests {
     private let longitudinalAcceleration = HighFrequencyContainer.unavailableAcceleration
     private let stationID: UInt32 = 123456
     private let dateComponents = DateComponents(calendar: .init(identifier: .gregorian),
-                                                timeZone: TimeZone.gmt,
+                                                timeZone: TimeZone(secondsFromGMT: 0),
                                                 year: 2025,
                                                 month: 3,
                                                 day: 25,

@@ -119,7 +119,7 @@ struct MQTTNIOClientTests {
                                                      topic: topic,
                                                      userProperty: userProperty))
             // Wait the message
-            try await Task.sleep(for: .seconds(0.5))
+            try await Task.sleep(seconds: 0.5)
 
             try await mqttClient.disconnect()
         }
@@ -149,7 +149,7 @@ struct MQTTNIOClientTests {
                                                      topic: topic,
                                                      userProperty: nil))
             // Wait the message
-            try await Task.sleep(for: .seconds(0.5))
+            try await Task.sleep(seconds: 0.5)
 
             try await mqttClient.disconnect()
         }
@@ -250,7 +250,7 @@ struct MQTTNIOClientTests {
         mqttClient = nil
 
         // Then
-        try await Task.sleep(for: .seconds(0.5))
+        try await Task.sleep(seconds: 0.5)
         #expect(weakMQTTClient == nil, "Memory leak detected in MQTTNIOClient")
     }
 }

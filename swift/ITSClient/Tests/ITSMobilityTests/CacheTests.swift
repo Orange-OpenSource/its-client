@@ -76,7 +76,7 @@ struct CacheTests {
             await cache.setExpiredEntryHandler { _ in
                 confirmation()
             }
-            try await Task.sleep(for: .seconds(3))
+            try await Task.sleep(seconds: 3)
         }
 
         // Then

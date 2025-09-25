@@ -33,7 +33,7 @@ public struct Bootstrap: Sendable {
     /// Builds a `MQTTClientConfiguration`.
     /// - Returns: A `MQTTClientConfiguration` or nil if the MQTT `host` or `port` is nil.
     public func mqttClientConfiguration() -> MQTTClientConfiguration? {
-        guard let host = mqttURL.host(), let port = mqttURL.port else { return nil }
+        guard let host = mqttURL.host, let port = mqttURL.port else { return nil }
 
         return MQTTClientConfiguration(host: host,
                                        port: port,

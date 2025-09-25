@@ -7,7 +7,7 @@ let package = Package(
     name: "ITSClient",
     platforms: [
         .macOS(.v13),
-        .iOS(.v16)
+        .iOS(.v14)
     ],
     products: [
         .library(
