@@ -45,6 +45,7 @@ public class IoT3Core {
      * @param mqttPassword MQTT password
      * @param mqttClientId unique MQTT client ID
      * @param mqttUseTls use TLS for a secure connection with the MQTT broker
+     * @param mqttKeepAlive keepAlive of the MQTT session - time it takes for noticing the disconnected state
      * @param ioT3CoreCallback interface to retrieve the different clients outputs
      * @param telemetryScheme Open Telemetry scheme (HTTP, HTTPS...)
      * @param telemetryHost Open Telemetry server address
@@ -59,6 +60,7 @@ public class IoT3Core {
                     String mqttPassword,
                     String mqttClientId,
                     boolean mqttUseTls,
+                    int mqttKeepAlive,
                     IoT3CoreCallback ioT3CoreCallback,
                     String telemetryScheme,
                     String telemetryHost,
@@ -90,6 +92,7 @@ public class IoT3Core {
                     mqttPassword,
                     mqttClientId,
                     mqttUseTls,
+                    mqttKeepAlive,
                     new MqttCallback() {
                         @Override
                         public void connectionLost(Throwable cause) {
@@ -236,6 +239,7 @@ public class IoT3Core {
         private String mqttPassword;
         private String mqttClientId;
         private boolean mqttUseTls;
+        private int mqttKeepAlive = 60;
         private IoT3CoreCallback ioT3CoreCallback;
         private String telemetryScheme;
         private String telemetryHost = null; // will remain null if not initialized
@@ -275,6 +279,16 @@ public class IoT3Core {
             this.mqttPassword = mqttPassword;
             this.mqttClientId = mqttClientId;
             this.mqttUseTls = mqttUseTls;
+            return this;
+        }
+
+        /**
+         * Set the MQTT keep alive of your IoT3Core instance.
+         *
+         * @param mqttKeepAlive keepAlive of the MQTT session - time it takes for noticing the disconnected state
+         */
+        public IoT3CoreBuilder mqttKeepAlive(int mqttKeepAlive) {
+            this.mqttKeepAlive = mqttKeepAlive;
             return this;
         }
 
@@ -386,6 +400,7 @@ public class IoT3Core {
                     mqttPassword,
                     mqttClientId,
                     mqttUseTls,
+                    mqttKeepAlive,
                     ioT3CoreCallback,
                     telemetryScheme,
                     telemetryHost,

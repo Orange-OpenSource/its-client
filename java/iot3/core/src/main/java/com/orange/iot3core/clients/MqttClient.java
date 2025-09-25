@@ -61,6 +61,7 @@ public class MqttClient {
                       String password,
                       String clientId,
                       boolean useTls,
+                      int keepAlive,
                       MqttCallback callback,
                       OpenTelemetryClient openTelemetryClient) {
         this.callback = callback;
@@ -112,12 +113,13 @@ public class MqttClient {
         // single callback for processing messages received on subscribed topics
         mqttClient.publishes(MqttGlobalPublishFilter.SUBSCRIBED, this::processPublish);
 
-        connect();
+        connect(keepAlive);
     }
 
-    private void connect() {
+    private void connect(int keepAlive) {
         mqttClient.connectWith()
                 .cleanStart(true)
+                .keepAlive(keepAlive)
                 .send()
                 .whenComplete((connAck, throwable) -> {
                     if(throwable != null) {
@@ -254,8 +256,9 @@ public class MqttClient {
             LOGGER.log(Level.WARNING, "Cannot publish: " + CLOSED);
             return;
         }
-        if(mqttClient.getState() != MqttClientState.CONNECTED) {
-            LOGGER.log(Level.INFO, "Cannot publish: " + NOT_CONNECTED);
+        // do not attempt to publish QoS 0 messages if the client is disconnected (only QoS 1 and 2 will be queued)
+        if(mqttClient.getState() != MqttClientState.CONNECTED && qos == 0) {
+            LOGGER.log(Level.INFO, "QoS 0 publish dropped: " + NOT_CONNECTED);
             return;
         }
         if(isValidMqttPubTopic(topic)) {
