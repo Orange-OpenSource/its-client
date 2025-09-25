@@ -20,6 +20,8 @@ public class IoT3CoreBootstrapExample {
     private static final BootstrapHelper.Role BOOTSTRAP_ROLE = BootstrapHelper.Role.EXTERNAL_APP;
     private static final String BOOTSTRAP_URI = "bootstrap.uri.com";
 
+    private static final int EXAMPLE_MQTT_KEEP_ALIVE = 30;
+
     private static IoT3Core ioT3Core;
 
     public static void main(String[] args) {
@@ -57,6 +59,7 @@ public class IoT3CoreBootstrapExample {
         // instantiate IoT3Core with the bootstrap configuration
         ioT3Core = new IoT3Core.IoT3CoreBuilder()
                 .bootstrapConfig(bootstrapConfig)
+                .mqttKeepAlive(EXAMPLE_MQTT_KEEP_ALIVE) // optional, default is 60 seconds
                 .callback(new IoT3CoreCallback() {
                     @Override
                     public void mqttConnectionLost(Throwable throwable) {
