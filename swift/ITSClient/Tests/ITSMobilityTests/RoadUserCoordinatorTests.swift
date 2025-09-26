@@ -78,7 +78,7 @@ struct RoadUserCoordinatorTests {
         let camData = try JSONEncoder().encode(cam)
         await roadUserCoordinator.handleRoadUser(withPayload: camData)
 
-        try await Task.sleep(for: .seconds(4.0))
+        try await Task.sleep(seconds: 4.0)
 
         // Then
         #expect(await observer.didCreateCallsCount == 1)

@@ -39,9 +39,9 @@ struct CoreTests {
         try await core.start(coreConfiguration: coreConfiguration)
         try await core.subscribe(to: topic)
         Task {
-            try await Task.sleep(for: .seconds(0.5))
+            try await Task.sleep(seconds: 0.5)
             try await core.publish(message: incomingMessage)
-            try await Task.sleep(for: .seconds(0.5))
+            try await Task.sleep(seconds: 0.5)
             await core.stop() // Stop to flush spans
         }
 
@@ -54,11 +54,11 @@ struct CoreTests {
                 // Wait a bit to simulate a task that takes time
                 Thread.sleep(forTimeInterval: 0.25)
             })
-            try await Task.sleep(for: .seconds(3.0))
+            try await Task.sleep(seconds: 3.0)
         }
 
         // Wait a bit for the spans flush
-        try await Task.sleep(for: .seconds(0.5))
+        try await Task.sleep(seconds: 0.5)
     }
 
     @Test("A message sent with an error should create a span with an error")
@@ -75,7 +75,7 @@ struct CoreTests {
         } catch {
             await core.stop() // Stop to flush spans
             // Wait a bit for the spans flush
-            try await Task.sleep(for: .seconds(0.5))
+            try await Task.sleep(seconds: 0.5)
         }
     }
 
@@ -92,7 +92,7 @@ struct CoreTests {
         try await core.publish(message: message)
         await core.stop() // Stop as you want to flush spans
         // Wait a bit for the spans flush
-        try await Task.sleep(for: .seconds(0.5))
+        try await Task.sleep(seconds: 0.5)
     }
 
     @Test(.bug("https://github.com/Orange-OpenSource/its-client/issues/387",
@@ -134,9 +134,9 @@ struct CoreTests {
         try await core.start(coreConfiguration: coreConfiguration)
         try await core.subscribe(to: topic)
         Task {
-            try await Task.sleep(for: .seconds(0.5))
+            try await Task.sleep(seconds: 0.5)
             try await core.publish(message: incomingMessage)
-            try await Task.sleep(for: .seconds(0.5))
+            try await Task.sleep(seconds: 0.5)
         }
 
         nonisolated(unsafe) var messagesReceivedCount = 0
@@ -144,7 +144,7 @@ struct CoreTests {
             messagesReceivedCount += 1
         })
 
-        try await Task.sleep(for: .seconds(1))
+        try await Task.sleep(seconds: 1.0)
 
         // Expect one message is received
         #expect(messagesReceivedCount == 1)
@@ -152,30 +152,30 @@ struct CoreTests {
         messagesReceivedCount = 0
         // Disable network
         networkManager.disableNetwork()
-        try await Task.sleep(for: .seconds(1))
+        try await Task.sleep(seconds: 1.0)
 
         Task {
-            try await Task.sleep(for: .seconds(0.5))
+            try await Task.sleep(seconds: 0.5)
             try await core.publish(message: incomingMessage)
-            try await Task.sleep(for: .seconds(0.5))
+            try await Task.sleep(seconds: 0.5)
         }
 
-        try await Task.sleep(for: .seconds(1))
+        try await Task.sleep(seconds: 1.0)
 
         // Expect that no message is received
         #expect(messagesReceivedCount == 0)
 
         // Enable the network
         networkManager.enableNetwork()
-        try await Task.sleep(for: .seconds(5))
+        try await Task.sleep(seconds: 5.0)
 
         Task {
-            try await Task.sleep(for: .seconds(0.5))
+            try await Task.sleep(seconds: 0.5)
             try await core.publish(message: incomingMessage)
-            try await Task.sleep(for: .seconds(0.5))
+            try await Task.sleep(seconds: 0.5)
         }
 
-        try await Task.sleep(for: .seconds(1))
+        try await Task.sleep(seconds: 1.0)
 
         // Expect that one message is received
         #expect(messagesReceivedCount == 1)

@@ -27,7 +27,7 @@ struct DENMTests {
     private let stationID: UInt32 = 654321
     private let originatingStationID: UInt32 = 10000
     private let dateComponents = DateComponents(calendar: .init(identifier: .gregorian),
-                                                timeZone: TimeZone.gmt,
+                                                timeZone: TimeZone(secondsFromGMT: 0),
                                                 year: 2025,
                                                 month: 3,
                                                 day: 26,

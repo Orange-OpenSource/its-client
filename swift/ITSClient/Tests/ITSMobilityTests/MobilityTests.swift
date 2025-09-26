@@ -44,7 +44,7 @@ struct MobilityTests {
                                         speed: 8.1)
         await mobility.stop()
         // Wait a bit for the spans flush
-        try await Task.sleep(for: .seconds(0.5))
+        try await Task.sleep(seconds: 0.5)
     }
 
     @Test("Send alert should send a payload on a topic computed from coordinates")
@@ -57,6 +57,6 @@ struct MobilityTests {
                                      cause: .trafficCondition())
         await mobility.stop()
         // Wait a bit for the spans flush
-        try await Task.sleep(for: .seconds(0.5))
+        try await Task.sleep(seconds: 0.5)
     }
 }

@@ -99,7 +99,7 @@ actor MQTTNIOClient: MQTTClient {
 
         do {
             isDisconnectedFromUser = false
-            _ = try await client.v5.connect(cleanStart: true)
+            _ = try await client.v5.connect(cleanStart: true).get()
             // As MQTTNIO close connection event is not triggered quickly when network is lost,
             // monitor the network to be more reactive.
             startNetworkMonitoring()
@@ -116,7 +116,7 @@ actor MQTTNIOClient: MQTTClient {
 
         do {
             let subscriptions = [MQTTSubscribeInfoV5(topicFilter: topic, qos: .atLeastOnce)]
-            _ = try await client.v5.subscribe(to: subscriptions)
+            _ = try await client.v5.subscribe(to: subscriptions).get()
         } catch {
             throw .subscriptionFailed
         }
@@ -129,7 +129,7 @@ actor MQTTNIOClient: MQTTClient {
         guard !isReconnecting else { return }
 
         do {
-            _ = try await client.v5.unsubscribe(from: [topic])
+            _ = try await client.v5.unsubscribe(from: [topic]).get()
         } catch {
             throw .unsubscriptionFailed
         }
@@ -145,7 +145,7 @@ actor MQTTNIOClient: MQTTClient {
         guard isConnected else { return }
 
         do {
-            try await client.v5.disconnect()
+            try await client.v5.disconnect().get()
             isDisconnectedFromUser = true
         } catch {
             throw .disconnectionFailed
@@ -164,6 +164,7 @@ actor MQTTNIOClient: MQTTClient {
                                             payload: ByteBufferAllocator().buffer(data: message.payload),
                                             qos: .atLeastOnce,
                                             properties: mqttProperties ?? .init())
+                                            .get()
         } catch {
             throw .sendPayloadFailed
         }
@@ -222,7 +223,7 @@ actor MQTTNIOClient: MQTTClient {
                 if await isConnected && networkStatus != previousNetworkStatus &&
                     networkStatus == .disconnected {
                     // Disconnect to close connection early when the network is disconnected
-                    try? await client.v5.disconnect()
+                    try? await client.v5.disconnect().get()
                 }
                 previousNetworkStatus = networkStatus
             }

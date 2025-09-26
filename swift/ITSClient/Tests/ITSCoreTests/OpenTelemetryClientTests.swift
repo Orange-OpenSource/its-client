@@ -40,7 +40,7 @@ struct OpenTelemetryClientTests {
         }
 
         await openTelemetryClient.stop()
-        try await Task.sleep(for: .seconds(0.1))
+        try await Task.sleep(seconds: 0.1)
     }
 
     @Test("Send a producer and a child consumer span")
@@ -53,7 +53,7 @@ struct OpenTelemetryClientTests {
                                     traceParent: traceParent)
 
         await openTelemetryClient.stop()
-        try await Task.sleep(for: .seconds(0.1))
+        try await Task.sleep(seconds: 0.1)
     }
 
     @Test("Send a producer span with error")
@@ -65,7 +65,7 @@ struct OpenTelemetryClientTests {
                                     errorMessage: "Test error")
 
         await openTelemetryClient.stop()
-        try await Task.sleep(for: .seconds(0.1))
+        try await Task.sleep(seconds: 0.1)
     }
 
     private func startConsumerSpan(telemetryClient: TelemetryClient, traceParent: String? = nil) async throws {
@@ -75,7 +75,7 @@ struct OpenTelemetryClientTests {
                                                                           type: .consumer,
                                                                           attributes: consumerAttributes,
                                                                           fromContext: context))
-        try await Task.sleep(for: .seconds(0.1))
+        try await Task.sleep(seconds: 0.1)
         await telemetryClient.stopSpan(spanID: consumerSpanID)
     }
 
@@ -89,7 +89,7 @@ struct OpenTelemetryClientTests {
                                                                           type: .producer,
                                                                           attributes: producerAttributes))
         let context = await telemetryClient.updateContext(withSpanID: producerSpanID)
-        try await Task.sleep(for: .seconds(0.1))
+        try await Task.sleep(seconds: 0.1)
         await telemetryClient.stopSpan(spanID: producerSpanID, errorMessage: errorMessage)
 
         return context["traceparent"]

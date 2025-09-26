@@ -111,7 +111,7 @@ struct RoadAlarmCoordinatorTests {
         let denmData = try JSONEncoder().encode(denm)
         await roadAlarmCoordinator.handleRoadAlarm(withPayload: denmData)
 
-        try await Task.sleep(for: .seconds(expirationDelay + 4.0))
+        try await Task.sleep(seconds: expirationDelay + 4.0)
 
         // Then
         #expect(await observer.didCreateCallsCount == 1)

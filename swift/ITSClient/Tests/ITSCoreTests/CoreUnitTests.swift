@@ -51,7 +51,7 @@ struct CoreUnitTests {
 
         // When
         try await core.start(mqttClient: mockMQTTClient, telemetryClient: mockTelemetryClient)
-        try await Task.sleep(for: .seconds(0.5))
+        try await Task.sleep(seconds: 0.5)
         await core.stop()
 
         // Then
@@ -70,7 +70,7 @@ struct CoreUnitTests {
         let incomingMessage = MQTTMessage(payload: Data(), topic: topic, userProperty: nil)
         try await core.subscribe(to: topic)
         Task {
-            try await Task.sleep(for: .seconds(0.5))
+            try await Task.sleep(seconds: 0.5)
             await mockMQTTClient.simulateMessageReceived(incomingMessage)
             await mockMQTTClient.simulateMessageReceived(incomingMessage)
         }
@@ -82,7 +82,7 @@ struct CoreUnitTests {
                 #expect(message.topic == incomingMessage.topic)
                 confirmation()
             })
-            try await Task.sleep(for: .seconds(1))
+            try await Task.sleep(seconds: 1.0)
         }
 
         #expect(await mockTelemetryClient.startSpanWithContextCallsCount == 2)
