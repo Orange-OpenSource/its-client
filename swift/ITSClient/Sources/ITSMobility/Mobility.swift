@@ -220,18 +220,18 @@ public actor Mobility {
         await updateSubscriptions(topicUpdateRequest: topicUpdateRequest)
     }
 
-    /// Updates the road position region of interest according the coordinates and the zoom level.
+    /// Updates the road user region of interest according the coordinates and the zoom level.
     /// - Parameters:
     ///   - latitude: The latitude in decimal degrees.
     ///   - longitude: The longitude in decimal degrees.
     ///   - zoomLevel: The zoom level.
-    public func updateRoadPositionRegionOfInterest(
+    public func updateRoadUserRegionOfInterest(
         latitude: Double,
         longitude: Double,
         zoomLevel: Int) async throws(MobilityError) {
         guard let mobilityConfiguration else { throw .notStarted }
 
-        let topicUpdateRequest = regionOfInterestCoordinator.updateRoadPositionRegionOfInterest(
+        let topicUpdateRequest = regionOfInterestCoordinator.updateRoadUserRegionOfInterest(
             latitude: latitude,
             longitude: longitude,
             zoomLevel: zoomLevel,

@@ -35,7 +35,7 @@ final class RegionOfInterestCoordinator {
                                currentRegionOfInterest: &currentDENMRegionOfInterest)
     }
 
-    func updateRoadPositionRegionOfInterest(
+    func updateRoadUserRegionOfInterest(
         latitude: Double,
         longitude: Double,
         zoomLevel: Int,
