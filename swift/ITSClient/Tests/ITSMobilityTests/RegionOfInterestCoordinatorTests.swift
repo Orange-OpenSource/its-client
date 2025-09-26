@@ -78,18 +78,18 @@ struct RegionOfInterestCoordinatorTests {
         #expect(requestUpdate == nil)
     }
 
-    @Test("Updating road position ROI should return nil when no update")
+    @Test("Updating road user ROI should return nil when no update")
     func updating_road_position_roi_should_return_nil_when_no_update() throws {
         // Given
         let regionOfInterestCoordinator = RegionOfInterestCoordinator()
-        _ = regionOfInterestCoordinator.updateRoadPositionRegionOfInterest(
+        _ = regionOfInterestCoordinator.updateRoadUserRegionOfInterest(
             latitude: 43.63516355648167,
             longitude: 1.3744570239910097,
             zoomLevel: 22,
             namespace: namespace)
 
         // When
-        let requestUpdate = regionOfInterestCoordinator.updateRoadPositionRegionOfInterest(
+        let requestUpdate = regionOfInterestCoordinator.updateRoadUserRegionOfInterest(
             latitude: 43.63516355648101,
             longitude: 1.3744570239910001,
             zoomLevel: 22,
