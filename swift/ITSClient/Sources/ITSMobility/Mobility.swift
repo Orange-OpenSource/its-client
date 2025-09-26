@@ -154,14 +154,14 @@ public actor Mobility {
         try await publish(cam, topic: try topic(for: .cam, in: quadkey))
     }
 
-    /// Sends an alert to share it.
+    /// Sends an alarm to share it.
     /// - Parameters:
     ///   - stationType: The user `StationType`.
     ///   - latitude: The latitude in decimal degrees.
     ///   - longitude: The longitude in decimal degrees.
     ///   - altitude: The altitude in meters.
-    ///   - cause: The alert cause.
-    public func sendAlert(
+    ///   - cause: The alarm cause.
+    public func sendAlarm(
         stationType: StationType,
         latitude: Double,
         longitude: Double,

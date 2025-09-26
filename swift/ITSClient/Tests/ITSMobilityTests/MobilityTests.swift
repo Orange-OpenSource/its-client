@@ -47,10 +47,10 @@ struct MobilityTests {
         try await Task.sleep(seconds: 0.5)
     }
 
-    @Test("Send alert should send a payload on a topic computed from coordinates")
-    func send_alert_should_send_payload_on_topic_computed_from_coordinates() async throws {
+    @Test("Send alarm should send a payload on a topic computed from coordinates")
+    func send_alarm_should_send_payload_on_topic_computed_from_coordinates() async throws {
         try await mobility.start(mobilityConfiguration: mobilityConfiguration)
-        try await mobility.sendAlert(stationType: .pedestrian,
+        try await mobility.sendAlarm(stationType: .pedestrian,
                                      latitude: 43.63516355648167,
                                      longitude: 1.3744570239910097,
                                      altitude: 155,
