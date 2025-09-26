@@ -3,6 +3,7 @@ and select the appropriate template in the list:
 
 * [Python](?expand=1&template=python.md)
 * [Rust](?expand=1&template=rust.md)
+* [Swift](?expand=1&template=swift.md)
 
 If no template matches your changes, remove this whole text,
 and enter your own description with the following information:
