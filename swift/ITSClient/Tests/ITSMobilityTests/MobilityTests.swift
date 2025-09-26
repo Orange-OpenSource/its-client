@@ -33,15 +33,15 @@ struct MobilityTests {
                                                       stationID: UInt32.random(in: 0..<UInt32.max))
     }
 
-    @Test("Send position should send a payload on a topic computed from coordinates")
+    @Test("Send user position should send a payload on a topic computed from coordinates")
     func send_position_should_send_payload_on_topic_computed_from_coordinates() async throws {
         try await mobility.start(mobilityConfiguration: mobilityConfiguration)
-        try await mobility.sendPosition(stationType: .pedestrian,
-                                        latitude: 43.63516355648167,
-                                        longitude: 1.3744570239910097,
-                                        altitude: 155,
-                                        heading: 45,
-                                        speed: 8.1)
+        try await mobility.sendUserPosition(stationType: .pedestrian,
+                                            latitude: 43.63516355648167,
+                                            longitude: 1.3744570239910097,
+                                            altitude: 155,
+                                            heading: 45,
+                                            speed: 8.1)
         await mobility.stop()
         // Wait a bit for the spans flush
         try await Task.sleep(seconds: 0.5)

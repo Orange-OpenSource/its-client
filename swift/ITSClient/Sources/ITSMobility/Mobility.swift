@@ -101,7 +101,7 @@ public actor Mobility {
         self.reportZoomLevel = reportZoomLevel
     }
 
-    /// Sends a position to share it.
+    /// Sends a user position to share it.
     /// - Parameters:
     ///   - stationType: The user `StationType`.
     ///   - latitude: The latitude in decimal degrees.
@@ -111,7 +111,7 @@ public actor Mobility {
     ///   - speed: The speed in meters per second.
     ///   - acceleration: The longitudinal acceleration in meters per squared second.
     ///   - yawRate: The rotational acceleration in degrees per squared second.
-    public func sendPosition(
+    public func sendUserPosition(
         stationType: StationType,
         latitude: Double,
         longitude: Double,
