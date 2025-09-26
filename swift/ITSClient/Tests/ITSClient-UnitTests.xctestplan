@@ -28,7 +28,7 @@
         ]
       },
       "target" : {
-        "containerPath" : "container:",
+        "containerPath" : "container:..",
         "identifier" : "ITSCoreTests",
         "name" : "ITSCoreTests"
       }
@@ -42,7 +42,7 @@
         ]
       },
       "target" : {
-        "containerPath" : "container:",
+        "containerPath" : "container:..",
         "identifier" : "ITSMobilityTests",
         "name" : "ITSMobilityTests"
       }

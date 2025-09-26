@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		97228C472E86D2B5008BFBBA /* ITSMobility in Frameworks */ = {isa = PBXBuildFile; productRef = 97228C462E86D2B5008BFBBA /* ITSMobility */; };
+		9748A4842E86DF8000BD2599 /* ITSMobility in Frameworks */ = {isa = PBXBuildFile; productRef = 9748A4832E86DF8000BD2599 /* ITSMobility */; };
 		97B1AC0D2DDDC08C0091F5B9 /* ITSMobility in Frameworks */ = {isa = PBXBuildFile; productRef = 97B1AC0C2DDDC08C0091F5B9 /* ITSMobility */; };
 		97F350082DD787C60067349C /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = 97F350072DD787C60067349C /* .swiftlint.yml */; };
 /* End PBXBuildFile section */
@@ -29,7 +31,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				97228C472E86D2B5008BFBBA /* ITSMobility in Frameworks */,
 				97B1AC0D2DDDC08C0091F5B9 /* ITSMobility in Frameworks */,
+				9748A4842E86DF8000BD2599 /* ITSMobility in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -83,6 +87,8 @@
 			name = SampleApp;
 			packageProductDependencies = (
 				97B1AC0C2DDDC08C0091F5B9 /* ITSMobility */,
+				97228C462E86D2B5008BFBBA /* ITSMobility */,
+				9748A4832E86DF8000BD2599 /* ITSMobility */,
 			);
 			productName = SampleApp;
 			productReference = 97A0E04E2DD77E7F0070043C /* SampleApp.app */;
@@ -96,7 +102,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1630;
-				LastUpgradeCheck = 1630;
+				LastUpgradeCheck = 1640;
 				TargetAttributes = {
 					97A0E04D2DD77E7F0070043C = {
 						CreatedOnToolsVersion = 16.3;
@@ -114,6 +120,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				97F350042DD783F70067349C /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */,
+				9748A4822E86DF8000BD2599 /* XCLocalSwiftPackageReference "../../../its-client" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 97A0E04F2DD77E7F0070043C /* Products */;
@@ -376,6 +383,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		9748A4822E86DF8000BD2599 /* XCLocalSwiftPackageReference "../../../its-client" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../../../its-client";
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		97F350042DD783F70067349C /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -388,6 +402,14 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		97228C462E86D2B5008BFBBA /* ITSMobility */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ITSMobility;
+		};
+		9748A4832E86DF8000BD2599 /* ITSMobility */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ITSMobility;
+		};
 		97B1AC0C2DDDC08C0091F5B9 /* ITSMobility */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ITSMobility;
