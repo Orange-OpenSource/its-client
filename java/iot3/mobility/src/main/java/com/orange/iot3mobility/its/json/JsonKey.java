@@ -223,7 +223,7 @@ public class JsonKey {
     }
 
     public enum SituationContainer {
-        INFO_QUALITY("info_quality"),
+        INFO_QUALITY("information_quality"),
         EVENT_TYPE("event_type"),
         LINKED_CAUSE("linked_cause"),
         EVENT_HISTORY("event_history");
