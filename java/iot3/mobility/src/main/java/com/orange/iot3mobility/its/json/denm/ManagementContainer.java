@@ -319,7 +319,7 @@ public class ManagementContainer {
             int relevanceTrafficDirection = jsonManagementContainer.optInt(JsonKey.ManagementContainer.RELEVANCE_TRAFFIC_DIRECTION.key(), UNKNOWN);
             int validityDuration = jsonManagementContainer.optInt(JsonKey.ManagementContainer.VALIDITY_DURATION.key(), 600);
             int transmissionInterval = jsonManagementContainer.optInt(JsonKey.ManagementContainer.TRANSMISSION_INTERVAL.key(), UNKNOWN);
-            int stationType = jsonManagementContainer.getInt(JsonKey.ManagementContainer.STATION_TYPE.key());
+            int stationType = jsonManagementContainer.optInt(JsonKey.ManagementContainer.STATION_TYPE.key(), 0);
             JSONObject jsonPositionConfidence = jsonManagementContainer.optJSONObject(JsonKey.Position.CONFIDENCE.key());
             PositionConfidence positionConfidence = PositionConfidence.jsonParser(jsonPositionConfidence);
 
