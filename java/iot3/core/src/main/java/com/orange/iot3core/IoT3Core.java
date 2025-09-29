@@ -45,6 +45,7 @@ public class IoT3Core {
      * @param mqttPassword MQTT password
      * @param mqttClientId unique MQTT client ID
      * @param mqttUseTls use TLS for a secure connection with the MQTT broker
+     * @param mqttKeepAlive keepAlive of the MQTT session - time it takes for noticing the disconnected state
      * @param ioT3CoreCallback interface to retrieve the different clients outputs
      * @param telemetryScheme Open Telemetry scheme (HTTP, HTTPS...)
      * @param telemetryHost Open Telemetry server address
@@ -59,6 +60,7 @@ public class IoT3Core {
                     String mqttPassword,
                     String mqttClientId,
                     boolean mqttUseTls,
+                    int mqttKeepAlive,
                     IoT3CoreCallback ioT3CoreCallback,
                     String telemetryScheme,
                     String telemetryHost,
@@ -90,6 +92,7 @@ public class IoT3Core {
                     mqttPassword,
                     mqttClientId,
                     mqttUseTls,
+                    mqttKeepAlive,
                     new MqttCallback() {
                         @Override
                         public void connectionLost(Throwable cause) {
@@ -134,61 +137,31 @@ public class IoT3Core {
     /**
      * Disconnect the 3 clients (MQTT, LwM2M and OpenTelemetry)
      */
-    public void disconnectAll() {
-        disconnectMqtt();
-        disconnectOpenTelemetry();
-        disconnectLwM2M();
+    public void close() {
+        closeMqtt();
+        closeOpenTelemetry();
+        closeLwM2M();
     }
 
     /**
      * Disconnect the MQTT client
      */
-    public void disconnectMqtt() {
-        if(mqttClient != null) mqttClient.disconnect();
+    private void closeMqtt() {
+        if(mqttClient != null) mqttClient.close();
     }
 
     /**
      * Disconnect the OpenTelemetry client
      */
-    public void disconnectOpenTelemetry() {
-        if(openTelemetryClient != null) openTelemetryClient.disconnect();
+    private void closeOpenTelemetry() {
+        if(openTelemetryClient != null) openTelemetryClient.close();
     }
 
     /**
      * Disconnect the LwM2M client
      */
-    public void disconnectLwM2M() {
-        if(lwm2mClient != null) lwm2mClient.disconnect();
-    }
-
-    /**
-     * Reconnect the 3 clients (MQTT, LwM2M and OpenTelemetry)
-     */
-    public void reconnectAll() {
-        reconnectMqtt();
-        reconnectOpenTelemetry();
-        reconnectLwM2M();
-    }
-
-    /**
-     * Reconnect the MQTT client
-     */
-    public void reconnectMqtt() {
-        if(mqttClient != null) mqttClient.connect();
-    }
-
-    /**
-     * Reconnect the OpenTelemetry client
-     */
-    public void reconnectOpenTelemetry() {
-        if(openTelemetryClient != null) openTelemetryClient.connect();
-    }
-
-    /**
-     * Reconnect the LwM2M client
-     */
-    public void reconnectLwM2M() {
-        if(lwm2mClient != null) lwm2mClient.connect();
+    private void closeLwM2M() {
+        if(lwm2mClient != null) lwm2mClient.close();
     }
 
     /**
@@ -206,17 +179,39 @@ public class IoT3Core {
     }
 
     /**
-     * Publish a message on the specified MQTT topic
+     * Publish a message on the specified MQTT topic with the following parameters:
+     * <ul>
+     * <li>retained false</li>
+     * <li>QoS 0 (fire and forget)</li>
+     * <li>no expiry interval</li>
+     * </ul>
      */
     public void mqttPublish(String topic, String message) {
-        mqttPublish(topic, message, false);
+        mqttPublish(topic, message, false, 0, 0);
     }
 
     /**
-     * Publish a message on the specified MQTT topic with the indicated retained value
+     * Publish a message on the specified MQTT topic with the indicated retained value and the following parameters:
+     * <ul>
+     * <li>QoS 0 (fire and forget)</li>
+     * <li>no expiry interval</li>
+     * </ul>
      */
     public void mqttPublish(String topic, String message, boolean retain) {
-        if(mqttClient != null) mqttClient.publishMessage(topic, message, retain);
+        mqttPublish(topic, message, retain, 0, 0);
+    }
+
+    /**
+     * Publish a message on the specified MQTT topic and set all parameters:
+     *
+     * @param retain whether the broker should retain this message in memory for future subscribers
+     *               (can be combined with the expiry parameter to set a retain time limit)
+     * @param qos delivery quality of service: 0 at most once (default), 1 at least once, 2 exactly once
+     * @param expiry expiry interval: how long the client and broker will keep this message in cache for
+     *               current subscribers in case of disconnection
+     */
+    public void mqttPublish(String topic, String message, boolean retain, int qos, int expiry) {
+        if(mqttClient != null) mqttClient.publishMessage(topic, message, retain, qos, expiry);
     }
 
     /**
@@ -244,6 +239,7 @@ public class IoT3Core {
         private String mqttPassword;
         private String mqttClientId;
         private boolean mqttUseTls;
+        private int mqttKeepAlive = 60;
         private IoT3CoreCallback ioT3CoreCallback;
         private String telemetryScheme;
         private String telemetryHost = null; // will remain null if not initialized
@@ -283,6 +279,16 @@ public class IoT3Core {
             this.mqttPassword = mqttPassword;
             this.mqttClientId = mqttClientId;
             this.mqttUseTls = mqttUseTls;
+            return this;
+        }
+
+        /**
+         * Set the MQTT keep alive of your IoT3Core instance.
+         *
+         * @param mqttKeepAlive keepAlive of the MQTT session - time it takes for noticing the disconnected state
+         */
+        public IoT3CoreBuilder mqttKeepAlive(int mqttKeepAlive) {
+            this.mqttKeepAlive = mqttKeepAlive;
             return this;
         }
 
@@ -394,6 +400,7 @@ public class IoT3Core {
                     mqttPassword,
                     mqttClientId,
                     mqttUseTls,
+                    mqttKeepAlive,
                     ioT3CoreCallback,
                     telemetryScheme,
                     telemetryHost,
