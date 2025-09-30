@@ -305,19 +305,21 @@ if __name__ == "__main__":
 
         doctest.testmod()
 
-    import json
+    else:
+        import json
 
-    assert all(
-        ls.dTAI_UTC == timedelta(seconds=ls.dTAI_UTC.seconds) for ls in leapseconds()
-    )  # ~+200 leap second until 2100
-    print(
-        json.dumps(
-            [
-                dict(utc=t.utc, tai=t.utc + t.dTAI_UTC, dTAI_UTC=t.dTAI_UTC.seconds)
-                for t in leapseconds()
-            ],
-            default=str,
-            indent=4,
-            sort_keys=True,
+        assert all(
+            ls.dTAI_UTC == timedelta(seconds=ls.dTAI_UTC.seconds)
+            for ls in leapseconds()
+        )  # ~+200 leap second until 2100
+        print(
+            json.dumps(
+                [
+                    dict(utc=t.utc, tai=t.utc + t.dTAI_UTC, dTAI_UTC=t.dTAI_UTC.seconds)
+                    for t in leapseconds()
+                ],
+                default=str,
+                indent=4,
+                sort_keys=True,
+            )
         )
-    )
