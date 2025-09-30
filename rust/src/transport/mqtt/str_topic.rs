@@ -16,6 +16,7 @@ use std::str::FromStr;
 /// Represents a topic as a string.
 #[derive(Clone, Default, Debug, Hash, PartialEq, Eq)]
 pub struct StrTopic {
+    /// Topic as a string.
     topic: String,
 }
 
@@ -61,7 +62,7 @@ impl Topic for StrTopic {
     /// A string representing the route.
     fn as_route(&self) -> String {
         // Assume the topic is the route
-        // Assumed clone is cheap
+        // Assumed clone is inexpensive
         self.topic.clone()
     }
 }
