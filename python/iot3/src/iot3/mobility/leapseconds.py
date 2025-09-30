@@ -35,6 +35,7 @@ Python 2.6+, Python 3, Jython, Pypy support.
 """
 from __future__ import with_statement
 
+import time
 from collections import namedtuple
 from datetime import datetime, timedelta
 from struct import Struct
@@ -91,6 +92,11 @@ NTP_EPOCH = datetime(1900, 1, 1)
 LeapSecond = namedtuple("LeapSecond", "utc dTAI_UTC")  # tai = utc + dTAI_UTC
 sentinel = LeapSecond(utc=datetime.max, dTAI_UTC=timedelta(0))
 
+LeapSeconds = None
+LastLoad = None
+# Only reload once a day. In practice, even once a day is waaaayyyy too much...
+ReloadDelay = 24 * 60 * 60
+
 
 def _leapseconds_reset():
     global LeapSeconds
@@ -122,6 +128,17 @@ def leapseconds(
     >>> leapseconds(tzfiles=["non-existent"], use_fallback=True)[27]
     LeapSecond(utc=datetime.datetime(2017, 1, 1, 0, 0), dTAI_UTC=datetime.timedelta(seconds=37))
     """
+    global LeapSeconds
+    global LastLoad
+
+    now = time.time()
+    if (
+        LeapSeconds  # neither None nor an empty list()
+        and LastLoad is not None
+        and now - LastLoad < ReloadDelay
+    ):
+        return LeapSeconds
+
     for filename in tzfiles:
         try:
             file = open(filename, "rb")
@@ -133,6 +150,7 @@ def leapseconds(
         if not use_fallback:
             raise ValueError("Unable to open any tzfile: %s" % (tzfiles,))
         else:
+            # Don't store fallback as if it were actual data
             return _fallback()
 
     with file:
@@ -143,44 +161,47 @@ def leapseconds(
         if magic != "TZif".encode():
             # assume /usr/share/zoneinfo/leap-seconds.list like file
             file.seek(0)  # rewind
-            return leapseconds_from_listfile(file)
-        if version not in "\x0023".encode():
-            warn(
-                "Unsupported version %r in tzfile: %s" % (version, file.name),
-                RuntimeWarning,
-            )
-        if leapcnt == 0:
-            raise ValueError("No leap seconds in tzfile: %s" % (file.name))
+            LeapSeconds = leapseconds_from_listfile(file)
+        else:
+            if version not in "\x0023".encode():
+                warn(
+                    "Unsupported version %r in tzfile: %s" % (version, file.name),
+                    RuntimeWarning,
+                )
+            if leapcnt == 0:
+                raise ValueError("No leap seconds in tzfile: %s" % (file.name))
 
-        """# from tzfile.h[2] (the file is in public domain)
+            """# from tzfile.h[2] (the file is in public domain)
 
-         . . .header followed by. . .
+             . . .header followed by. . .
 
-         tzh_timecnt (char [4])s  coded transition times a la time(2)
-         tzh_timecnt (unsigned char)s types of local time starting at above
-         tzh_typecnt repetitions of
-           one (char [4])  coded UT offset in seconds
-           one (unsigned char) used to set tm_isdst
-           one (unsigned char) that's an abbreviation list index
-         tzh_charcnt (char)s  '\0'-terminated zone abbreviations
-         tzh_leapcnt repetitions of
-           one (char [4])  coded leap second transition times
-           one (char [4])  total correction after above
-        """
-        file.read(timecnt * 5 + typecnt * 6 + charcnt)  # skip
+             tzh_timecnt (char [4])s  coded transition times a la time(2)
+             tzh_timecnt (unsigned char)s types of local time starting at above
+             tzh_typecnt repetitions of
+               one (char [4])  coded UT offset in seconds
+               one (unsigned char) used to set tm_isdst
+               one (unsigned char) that's an abbreviation list index
+             tzh_charcnt (char)s  '\0'-terminated zone abbreviations
+             tzh_leapcnt repetitions of
+               one (char [4])  coded leap second transition times
+               one (char [4])  total correction after above
+            """
+            file.read(timecnt * 5 + typecnt * 6 + charcnt)  # skip
 
-        result = [LeapSecond(datetime(1972, 1, 1), timedelta(seconds=10))]
-        nleap_seconds = 10
-        tai_epoch_as_tai = datetime(1970, 1, 1, 0, 0, 10)
-        buf = Struct(">2i")
-        for _ in range(leapcnt):  # read leap seconds
-            t, cnt = buf.unpack_from(file.read(buf.size))
-            dTAI_UTC = nleap_seconds + cnt
-            utc = tai_epoch_as_tai + timedelta(seconds=t - dTAI_UTC + 1)
-            assert utc - datetime(utc.year, utc.month, utc.day) == timedelta(0)
-            result.append(LeapSecond(utc, timedelta(seconds=dTAI_UTC)))
-        result.append(sentinel)
-        return result
+            LeapSeconds = [LeapSecond(datetime(1972, 1, 1), timedelta(seconds=10))]
+            nleap_seconds = 10
+            tai_epoch_as_tai = datetime(1970, 1, 1, 0, 0, 10)
+            buf = Struct(">2i")
+            for _ in range(leapcnt):  # read leap seconds
+                t, cnt = buf.unpack_from(file.read(buf.size))
+                dTAI_UTC = nleap_seconds + cnt
+                utc = tai_epoch_as_tai + timedelta(seconds=t - dTAI_UTC + 1)
+                assert utc - datetime(utc.year, utc.month, utc.day) == timedelta(0)
+                LeapSeconds.append(LeapSecond(utc, timedelta(seconds=dTAI_UTC)))
+
+        LeapSeconds.append(sentinel)
+        LastLoad = now
+        return LeapSeconds
 
 
 def leapseconds_from_listfile(file, comment="#".encode()):
@@ -195,7 +216,6 @@ def leapseconds_from_listfile(file, comment="#".encode()):
             ntp_time, dtai = line.partition(comment)[0].split()
             utc = NTP_EPOCH + timedelta(seconds=int(ntp_time))
             result.append(LeapSecond(utc, timedelta(seconds=int(dtai))))
-    result.append(sentinel)
     return result
 
 
