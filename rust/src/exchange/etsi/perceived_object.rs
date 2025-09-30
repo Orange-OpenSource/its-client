@@ -383,7 +383,7 @@ mod test {
                         "confidence": 0
                     }
                 }
-            },            
+            },
             "object_dimension_z": {
                 "value": 256,
                 "confidence": 32

@@ -208,15 +208,19 @@ pub struct MessageRateHz {
 }
 
 impl CollectivePerceptionMessage {
-    pub fn mobile_perceived_object_list(&self) -> Vec<MobilePerceivedObject> {
+    pub fn mobile_perceived_object_list(
+        &self,
+        object_id_rotation_count: Option<u8>,
+    ) -> Vec<MobilePerceivedObject> {
         self.perceived_object_container
             .iter()
             .map(|perceived_object| {
                 MobilePerceivedObject::new(
+                    self,
                     // assumed clone : we store a copy into the MobilePerceivedObject container
                     // TODO use a lifetime to propage the lifecycle between PerceivedObject and MobilePerceivedObject instead of clone
                     perceived_object.clone(),
-                    self,
+                    object_id_rotation_count,
                 )
             })
             .collect()
@@ -328,7 +332,7 @@ mod tests {
                     "altitude": {
                         "value": 800001,
                         "confidence": 15
-                    },                    
+                    },
                     "position_confidence_ellipse": {
                         "semi_major": 4095,
                         "semi_minor": 4095,
@@ -356,7 +360,7 @@ mod tests {
                         "semi_major": 4095,
                         "semi_minor": 4095,
                         "semi_major_orientation": 3601
-                    }                    
+                    }
                 }
             },
             "sensor_information_container": [
@@ -420,7 +424,7 @@ mod tests {
                         "semi_major": 4095,
                         "semi_minor": 4095,
                         "semi_major_orientation": 3601
-                    }                    
+                    }
                 },
                 "segmentation_info": {
                     "total_msg_no": 8,
@@ -455,7 +459,7 @@ mod tests {
                 {
                     "sensor_id": 255,
                     "sensor_type": 13,
-                    "shadowing_applies": true,                    
+                    "shadowing_applies": true,
                     "perception_region_shape": {
                          "polygonal": {
                             "polygon": [
@@ -493,7 +497,7 @@ mod tests {
                 {
                     "sensor_id": 2,
                     "sensor_type": 1,
-                    "shadowing_applies": true,                    
+                    "shadowing_applies": true,
                     "perception_region_shape": {
                         "circular": {
                             "radius": 4095,
@@ -679,7 +683,7 @@ mod tests {
                         "semi_major": 4095,
                         "semi_minor": 4095,
                         "semi_major_orientation": 3601
-                    }                    
+                    }
                 },
                 "segmentation_info": {
                     "total_msg_no": 8,
@@ -738,7 +742,7 @@ mod tests {
                 {
                     "sensor_id": 255,
                     "sensor_type": 13,
-                    "shadowing_applies": true,                    
+                    "shadowing_applies": true,
                     "perception_region_shape": {
                          "polygonal": {
                             "polygon": [
@@ -1962,7 +1966,7 @@ mod tests {
                             "semi_major": 4095,
                             "semi_minor": 4095,
                             "semi_major_orientation": 3601
-                        }                        
+                        }
                     }
                 },
                 "sensor_information_container": [],
