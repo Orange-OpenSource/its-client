@@ -3,6 +3,7 @@
 # From: https://gist.github.com/zed/92df922103ac9deb1a05/f1864577a8a05bcc78d19512135d51bede2db3b7
 # SPDX-FileCopyrightText: This file is in the public domain.
 # See URL above, and doc-string below, for the (non-)license...
+# Modified by: Yann E. MORIN <yann.morin@orange.com>
 
 """Get TAI-UTC difference in seconds for a given time using tzdata.
 
@@ -39,11 +40,18 @@ from datetime import datetime, timedelta
 from struct import Struct
 from warnings import warn
 
-__all__ = ['leapseconds', 'LeapSecond',
-           'dTAI_UTC_from_utc', 'dTAI_UTC_from_tai',
-           'tai_to_utc', 'utc_to_tai',
-           'gps_to_utc', 'utc_to_gps',
-           'tai_to_gps', 'gps_to_tai']
+__all__ = [
+    "leapseconds",
+    "LeapSecond",
+    "dTAI_UTC_from_utc",
+    "dTAI_UTC_from_tai",
+    "tai_to_utc",
+    "utc_to_tai",
+    "gps_to_utc",
+    "utc_to_gps",
+    "tai_to_gps",
+    "gps_to_tai",
+]
 
 __version__ = "0.4.0"
 
@@ -80,7 +88,7 @@ convert(const int_fast32_t val, char *const buf)
 dTAI_GPS = timedelta(seconds=19)  # constant offset
 NTP_EPOCH = datetime(1900, 1, 1)
 
-LeapSecond = namedtuple('LeapSecond', 'utc dTAI_UTC')  # tai = utc + dTAI_UTC
+LeapSecond = namedtuple("LeapSecond", "utc dTAI_UTC")  # tai = utc + dTAI_UTC
 sentinel = LeapSecond(utc=datetime.max, dTAI_UTC=timedelta(0))
 
 
@@ -105,31 +113,33 @@ def leapseconds(
     """
     for filename in tzfiles:
         try:
-            file = open(filename, 'rb')
+            file = open(filename, "rb")
         except IOError:
             continue
         else:
             break
     else:  # no break
         if not use_fallback:
-            raise ValueError('Unable to open any tzfile: %s' % (tzfiles,))
+            raise ValueError("Unable to open any tzfile: %s" % (tzfiles,))
         else:
             return _fallback()
 
     with file:
-        header = Struct('>4s c 15x 6i')  # see struct tzhead above
-        (magic, version, _, _, leapcnt, timecnt, typecnt,
-         charcnt) = header.unpack_from(file.read(header.size))
+        header = Struct(">4s c 15x 6i")  # see struct tzhead above
+        (magic, version, _, _, leapcnt, timecnt, typecnt, charcnt) = header.unpack_from(
+            file.read(header.size)
+        )
         if magic != "TZif".encode():
             # assume /usr/share/zoneinfo/leap-seconds.list like file
             file.seek(0)  # rewind
             return leapseconds_from_listfile(file)
-        if version not in '\x0023'.encode():
-            warn('Unsupported version %r in tzfile: %s' % (
-                version, file.name), RuntimeWarning)
+        if version not in "\x0023".encode():
+            warn(
+                "Unsupported version %r in tzfile: %s" % (version, file.name),
+                RuntimeWarning,
+            )
         if leapcnt == 0:
-            raise ValueError("No leap seconds in tzfile: %s" % (
-                file.name))
+            raise ValueError("No leap seconds in tzfile: %s" % (file.name))
 
         """# from tzfile.h[2] (the file is in public domain)
 
@@ -161,6 +171,7 @@ def leapseconds(
         result.append(sentinel)
         return result
 
+
 def leapseconds_from_listfile(file, comment="#".encode()):
     """Extract leap seconds from *file*
 
@@ -175,6 +186,7 @@ def leapseconds_from_listfile(file, comment="#".encode()):
             result.append(LeapSecond(utc, timedelta(seconds=int(dtai))))
     result.append(sentinel)
     return result
+
 
 def _fallback():
     """Leap seconds list if no tzfiles are available."""
@@ -207,7 +219,8 @@ def _fallback():
         LeapSecond(utc=datetime(2012, 7, 1, 0, 0), dTAI_UTC=timedelta(0, 35)),
         LeapSecond(utc=datetime(2015, 7, 1, 0, 0), dTAI_UTC=timedelta(0, 36)),
         LeapSecond(utc=datetime(2017, 1, 1, 0, 0), dTAI_UTC=timedelta(0, 37)),
-        sentinel]
+        sentinel,
+    ]
 
 
 def dTAI_UTC_from_utc(utc_time):
@@ -245,10 +258,10 @@ def _dTAI_UTC(time, leapsecond_to_time, leapseconds=leapseconds):
     leapseconds_list = leapseconds()
     transition_times = list(map(leapsecond_to_time, leapseconds_list))
     if time < transition_times[0]:
-        raise ValueError("Dates before %s are not supported, got %r" % (
-            transition_times[0], time))
-    for i, (start, end) in enumerate(zip(transition_times,
-                                         transition_times[1:])):
+        raise ValueError(
+            "Dates before %s are not supported, got %r" % (transition_times[0], time)
+        )
+    for i, (start, end) in enumerate(zip(transition_times, transition_times[1:])):
         if start <= time < end:
             return leapseconds_list[i].dTAI_UTC
     assert 0
@@ -289,12 +302,22 @@ if __name__ == "__main__":
 
     if "--test" in sys.argv:
         import doctest
+
         doctest.testmod()
 
     import json
-    assert all(ls.dTAI_UTC == timedelta(seconds=ls.dTAI_UTC.seconds)
-               for ls in leapseconds())  # ~+200 leap second until 2100
-    print(json.dumps([dict(utc=t.utc, tai=t.utc + t.dTAI_UTC,
-                           dTAI_UTC=t.dTAI_UTC.seconds)
-                      for t in leapseconds()],
-                     default=str, indent=4, sort_keys=True))
+
+    assert all(
+        ls.dTAI_UTC == timedelta(seconds=ls.dTAI_UTC.seconds) for ls in leapseconds()
+    )  # ~+200 leap second until 2100
+    print(
+        json.dumps(
+            [
+                dict(utc=t.utc, tai=t.utc + t.dTAI_UTC, dTAI_UTC=t.dTAI_UTC.seconds)
+                for t in leapseconds()
+            ],
+            default=str,
+            indent=4,
+            sort_keys=True,
+        )
+    )
