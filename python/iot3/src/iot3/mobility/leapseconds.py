@@ -161,7 +161,7 @@ def leapseconds(
         if magic != "TZif".encode():
             # assume /usr/share/zoneinfo/leap-seconds.list like file
             file.seek(0)  # rewind
-            LeapSeconds = leapseconds_from_listfile(file)
+            LeapSeconds = leapseconds_from_listfile(file, now)
         else:
             if version not in "\x0023".encode():
                 warn(
@@ -204,11 +204,13 @@ def leapseconds(
         return LeapSeconds
 
 
-def leapseconds_from_listfile(file, comment="#".encode()):
+def leapseconds_from_listfile(file, now=None, comment="#".encode()):
     """Extract leap seconds from *file*
 
     See /usr/share/zoneinfo/leap-seconds.list
     """
+    if now is None:
+        now = time.time()
     result = []
     for line in file:
         if not line.startswith(comment):  # skip comments
@@ -216,6 +218,13 @@ def leapseconds_from_listfile(file, comment="#".encode()):
             ntp_time, dtai = line.partition(comment)[0].split()
             utc = NTP_EPOCH + timedelta(seconds=int(ntp_time))
             result.append(LeapSecond(utc, timedelta(seconds=int(dtai))))
+        elif line.startswith("#@".encode()):
+            ntp_time = line[2:].strip()
+            utc = NTP_EPOCH + timedelta(seconds=int(ntp_time))
+            if utc.timestamp() < now:
+                raise ValueError(
+                    f"leap-seconds.list is out of date, expired on {utc.isoformat()}"
+                )
     return result
 
 
