@@ -15,8 +15,8 @@ The following table provides the current status of features implementation in ea
 
 |        Feature        | Rust | Python | Java | Swift |
 |:---------------------:|:----:|:------:|:----:|:-----:|
-|      **MQTTv5**       |  ✓   |   ✓    |  ✓   |       |
-|     **Telemetry**     |  ✓   |   ✓    |  ✓   |       |
+|      **MQTTv5**       |  ✓   |   ✓    |  ✓   |   ✓   |
+|     **Telemetry**     |  ✓   |   ✓    |  ✓   |   ✓   |
 | **Device Management** |      |        |      |       |
 
 ### Message exchange
@@ -30,7 +30,7 @@ The following table provides the current implementation status of telemetry in e
 
 |   Signal    | Rust | Python | Java | Swift |
 |:-----------:|:----:|:------:|:----:|:-----:|
-| **Traces**  |  ✓   |   ✓    |  ✓   |       |
+| **Traces**  |  ✓   |   ✓    |  ✓   |   ✓   |
 |  **Logs**   |      |        |      |       |
 | **Metrics** |      |        |      |       |
 | **Baggage** |      |        |      |       |
@@ -95,9 +95,9 @@ they are using the following versions:
 |      Schema       |                                        Rust                                         |                          Python                           |                    Java                     | Swift |
 |:-----------------:|:-----------------------------------------------------------------------------------:|:---------------------------------------------------------:|:-------------------------------------------:|:-----:|
 |   **Bootstrap**   |                                                                                     |                                                           |                                             |       |
-|      **CAM**      | [2.2.0](schema/cam/cam_schema_2-2-0.json) [1.1.3](schema/cam/cam_schema_1-1-3.json) |         [1.1.3](schema/cam/cam_schema_1-1-3.json)         |  [1.1.3](schema/cam/cam_schema_1-1-3.json)  |       |
+|      **CAM**      | [2.2.0](schema/cam/cam_schema_2-2-0.json) [1.1.3](schema/cam/cam_schema_1-1-3.json) |         [1.1.3](schema/cam/cam_schema_1-1-3.json)         |  [1.1.3](schema/cam/cam_schema_1-1-3.json)  |  [1.1.3](schema/cam/cam_schema_1-1-3.json)  |
 |      **CPM**      |                      [2.1.0](schema/cpm/cpm_schema_2-1-0.json)                      |         [1.2.1](schema/cpm/cpm_schema_1-2-1.json)         |  [1.2.1](schema/cpm/cpm_schema_1-2-1.json)  |       |
-|     **DENM**      |                     [2.2.0](schema/denm/denm_schema_2-2-0.json)                     |        [1.1.3](schema/denm/denm_schema_1-1-3.json)        | [1.1.3](schema/denm/denm_schema_1-1-3.json) |       |
+|     **DENM**      |                     [2.2.0](schema/denm/denm_schema_2-2-0.json)                     |        [1.1.3](schema/denm/denm_schema_1-1-3.json)        | [1.1.3](schema/denm/denm_schema_1-1-3.json) |  [1.1.3](schema/denm/denm_schema_1-1-3.json)  |
 |  **Information**  |              [2.1.0](schema/information/information_schema_2-1-0.json)              | [1.2.0](schema/information/information_schema_1-2-0.json) |                                             |       |
 |     **MAPEM**     |                                                                                     |                                                           |                                             |       |
 | **Neighbourhood** |                                                                                     |                                                           |                                             |       |
@@ -168,6 +168,15 @@ The Java IoT3 Mobility library - powered by the IoT3 Core library - makes it eas
 - connect to our ITS platform
 - send and receive ITS messages through it
 
+### [Swift ITSClient](swift/README.md)
+
+[![Build Status](https://github.com/Orange-OpenSource/its-client/workflows/Swift%20ITSClient/badge.svg)][13]
+
+The Swift ITSClient library allows to:
+
+- connect to an ITS platform
+- send and receive ITS messages through it
+
 [1]: https://mqtt.org/
 
 [2]: https://www.json.org
@@ -191,3 +200,5 @@ The Java IoT3 Mobility library - powered by the IoT3 Core library - makes it eas
 [11]: https://github.com/Orange-OpenSource/its-client/actions/workflows/java_iot3-mobility.yml
 
 [12]: https://www.w3.org/TR/trace-context/
+
+[13]: https://github.com/Orange-OpenSource/its-client/actions/workflows/swift.yml
