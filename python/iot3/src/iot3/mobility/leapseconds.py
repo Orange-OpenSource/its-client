@@ -92,6 +92,14 @@ LeapSecond = namedtuple("LeapSecond", "utc dTAI_UTC")  # tai = utc + dTAI_UTC
 sentinel = LeapSecond(utc=datetime.max, dTAI_UTC=timedelta(0))
 
 
+def _leapseconds_reset():
+    global LeapSeconds
+    global LastLoad
+
+    LeapSeconds = None
+    LastLoad = None
+
+
 def leapseconds(
     tzfiles=[
         "/usr/share/zoneinfo/leap-seconds.list",
@@ -102,12 +110,15 @@ def leapseconds(
 ):
     """Extract leap seconds from *tzfiles*.
 
+    >>> _leapseconds_reset()
     >>> leapseconds()[0]
     LeapSecond(utc=datetime.datetime(1972, 1, 1, 0, 0), dTAI_UTC=datetime.timedelta(seconds=10))
+    >>> _leapseconds_reset()
     >>> leapseconds(tzfiles=["non-existent"])[27]
     Traceback (most recent call last):
     ...
     ValueError: Unable to open any tzfile: ['non-existent']
+    >>> _leapseconds_reset()
     >>> leapseconds(tzfiles=["non-existent"], use_fallback=True)[27]
     LeapSecond(utc=datetime.datetime(2017, 1, 1, 0, 0), dTAI_UTC=datetime.timedelta(seconds=37))
     """
