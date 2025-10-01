@@ -11,6 +11,7 @@ import its_quadkeys
 import json
 import math
 from typing import Optional
+from . import leapseconds
 
 
 class ETSI(abc.ABC):
@@ -27,8 +28,10 @@ class ETSI(abc.ABC):
 
     # ETSI EPOCH, as a UNIX timestamp (int)
     EPOCH: int = int(
-        datetime.datetime.fromisoformat(
-            "2004-01-01T00:00:00.000+00:00",
+        leapseconds.utc_to_tai(
+            datetime.datetime.fromisoformat(
+                "2004-01-01T00:00:00.000",
+            )
         ).timestamp()
     )
 
@@ -178,8 +181,20 @@ class ETSI(abc.ABC):
         If the value is a date before the ETSI EPOCH, the returned value is
         negative; it is left to the caller to decide whether that is usable
         in their case.
+
+        NOTE: the result is undefined during a leap second.
+
+        Test from the ETSI ITS CDD 2.1.1 example:
+        https://forge.etsi.org/rep/ITS/asn1/cpm_ts103324/-/blob/v2.1.1/docs/ETSI-ITS-CDD.md#timestampits
+
+        >>> from datetime import datetime
+        >>> unix2etsi_time(datetime(2007, 1, 1).timestamp())
+        94694401000
         """
-        return ETSI.si2etsi(unix_time - ETSI.EPOCH, ETSI.MILLI_SECOND, 0)
+        tai_time = leapseconds.utc_to_tai(
+            datetime.datetime.utcfromtimestamp(unix_time)
+        ).timestamp()
+        return ETSI.si2etsi(tai_time - ETSI.EPOCH, ETSI.MILLI_SECOND, 0)
 
     @staticmethod
     def etsi2unix_time(
@@ -192,8 +207,20 @@ class ETSI(abc.ABC):
         :return: The UNIX timestamp, in seconds since the UNIX EPOCH, with
                  arbitrary sub-second precision (in practice, down to millisecond
                  precision).
+
+        Test from the ETSI ITS CDD 2.1.1 example:
+        https://forge.etsi.org/rep/ITS/asn1/cpm_ts103324/-/blob/v2.1.1/docs/ETSI-ITS-CDD.md#timestampits
+
+        >>> from datetime import datetime
+        >>> etsi2unix_time(94694401000)
+        1167609600.0
+        >>> datetime.datetime.utcfromtimestamp(etsi2unix_time(94694401000))
+        datetime.datetime(2007, 1, 1, 0, 0)
         """
-        return ETSI.etsi2si(etsi_time, ETSI.MILLI_SECOND, 0) + ETSI.EPOCH
+        tai_time = ETSI.etsi2si(etsi_time, ETSI.MILLI_SECOND, 0) + ETSI.EPOCH
+        return leapseconds.tai_to_utc(
+            datetime.datetime.utcfromtimestamp(tai_time)
+        ).timestamp()
 
     @staticmethod
     def generation_delta_time(
