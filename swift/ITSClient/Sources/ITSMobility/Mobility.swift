@@ -101,7 +101,7 @@ public actor Mobility {
         self.reportZoomLevel = reportZoomLevel
     }
 
-    /// Sends a position to share it.
+    /// Sends a user position to share it.
     /// - Parameters:
     ///   - stationType: The user `StationType`.
     ///   - latitude: The latitude in decimal degrees.
@@ -111,7 +111,7 @@ public actor Mobility {
     ///   - speed: The speed in meters per second.
     ///   - acceleration: The longitudinal acceleration in meters per squared second.
     ///   - yawRate: The rotational acceleration in degrees per squared second.
-    public func sendPosition(
+    public func sendUserPosition(
         stationType: StationType,
         latitude: Double,
         longitude: Double,
@@ -154,14 +154,14 @@ public actor Mobility {
         try await publish(cam, topic: try topic(for: .cam, in: quadkey))
     }
 
-    /// Sends an alert to share it.
+    /// Sends an alarm to share it.
     /// - Parameters:
     ///   - stationType: The user `StationType`.
     ///   - latitude: The latitude in decimal degrees.
     ///   - longitude: The longitude in decimal degrees.
     ///   - altitude: The altitude in meters.
-    ///   - cause: The alert cause.
-    public func sendAlert(
+    ///   - cause: The alarm cause.
+    public func sendAlarm(
         stationType: StationType,
         latitude: Double,
         longitude: Double,
@@ -220,18 +220,18 @@ public actor Mobility {
         await updateSubscriptions(topicUpdateRequest: topicUpdateRequest)
     }
 
-    /// Updates the road position region of interest according the coordinates and the zoom level.
+    /// Updates the road user region of interest according the coordinates and the zoom level.
     /// - Parameters:
     ///   - latitude: The latitude in decimal degrees.
     ///   - longitude: The longitude in decimal degrees.
     ///   - zoomLevel: The zoom level.
-    public func updateRoadPositionRegionOfInterest(
+    public func updateRoadUserRegionOfInterest(
         latitude: Double,
         longitude: Double,
         zoomLevel: Int) async throws(MobilityError) {
         guard let mobilityConfiguration else { throw .notStarted }
 
-        let topicUpdateRequest = regionOfInterestCoordinator.updateRoadPositionRegionOfInterest(
+        let topicUpdateRequest = regionOfInterestCoordinator.updateRoadUserRegionOfInterest(
             latitude: latitude,
             longitude: longitude,
             zoomLevel: zoomLevel,
