@@ -108,6 +108,7 @@ def _leapseconds_reset():
 
 def leapseconds(
     tzfiles=[
+        "/run/zoneinfo/leap-seconds.list",
         "/usr/share/zoneinfo/leap-seconds.list",
         "/usr/share/zoneinfo/right/UTC",
         "/usr/lib/zoneinfo/right/UTC",
