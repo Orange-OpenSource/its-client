@@ -51,6 +51,8 @@ class CollectivePerceptionMessage(etsi.Message):
         """
         self._gnss_report = gnss_report
 
+        self._timestamp = time.time()
+
         self._message = dict(
             {
                 "type": "cpm",
@@ -59,7 +61,7 @@ class CollectivePerceptionMessage(etsi.Message):
                 "source_uuid": uuid,
                 "timestamp": (
                     etsi.ETSI.si2etsi(
-                        time.time(),
+                        self._timestamp,
                         etsi.ETSI.MILLI_SECOND,
                     )
                 ),
@@ -170,10 +172,9 @@ class CollectivePerceptionMessage(etsi.Message):
             {
                 "object_id": perceived_object.object_id,
                 "time_of_measurement": etsi.ETSI.si2etsi(
-                    perceived_object.time_of_measurement,
+                    perceived_object.time_of_measurement - self._timestamp,
                     etsi.ETSI.MILLI_SECOND,
-                )
-                - self._message["timestamp"],
+                ),
                 "object_age": etsi.ETSI.si2etsi(
                     perceived_object.object_age,
                     etsi.ETSI.MILLI_SECOND,
@@ -282,9 +283,10 @@ class CollectivePerceptionMessage(etsi.Message):
                     etsi.ETSI.MILLI_SECOND,
                 ),
                 time_of_measurement=etsi.ETSI.etsi2si(
-                    po["time_of_measurement"] + self._message["timestamp"],
+                    po["time_of_measurement"],
                     etsi.ETSI.MILLI_SECOND,
-                ),
+                )
+                + self._timestamp,
                 x_distance=etsi.ETSI.etsi2si(
                     po["x_distance"],
                     etsi.ETSI.CENTI_METER,
