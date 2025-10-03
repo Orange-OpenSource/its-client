@@ -28,25 +28,29 @@ let package = Package(
             [
                 .product(name: "MQTTNIO", package: "mqtt-nio"),
                 .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
-            ]
+            ],
+            path: "swift/ITSClient/Sources/ITSCore",
         ),
         .testTarget(
             name: "ITSCoreTests",
             dependencies: ["ITSCore", "ITSCommonTests"],
-            resources: [.copy("Data")]
+            path: "swift/ITSClient/Tests/ITSCoreTests",
+            resources: [.copy("Data")],
         ),
         .target(
             name: "ITSMobility",
-            dependencies: ["ITSCore"]
+            dependencies: ["ITSCore"],
+            path: "swift/ITSClient/Sources/ITSMobility",
         ),
         .testTarget(
             name: "ITSMobilityTests",
             dependencies: ["ITSMobility", "ITSCommonTests"],
-            resources: [.copy("Data")]
+            path: "swift/ITSClient/Tests/ITSMobilityTests",
+            resources: [.copy("Data")],
         ),
         .target(
             name: "ITSCommonTests",
-            path: "Tests/ITSCommonTests"
+            path: "swift/ITSClient/Tests/ITSCommonTests"
         ),
     ]
 )
