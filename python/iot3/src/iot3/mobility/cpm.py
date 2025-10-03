@@ -136,23 +136,14 @@ class CollectivePerceptionMessage(etsi.Message):
             # list for now.
             self._message["message"]["originating_rsu_container"] = []
         else:
-            self._message["message"]["station_data_container"] = {
-                "originating_vehicle_container": {
-                    "heading": etsi.ETSI.si2etsi(
+            self._message["message"]["originating_vehicle_container"] = {
+                "orientation_angle": {
+                    "value": etsi.ETSI.si2etsi(
                         gnss_report.true_heading,
                         etsi.ETSI.DECI_DEGREE,
                         3601,
                     ),
-                    "speed": etsi.ETSI.si2etsi(
-                        gnss_report.speed,
-                        etsi.ETSI.CENTI_METER_PER_SECOND,
-                        16383,
-                    ),
-                    # Confidence is unknown, we have no way of knowing it.
-                    "confidence": {
-                        "heading": 127,
-                        "speed": 127,
-                    },
+                    "confidence": 127,
                 },
             }
 

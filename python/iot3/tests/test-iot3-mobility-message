@@ -81,7 +81,7 @@ msg = CPM(
         ),
     ],
 )
-assert "station_data_container" in msg["message"]
+assert "originating_vehicle_container" in msg["message"]
 assert len(msg["message"]["perceived_object_container"]) == 2
 
 print("CPM with a new P.O...")
