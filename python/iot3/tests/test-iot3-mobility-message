@@ -66,18 +66,18 @@ msg = CPM(
     perceived_objects=[
         CPM.PerceivedObject(
             object_id= 27,
-            time_of_measurement= time.time(),
+            measurement_delta_time=0.128,
             x_distance= 12,
             y_distance= -16,
             object_age= 127,
         ),
         CPM.PerceivedObject(
             object_id= 42,
-            time_of_measurement= time.time(),
+            measurement_delta_time=-1.640,
             x_distance= 63,
             y_distance= -32,
             object_age= 255,
-            confidence=7,
+            quality=7,
         ),
     ],
 )
@@ -88,11 +88,11 @@ print("CPM with a new P.O...")
 msg.add_perceived_object(
     perceived_object=CPM.PerceivedObject(
         object_id= 12,
-        time_of_measurement= time.time(),
+        measurement_delta_time=1.280,
         x_distance= 1,
         y_distance= -2,
         object_age= 3,
-        confidence=15,
+        quality=15,
     ),
 )
 assert len(msg["message"]["perceived_object_container"]) == 3
@@ -103,7 +103,7 @@ for po in msg.perceived_objects:
     assert type(po) is CPM.PerceivedObject
     count += 1
 assert count == 3
-assert po.confidence == 15
+assert po.quality == 15
 
 print("CPM serialisation...")
 json_msg = msg.to_json()

@@ -24,13 +24,13 @@ class CollectivePerceptionMessage(etsi.Message):
         """
 
         object_id: int
-        object_age: float
-        time_of_measurement: float
+        measurement_delta_time: float
         x_distance: float
         y_distance: float
+        object_age: Optional[float] = None
         x_speed: Optional[float] = None
         y_speed: Optional[float] = None
-        confidence: Optional[int] = 0
+        quality: Optional[int] = 0
 
     def __init__(
         self,
@@ -158,45 +158,60 @@ class CollectivePerceptionMessage(etsi.Message):
         po = dict(
             {
                 "object_id": perceived_object.object_id,
-                "time_of_measurement": etsi.ETSI.si2etsi(
-                    perceived_object.time_of_measurement - self._timestamp,
+                "measurement_delta_time": etsi.ETSI.si2etsi(
+                    perceived_object.measurement_delta_time,
                     etsi.ETSI.MILLI_SECOND,
+                    None,
+                    {"min": -2048, "max": 2047},
                 ),
-                "object_age": etsi.ETSI.si2etsi(
-                    perceived_object.object_age,
-                    etsi.ETSI.MILLI_SECOND,
-                    # Unusual: "1500" means "1500 or more"
-                    validity_range={"min": 0, "max": 1500},
-                ),
-                "x_distance": etsi.ETSI.si2etsi(
-                    perceived_object.x_distance,
-                    etsi.ETSI.CENTI_METER,
-                ),
-                "y_distance": etsi.ETSI.si2etsi(
-                    perceived_object.y_distance,
-                    etsi.ETSI.CENTI_METER,
-                ),
-                "x_speed": etsi.ETSI.si2etsi(
-                    perceived_object.x_speed,
-                    etsi.ETSI.CENTI_METER_PER_SECOND,
-                    16383,
-                ),
-                "y_speed": etsi.ETSI.si2etsi(
-                    perceived_object.y_speed,
-                    etsi.ETSI.CENTI_METER_PER_SECOND,
-                    16383,
-                ),
-                "confidence": {
-                    "object": perceived_object.confidence,
-                    # All other required confidence fields set to unknwn
-                    # for now...
-                    "x_distance": 4095,
-                    "y_distance": 4095,
-                    "x_speed": 0,
-                    "y_speed": 0,
+                "position": {
+                    "x_coordinate": {
+                        "value": etsi.ETSI.si2etsi(
+                            perceived_object.x_distance,
+                            etsi.ETSI.CENTI_METER,
+                        ),
+                        "confidence": 4096,
+                    },
+                    "y_coordinate": {
+                        "value": etsi.ETSI.si2etsi(
+                            perceived_object.y_distance,
+                            etsi.ETSI.CENTI_METER,
+                        ),
+                        "confidence": 4096,
+                    },
                 },
+                "velocity": {
+                    "cartesian_velocity": {
+                        "x_velocity": {
+                            "value": etsi.ETSI.si2etsi(
+                                perceived_object.x_speed,
+                                etsi.ETSI.CENTI_METER_PER_SECOND,
+                                16_383,
+                                {"min": -16_383, "max": 16_382},
+                            ),
+                            "confidence": 127,
+                        },
+                        "y_velocity": {
+                            "value": etsi.ETSI.si2etsi(
+                                perceived_object.y_speed,
+                                etsi.ETSI.CENTI_METER_PER_SECOND,
+                                16_383,
+                                {"min": -16_383, "max": 16_382},
+                            ),
+                            "confidence": 127,
+                        },
+                    },
+                },
+                "object_perception_quality": perceived_object.quality,
             },
         )
+        if perceived_object.object_age is not None:
+            po["object_age"] = etsi.ETSI.si2etsi(
+                perceived_object.object_age,
+                etsi.ETSI.MILLI_SECOND,
+                None,
+                {"min": 0, "max": 2047},
+            )
 
         self._message["message"]["perceived_object_container"].append(po)
 
@@ -263,36 +278,44 @@ class CollectivePerceptionMessage(etsi.Message):
     @property
     def perceived_objects(self):
         for po in self._message["message"]["perceived_object_container"]:
+            try:
+                x_speed = po["velocity"]["cartesian_velocity"]["x_velocity"]["value"]
+            except KeyError:
+                x_speed = None
+            try:
+                y_speed = po["velocity"]["cartesian_velocity"]["y_velocity"]["value"]
+            except KeyError:
+                y_speed = None
+
             yield self.PerceivedObject(
                 object_id=po["object_id"],
                 object_age=etsi.ETSI.etsi2si(
-                    po["object_age"],
+                    po.get("object_age", None),
                     etsi.ETSI.MILLI_SECOND,
                 ),
-                time_of_measurement=etsi.ETSI.etsi2si(
-                    po["time_of_measurement"],
+                measurement_delta_time=etsi.ETSI.etsi2si(
+                    po["measurement_delta_time"],
                     etsi.ETSI.MILLI_SECOND,
-                )
-                + self._timestamp,
+                ),
                 x_distance=etsi.ETSI.etsi2si(
-                    po["x_distance"],
+                    po["position"]["x_coordinate"]["value"],
                     etsi.ETSI.CENTI_METER,
                 ),
                 y_distance=etsi.ETSI.etsi2si(
-                    po["y_distance"],
+                    po["position"]["y_coordinate"]["value"],
                     etsi.ETSI.CENTI_METER,
                 ),
                 x_speed=etsi.ETSI.etsi2si(
-                    po["x_speed"],
+                    x_speed,
                     etsi.ETSI.CENTI_METER_PER_SECOND,
-                    16383,
+                    16_383,
                 ),
                 y_speed=etsi.ETSI.etsi2si(
-                    po["y_speed"],
+                    y_speed,
                     etsi.ETSI.CENTI_METER_PER_SECOND,
-                    16383,
+                    16_383,
                 ),
-                confidence=po["confidence"]["object"],
+                quality=po["object_perception_quality"],
             )
 
 
