@@ -131,11 +131,10 @@ class CollectivePerceptionMessage(etsi.Message):
             # Unknown station type, no station data.
             pass
         elif station_type == etsi.Message.StationType.roadSideUnit:
-            # Everything is optional in an RSU data, and we don't (yet)
-            # know how to fill the optional fields in...
-            self._message["message"]["station_data_container"] = {
-                "originating_rsu_container": {},
-            }
+            # We for now don't have enough to handle the MAPEM to define an RSU;
+            # the RSU container is just a list of stuff, so just provide an empty
+            # list for now.
+            self._message["message"]["originating_rsu_container"] = []
         else:
             self._message["message"]["station_data_container"] = {
                 "originating_vehicle_container": {
