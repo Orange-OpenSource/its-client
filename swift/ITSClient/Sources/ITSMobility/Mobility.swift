@@ -78,7 +78,7 @@ public actor Mobility {
     /// Stops the `Mobility` disconnecting the MQTT client and stopping the telemetry client.
     public func stop() async {
         await core.stop()
-        regionOfInterestCoordinator.reset()
+        await regionOfInterestCoordinator.reset()
         await roadAlarmCoordinator.reset()
         await roadUserCoordinator.reset()
     }
@@ -212,12 +212,12 @@ public actor Mobility {
         zoomLevel: Int) async throws(MobilityError) {
         guard let mobilityConfiguration else { throw .notStarted }
 
-        let topicUpdateRequest = regionOfInterestCoordinator.updateRoadAlarmRegionOfInterest(
+        await regionOfInterestCoordinator.updateRoadAlarmRegionOfInterest(
             latitude: latitude,
             longitude: longitude,
             zoomLevel: zoomLevel,
-            namespace: mobilityConfiguration.namespace)
-        await updateSubscriptions(topicUpdateRequest: topicUpdateRequest)
+            namespace: mobilityConfiguration.namespace,
+            subscriber: self)
     }
 
     /// Updates the road user region of interest according the coordinates and the zoom level.
@@ -231,12 +231,12 @@ public actor Mobility {
         zoomLevel: Int) async throws(MobilityError) {
         guard let mobilityConfiguration else { throw .notStarted }
 
-        let topicUpdateRequest = regionOfInterestCoordinator.updateRoadUserRegionOfInterest(
+        await regionOfInterestCoordinator.updateRoadUserRegionOfInterest(
             latitude: latitude,
             longitude: longitude,
             zoomLevel: zoomLevel,
-            namespace: mobilityConfiguration.namespace)
-        await updateSubscriptions(topicUpdateRequest: topicUpdateRequest)
+            namespace: mobilityConfiguration.namespace,
+            subscriber: self)
     }
 
     private func publish<T: Codable>(_ payload: T, topic: String) async throws(MobilityError) {
@@ -248,31 +248,6 @@ public actor Mobility {
             throw .payloadPublishingFailed(error)
         } catch {
             throw .payloadEncodingFailed
-        }
-    }
-
-    private func updateSubscriptions(
-        topicUpdateRequest: RegionOfInterestCoordinator.TopicUpdateRequest?
-    ) async {
-        guard let topicUpdateRequest else { return }
-
-        await subscribe(to: topicUpdateRequest.subscriptions)
-        await unsubscribe(from: topicUpdateRequest.unsubscriptions)
-    }
-
-    private func subscribe(to topics: [String]) async {
-        for topic in topics {
-            do {
-                try await core.subscribe(to: topic)
-            } catch {}
-        }
-    }
-
-    private func unsubscribe(from topics: [String]) async {
-        for topic in topics {
-            do {
-                try await core.unsubscribe(from: topic)
-            } catch {}
         }
     }
 
@@ -293,5 +268,25 @@ public actor Mobility {
         let namespace = mobilityConfiguration.namespace
         let userIdentifier = mobilityConfiguration.userIdentifier
         return "\(namespace)/inQueue/v2x/\(messageType.rawValue)/\(userIdentifier)/\(quadkey)"
+    }
+}
+
+extension Mobility: RegionOfInterestSubscriber {
+    func subscribe(topic: String) async -> Bool {
+        do {
+            try await core.subscribe(to: topic)
+            return true
+        } catch {
+            return false
+        }
+    }
+    
+    func unsubscribe(topic: String) async -> Bool {
+        do {
+            try await core.unsubscribe(from: topic)
+            return true
+        } catch {
+            return false
+        }
     }
 }
