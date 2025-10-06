@@ -130,7 +130,7 @@ class ETSI(abc.ABC):
 
     @staticmethod
     def etsi2si(
-        value: int,
+        value: int | None,
         scale: float,
         undef: Optional[int] = None,
         out_of_range: Optional[int] = None,
@@ -142,14 +142,14 @@ class ETSI(abc.ABC):
         specific object. This function converts from an ETSI scale to an SI unit.
 
         :param value: the value in an ETSI scale, or its special value when it
-                      is unknown
+                      is unknown; value can be None
         :param scale: the ETSI scale of the key
         :param undef: the special ETSI-scaled value used when the value is unknown
         :param out_of_range: the special ETSI-scaled value to use when the value is
                              out of range
         :return: None if the value is either one of the special ETSI-scaled values
-                 'undef' or 'out_of_range', or the value scaled back to SI units
-                 otherwise
+                 'undef' or 'out_of_range' or None, or the value scaled back to SI
+                 units otherwise
 
         For example:
             etsi2si(my_cam.altitude, ETSI.CENTI_METER, 800001)
@@ -160,7 +160,7 @@ class ETSI(abc.ABC):
         altitude as a floating point numbers of meters, or None if the altitude
         is not known or out of range.
         """
-        if undef is not None and value == undef:
+        if undef is not None and (value is None or value == undef):
             return None
         if out_of_range is not None and value == out_of_range:
             return None
