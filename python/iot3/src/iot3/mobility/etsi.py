@@ -145,7 +145,7 @@ class ETSI(abc.ABC):
         :param value: the value in an ETSI scale, or its special value when it
                       is unknown
         :param scale: the ETSI scale of the key
-        :param undef: the special ETSI-scaled value to use when the value is unknown
+        :param undef: the special ETSI-scaled value used when the value is unknown
         :param out_of_range: the special ETSI-scaled value to use when the value is
                              out of range
         :return: None if the value is either one of the special ETSI-scaled values
