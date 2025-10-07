@@ -14,11 +14,16 @@ import ITSCore
 
 /// An object that manages a mobility client using the `Core`.
 public actor Mobility {
+    private enum State {
+        case stopped, starting, started, stopping
+    }
+
     private let core: Core
     private let regionOfInterestCoordinator: RegionOfInterestCoordinator
     private let roadAlarmCoordinator: RoadAlarmCoordinator
     private let roadUserCoordinator: RoadUserCoordinator
     private var reportZoomLevel: Int
+    private var state: State
     /// The mobility configuration.
     public private(set) var mobilityConfiguration: MobilityConfiguration?
 
@@ -29,12 +34,16 @@ public actor Mobility {
         roadAlarmCoordinator = RoadAlarmCoordinator()
         roadUserCoordinator = RoadUserCoordinator()
         reportZoomLevel = 22
+        state = .stopped
     }
 
     /// Starts the `Mobility` with a configuration to connect to a MQTT server and initialize the telemetry client.
     /// - Parameter mobilityConfiguration: The configuration used to start the mobility including `CoreConfiguration`.
     /// - Throws: A `MobilityError` if the MQTT connection fails.
     public func start(mobilityConfiguration: MobilityConfiguration) async throws(MobilityError) {
+        guard state == .stopped else { return }
+
+        state = .starting
         self.mobilityConfiguration = mobilityConfiguration
         do {
             try await core.start(coreConfiguration: mobilityConfiguration.coreConfiguration)
@@ -43,7 +52,9 @@ public actor Mobility {
                     await self?.processIncomingMessage(message)
                 }
             }
+            state = .started
         } catch {
+            state = .stopped
             throw .startFailed(error)
         }
     }
@@ -77,10 +88,12 @@ public actor Mobility {
 
     /// Stops the `Mobility` disconnecting the MQTT client and stopping the telemetry client.
     public func stop() async {
+        state = .stopping
         await core.stop()
         await regionOfInterestCoordinator.reset()
         await roadAlarmCoordinator.reset()
         await roadUserCoordinator.reset()
+        state = .stopped
     }
 
     /// Sets an observer to observe changes on road alarms.
@@ -121,7 +134,7 @@ public actor Mobility {
         acceleration: Double? = nil,
         yawRate: Double? = nil
     ) async throws(MobilityError) {
-        guard let mobilityConfiguration else { throw .notStarted }
+        guard state == .started, let mobilityConfiguration else { throw .notStarted }
 
         // Build CAM
         let now = Date().timeIntervalSince1970
@@ -147,6 +160,8 @@ public actor Mobility {
     /// Sends a `CAM` to share it.
     /// - Parameter cam: The `CAM` to send.
     public func sendCAM(_ cam: CAM) async throws(MobilityError)  {
+        guard state == .started else { throw MobilityError.notStarted }
+
         let quadkey = QuadkeyBuilder().quadkeyFrom(latitude: cam.message.basicContainer.referencePosition.latitude,
                                                    longitude: cam.message.basicContainer.referencePosition.longitude,
                                                    zoomLevel: reportZoomLevel,
@@ -168,7 +183,7 @@ public actor Mobility {
         altitude: Double,
         cause: Cause = .dangerousSituation()
     ) async throws(MobilityError) {
-        guard let mobilityConfiguration else { throw MobilityError.notStarted }
+        guard state == .started, let mobilityConfiguration else { throw MobilityError.notStarted }
 
         // Build DENM
         let now = Date().timeIntervalSince1970
@@ -194,6 +209,8 @@ public actor Mobility {
     /// Sends a `DENM` to share it.
     /// - Parameter denm: The `DENM` to send.
     public func sendDENM(_ denm: DENM) async throws(MobilityError) {
+        guard state == .started else { throw MobilityError.notStarted }
+
         let quadkey = QuadkeyBuilder().quadkeyFrom(latitude: denm.message.managementContainer.eventPosition.latitude,
                                                    longitude: denm.message.managementContainer.eventPosition.longitude,
                                                    zoomLevel: reportZoomLevel,
@@ -210,7 +227,7 @@ public actor Mobility {
         latitude: Double,
         longitude: Double,
         zoomLevel: Int) async throws(MobilityError) {
-        guard let mobilityConfiguration else { throw .notStarted }
+        guard state == .started, let mobilityConfiguration else { throw .notStarted }
 
         await regionOfInterestCoordinator.updateRoadAlarmRegionOfInterest(
             latitude: latitude,
@@ -229,7 +246,7 @@ public actor Mobility {
         latitude: Double,
         longitude: Double,
         zoomLevel: Int) async throws(MobilityError) {
-        guard let mobilityConfiguration else { throw .notStarted }
+        guard state == .started, let mobilityConfiguration else { throw .notStarted }
 
         await regionOfInterestCoordinator.updateRoadUserRegionOfInterest(
             latitude: latitude,
@@ -240,6 +257,8 @@ public actor Mobility {
     }
 
     private func publish<T: Codable>(_ payload: T, topic: String) async throws(MobilityError) {
+        guard state == .started else { throw .notStarted }
+
         do {
             let coreMQTTMessage = CoreMQTTMessage(payload: try JSONEncoder().encode(payload),
                                                   topic: topic)
@@ -273,6 +292,8 @@ public actor Mobility {
 
 extension Mobility: RegionOfInterestSubscriber {
     func subscribe(topic: String) async -> Bool {
+        guard state == .started else { return false }
+
         do {
             try await core.subscribe(to: topic)
             return true
@@ -280,8 +301,10 @@ extension Mobility: RegionOfInterestSubscriber {
             return false
         }
     }
-    
+
     func unsubscribe(topic: String) async -> Bool {
+        guard state == .started else { return false }
+
         do {
             try await core.unsubscribe(from: topic)
             return true
