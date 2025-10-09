@@ -31,7 +31,7 @@ Python 2.6+, Python 3, Jython, Pypy support.
 [1]: https://github.com/eggert/tz/blob/master/leap-seconds.list
 [2]: https://github.com/eggert/tz/blob/master/tzfile.h
 [3]: https://github.com/eggert/tz/blob/master/zic.c
-[4]: https://datacenter.iers.org/data/16/bulletinc-067.txt
+[4]: https://datacenter.iers.org/data/16/bulletinc-070.txt
 """
 from __future__ import with_statement
 
@@ -247,11 +247,11 @@ def _dTAI_UTC(time, leapsecond_to_time, leapseconds=leapseconds):
     >>> _dTAI_UTC(datetime(2015, 7, 1, 0, 0, 36), tai)
     datetime.timedelta(seconds=36)
 
-    Bulletin C 67 says "NO leap second will be introduced at the end
-    of June 2024."[4] and therefore TAI-UTC is still 37s as of 10 June
-    2024:
+    Bulletin C 70 says "NO leap second will be introduced at the end
+    of December 2025."[4] and therefore TAI-UTC is still 37s as of
+    October 9th, 2025:
 
-    >>> _dTAI_UTC(datetime(2024, 6, 10), lambda ls: ls.utc)
+    >>> _dTAI_UTC(datetime(2025, 10, 9), lambda ls: ls.utc)
     datetime.timedelta(seconds=37)
 
     """
