@@ -15,7 +15,9 @@ import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5ClientBuilder;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperty;
+import com.hivemq.client.mqtt.mqtt5.exceptions.Mqtt5DisconnectException;
 import com.hivemq.client.mqtt.mqtt5.message.Mqtt5ReasonCode;
+import com.hivemq.client.mqtt.mqtt5.message.disconnect.Mqtt5DisconnectReasonCode;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 import com.hivemq.client.mqtt.mqtt5.message.unsubscribe.unsuback.Mqtt5UnsubAckReasonCode;
 import io.opentelemetry.api.GlobalOpenTelemetry;
@@ -79,10 +81,20 @@ public class MqttClient {
                 .addDisconnectedListener(disconnectContext -> {
                     // when the disconnection was initiated by the user, disable auto-reconnect
                     if(closed || disconnectContext.getSource() == MqttDisconnectSource.USER) {
-                        LOGGER.log(Level.FINE, "User-initiated disconnection from the MQTT broker");
+                        LOGGER.log(Level.FINE, "USER-initiated disconnection from the MQTT broker");
                         disconnectContext.getReconnector().reconnect(false);
+                    } else if(disconnectContext.getSource() == MqttDisconnectSource.SERVER) {
+                        LOGGER.log(Level.INFO, "SERVER-initiated disconnection from the MQTT broker");
+                        if (disconnectContext.getCause() instanceof Mqtt5DisconnectException disconnectException) {
+                            Mqtt5DisconnectReasonCode reasonCode = disconnectException.getMqttMessage().getReasonCode();
+                            LOGGER.log(Level.INFO, "Due to " + reasonCode);
+                            if (reasonCode == Mqtt5DisconnectReasonCode.SESSION_TAKEN_OVER) {
+                                // there is a client ID overlap, disable auto-reconnect to avoid conflict
+                                disconnectContext.getReconnector().reconnect(false);
+                            }
+                        }
                     } else {
-                        LOGGER.log(Level.INFO, "Disconnected from the MQTT broker by " + disconnectContext.getSource());
+                        LOGGER.log(Level.INFO, "CLIENT-initiated disconnection from the MQTT broker");
                     }
                     callback.connectionLost(disconnectContext.getCause());
                 })
