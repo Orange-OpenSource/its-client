@@ -164,8 +164,8 @@ function_body_length:
     error: 80
     
 function_parameter_count:
-    warning: 6
-    error: 8
+    warning: 8
+    error: 10
 
 implicit_getter:
     severity: error

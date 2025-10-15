@@ -13,7 +13,7 @@ import Foundation
 import ITSCore
 
 /// The errors thrown by the mobility.
-public enum MobilityError: Error {
+public enum MobilityError: Error, Equatable {
     /// The mobilty start failed.
     case startFailed(CoreError)
     /// The mobility must be started before performing this action.

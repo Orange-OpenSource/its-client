@@ -34,7 +34,7 @@ struct MobilityTests {
     }
 
     @Test("Send user position should send a payload on a topic computed from coordinates")
-    func send_position_should_send_payload_on_topic_computed_from_coordinates() async throws {
+    func send_user_position_should_send_payload_on_topic_computed_from_coordinates() async throws {
         try await mobility.start(mobilityConfiguration: mobilityConfiguration)
         try await mobility.sendUserPosition(stationType: .pedestrian,
                                             latitude: 43.63516355648167,
@@ -58,5 +58,46 @@ struct MobilityTests {
         await mobility.stop()
         // Wait a bit for the spans flush
         try await Task.sleep(seconds: 0.5)
+    }
+
+    @Test("Send user position when stopping should throw a not started error")
+    func send_user_position_when_stopping_should_throw_not_started_error() async throws {
+        try await mobility.start(mobilityConfiguration: mobilityConfiguration)
+        Task {
+            await mobility.stop()
+        }
+        Task {
+            do {
+                try await mobility.sendUserPosition(stationType: .pedestrian,
+                                                    latitude: 43.63516355648167,
+                                                    longitude: 1.3744570239910097,
+                                                    altitude: 155,
+                                                    heading: 45,
+                                                    speed: 8.1)
+                Issue.record("An not started error must be thrown")
+            } catch {
+                // Then
+                #expect((error as? MobilityError) == .notStarted)
+            }
+        }
+    }
+
+    @Test("Update road user ROI when stopping should throw a not started error")
+    func update_road_user_ROI_when_stopping_should_throw_not_started_error() async throws {
+        try await mobility.start(mobilityConfiguration: mobilityConfiguration)
+        Task {
+            await mobility.stop()
+        }
+        Task {
+            do {
+                try await mobility.updateRoadUserRegionOfInterest(latitude: 43.63516355648167,
+                                                                  longitude: 1.3744570239910097,
+                                                                  zoomLevel: 15)
+                Issue.record("An not started error must be thrown")
+            } catch {
+                // Then
+                #expect((error as? MobilityError) == .notStarted)
+            }
+        }
     }
 }

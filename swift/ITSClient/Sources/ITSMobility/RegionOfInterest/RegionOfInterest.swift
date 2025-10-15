@@ -11,11 +11,18 @@
 
 import Foundation
 
-struct RegionOfInterest {
-    let quadkey: String
-    let neighborQuadkeys: [String]
+struct RegionOfInterest: Equatable {
+    private(set)var quadkeys: [String]
 
-    var allQuadkeys: [String] {
-        [quadkey] + neighborQuadkeys
+    mutating func addQuadkey(_ quadkey: String) {
+        if !quadkeys.contains(quadkey) {
+            quadkeys.append(quadkey)
+        }
+    }
+
+    mutating func removeQuadkey(_ quadkey: String) {
+        if let index = quadkeys.firstIndex(where: { quadkey == $0 }) {
+            quadkeys.remove(at: index)
+        }
     }
 }
