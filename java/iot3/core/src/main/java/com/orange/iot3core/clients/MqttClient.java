@@ -149,7 +149,6 @@ public class MqttClient {
         }
         closed = true;
         mqttClient.disconnect()
-                .orTimeout(500, TimeUnit.MILLISECONDS) // don't wait more than 500 milliseconds
                 .whenComplete((mqtt5DisconnectResult, throwable) -> {
                     if(throwable != null) {
                         LOGGER.log(Level.WARNING, "Error during disconnection: " + throwable.getMessage());
