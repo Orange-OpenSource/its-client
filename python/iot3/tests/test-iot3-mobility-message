@@ -55,6 +55,7 @@ msg = CPM(
 assert "station_data_container" not in msg["message"]
 assert len(msg["message"]["perceived_object_container"]) == 0
 
+#-----------------------------------------------------------------------------------------
 print("CPM of a car with some P.O...")
 msg = CPM(
     uuid="test_1234",
@@ -93,6 +94,8 @@ msg.add_perceived_object(
         y_distance= -2,
         object_age= 3,
         quality=15,
+        object_class=CPM.PerceivedObject.Vehicle.motorcycle,
+        object_class_confidence=50,
     ),
 )
 assert len(msg["message"]["perceived_object_container"]) == 3
@@ -104,6 +107,8 @@ for po in msg.perceived_objects:
     count += 1
 assert count == 3
 assert po.quality == 15
+assert po.object_class["vehicle"] == Message.StationType.motorcycle
+assert po.object_class_confidence == 50
 
 print("CPM serialisation...")
 json_msg = msg.to_json()
@@ -113,7 +118,9 @@ msg = iot3.mobility.message_from_json(msg_json=json_msg)
 assert msg.msg_type == "cpm"
 assert msg["message"]["management_container"]["station_type"] == Message.StationType.passengerCar
 assert len(msg["message"]["perceived_object_container"]) == 3
+assert po.object_class["vehicle"] == Message.StationType.motorcycle
 
+#-----------------------------------------------------------------------------------------
 print("DENM with nothing set...")
 msg = DENM(
     uuid="test_1234",
@@ -206,6 +213,7 @@ assert msg.termination == DENM.TerminationType.isNegation
 # UNIX time: seconds as a float, ETSI time: ms as an int; => delta max = 1ms
 assert math.fabs(detect_time - msg.detection_time) < 10 ** -3
 
+#-----------------------------------------------------------------------------------------
 print("Invalid generic message...")
 try:
     msg = Message()

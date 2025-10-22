@@ -19,9 +19,68 @@ class CollectivePerceptionMessage(etsi.Message):
     class PerceivedObject:
         """A simple wrapper to define a basice Perceived Object
 
-        All values are in SI units, with times in seconds relative to
+        All measures are in SI units, with times in seconds relative to
         the UNIX EPOCH, and ages in seconds.
+
+        The object_class is a dict matching the object_class of the
+        perceived object classification (see CPM schema).
         """
+
+        class Vehicle:
+            unknown = {"vehicle": etsi.Message.TrafficParticipantType.unknown}
+            pedestrian = {"vehicle": etsi.Message.TrafficParticipantType.pedestrian}
+            cyclist = {"vehicle": etsi.Message.TrafficParticipantType.cyclist}
+            moped = {"vehicle": etsi.Message.TrafficParticipantType.moped}
+            motorcycle = {"vehicle": etsi.Message.TrafficParticipantType.motorcycle}
+            passengerCar = {"vehicle": etsi.Message.TrafficParticipantType.passengerCar}
+            bus = {"vehicle": etsi.Message.TrafficParticipantType.bus}
+            lightTruck = {"vehicle": etsi.Message.TrafficParticipantType.lightTruck}
+            heavyTruck = {"vehicle": etsi.Message.TrafficParticipantType.heavyTruck}
+            trailer = {"vehicle": etsi.Message.TrafficParticipantType.trailer}
+            specialVehicles = {
+                "vehicle": etsi.Message.TrafficParticipantType.specialVehicles
+            }
+            tram = {"vehicle": etsi.Message.TrafficParticipantType.tram}
+            lightVruVehicle = {
+                "vehicle": etsi.Message.TrafficParticipantType.lightVruVehicle
+            }
+            animal = {"vehicle": etsi.Message.TrafficParticipantType.animal}
+            roadSideUnit = {"vehicle": etsi.Message.TrafficParticipantType.roadSideUnit}
+
+        class Vru:
+            class Pedestrian:
+                unavailable = {"vru": {"pedestrian": 0}}
+                ordinary_pedestrian = {"vru": {"pedestrian": 1}}
+                road_worker = {"vru": {"pedestrian": 2}}
+                first_responder = {"vru": {"pedestrian": 3}}
+
+            class BicyclistAndLightVruVehicle:
+                unavailable = {"vru": {"bicyclist_and_light_vru_vehicle": 0}}
+                bicyclist = {"vru": {"bicyclist_and_light_vru_vehicle": 1}}
+                wheelchair_user = {"vru": {"bicyclist_and_light_vru_vehicle": 2}}
+                horse_and_rider = {"vru": {"bicyclist_and_light_vru_vehicle": 3}}
+                rollerskater = {"vru": {"bicyclist_and_light_vru_vehicle": 4}}
+                e_scooter = {"vru": {"bicyclist_and_light_vru_vehicle": 5}}
+                personal_transporter = {"vru": {"bicyclist_and_light_vru_vehicle": 6}}
+                pedelec = {"vru": {"bicyclist_and_light_vru_vehicle": 7}}
+                speed_pedelec = {"vru": {"bicyclist_and_light_vru_vehicle": 8}}
+
+            class Motorcylist:
+                unavailable = {"vru": {"bicyclist_and_light_vru_vehicle": 0}}
+                moped = {"vru": {"bicyclist_and_light_vru_vehicle": 1}}
+                motorcycle = {"vru": {"bicyclist_and_light_vru_vehicle": 2}}
+                motorcycle_and_sidecar_right = {
+                    "vru": {"bicyclist_and_light_vru_vehicle": 3}
+                }
+                motorcycle_and_sidecar_left = {
+                    "vru": {"bicyclist_and_light_vru_vehicle": 4}
+                }
+
+        class Other:
+            unknown = {"other": 0}
+            single_object = {"other": 1}
+            multiple_objects = {"other": 2}
+            bulk_material = {"other": 3}
 
         object_id: int
         measurement_delta_time: float
@@ -31,6 +90,8 @@ class CollectivePerceptionMessage(etsi.Message):
         x_speed: Optional[float] = None
         y_speed: Optional[float] = None
         quality: Optional[int] = 0
+        object_class: Optional[Vehicle | Vru | Other] = None
+        object_class_confidence: int = 0
 
     def __init__(
         self,
@@ -213,6 +274,15 @@ class CollectivePerceptionMessage(etsi.Message):
                 {"min": 0, "max": 2047},
             )
 
+        if perceived_object.object_class is not None:
+            c = dict(
+                {
+                    "object_class": perceived_object.object_class,
+                    "confidence": perceived_object.object_class_confidence,
+                }
+            )
+            po["classification"] = list([c])
+
         self._message["message"]["perceived_object_container"].append(po)
 
     @property
@@ -287,36 +357,53 @@ class CollectivePerceptionMessage(etsi.Message):
             except KeyError:
                 y_speed = None
 
-            yield self.PerceivedObject(
-                object_id=po["object_id"],
-                object_age=etsi.ETSI.etsi2si(
+            kwargs = {
+                "object_id": po["object_id"],
+                "object_age": etsi.ETSI.etsi2si(
                     po.get("object_age", None),
                     etsi.ETSI.MILLI_SECOND,
                 ),
-                measurement_delta_time=etsi.ETSI.etsi2si(
+                "measurement_delta_time": etsi.ETSI.etsi2si(
                     po["measurement_delta_time"],
                     etsi.ETSI.MILLI_SECOND,
-                ),
-                x_distance=etsi.ETSI.etsi2si(
+                )
+                + self._timestamp,
+                "x_distance": etsi.ETSI.etsi2si(
                     po["position"]["x_coordinate"]["value"],
                     etsi.ETSI.CENTI_METER,
                 ),
-                y_distance=etsi.ETSI.etsi2si(
+                "y_distance": etsi.ETSI.etsi2si(
                     po["position"]["y_coordinate"]["value"],
                     etsi.ETSI.CENTI_METER,
                 ),
-                x_speed=etsi.ETSI.etsi2si(
+                "x_speed": etsi.ETSI.etsi2si(
                     x_speed,
                     etsi.ETSI.CENTI_METER_PER_SECOND,
                     16_383,
                 ),
-                y_speed=etsi.ETSI.etsi2si(
+                "y_speed": etsi.ETSI.etsi2si(
                     y_speed,
                     etsi.ETSI.CENTI_METER_PER_SECOND,
                     16_383,
                 ),
-                quality=po["object_perception_quality"],
-            )
+                "quality": po["object_perception_quality"],
+            }
+
+            if "classification" in po:
+                # Only keep the best classification
+                best = sorted(
+                    po["classification"],
+                    key=lambda k: k["confidence"],
+                    reverse=True,
+                )[0]
+                kwargs.update(
+                    {
+                        "object_class": best["object_class"],
+                        "object_class_confidence": best["confidence"],
+                    },
+                )
+
+            yield self.PerceivedObject(**kwargs)
 
 
 # Shorthand
