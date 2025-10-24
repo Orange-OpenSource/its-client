@@ -5,18 +5,19 @@ libits-client
 [![crates.io](https://img.shields.io/crates/v/libits-client)][2]
 
 This crate provides IoT3 [MQTT][3] and [OpenTelemetry][4] generic clients and,
-on top of this an [ETSI][5] [Intelligent Transport System][6] messages implementation using [JSON][7]
+on top of this, an [ETSI][5] [Intelligent Transport System][6] messages implementation using [JSON][7]
 
 Examples
 --------
 
 ### Common environment
 
-1. Let's be sure to have unrestricted access to _test.mosquitto.org_ (IPv4 and IPv6)
+1. Let's be sure to have unrestricted access to [test.mosquitto.org](https://test.mosquitto.org/) (IPv4 and IPv6)
 2. In a terminal, prepare a collector implementing the OpenTelemetry API, on localhost. If you don't have one,
    you may use an existing one, like using docker:
     ```shell
     docker container run \
+        --name jaeger \
         --rm \
         -p 16686:16686 \
         -p 4318:4318 \
@@ -146,7 +147,7 @@ INFO [libits::client::application::pipeline] starting MQTT publishing thread...
 ...
 ```
 
-**Note: this example does not send any message so it has to be used with a sender example from the python
+**Note: this example does not send any message, so it has to be used with a sender example from the python
 implementation to work relevantly**
 
 You can manually send an information and a stopped CAM message with the following commands:
@@ -159,7 +160,7 @@ docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.
 docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.org -p 8886 -t default/outQueue/v2x/cam/com_car_555/0/3/1/3/3/3/1/1/1/2/0/2/1/0/0/1/2/1/2/1/2/1 --tls-version tlsv1.2 --capath /etc/ssl/certs/ -m "{\"message_type\":\"cam\",\"origin\":\"self\",\"version\":\"2.2.0\",\"source_uuid\":\"com_car_555\",\"timestamp\":1742227617044,\"message\":{\"protocol_version\":1,\"station_id\":555,\"generation_delta_time\":64291,\"basic_container\":{\"station_type\":5,\"reference_position\":{\"latitude\":447753167,\"longitude\":-6518623,\"position_confidence_ellipse\":{\"semi_major\":10,\"semi_minor\":50,\"semi_major_orientation\":1},\"altitude\":{\"value\":14750,\"confidence\":1}}},\"high_frequency_container\":{\"basic_vehicle_container_high_frequency\":{\"heading\":{\"value\":1800,\"confidence\":2},\"speed\":{\"value\":0,\"confidence\":3},\"drive_direction\":0,\"vehicle_length\":{\"value\":40,\"confidence\":0},\"vehicle_width\":20,\"longitudinal_acceleration\":{\"value\":10,\"confidence\":2},\"curvature\":{\"value\":11,\"confidence\":4},\"curvature_calculation_mode\":0,\"yaw_rate\":{\"value\":562,\"confidence\":2}}}}}"
 ```
 
-NB: you can alse use the deprecated version 1.1.3 of a CAM message:
+NB: you can also use the deprecated version 1.1.3 of a CAM message:
 
 ```shell
 docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.org -p 8886 -t default/outQueue/v2x/cam/com_car_555/0/3/1/3/3/3/1/1/1/2/0/2/1/0/0/1/2/1/2/1/2/1 --tls-version tlsv1.2 --capath /etc/ssl/certs/ -m "{\"type\":\"cam\",\"origin\":\"self\",\"version\":\"1.1.3\",\"source_uuid\":\"com_car_555\",\"timestamp\":1742227617044,\"message\":{\"protocol_version\":1,\"station_id\":555,\"generation_delta_time\":64291,\"basic_container\":{\"station_type\":5,\"reference_position\":{\"latitude\":447753167,\"longitude\":-6518623,\"altitude\":14750},\"confidence\":{\"position_confidence_ellipse\":{\"semi_major_confidence\":10,\"semi_minor_confidence\":50,\"semi_major_orientation\":1},\"altitude\":1}},\"high_frequency_container\":{\"heading\":3601,\"speed\":0,\"longitudinal_acceleration\":161,\"drive_direction\":0,\"vehicle_length\":40,\"vehicle_width\":20,\"confidence\":{\"heading\":2,\"speed\":3,\"vehicle_length\":0}}}}"
@@ -206,19 +207,33 @@ This example subscribes to messages and sends it to an exporter.
 cargo run --example collector
 ```
 
-Logs are redirected to output:
+Logs are redirected to output. By default, no exporter is used:
 
 ```
-INFO [libits::client::configuration] Logger ready on stdout
-Transport: standard MQTT; TLS enabled
-INFO [libits::transport::mqtt::mqtt_router] Registered route for topic: #
-INFO [collector] Exporter stdout activated
-INFO [collector] Exporter file activated on /data/collector with switch each 10000 lines
+INFO [libits::client::logger] Logger ready on stdout
+INFO [libits::transport::mqtt] Transport: standard MQTT; TLS enabled
+INFO [collector] Receiver on ["#"]
+INFO [collector] Exporter stdout not configured: Could not found field 'stdout'
+INFO [collector] Exporter file not configured: Could not found field 'file'
+INFO [collector] Exporter mqtt not configured: Could not found field 'mqtt'
+INFO [collector] Exporter stdout deactivated
+INFO [collector] Exporter file deactivated
 INFO [collector] Exporter mqtt deactivated
+INFO [libits::transport::mqtt::mqtt_router] Registered route for topic: #
 ...
 ```
 
-The stdout export prints it to the console, with the logs:
+If you want to use an exporter, you can configure it in the configuration file.
+
+You can activate a `stdout` exporter to write the messages to the console:
+
+```config
+[exporter]
+# optional, true to export the received messages to the console, default to false
+stdout = true
+```
+
+The `stdout` exporter prints it to the console, with the logs:
 
 ```
 ...
@@ -233,7 +248,18 @@ value
 ...
 ```
 
-The file export saves it to a file, rotating and compressing each 10000 lines:
+You can activate a `file` exporter to write the messages to a file:
+
+```config
+# optional, true to export the received messages to files, default to false
+file = true
+# optional, directory where to store the files, default to '/data/collector'
+#file_directory = "/data/collector"
+# optional, number of lines stored before the file is rotated, default to 10000
+#file_nb_line = 10000
+```
+
+The `file` exporter saves it to a file, rotating and compressing each 10000 lines:
 
 ```shell
 cat /data/collector/*.log | wc -l && ls -lh /data/collector/
@@ -247,6 +273,128 @@ total 1,3M
 -rw-rw-r-- 1 user group 241K abr.  11 10:41 collector_20250411_104140_217.tar.gz
 -rw-rw-r-- 1 user group 204K abr.  11 10:41 collector_20250411_104144_181.tar.gz
 -rw-rw-r-- 1 user group 452K abr.  11 10:41 collector_20250411_104148_210.log
+```
+
+You can activate a `mqtt` exporter to write the messages to a(nother) broker:
+
+```config
+# optional, true to export the received messages to a mqtt broker, default to false
+mqtt = true
+# broker host to export to
+host = test.mosquitto.org
+# broker port is the port to export to
+port = 1883
+# true to use the TLS protocol
+use_tls = false
+# true to use the MQTT WebSocket protocol
+use_websocket = false
+# client id to provide at the connection
+client_id = com_app_its-exporter-1
+# optional, connection timeout
+#connection_timeout = 60
+# optional, ACL username
+#username = username
+# optional, ACL password
+#password = password
+# optional, list of topic level to update with its new value. e.g. "1=default","2=exporter"
+topic_level_update_list = "1=collector"
+```
+
+The `mqtt` exporter copies the messages to `test.mosquitto.org`
+on the port `1883` without TLS neither webSocket,
+using the client id `com_app_its-exporter-1`
+and updating topic level 1 with the new value `collector`
+(to not loop here, we're using the same broker to receive and publish):
+
+```shell
+docker container run -it --rm eclipse-mosquitto mosquitto_sub -h test.mosquitto.org -p 1883 -t "collector/#" -v
+```
+
+```
+...
+collector/homey/shelly-powder-room-dimmer/measure-temperature "34.5"
+collector/saccal/em/serial "failed to read modbus !!!"
+collector/saccal/em/serial "Retrying 1 ..."
+collector/GarageTemperatures/fridgeHumidity "26.5"
+collector/GarageTemperatures/mqttTemperatureRec "4267"
+collector/GarageTemperatures/garageTemperature "55.9"
+collector/GarageTemperatures/garageHumidity "51.3"
+collector "23.8"
+...
+```
+
+You can filter the reception of messages by topics:
+
+```config
+[receiver]
+# optional, list of topic (with a comma ',' separator) to subscribe to, default to "#"
+topic_list = "test/topic1","test/topic2"
+# optional, topic level number to put together into the router
+#route_level = 1
+
+[exporter]
+# optional, true to export the received messages to the console, default to false
+stdout = true
+```
+
+The `stdout` exporter prints only the messages from the `test/topic1` and `test/topic2` topics:
+
+```shell
+docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.org -p 8886 -t test/topic1 --capath /etc/ssl/certs/ -m "message of the topic 1"
+docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.org -p 8886 -t test/topic2 --capath /etc/ssl/certs/ -m "message of the topic 2"
+```
+
+```
+INFO [libits::client::logger] Logger ready on stdout
+INFO [libits::transport::mqtt] Transport: standard MQTT; TLS enabled
+INFO [collector] Receiver on ["test/topic1", "test/topic2"]
+INFO [collector] Exporter file not configured: Could not found field 'file'
+INFO [collector] Exporter mqtt not configured: Could not found field 'mqtt'
+INFO [collector] Exporter stdout activated
+INFO [collector] Exporter file deactivated
+INFO [collector] Exporter mqtt deactivated
+INFO [libits::transport::mqtt::mqtt_router] Registered route for topic: test/topic1
+INFO [libits::transport::mqtt::mqtt_router] Registered route for topic: test/topic2
+message of the topic 1
+message of the topic 2
+```
+
+You can filter the reception of messages by topics including wld cards (`+` and/or `#`)
+and indicate the topic level to put together into the router:
+
+```config
+[receiver]
+# optional, list of topic (with a comma ',' separator) to subscribe to, default to "#"
+topic_list = "test/topic3/#","test/topic4/+/data"
+# optional, topic level number to put together into the router
+route_level = 2
+
+[exporter]
+# optional, true to export the received messages to the console, default to false
+stdout = true
+```
+
+The `stdout` exporter prints only the messages from the `test/topic3/#` and `test/topic4/+/data` topics
+and groups all the messages on two routes of level 2, so `test/topic3` or `test/topic4`:
+
+```shell
+docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.org -p 8886 -t test/topic3/subinformation --capath /etc/ssl/certs/ -m "message of the topic 3"
+docker container run -it --rm eclipse-mosquitto mosquitto_pub -h test.mosquitto.org -p 8886 -t test/topic4/subinformation/data --capath /etc/ssl/certs/ -m "message of the topic 4"
+```
+
+```
+INFO [libits::client::logger] Logger ready on stdout
+INFO [libits::transport::mqtt] Transport: standard MQTT; TLS enabled
+INFO [collector] Receiver on ["test/topic3/#", "test/topic4/+/data"] with the route level 2
+INFO [collector] Exporter file not configured: Could not found field 'file'
+INFO [collector] Exporter mqtt not configured: Could not found field 'mqtt'
+INFO [collector] Exporter stdout activated
+INFO [collector] Exporter file deactivated
+INFO [collector] Exporter mqtt deactivated
+INFO [libits::transport::mqtt::mqtt_router] Registered route for topic: test/topic3
+INFO [libits::transport::mqtt::mqtt_router] Registered route for topic: test/topic4
+message of the topic 3
+message of the topic 4
 ```
 
 If the `telemetry` features is enabled both message reception and publish are traced;
