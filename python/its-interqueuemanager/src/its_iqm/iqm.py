@@ -8,6 +8,7 @@ import configparser
 import iot3.core.mqtt
 import iot3.core.otel
 import logging
+import random
 import time
 from . import authority
 from . import filters
@@ -21,6 +22,15 @@ class IQM:
         logging.info("create")
         self.cfg = cfg
         self.instance_id = self.cfg["general"]["instance-id"]
+
+        if "multi-instances" in self.cfg["general"]:
+            random_id = random.randbytes(16).hex()
+            logging.info(f"Starting multi-instances IQM, my token is {random_id}")
+            self.share_prefix = "$share/" + self.instance_id + "/"
+            self.cfg["local"]["client_id"] += "_" + random_id
+            self.cfg["neighbours"]["client_id"] += "_" + random_id
+        else:
+            self.share_prefix = ""
 
         prefix = self.cfg["general"]["prefix"]
         suffix = self.cfg["general"]["suffix"]
@@ -98,7 +108,11 @@ class IQM:
             msg_cb_data=qm_data,
             span_ctxmgr_cb=self.span_cb,
         )
-        self.local_qm.subscribe(topics=[inqueue + "/#"])
+        # Note: for a shared subscription, the special $share prefix and
+        # the subscription name (and the '/') are not part of the topic
+        # when messages are received.
+        logging.info(f"subscribing to {self.share_prefix + inqueue + '/#'}")
+        self.local_qm.subscribe(topics=[self.share_prefix + inqueue + "/#"])
 
         # The central authority will call our update_cb(), for which we
         # will need to have a valid local_qm to pass to the neighbours
