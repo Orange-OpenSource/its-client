@@ -111,16 +111,12 @@ in the python venv._
     ```sh
     (docker)🐍 ./python/iot3/tests/test-iot3-core
     (docker)🐍 ./python/iot3/tests/test-iot3-core-all
-    (docker)🐍 ./python/iot3/tests/test-iot3-core-bootstrap
     (docker)🐍 ./python/iot3/tests/test-iot3-core-mqtt
     (docker)🐍 ./python/iot3/tests/test-iot3-core-otel
     (docker)🐍 ./python/iot3/tests/test-iot3-mobility
-    (docker)🐍 ./python/iot3/tests/test-iot3-mobility-bootstrap
     (docker)🐍 ./python/iot3/tests/test-iot3-mobility-gnss
     (docker)🐍 ./python/iot3/tests/test-iot3-mobility-message
     ```
-   _**Note:**_ the bootstrap tests require a bootstrap server;
-   skip them if you do not have one.
 5. ...
 
 Expected results
