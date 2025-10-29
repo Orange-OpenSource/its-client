@@ -240,7 +240,7 @@ class ETSI(abc.ABC):
 class Message(abc.ABC):
     msg_type = ...
 
-    class StationType(enum.IntEnum):
+    class TrafficParticipantType(enum.IntEnum):
         # We need those values to *exactly* match those defined in the spec
         unknown = 0
         pedestrian = 1
@@ -254,7 +254,12 @@ class Message(abc.ABC):
         trailer = 9
         specialVehicles = 10
         tram = 11
+        lightVruVehicle = 12
+        animal = 13
         roadSideUnit = 15
+
+    # Legacy
+    StationType = TrafficParticipantType
 
     @abc.abstractmethod
     def __init__(self, *args, **kwargs):
