@@ -42,30 +42,33 @@ public class RoadSensorManager {
         if(ioT3RoadSensorCallback != null) {
             try {
                 CPM cpm = CPM.jsonParser(new JSONObject(message));
-                ioT3RoadSensorCallback.cpmArrived(cpm);
-
-                //associate the received CPM to a RoadSensor object
-                String uuid = cpm.getSourceUuid() + "_" + cpm.getStationId();
-                LatLng position = new LatLng(
-                        cpm.getManagementContainer().getReferencePosition().getLatitudeDegree(),
-                        cpm.getManagementContainer().getReferencePosition().getLongitudeDegree());
-                if(ROAD_SENSOR_MAP.containsKey(uuid)) {
-                    synchronized (ROAD_SENSOR_MAP) {
-                        RoadSensor roadSensor = ROAD_SENSOR_MAP.get(uuid);
-                        if(roadSensor != null) {
-                            roadSensor.updateTimestamp();
-                            roadSensor.setCpm(cpm);
-                            if(cpm.getPerceivedObjectContainer() != null)
-                                roadSensor.updateSensorObjects(cpm.getPerceivedObjectContainer().getPerceivedObjects());
-                            ioT3RoadSensorCallback.roadSensorUpdate(roadSensor);
-                        }
-                    }
+                if(cpm == null) {
+                    LOGGER.log(Level.WARNING, TAG, "CPM parsing returned null");
                 } else {
-                    RoadSensor roadSensor = new RoadSensor(uuid, position, cpm, ioT3RoadSensorCallback);
-                    if(cpm.getPerceivedObjectContainer() != null)
-                        roadSensor.updateSensorObjects(cpm.getPerceivedObjectContainer().getPerceivedObjects());
-                    addRoadSensor(uuid, roadSensor);
-                    ioT3RoadSensorCallback.newRoadSensor(roadSensor);
+                    ioT3RoadSensorCallback.cpmArrived(cpm);
+                    //associate the received CPM to a RoadSensor object
+                    String uuid = cpm.getSourceUuid() + "_" + cpm.getStationId();
+                    LatLng position = new LatLng(
+                            cpm.getManagementContainer().getReferencePosition().getLatitudeDegree(),
+                            cpm.getManagementContainer().getReferencePosition().getLongitudeDegree());
+                    if(ROAD_SENSOR_MAP.containsKey(uuid)) {
+                        synchronized (ROAD_SENSOR_MAP) {
+                            RoadSensor roadSensor = ROAD_SENSOR_MAP.get(uuid);
+                            if(roadSensor != null) {
+                                roadSensor.updateTimestamp();
+                                roadSensor.setCpm(cpm);
+                                if(cpm.getPerceivedObjectContainer() != null)
+                                    roadSensor.updateSensorObjects(cpm.getPerceivedObjectContainer().getPerceivedObjects());
+                                ioT3RoadSensorCallback.roadSensorUpdate(roadSensor);
+                            }
+                        }
+                    } else {
+                        RoadSensor roadSensor = new RoadSensor(uuid, position, cpm, ioT3RoadSensorCallback);
+                        if(cpm.getPerceivedObjectContainer() != null)
+                            roadSensor.updateSensorObjects(cpm.getPerceivedObjectContainer().getPerceivedObjects());
+                        addRoadSensor(uuid, roadSensor);
+                        ioT3RoadSensorCallback.newRoadSensor(roadSensor);
+                    }
                 }
             } catch (JSONException e) {
                 LOGGER.log(Level.WARNING, TAG, "CPM parsing error: " + e);
