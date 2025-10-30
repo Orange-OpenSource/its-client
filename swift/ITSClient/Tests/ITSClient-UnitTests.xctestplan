@@ -34,6 +34,7 @@
       }
     },
     {
+      "parallelizable" : false,
       "skippedTests" : {
         "suites" : [
           {
