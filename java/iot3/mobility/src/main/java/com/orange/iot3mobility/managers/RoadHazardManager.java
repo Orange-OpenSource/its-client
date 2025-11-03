@@ -43,7 +43,9 @@ public class RoadHazardManager {
         if(ioT3RoadHazardCallback != null) {
             try {
                 DENM denm = DENM.jsonParser(new JSONObject(message));
-                if(denm != null) {
+                if(denm == null) {
+                    LOGGER.log(Level.WARNING, TAG, "DENM parsing returned null");
+                } else {
                     ioT3RoadHazardCallback.denmArrived(denm);
                     //associate the received DENM to a RoadHazard object
                     String uuid = denm.getManagementContainer().getActionId().getOriginatingStationId()

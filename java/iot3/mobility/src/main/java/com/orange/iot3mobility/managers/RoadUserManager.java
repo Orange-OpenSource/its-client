@@ -43,33 +43,36 @@ public class RoadUserManager {
         if(ioT3RoadUserCallback != null) {
             try {
                 CAM cam = CAM.jsonParser(new JSONObject(message));
-                ioT3RoadUserCallback.camArrived(cam);
-
-                //associate the received CAM to a RoadUser object
-                String uuid = cam.getSourceUuid() + "_" + cam.getStationId();
-                StationType stationType = StationType.fromId(cam.getBasicContainer().getStationType());
-                LatLng position = new LatLng(
-                        cam.getBasicContainer().getPosition().getLatitudeDegree(),
-                        cam.getBasicContainer().getPosition().getLongitudeDegree());
-                float speed = cam.getHighFrequencyContainer().getSpeedMs();
-                float heading = cam.getHighFrequencyContainer().getHeadingDegree();
-                if(ROAD_USER_MAP.containsKey(uuid)) {
-                    synchronized (ROAD_USER_MAP) {
-                        RoadUser roadUser = ROAD_USER_MAP.get(uuid);
-                        if(roadUser != null) {
-                            roadUser.updateTimestamp();
-                            roadUser.setStationType(stationType);
-                            roadUser.setPosition(position);
-                            roadUser.setSpeed(speed);
-                            roadUser.setHeading(heading);
-                            roadUser.setCam(cam);
-                            ioT3RoadUserCallback.roadUserUpdate(roadUser);
-                        }
-                    }
+                if(cam == null) {
+                    LOGGER.log(Level.WARNING, TAG, "CAM parsing returned null");
                 } else {
-                    RoadUser roadUser = new RoadUser(uuid, stationType, position, speed, heading, cam);
-                    addRoadUser(uuid, roadUser);
-                    ioT3RoadUserCallback.newRoadUser(roadUser);
+                    ioT3RoadUserCallback.camArrived(cam);
+                    //associate the received CAM to a RoadUser object
+                    String uuid = cam.getSourceUuid() + "_" + cam.getStationId();
+                    StationType stationType = StationType.fromId(cam.getBasicContainer().getStationType());
+                    LatLng position = new LatLng(
+                            cam.getBasicContainer().getPosition().getLatitudeDegree(),
+                            cam.getBasicContainer().getPosition().getLongitudeDegree());
+                    float speed = cam.getHighFrequencyContainer().getSpeedMs();
+                    float heading = cam.getHighFrequencyContainer().getHeadingDegree();
+                    if(ROAD_USER_MAP.containsKey(uuid)) {
+                        synchronized (ROAD_USER_MAP) {
+                            RoadUser roadUser = ROAD_USER_MAP.get(uuid);
+                            if(roadUser != null) {
+                                roadUser.updateTimestamp();
+                                roadUser.setStationType(stationType);
+                                roadUser.setPosition(position);
+                                roadUser.setSpeed(speed);
+                                roadUser.setHeading(heading);
+                                roadUser.setCam(cam);
+                                ioT3RoadUserCallback.roadUserUpdate(roadUser);
+                            }
+                        }
+                    } else {
+                        RoadUser roadUser = new RoadUser(uuid, stationType, position, speed, heading, cam);
+                        addRoadUser(uuid, roadUser);
+                        ioT3RoadUserCallback.newRoadUser(roadUser);
+                    }
                 }
             } catch (JSONException e) {
                 LOGGER.log(Level.WARNING, TAG, "CAM parsing error: " + e);
