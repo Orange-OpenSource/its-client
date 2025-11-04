@@ -222,15 +222,16 @@ class Otel(threading.Thread):
 
     def _run(self):
         while True:
+            if self.batch_period:
+                # This does not provide a perfect next-expiration delay for
+                # a precise period, but over the long run, that will make
+                # for slightly jittered expiration delays, all more or less
+                # close to the ideal expiration delay. Which is good enough.
+                timeout = self.batch_period - (time.time() % self.batch_period)
+            else:
+                timeout = None
+
             try:
-                if self.batch_period:
-                    # This does not provide a perfect next-expiration delay for
-                    # a precise period, but over the long run, that will make
-                    # for slightly jittered expiration delays, all centered
-                    # around the requested period. Which is good enough.
-                    timeout = self.batch_period - (time.time() % self.batch_period)
-                else:
-                    timeout = None
                 span = self.queue.get(timeout=timeout)
             except queue.Empty:
                 # queue.Empty is only raised when we timed out waiting on the
@@ -238,6 +239,7 @@ class Otel(threading.Thread):
                 # to push the spans.
                 self._send()
                 continue
+
             if type(span) is Otel._Quit:
                 return
             self.spans.append(span)
