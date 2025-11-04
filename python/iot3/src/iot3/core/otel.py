@@ -251,6 +251,17 @@ class Otel(threading.Thread):
             if type(span) is Otel._Quit:
                 return
             self.spans.append(span)
+            # Opportunistically try to drain the queue, but do not stay stuck
+            # if it fills faster than we can empty it...
+            try:
+                for i in range(2 * self.max_backlog):
+                    span = self.queue.get(block=False)
+                    if type(span) is Otel._Quit:
+                        return
+                    self.spans.append(span)
+            except queue.Empty:
+                pass
+
             if len(self.spans) >= self.max_backlog:
                 self._send()
 
