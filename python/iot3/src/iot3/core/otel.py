@@ -214,6 +214,8 @@ class Otel(threading.Thread):
         self.shutdown = True
         self.queue.put(Otel._Quit())
         self.join()
+        # Last chance to send any pending span
+        self._send()
 
     class _Quit:
         pass
@@ -247,8 +249,7 @@ class Otel(threading.Thread):
                 self._send()
                 continue
             if type(span) is Otel._Quit:
-                self._send()
-                break
+                return
             self.spans.append(span)
             if len(self.spans) >= self.max_backlog:
                 self._send()
