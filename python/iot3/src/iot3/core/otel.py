@@ -129,8 +129,10 @@ class Otel(threading.Thread):
 
         self.spans = list()
         self.shutdown = False
-        self.queue = queue.SimpleQueue()
         self.tls = threading.local()
+        # Create a queue twice the required size, so it can still be filled a
+        # bit while we are trying to push the messages to the OTLP collector.
+        self.queue = queue.Queue(maxsize=2 * self.max_backlog)
 
         super().__init__(
             name="otel-client",
@@ -145,6 +147,9 @@ class Otel(threading.Thread):
         as passed to __init__().
 
         :param span: The span to export.
+
+        Note: this function blocks until there is room to queue the span,
+        which can take an unbounded time.
         """
         # Note: if queued after stop(), span will ultimately be ignored
         self.queue.put(span)
