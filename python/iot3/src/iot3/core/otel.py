@@ -221,7 +221,6 @@ class Otel(threading.Thread):
         pass
 
     def _run(self):
-        prev_timeout = self.batch_period
         while True:
             try:
                 if self.batch_period:
@@ -230,22 +229,13 @@ class Otel(threading.Thread):
                     # for slightly jittered expiration delays, all centered
                     # around the requested period. Which is good enough.
                     timeout = self.batch_period - (time.time() % self.batch_period)
-                    # Did we miss a period? Then don't wait!
-                    # Note that there is still a corner case, where we did miss
-                    # a period *and* we got resumed after more than a multiple
-                    # of the period has elapsed. This is considered so
-                    # improbable that we simply ignore that (for now).
-                    block = not (timeout > prev_timeout)
                 else:
                     timeout = None
-                    block = True
-                span = self.queue.get(block=block, timeout=timeout)
-                prev_timeout = timeout or self.batch_period
+                span = self.queue.get(timeout=timeout)
             except queue.Empty:
-                # queue.Empty is only raised when we do have a batch_period
-                # in which case it means we timed out, and we're going to start
-                # a new period.
-                prev_timeout = self.batch_period
+                # queue.Empty is only raised when we timed out waiting on the
+                # queue, which means we have a batch_preiod, and so it's time
+                # to push the spans.
                 self._send()
                 continue
             if type(span) is Otel._Quit:
