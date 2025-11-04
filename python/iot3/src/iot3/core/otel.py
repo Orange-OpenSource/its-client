@@ -148,11 +148,15 @@ class Otel(threading.Thread):
 
         :param span: The span to export.
 
-        Note: this function blocks until there is room to queue the span,
-        which can take an unbounded time.
+        Note: when the queue is full, spans are dropped, so this function
+        is not blocking.
         """
         # Note: if queued after stop(), span will ultimately be ignored
-        self.queue.put(span)
+        try:
+            self.queue.put(span, block=False)
+        except queue.Full:
+            # When we can send events, we can trace that situation...
+            pass
 
     @contextlib.contextmanager
     def span(self, *args, **kwargs) -> "Span":
