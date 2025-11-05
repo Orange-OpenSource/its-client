@@ -99,7 +99,7 @@ in the python venv._
 2. Build the Python packages:
     ```sh
     (docker)🐍 $ for pkg in python/*/; do
-                    python -m build "${pkg}" || break
+                    python -m build -w "${pkg}" || break
                  done
     ```
 3. Install the Python packages:
