@@ -68,12 +68,12 @@ class Otel(threading.Thread):
         *,
         service_name: str,
         endpoint: str,
-        auth: Optional[Auth] = Auth.NONE,
+        auth: Auth = Auth.NONE,
         username: Optional[str] = None,
         password: Optional[str] = None,
         batch_period: Optional[float] = None,
         max_backlog: Optional[int] = None,
-        compression: Optional[Compression] = Compression.NONE,
+        compression: Compression = Compression.NONE,
     ):
         """
         Simple span exporter
