@@ -72,7 +72,7 @@ class Otel(threading.Thread):
         username: Optional[str] = None,
         password: Optional[str] = None,
         batch_period: Optional[float] = None,
-        max_backlog: Optional[int] = None,
+        max_backlog: int = 1023,
         compression: Compression = Compression.NONE,
     ):
         """
@@ -80,15 +80,15 @@ class Otel(threading.Thread):
 
         Exports spans to an OpenTelemetry collector, using JSON over HTTP.
 
-        Either or both of batch_period and max_backlog must be specified to
-        a non-zero value. When only batch_period is non-zero, then spans are
-        only sent periodically, every batch_period seconds. When only
-        max_backlog is non-zero, then spans are only sent when that many have
-        accumulated. When both are non-zero, then spans are sent periodically
-        and as soon as max_backlog spans have accumulated, whichever occurs
-        first. If max_backlog is provided, then this is also the maximum number
-        of spans that are kept if they can't be exported to the collector, for
-        a later export tentative.
+        Spans are not sent right away after being finalised (closed); instead,
+        when max_backlog spans have been accumulated, they are sent to the OTLP
+        collector as a batch; this is also the maximum number of spans that
+        are kept if they can't be exported to the collector, for a later export
+        tentative.
+
+        If batch_period is specified, spans that have been accumulated so far
+        are sent to the OTLP collector, even if there is not max_backlog spans
+        accumulated yet.
 
         Note: failure to call stop() before terminating, risk losing any
         pending spans not yet exported.
@@ -99,10 +99,11 @@ class Otel(threading.Thread):
         :param auth: Type of HTTP authentication to employ.
         :param username: Username to use for authentication to the collector.
         :param password: Password to use for authentication to the collector.
-        :param batch_period: Send spans every so often, in seconds.
+        :param batch_period: Send spans every so often, in seconds. There is no
+                             default, which means no periodic send (only backlog
+                             based).
         :param max_backlog: Send spans as soon as that many have accumulated.
-                            This is also the maximum number of spans that are
-                            kept if they can't be sent to the collector.
+                            The default is 1023.
         :param compression: Type of compression, if any, to use to compress
                             the payload; the default is no compression.
         """
@@ -122,17 +123,8 @@ class Otel(threading.Thread):
             else:
                 self.auth = requests.auth.HTTPDigestAuth(username, password)
 
-        if batch_period or max_backlog:
-            self.batch_period = batch_period
-            self.max_backlog = max_backlog
-        else:
-            raise ValueError(
-                (
-                    "either or both of batch_period and/or max_backlog"
-                    + " must be specified as a non-zero value"
-                )
-            )
-
+        self.batch_period = batch_period
+        self.max_backlog = max_backlog
         self.compression = compression
 
         self.spans = list()
@@ -249,7 +241,7 @@ class Otel(threading.Thread):
                 self._send()
                 break
             self.spans.append(span)
-            if self.max_backlog and len(self.spans) >= self.max_backlog:
+            if len(self.spans) >= self.max_backlog:
                 self._send()
 
     def _send(self):
@@ -312,8 +304,7 @@ class Otel(threading.Thread):
                 self.spans = list()
         finally:
             # In any case, only keep a limited backlog
-            if self.max_backlog:
-                self.spans = self.spans[-self.max_backlog :]
+            self.spans = self.spans[-self.max_backlog :]
 
 
 class Span:
