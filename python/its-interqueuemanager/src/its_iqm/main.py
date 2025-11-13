@@ -22,6 +22,9 @@ DEFAULTS = {
         "password": None,
     },
     "local": {
+        "host": None,
+        "port": None,
+        "socket-path": None,
         "username": None,
         "password": None,
         "client_id": "iqm",
