@@ -32,7 +32,8 @@
     },
     "message_format": {
       "enum": [
-        "json/raw"
+        "json/raw",
+        "asn1/uper"
       ]
     },
     "source_uuid": {
@@ -756,6 +757,26 @@
                   }
                 }
               }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "version",
+            "payload"
+          ],
+          "properties": {
+            "version": {
+              "description": "ASN.1 PDU version",
+              "examples": [
+                "ETSI EN 302 637-2 v1.4.1"
+              ],
+              "type": "string"
+            },
+            "payload": {
+              "description": "Base64-encoded ASN.1 binary payload",
+              "type": "string"
             }
           }
         }
