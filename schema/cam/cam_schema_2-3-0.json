@@ -30,6 +30,11 @@
       "description": "Type of the message carried in message property.",
       "const": "cam"
     },
+    "message_format": {
+      "enum": [
+        "json/raw"
+      ]
+    },
     "source_uuid": {
       "type": "string",
       "description": "Unique id all over the world for the message sender.",
