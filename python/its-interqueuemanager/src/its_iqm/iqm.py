@@ -4,7 +4,6 @@
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
 from __future__ import annotations
-import configparser
 import iot3.core.mqtt
 import iot3.core.otel
 import logging
@@ -17,7 +16,7 @@ from . import filters
 class IQM:
     def __init__(
         self: IQM,
-        cfg: configparser.ConfigParser,
+        cfg: dict,
     ):
         logging.info("create")
         self.cfg = cfg
