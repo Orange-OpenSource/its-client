@@ -56,7 +56,7 @@
     "version": {
       "type": "string",
       "description": "JSON message format version.",
-      "const": "2.3.0-dev"
+      "const": "2.3.0"
     },
     "message": {
       "type": "object",
