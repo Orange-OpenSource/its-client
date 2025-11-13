@@ -753,6 +753,21 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "version",
+            "payload"
+          ],
+          "properties": {
+            "version": {
+              "type": "string"
+            },
+            "payload": {
+              "type": "string"
+            }
+          }
         }
       ]
     }
