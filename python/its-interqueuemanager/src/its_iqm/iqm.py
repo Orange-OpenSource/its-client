@@ -93,10 +93,10 @@ class IQM:
         logging.info("create local qm")
         conn = dict()
         try:
+            conn["socket_path"] = cfg["local"]["socket-path"]
+        except KeyError:
             conn["host"] = cfg["local"]["host"]
             conn["port"] = int(cfg["local"]["port"])
-        except TypeError:
-            conn["socket_path"] = cfg["local"]["socket-path"]
 
         qm_data = {
             "copy_qm": None,
