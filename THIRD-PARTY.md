@@ -4,9 +4,6 @@
 
 ### License Apache 2.0
 
-#### async-channel
-- [Source code](https://github.com/smol-rs/async-channel)
-
 #### chrono
 - [Source code](https://github.com/chronotope/chrono)
 - Copyright (c) 2014, Kang Seonghoon.
@@ -68,8 +65,6 @@
 
 ### License MIT
 
-#### async-channel
-- [Source code](https://github.com/smol-rs/async-channel)
 
 #### clap
 - [Source code](https://github.com/clap-rs/clap)
