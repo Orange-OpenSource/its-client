@@ -4,9 +4,6 @@
 
 ### License Apache 2.0
 
-#### async-channel
-- [Source code](https://github.com/smol-rs/async-channel)
-
 #### chrono
 - [Source code](https://github.com/chronotope/chrono)
 - Copyright (c) 2014, Kang Seonghoon.
@@ -44,6 +41,9 @@
 #### map_3d
 - [Source code](https://github.com/gberrante/map_3d)
 
+#### opentelemetry-rust
+- [Source code](https://github.com/open-telemetry/opentelemetry-rust/tree/main/opentelemetry)
+
 #### rumqtt
 - [Source code](https://github.com/bytebeamio/rumqtt)
 
@@ -68,8 +68,9 @@
 
 ### License MIT
 
-#### async-channel
-- [Source code](https://github.com/smol-rs/async-channel)
+#### base64
+- [Source code](https://github.com/marshallpierce/rust-base64)
+- Copyright (c) 2025 Alice Maz
 
 #### clap
 - [Source code](https://github.com/clap-rs/clap)
@@ -86,6 +87,10 @@
 #### enum_dispatch
 - [Source code](https://gitlab.com/antonok/enum_dispatch)
 - Copyright (c) 2019 Anton Lazarev
+
+#### flate2
+- [Source code](https://github.com/rust-lang/flate2-rs)
+- Copyright (c) 2014-2025 Alex Crichton
 
 #### flexi_logger
 - [Source code](https://github.com/emabee/flexi_logger)
@@ -105,6 +110,15 @@
 - [Source code](https://github.com/rust-lang/log)
 - Copyright (c) 2014-present The Rust Project Developers
 
+#### rand
+- [Source code](https://github.com/rust-random/rand)
+- Copyright 2018 Developers of the Rand project
+- Copyright (c) 2014 The Rust Project Developers
+
+#### reqwest
+- [Source code](https://github.com/seanmonstar/reqwest)
+- Copyright (c) 2016-2025 Sean McArthur
+
 #### rust-ini
 - [Source code](https://github.com/zonyitoo/rust-ini)
 - Copyright (c) 2014 Y. T. CHUNG
@@ -121,6 +135,14 @@
 
 #### serde_with
 - [Source code](https://github.com/jonasbb/serde_with)
+
+#### tar
+- [Source code](https://github.com/alexcrichton/tar-rs)
+- Copyright (c) The tar-rs Project Contributors
+
+#### tempfile
+- [Source code](https://github.com/Stebalien/tempfile)
+- Copyright (c) 2015 Steven Allen
 
 #### thiserror
 - [Source code](https://github.com/dtolnay/thiserror)
