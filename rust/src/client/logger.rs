@@ -14,7 +14,7 @@ use log::info;
 
 /// Creates a logger that outputs to stdout.
 ///
-/// This function initializes a logger using the `flexi_logger` crate, which logs messages to the standard output (stdout).
+/// This function initialises a logger using the `flexi_logger` crate, which logs messages to the standard output (stdout).
 /// Logger's log level is set based on the environment variable or defaults to "info".
 ///
 /// # Returns

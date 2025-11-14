@@ -12,7 +12,7 @@
 use ini::Properties;
 
 use crate::client::configuration::configuration_error::ConfigurationError;
-use crate::client::configuration::get_mandatory_from_section;
+use crate::client::configuration::get_mandatory_from_properties;
 
 pub(crate) const MOBILITY_SECTION: &str = "mobility";
 
@@ -35,22 +35,13 @@ impl TryFrom<&Properties> for MobilityConfiguration {
 
     fn try_from(properties: &Properties) -> Result<Self, Self::Error> {
         let s = MobilityConfiguration {
-            source_uuid: get_mandatory_from_section(
-                SOURCE_UUID_FIELD,
-                (MOBILITY_SECTION, properties),
-            )?,
-            station_id: get_mandatory_from_section(
-                STATION_ID_FIELD,
-                (MOBILITY_SECTION, properties),
-            )?,
-            use_responsibility: get_mandatory_from_section(
+            source_uuid: get_mandatory_from_properties(SOURCE_UUID_FIELD, properties)?,
+            station_id: get_mandatory_from_properties(STATION_ID_FIELD, properties)?,
+            use_responsibility: get_mandatory_from_properties(
                 USE_RESPONSIBILITY_FIELD,
-                (MOBILITY_SECTION, properties),
+                properties,
             )?,
-            thread_count: get_mandatory_from_section(
-                THREAD_COUNT_FIELD,
-                (MOBILITY_SECTION, properties),
-            )?,
+            thread_count: get_mandatory_from_properties(THREAD_COUNT_FIELD, properties)?,
         };
         Ok(s)
     }
