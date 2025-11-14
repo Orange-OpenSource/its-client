@@ -73,7 +73,9 @@ in the python venv._
             /bin/bash -il
 
         $ docker container exec -u 0:0 iot3 apt update
-        $ docker container exec -u 0:0 iot3 apt install -y git build-essential socat
+        $ docker container exec -u 0:0 iot3 apt install -y git build-essential curl socat
+        $ docker container exec -u 0:0 iot3 install -d -m 0755 /run/zoneinfo
+        $ docker container exec -u 0:0 iot3 curl -o /run/zoneinfo/leap-seconds.list 'https://data.iana.org/time-zones/data/leap-seconds.list' 
         $ docker container exec -d iot3 socat UNIX-LISTEN:/tmp/mqtt.socket,fork TCP4:localhost:1883
 
         $ docker container attach iot3
@@ -111,16 +113,12 @@ in the python venv._
     ```sh
     (docker)🐍 ./python/iot3/tests/test-iot3-core
     (docker)🐍 ./python/iot3/tests/test-iot3-core-all
-    (docker)🐍 ./python/iot3/tests/test-iot3-core-bootstrap
     (docker)🐍 ./python/iot3/tests/test-iot3-core-mqtt
     (docker)🐍 ./python/iot3/tests/test-iot3-core-otel
     (docker)🐍 ./python/iot3/tests/test-iot3-mobility
-    (docker)🐍 ./python/iot3/tests/test-iot3-mobility-bootstrap
     (docker)🐍 ./python/iot3/tests/test-iot3-mobility-gnss
     (docker)🐍 ./python/iot3/tests/test-iot3-mobility-message
     ```
-   _**Note:**_ the bootstrap tests require a bootstrap server;
-   skip them if you do not have one.
 5. ...
 
 Expected results
