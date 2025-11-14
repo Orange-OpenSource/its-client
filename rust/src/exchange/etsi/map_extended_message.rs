@@ -58,6 +58,7 @@ pub struct Lane {
     /// Unique identifier for the lane.
     pub id: u64,
     /// ID of the signal, corresponding to the [SPAT][1] signal ID.
+    ///
     /// [1]: crate::exchange::etsi::signal_phase_and_timing_extended_message
     pub signal_id: u64,
     /// True if the lane allows a left turn at its end.
