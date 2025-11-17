@@ -8,7 +8,7 @@ import its_quadkeys
 import json
 import time
 
-from typing import Any, Callable, Optional, Protocol, TypeAlias
+from typing import Any, Callable, Optional, TypeAlias
 
 from .. import core
 
