@@ -9,7 +9,6 @@ import enum
 import hashlib
 import its_quadkeys
 import json
-import math
 from typing import Optional
 from . import leapseconds
 
