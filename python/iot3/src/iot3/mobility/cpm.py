@@ -4,9 +4,6 @@
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
 import dataclasses
-import enum
-import hashlib
-import json
 import time
 
 from typing import Iterable, Optional
