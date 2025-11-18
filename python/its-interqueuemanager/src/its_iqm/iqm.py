@@ -98,6 +98,7 @@ class IQM:
             conn["host"] = cfg["local"]["host"]
             conn["port"] = int(cfg["local"]["port"])
             conn["tls"] = str2bool(cfg["local"].get("tls"))
+            conn["websocket_path"] = cfg["local"].get("websocket_path")
 
         qm_data = {
             "copy_qm": None,
