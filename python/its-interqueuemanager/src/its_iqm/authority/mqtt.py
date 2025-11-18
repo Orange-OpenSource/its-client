@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import logging
 import iot3.core.mqtt
+from its_iqm.helpers import str2bool
 
 
 class Authority:
@@ -29,7 +30,7 @@ class Authority:
             host=self.cfg["host"],
             port=int(self.cfg["port"]),
             websocket_path=self.cfg.get("websocket_path"),
-            tls=self.cfg.get("tls"),
+            tls=str2bool(self.cfg.get("tls")),
             username=self.cfg.get("username"),
             password=self.cfg.get("password"),
             msg_cb=self.msg_cb,
