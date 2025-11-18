@@ -11,6 +11,7 @@ import random
 import time
 from . import authority
 from . import filters
+from its_iqm.helpers import str2bool
 
 
 class IQM:
@@ -96,6 +97,7 @@ class IQM:
         except KeyError:
             conn["host"] = cfg["local"]["host"]
             conn["port"] = int(cfg["local"]["port"])
+            conn["tls"] = str2bool(cfg["local"].get("tls"))
 
         qm_data = {
             "copy_qm": None,
