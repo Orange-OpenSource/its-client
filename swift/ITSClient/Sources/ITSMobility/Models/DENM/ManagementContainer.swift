@@ -134,11 +134,13 @@ public struct ActionID: Codable, Sendable {
     /// Initializes an `ActionID`.
     /// - Parameters:
     ///   - originatingStationID: The identifier of an ITS station.
-    ///   - sequenceNumber: The sequence number is set each time a new DENM is created. It is used to differentiate
-    ///     from events detected by the same ITS-S.
-    public init(originatingStationID: UInt32, sequenceNumber: UInt16 = SequenceNumberGenerator.next()) {
+    ///   - sequenceGenerator: The sequence number generator.
+    public init(
+        originatingStationID: UInt32,
+        sequenceGenerator: SequenceNumberGeneratable.Type = SequenceNumberGenerator.self
+    ) async {
         self.originatingStationID = originatingStationID
-        self.sequenceNumber = sequenceNumber
+        self.sequenceNumber = await sequenceGenerator.next()
     }
 }
 

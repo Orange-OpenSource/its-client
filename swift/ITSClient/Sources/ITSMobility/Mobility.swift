@@ -187,7 +187,7 @@ public actor Mobility {
 
         // Build DENM
         let now = Date().timeIntervalSince1970
-        let actionID = ActionID(originatingStationID: mobilityConfiguration.stationID)
+        let actionID = await ActionID(originatingStationID: mobilityConfiguration.stationID)
         let position = Position(latitude: latitude, longitude: longitude, altitude: altitude)
         let managementContainer = ManagementContainer(actionID: actionID,
                                                       detectionTime: now,
