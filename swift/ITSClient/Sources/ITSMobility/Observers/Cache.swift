@@ -11,7 +11,7 @@
 
 import Foundation
 
-actor Cache<K: Hashable, V: Sendable> {
+actor Cache<K: Hashable & Sendable, V: Sendable> {
     struct Entry {
         let value: V
         let expirationDate: Date?

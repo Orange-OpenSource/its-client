@@ -22,7 +22,7 @@ struct RoadAlarmCoordinatorTests {
         await roadAlarmCoordinator.setObserver(observer)
 
         // When
-        let denm = buildDENM()
+        let denm = await buildDENM()
         let denmData = try JSONEncoder().encode(denm)
         await roadAlarmCoordinator.handleRoadAlarm(withPayload: denmData)
 
@@ -48,12 +48,12 @@ struct RoadAlarmCoordinatorTests {
         await roadAlarmCoordinator.setObserver(observer)
 
         // When
-        let denm = buildDENM()
+        let denm = await buildDENM()
         let denmData = try JSONEncoder().encode(denm)
         await roadAlarmCoordinator.handleRoadAlarm(withPayload: denmData)
         let updatedLatitude = 43.5657460
         let updatedLongitude = 43.5657460
-        let denmUpdate = buildDENM(latitude: updatedLatitude, longitude: updatedLongitude)
+        let denmUpdate = await buildDENM(latitude: updatedLatitude, longitude: updatedLongitude)
         let denmUpdateData = try JSONEncoder().encode(denmUpdate)
         await roadAlarmCoordinator.handleRoadAlarm(withPayload: denmUpdateData)
 
@@ -77,14 +77,14 @@ struct RoadAlarmCoordinatorTests {
         await roadAlarmCoordinator.setObserver(observer)
 
         // When
-        let denm = buildDENM()
+        let denm = await buildDENM()
         let denmData = try JSONEncoder().encode(denm)
         await roadAlarmCoordinator.handleRoadAlarm(withPayload: denmData)
         let updatedLatitude = 43.5657460
         let updatedLongitude = 43.5657460
-        let denmUpdate = buildDENM(latitude: updatedLatitude,
-                                   longitude: updatedLongitude,
-                                   termination: .isCancellation)
+        let denmUpdate = await buildDENM(latitude: updatedLatitude,
+                                         longitude: updatedLongitude,
+                                         termination: .isCancellation)
         let denmUpdateData = try JSONEncoder().encode(denmUpdate)
         await roadAlarmCoordinator.handleRoadAlarm(withPayload: denmUpdateData)
 
@@ -107,7 +107,7 @@ struct RoadAlarmCoordinatorTests {
 
         // When
         let expirationDelay: TimeInterval = 1.0
-        let denm = buildDENM(validationDuration: expirationDelay)
+        let denm = await buildDENM(validationDuration: expirationDelay)
         let denmData = try JSONEncoder().encode(denm)
         await roadAlarmCoordinator.handleRoadAlarm(withPayload: denmData)
 
@@ -130,9 +130,10 @@ struct RoadAlarmCoordinatorTests {
         longitude: Double = 1.4681494,
         validationDuration: TimeInterval? = nil,
         termination: Termination? = nil
-    ) -> DENM {
+    ) async -> DENM {
         let now = Date().timeIntervalSince1970
-        let actionID = ActionID(originatingStationID: 10000, sequenceNumber: 1)
+        let actionID = await ActionID(originatingStationID: 10000,
+                                      sequenceGenerator: StaticSequenceNumberGenerator.self)
         let position = Position(latitude: latitude, longitude: longitude, altitude: 120)
         let managementContainer = ManagementContainer(actionID: actionID,
                                                       detectionTime: now,

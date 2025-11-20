@@ -54,10 +54,10 @@ struct DENMTests {
     }
 
     @Test("DENM JSON should be encoded correctly")
-    func denm_json_should_be_encoded_correctly() throws {
+    func denm_json_should_be_encoded_correctly() async throws {
         // Given
         let date = try #require(dateComponents.date)
-        let actionID = ActionID(originatingStationID: originatingStationID)
+        let actionID = await ActionID(originatingStationID: originatingStationID)
         let position = Position(latitude: latitude, longitude: longitude, altitude: altitude)
         let managementContainer = ManagementContainer(actionID: actionID,
                                                       detectionTime: date.timeIntervalSince1970,
