@@ -26,10 +26,13 @@ import org.eclipse.leshan.client.resource.BaseInstanceEnablerFactory;
 import org.eclipse.leshan.client.resource.ObjectsInitializer;
 import org.eclipse.leshan.client.resource.listener.ObjectsListenerAdapter;
 import org.eclipse.leshan.core.LwM2mId;
+import org.eclipse.leshan.core.model.*;
 import org.eclipse.leshan.core.node.LwM2mPath;
 import org.eclipse.leshan.core.util.Hex;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class Lwm2mClient {
@@ -108,7 +111,36 @@ public class Lwm2mClient {
             Lwm2mDevice lwm2mDevice,
             Lwm2mInstance[] lwm2mInstances
     ) {
-        ObjectsInitializer initializer = new ObjectsInitializer();
+        // create our custom IoT3 objects
+        ObjectModel obj36050 = new ObjectModel(
+                36050, "IoT3 Identity", "urn:oma:lwm2m:x:36050", "1.0",
+                false,  // multiple
+                false,  // mandatory
+                new ResourceModel(0, "IoT3 ID", ResourceModel.Operations.R, false, true, ResourceModel.Type.STRING, null, null, null),
+                new ResourceModel(1, "PSK Identity", ResourceModel.Operations.R, false, true, ResourceModel.Type.STRING, null, null, null),
+                new ResourceModel(2, "PSK Secret", ResourceModel.Operations.R, false, true, ResourceModel.Type.OPAQUE, null, null, null)
+        );
+
+        ObjectModel obj36051 = new ObjectModel(
+                36051, "IoT3 Service Endpoint", "urn:oma:lwm2m:x:36051", "1.0",
+                true,   // multiple
+                false,  // mandatory
+                new ResourceModel(0, "Service Name", ResourceModel.Operations.R, false, true, ResourceModel.Type.STRING, null, null, null),
+                new ResourceModel(1, "Payload", ResourceModel.Operations.R, false, false, ResourceModel.Type.STRING, null, null, null),
+                new ResourceModel(2, "Service URI", ResourceModel.Operations.R, false, true, ResourceModel.Type.STRING, null, null, null),
+                new ResourceModel(3, "Topic Root", ResourceModel.Operations.R, false, false, ResourceModel.Type.STRING, null, null, null),
+                new ResourceModel(4, "Server Public Key", ResourceModel.Operations.R, false, false, ResourceModel.Type.OPAQUE, null, null, null)
+        );
+
+        // load standard models and add our custom IoT3 models
+        List<ObjectModel> standardModels = ObjectLoader.loadDefault();
+        List<ObjectModel> allModels = new ArrayList<>(standardModels);
+        allModels.add(obj36050);
+        allModels.add(obj36051);
+
+        LwM2mModel model = new StaticModel(allModels);
+
+        ObjectsInitializer initializer = new ObjectsInitializer(model);
 
         Security security = getSecurity(lwm2mConfig);
         if (security != null) {
