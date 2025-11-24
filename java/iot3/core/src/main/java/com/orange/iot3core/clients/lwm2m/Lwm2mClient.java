@@ -14,25 +14,38 @@ import com.orange.iot3core.clients.lwm2m.model.Lwm2mConfig;
 import com.orange.iot3core.clients.lwm2m.model.Lwm2mDevice;
 import com.orange.iot3core.clients.lwm2m.model.Lwm2mInstance;
 import io.reactivex.annotations.Nullable;
+import org.eclipse.leshan.client.EndpointsManager;
 import org.eclipse.leshan.client.LeshanClient;
 import org.eclipse.leshan.client.LeshanClientBuilder;
+import org.eclipse.leshan.client.bootstrap.BootstrapHandler;
 import org.eclipse.leshan.client.californium.endpoint.CaliforniumClientEndpointsProvider;
 import org.eclipse.leshan.client.californium.endpoint.coap.CoapClientProtocolProvider;
 import org.eclipse.leshan.client.californium.endpoint.coaps.CoapsClientProtocolProvider;
 import org.eclipse.leshan.client.engine.DefaultRegistrationEngineFactory;
+import org.eclipse.leshan.client.engine.RegistrationEngine;
 import org.eclipse.leshan.client.object.Security;
 import org.eclipse.leshan.client.object.Server;
+import org.eclipse.leshan.client.observer.LwM2mClientObserver;
+import org.eclipse.leshan.client.request.UplinkRequestSender;
 import org.eclipse.leshan.client.resource.BaseInstanceEnablerFactory;
+import org.eclipse.leshan.client.resource.LwM2mObjectTree;
 import org.eclipse.leshan.client.resource.ObjectsInitializer;
 import org.eclipse.leshan.client.resource.listener.ObjectsListenerAdapter;
+import org.eclipse.leshan.client.servers.LwM2mServer;
+import org.eclipse.leshan.client.util.LinkFormatHelper;
 import org.eclipse.leshan.core.LwM2mId;
+import org.eclipse.leshan.core.ResponseCode;
 import org.eclipse.leshan.core.model.*;
 import org.eclipse.leshan.core.node.LwM2mPath;
+import org.eclipse.leshan.core.request.*;
 import org.eclipse.leshan.core.util.Hex;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
 
 public class Lwm2mClient {
@@ -45,6 +58,7 @@ public class Lwm2mClient {
             Lwm2mConfig lwm2mConfig,
             Lwm2mDevice lwm2mDevice,
             Lwm2mInstance[] lwm2mInstances,
+            Lwm2mCallback lwm2mCallback,
             boolean autoConnect
     ) {
         this.lwm2mConfig = lwm2mConfig;
@@ -66,7 +80,116 @@ public class Lwm2mClient {
                 );
         builder.setEndpointsProviders(endpointsBuilder.build());
 
-        DefaultRegistrationEngineFactory engineFactory = new DefaultRegistrationEngineFactory();
+        DefaultRegistrationEngineFactory engineFactory = new DefaultRegistrationEngineFactory() {
+            @Override
+            public RegistrationEngine createRegistratioEngine(
+                    String endpointName,
+                    LwM2mObjectTree objectTree,
+                    EndpointsManager endpointsManager,
+                    UplinkRequestSender uplinkRequestSender,
+                    BootstrapHandler bootstrapHandler,
+                    LwM2mClientObserver clientObserver,
+                    Map<String, String> additionalAttributes,
+                    Map<String, String> additionalSecureAttributes,
+                    Set<ContentFormat> supportedContentFormats,
+                    ScheduledExecutorService scheduler,
+                    LinkFormatHelper linkFormatHelper) {
+
+                // Wrap the observer to intercept bootstrap/registration events
+                LwM2mClientObserver wrappedObserver = new LwM2mClientObserver() {
+
+                    @Override
+                    public void onBootstrapStarted(LwM2mServer lwM2mServer, BootstrapRequest bootstrapRequest) {
+
+                    }
+
+                    @Override
+                    public void onBootstrapSuccess(LwM2mServer lwM2mServer, BootstrapRequest bootstrapRequest) {
+                        if(lwm2mCallback != null) lwm2mCallback.onBootstrap(null);
+                    }
+
+                    @Override
+                    public void onBootstrapFailure(LwM2mServer lwM2mServer, BootstrapRequest bootstrapRequest, ResponseCode responseCode, String s, Exception e) {
+                        if(lwm2mCallback != null) lwm2mCallback.onBootstrap(new Exception("LwM2M bootstrap failure: " + e));
+                    }
+
+                    @Override
+                    public void onBootstrapTimeout(LwM2mServer lwM2mServer, BootstrapRequest bootstrapRequest) {
+                        if(lwm2mCallback != null) lwm2mCallback.onBootstrap(new Exception("LwM2M bootstrap timeout"));
+                    }
+
+                    @Override
+                    public void onRegistrationStarted(LwM2mServer lwM2mServer, RegisterRequest registerRequest) {
+
+                    }
+
+                    @Override
+                    public void onRegistrationSuccess(LwM2mServer lwM2mServer, RegisterRequest registerRequest, String s) {
+                        if(lwm2mCallback != null) lwm2mCallback.onRegistration(null);
+                    }
+
+                    @Override
+                    public void onRegistrationFailure(LwM2mServer lwM2mServer, RegisterRequest registerRequest, ResponseCode responseCode, String s, Exception e) {
+                        if(lwm2mCallback != null) lwm2mCallback.onRegistration(new Exception("LwM2M registration failure: " + e));
+                    }
+
+                    @Override
+                    public void onRegistrationTimeout(LwM2mServer lwM2mServer, RegisterRequest registerRequest) {
+                        if(lwm2mCallback != null) lwm2mCallback.onRegistration(new Exception("LwM2M registration timeout"));
+                    }
+
+                    @Override
+                    public void onUpdateStarted(LwM2mServer lwM2mServer, UpdateRequest updateRequest) {
+
+                    }
+
+                    @Override
+                    public void onUpdateSuccess(LwM2mServer lwM2mServer, UpdateRequest updateRequest) {
+                        if(lwm2mCallback != null) lwm2mCallback.onUpdate(null);
+                    }
+
+                    @Override
+                    public void onUpdateFailure(LwM2mServer lwM2mServer, UpdateRequest updateRequest, ResponseCode responseCode, String s, Exception e) {
+                        if(lwm2mCallback != null) lwm2mCallback.onUpdate(new Exception("LwM2M update failure: " + e));
+                    }
+
+                    @Override
+                    public void onUpdateTimeout(LwM2mServer lwM2mServer, UpdateRequest updateRequest) {
+                        if(lwm2mCallback != null) lwm2mCallback.onUpdate(new Exception("LwM2M update timeout"));
+                    }
+
+                    @Override
+                    public void onDeregistrationStarted(LwM2mServer lwM2mServer, DeregisterRequest deregisterRequest) {
+
+                    }
+
+                    @Override
+                    public void onDeregistrationSuccess(LwM2mServer lwM2mServer, DeregisterRequest deregisterRequest) {
+                        if(lwm2mCallback != null) lwm2mCallback.onDeregistration(null);
+                    }
+
+                    @Override
+                    public void onDeregistrationFailure(LwM2mServer lwM2mServer, DeregisterRequest deregisterRequest, ResponseCode responseCode, String s, Exception e) {
+                        if(lwm2mCallback != null) lwm2mCallback.onDeregistration(new Exception("LwM2M deregistration failure: " + e));
+                    }
+
+                    @Override
+                    public void onDeregistrationTimeout(LwM2mServer lwM2mServer, DeregisterRequest deregisterRequest) {
+                        if(lwm2mCallback != null) lwm2mCallback.onDeregistration(new Exception("LwM2M deregistration timeout"));
+                    }
+
+                    @Override
+                    public void onUnexpectedError(Throwable throwable) {
+                        if(lwm2mCallback != null) lwm2mCallback.onUnexpectedError(throwable);
+                    }
+                };
+
+                return super.createRegistratioEngine(
+                        endpointName, objectTree, endpointsManager, uplinkRequestSender,
+                        bootstrapHandler, wrappedObserver, additionalAttributes, additionalSecureAttributes,
+                        supportedContentFormats, scheduler, linkFormatHelper);
+            }
+        };
         engineFactory.setQueueMode(lwm2mConfig.isQueueMode());
         builder.setRegistrationEngineFactory(engineFactory);
 
@@ -82,7 +205,7 @@ public class Lwm2mClient {
             Lwm2mDevice lwm2mDevice,
             Lwm2mInstance[] lwm2mInstances
     ) {
-        this(lwm2mConfig, lwm2mDevice, lwm2mInstances, true);
+        this(lwm2mConfig, lwm2mDevice, lwm2mInstances, null, true);
     }
 
     public void close() {
