@@ -69,7 +69,7 @@ in the python venv._
             --user $(id -u):$(id -u) \
             --mount type=bind,source=$(pwd),destination=$(pwd) \
             --workdir $(pwd) \
-            python:3.11.9-slim-bookworm \
+            python:3.11.17-slim-trixie \
             /bin/bash -il
 
         $ docker container exec -u 0:0 iot3 apt update
@@ -99,7 +99,7 @@ in the python venv._
 2. Build the Python packages:
     ```sh
     (docker)🐍 $ for pkg in python/*/; do
-                    python -m build "${pkg}" || break
+                    python -m build -w "${pkg}" || break
                  done
     ```
 3. Install the Python packages:
@@ -111,16 +111,12 @@ in the python venv._
     ```sh
     (docker)🐍 ./python/iot3/tests/test-iot3-core
     (docker)🐍 ./python/iot3/tests/test-iot3-core-all
-    (docker)🐍 ./python/iot3/tests/test-iot3-core-bootstrap
     (docker)🐍 ./python/iot3/tests/test-iot3-core-mqtt
     (docker)🐍 ./python/iot3/tests/test-iot3-core-otel
     (docker)🐍 ./python/iot3/tests/test-iot3-mobility
-    (docker)🐍 ./python/iot3/tests/test-iot3-mobility-bootstrap
     (docker)🐍 ./python/iot3/tests/test-iot3-mobility-gnss
     (docker)🐍 ./python/iot3/tests/test-iot3-mobility-message
     ```
-   _**Note:**_ the bootstrap tests require a bootstrap server;
-   skip them if you do not have one.
 5. ...
 
 Expected results

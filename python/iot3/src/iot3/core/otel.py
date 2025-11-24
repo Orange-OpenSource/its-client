@@ -68,27 +68,27 @@ class Otel(threading.Thread):
         *,
         service_name: str,
         endpoint: str,
-        auth: Optional[Auth] = Auth.NONE,
+        auth: Auth = Auth.NONE,
         username: Optional[str] = None,
         password: Optional[str] = None,
         batch_period: Optional[float] = None,
-        max_backlog: Optional[int] = None,
-        compression: Optional[Compression] = Compression.NONE,
+        max_backlog: int = 1023,
+        compression: Compression = Compression.NONE,
     ):
         """
         Simple span exporter
 
         Exports spans to an OpenTelemetry collector, using JSON over HTTP.
 
-        Either or both of batch_period and max_backlog must be specified to
-        a non-zero value. When only batch_period is non-zero, then spans are
-        only sent periodically, every batch_period seconds. When only
-        max_backlog is non-zero, then spans are only sent when that many have
-        accumulated. When both are non-zero, then spans are sent periodically
-        and as soon as max_backlog spans have accumulated, whichever occurs
-        first. If max_backlog is provided, then this is also the maximum number
-        of spans that are kept if they can't be exported to the collector, for
-        a later export tentative.
+        Spans are not sent right away after being finalised (closed); instead,
+        when max_backlog spans have been accumulated, they are sent to the OTLP
+        collector as a batch; this is also the maximum number of spans that
+        are kept if they can't be exported to the collector, for a later export
+        tentative.
+
+        If batch_period is specified, spans that have been accumulated so far
+        are sent to the OTLP collector, even if there is not max_backlog spans
+        accumulated yet.
 
         Note: failure to call stop() before terminating, risk losing any
         pending spans not yet exported.
@@ -99,10 +99,11 @@ class Otel(threading.Thread):
         :param auth: Type of HTTP authentication to employ.
         :param username: Username to use for authentication to the collector.
         :param password: Password to use for authentication to the collector.
-        :param batch_period: Send spans every so often, in seconds.
+        :param batch_period: Send spans every so often, in seconds. There is no
+                             default, which means no periodic send (only backlog
+                             based).
         :param max_backlog: Send spans as soon as that many have accumulated.
-                            This is also the maximum number of spans that are
-                            kept if they can't be sent to the collector.
+                            The default is 1023.
         :param compression: Type of compression, if any, to use to compress
                             the payload; the default is no compression.
         """
@@ -122,23 +123,16 @@ class Otel(threading.Thread):
             else:
                 self.auth = requests.auth.HTTPDigestAuth(username, password)
 
-        if batch_period or max_backlog:
-            self.batch_period = batch_period
-            self.max_backlog = max_backlog
-        else:
-            raise ValueError(
-                (
-                    "either or both of batch_period and/or max_backlog"
-                    + " must be specified as a non-zero value"
-                )
-            )
-
+        self.batch_period = batch_period
+        self.max_backlog = max_backlog
         self.compression = compression
 
         self.spans = list()
         self.shutdown = False
-        self.queue = queue.SimpleQueue()
         self.tls = threading.local()
+        # Create a queue twice the required size, so it can still be filled a
+        # bit while we are trying to push the messages to the OTLP collector.
+        self.queue = queue.Queue(maxsize=2 * self.max_backlog)
 
         super().__init__(
             name="otel-client",
@@ -153,9 +147,16 @@ class Otel(threading.Thread):
         as passed to __init__().
 
         :param span: The span to export.
+
+        Note: when the queue is full, spans are dropped, so this function
+        is not blocking.
         """
         # Note: if queued after stop(), span will ultimately be ignored
-        self.queue.put(span)
+        try:
+            self.queue.put(span, block=False)
+        except queue.Full:
+            # When we can send events, we can trace that situation...
+            pass
 
     @contextlib.contextmanager
     def span(self, *args, **kwargs) -> "Span":
@@ -213,43 +214,47 @@ class Otel(threading.Thread):
         self.shutdown = True
         self.queue.put(Otel._Quit())
         self.join()
+        # Last chance to send any pending span
+        self._send()
 
     class _Quit:
         pass
 
     def _run(self):
-        prev_timeout = self.batch_period
         while True:
+            if self.batch_period:
+                # This does not provide a perfect next-expiration delay for
+                # a precise period, but over the long run, that will make
+                # for slightly jittered expiration delays, all more or less
+                # close to the ideal expiration delay. Which is good enough.
+                timeout = self.batch_period - (time.time() % self.batch_period)
+            else:
+                timeout = None
+
             try:
-                if self.batch_period:
-                    # This does not provide a perfect next-expiration delay for
-                    # a precise period, but over the long run, that will make
-                    # for slightly jittered expiration delays, all centered
-                    # around the requested period. Which is good enough.
-                    timeout = self.batch_period - (time.time() % self.batch_period)
-                    # Did we miss a period? Then don't wait!
-                    # Note that there is still a corner case, where we did miss
-                    # a period *and* we got resumed after more than a multiple
-                    # of the period has elapsed. This is considered so
-                    # improbable that we simply ignore that (for now).
-                    block = not (timeout > prev_timeout)
-                else:
-                    timeout = None
-                    block = True
-                span = self.queue.get(block=block, timeout=timeout)
-                prev_timeout = timeout or self.batch_period
+                span = self.queue.get(timeout=timeout)
             except queue.Empty:
-                # queue.Empty is only raised when we do have a batch_period
-                # in which case it means we timed out, and we're going to start
-                # a new period.
-                prev_timeout = self.batch_period
+                # queue.Empty is only raised when we timed out waiting on the
+                # queue, which means we have a batch_preiod, and so it's time
+                # to push the spans.
                 self._send()
                 continue
+
             if type(span) is Otel._Quit:
-                self._send()
-                break
+                return
             self.spans.append(span)
-            if self.max_backlog and len(self.spans) >= self.max_backlog:
+            # Opportunistically try to drain the queue, but do not stay stuck
+            # if it fills faster than we can empty it...
+            try:
+                for i in range(2 * self.max_backlog):
+                    span = self.queue.get(block=False)
+                    if type(span) is Otel._Quit:
+                        return
+                    self.spans.append(span)
+            except queue.Empty:
+                pass
+
+            if len(self.spans) >= self.max_backlog:
                 self._send()
 
     def _send(self):
@@ -312,8 +317,7 @@ class Otel(threading.Thread):
                 self.spans = list()
         finally:
             # In any case, only keep a limited backlog
-            if self.max_backlog:
-                self.spans = self.spans[-self.max_backlog :]
+            self.spans = self.spans[-self.max_backlog :]
 
 
 class Span:
