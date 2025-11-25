@@ -9,8 +9,8 @@ import enum
 import hashlib
 import its_quadkeys
 import json
-import math
 from typing import Optional
+from . import leapseconds
 
 
 class ETSI(abc.ABC):
@@ -27,8 +27,10 @@ class ETSI(abc.ABC):
 
     # ETSI EPOCH, as a UNIX timestamp (int)
     EPOCH: int = int(
-        datetime.datetime.fromisoformat(
-            "2004-01-01T00:00:00.000+00:00",
+        leapseconds.utc_to_tai(
+            datetime.datetime.fromisoformat(
+                "2004-01-01T00:00:00.000",
+            )
         ).timestamp()
     )
 
@@ -128,7 +130,7 @@ class ETSI(abc.ABC):
 
     @staticmethod
     def etsi2si(
-        value: int,
+        value: int | None,
         scale: float,
         undef: Optional[int] = None,
         out_of_range: Optional[int] = None,
@@ -140,14 +142,14 @@ class ETSI(abc.ABC):
         specific object. This function converts from an ETSI scale to an SI unit.
 
         :param value: the value in an ETSI scale, or its special value when it
-                      is unknown
+                      is unknown; value can be None
         :param scale: the ETSI scale of the key
-        :param undef: the special ETSI-scaled value to use when the value is unknown
+        :param undef: the special ETSI-scaled value used when the value is unknown
         :param out_of_range: the special ETSI-scaled value to use when the value is
                              out of range
         :return: None if the value is either one of the special ETSI-scaled values
-                 'undef' or 'out_of_range', or the value scaled back to SI units
-                 otherwise
+                 'undef' or 'out_of_range' or None, or the value scaled back to SI
+                 units otherwise
 
         For example:
             etsi2si(my_cam.altitude, ETSI.CENTI_METER, 800001)
@@ -158,7 +160,7 @@ class ETSI(abc.ABC):
         altitude as a floating point numbers of meters, or None if the altitude
         is not known or out of range.
         """
-        if undef is not None and value == undef:
+        if undef is not None and (value is None or value == undef):
             return None
         if out_of_range is not None and value == out_of_range:
             return None
@@ -178,8 +180,20 @@ class ETSI(abc.ABC):
         If the value is a date before the ETSI EPOCH, the returned value is
         negative; it is left to the caller to decide whether that is usable
         in their case.
+
+        NOTE: the result is undefined during a leap second.
+
+        Test from the ETSI ITS CDD 2.1.1 example:
+        https://forge.etsi.org/rep/ITS/asn1/cpm_ts103324/-/blob/v2.1.1/docs/ETSI-ITS-CDD.md#timestampits
+
+        >>> from datetime import datetime
+        >>> unix2etsi_time(datetime(2007, 1, 1).timestamp())
+        94694401000
         """
-        return ETSI.si2etsi(unix_time - ETSI.EPOCH, ETSI.MILLI_SECOND, 0)
+        tai_time = leapseconds.utc_to_tai(
+            datetime.datetime.utcfromtimestamp(unix_time)
+        ).timestamp()
+        return ETSI.si2etsi(tai_time - ETSI.EPOCH, ETSI.MILLI_SECOND, 0)
 
     @staticmethod
     def etsi2unix_time(
@@ -192,8 +206,20 @@ class ETSI(abc.ABC):
         :return: The UNIX timestamp, in seconds since the UNIX EPOCH, with
                  arbitrary sub-second precision (in practice, down to millisecond
                  precision).
+
+        Test from the ETSI ITS CDD 2.1.1 example:
+        https://forge.etsi.org/rep/ITS/asn1/cpm_ts103324/-/blob/v2.1.1/docs/ETSI-ITS-CDD.md#timestampits
+
+        >>> from datetime import datetime
+        >>> etsi2unix_time(94694401000)
+        1167609600.0
+        >>> datetime.datetime.utcfromtimestamp(etsi2unix_time(94694401000))
+        datetime.datetime(2007, 1, 1, 0, 0)
         """
-        return ETSI.etsi2si(etsi_time, ETSI.MILLI_SECOND, 0) + ETSI.EPOCH
+        tai_time = ETSI.etsi2si(etsi_time, ETSI.MILLI_SECOND, 0) + ETSI.EPOCH
+        return leapseconds.tai_to_utc(
+            datetime.datetime.utcfromtimestamp(tai_time)
+        ).timestamp()
 
     @staticmethod
     def generation_delta_time(
@@ -214,7 +240,7 @@ class ETSI(abc.ABC):
 class Message(abc.ABC):
     msg_type = ...
 
-    class StationType(enum.IntEnum):
+    class TrafficParticipantType(enum.IntEnum):
         # We need those values to *exactly* match those defined in the spec
         unknown = 0
         pedestrian = 1
@@ -228,7 +254,12 @@ class Message(abc.ABC):
         trailer = 9
         specialVehicles = 10
         tram = 11
+        lightVruVehicle = 12
+        animal = 13
         roadSideUnit = 15
+
+    # Legacy
+    StationType = TrafficParticipantType
 
     @abc.abstractmethod
     def __init__(self, *args, **kwargs):

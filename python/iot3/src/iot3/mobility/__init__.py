@@ -8,7 +8,7 @@ import its_quadkeys
 import json
 import time
 
-from typing import Any, Callable, Optional, Protocol, TypeAlias
+from typing import Any, Callable, Optional, TypeAlias
 
 from .. import core
 
@@ -371,7 +371,11 @@ def message_from_json(
     except json.decoder.JSONDecodeError:
         raise RuntimeError("Not a known ITS message")
     try:
-        cls = _MSG_TYPE_CLASS[msg_py_obj["type"]]
+        try:
+            cls = _MSG_TYPE_CLASS[msg_py_obj["message_type"]]
+        except KeyError:
+            # Old, legacy, pre-2.x messages
+            cls = _MSG_TYPE_CLASS[msg_py_obj["type"]]
         source_uuid = msg_py_obj["source_uuid"]
     except (KeyError, TypeError):
         raise RuntimeError("Not a known ITS message")
