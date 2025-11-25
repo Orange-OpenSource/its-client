@@ -9,6 +9,8 @@ package com.orange.iot3core.clients.lwm2m;
 
 public interface Lwm2mCallback {
 
+    void onBootstrapStart();
+
     void onBootstrap(Throwable bootstrapFailure);
 
     void onRegistration(Throwable registrationFailure);

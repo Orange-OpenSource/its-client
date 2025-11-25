@@ -78,6 +78,11 @@ public class Lwm2mIoT3ServiceEndpoint extends Lwm2mInstance {
     @Override
     @Nullable
     protected ResponseValue write(int resourceId, @Nullable Object value) {
+        if (isBootstrapWritable()) return bootstrapWrite(resourceId, value);
+        return new ResponseValue(ResponseType.NOT_ALLOWED);
+    }
+
+    private ResponseValue bootstrapWrite(int resourceId, @Nullable Object value) {
         switch (resourceId) {
             case SERVICE_NAME_RES_ID: // String (M)
                 if (!(value instanceof String)) return new ResponseValue(ResponseType.NOT_FOUND);

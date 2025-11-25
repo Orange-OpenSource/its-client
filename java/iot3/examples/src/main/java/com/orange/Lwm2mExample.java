@@ -33,12 +33,9 @@ public class Lwm2mExample {
     }
 
     private static void bootstrapExample() {
-        Lwm2mIoT3Identity identity = new Lwm2mIoT3Identity();
-        Lwm2mIoT3ServiceEndpoint endpoint = new Lwm2mIoT3ServiceEndpoint();
-
         Lwm2mInstance[] lwm2mInstances = new Lwm2mInstance[] {
-                identity,
-                endpoint
+                new Lwm2mIoT3Identity(),
+                new Lwm2mIoT3ServiceEndpoint()
         };
 
         // instantiate LwM2M client
@@ -48,21 +45,39 @@ public class Lwm2mExample {
                 lwm2mInstances,
                 new Lwm2mCallback() {
                     @Override
+                    public void onBootstrapStart() {
+                        // allow to write values during the bootstrap sequence
+                        for(Lwm2mInstance lwm2mInstance: lwm2mInstances) {
+                            lwm2mInstance.enableBootstrapWrites();
+                        }
+                    }
+
+                    @Override
                     public void onBootstrap(Throwable bootstrapFailure) {
+                        // bootstrap sequence has ended, disable write permission
+                        for(Lwm2mInstance lwm2mInstance: lwm2mInstances) {
+                            lwm2mInstance.disableBootstrapWrites();
+                        }
                         if(bootstrapFailure == null) {
                             System.out.println("LwM2M bootstrap success!");
-                            IoT3Identity ioT3Identity = identity.toModel();
-                            IoT3ServiceEndpoint ioT3ServiceEndpoint = endpoint.toModel();
-                            System.out.println("IoT3Identity:"
-                                    + "\nID: " + ioT3Identity.getIot3Id()
-                                    + "\nPSK identity: " + ioT3Identity.getPskIdentity()
-                                    + "\nPSK secret key: " + Arrays.toString(ioT3Identity.getPskSecretKey()));
-                            System.out.println("IoT3ServiceEndpoint:"
-                                    + "\nService name: " + ioT3ServiceEndpoint.getServiceName()
-                                    + "\nPayload: " + ioT3ServiceEndpoint.getPayload()
-                                    + "\nURI: " + ioT3ServiceEndpoint.getServiceUri()
-                                    + "\nTopic root: " + ioT3ServiceEndpoint.getTopicRoot()
-                                    + "\nServer public key: " + Arrays.toString(ioT3ServiceEndpoint.getServerPublicKey()));
+                            for(Lwm2mInstance lwm2mInstance: lwm2mInstances) {
+                                if(lwm2mInstance instanceof Lwm2mIoT3Identity identity) {
+                                    IoT3Identity ioT3Identity = identity.toModel();
+                                    System.out.println("IoT3Identity:"
+                                            + "\nID: " + ioT3Identity.getIot3Id()
+                                            + "\nPSK identity: " + ioT3Identity.getPskIdentity()
+                                            + "\nPSK secret key: " + Arrays.toString(ioT3Identity.getPskSecretKey()));
+                                }
+                                if(lwm2mInstance instanceof Lwm2mIoT3ServiceEndpoint endpoint) {
+                                    IoT3ServiceEndpoint ioT3ServiceEndpoint = endpoint.toModel();
+                                    System.out.println("IoT3ServiceEndpoint:"
+                                            + "\nService name: " + ioT3ServiceEndpoint.getServiceName()
+                                            + "\nPayload: " + ioT3ServiceEndpoint.getPayload()
+                                            + "\nURI: " + ioT3ServiceEndpoint.getServiceUri()
+                                            + "\nTopic root: " + ioT3ServiceEndpoint.getTopicRoot()
+                                            + "\nServer public key: " + Arrays.toString(ioT3ServiceEndpoint.getServerPublicKey()));
+                                }
+                            }
                         } else {
                             System.out.println("LwM2M bootstrap failed: " + bootstrapFailure);
                         }

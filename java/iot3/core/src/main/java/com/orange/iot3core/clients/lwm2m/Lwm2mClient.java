@@ -100,7 +100,7 @@ public class Lwm2mClient {
 
                     @Override
                     public void onBootstrapStarted(LwM2mServer lwM2mServer, BootstrapRequest bootstrapRequest) {
-
+                        if(lwm2mCallback != null) lwm2mCallback.onBootstrapStart();
                     }
 
                     @Override

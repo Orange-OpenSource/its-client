@@ -5,6 +5,7 @@
 
  @authors
     Zbigniew Krawczyk  <zbigniew2.krawczyk@orange.com>
+    Mathieu LEFEBVRE <mathieu1.lefebvre@orange.com>
 */
 package com.orange.iot3core.clients.lwm2m.model;
 
@@ -28,6 +29,8 @@ public abstract class Lwm2mInstance {
 
     private final int objectId;
 
+    private volatile boolean bootstrapWritable = false;
+
     @Nullable
     private BaseInstanceEnabler instanceEnabler = null;
 
@@ -48,6 +51,13 @@ public abstract class Lwm2mInstance {
 
     public int getObjectId() {
         return objectId;
+    }
+
+    public void enableBootstrapWrites() { this.bootstrapWritable = true; }
+    public void disableBootstrapWrites() { this.bootstrapWritable = false; }
+
+    public boolean isBootstrapWritable() {
+        return bootstrapWritable;
     }
 
     public BaseInstanceEnabler getInstanceEnabler() {
@@ -187,7 +197,8 @@ public abstract class Lwm2mInstance {
 
     public enum ResponseType {
         SUCCESS,
-        NOT_FOUND;
+        NOT_ALLOWED,
+        NOT_FOUND
     }
 
     private class InternalInstanceEnabler extends BaseInstanceEnabler {
@@ -200,6 +211,7 @@ public abstract class Lwm2mInstance {
                 Object content = responseValue.getValue();
                 return switch (type) {
                     case SUCCESS -> ReadResponse.success(convertToResourceValue(resourceId, content));
+                    case NOT_ALLOWED -> ReadResponse.methodNotAllowed();
                     case NOT_FOUND -> ReadResponse.notFound();
                 };
             } else {
@@ -214,6 +226,7 @@ public abstract class Lwm2mInstance {
                 ResponseType type = responseValue.getType();
                 return switch (type) {
                     case SUCCESS -> WriteResponse.success();
+                    case NOT_ALLOWED -> WriteResponse.methodNotAllowed();
                     case NOT_FOUND -> WriteResponse.notFound();
                 };
             } else {
@@ -228,6 +241,7 @@ public abstract class Lwm2mInstance {
                 ResponseType type = responseValue.getType();
                 return switch (type) {
                     case SUCCESS -> ExecuteResponse.success();
+                    case NOT_ALLOWED -> ExecuteResponse.methodNotAllowed();
                     case NOT_FOUND -> ExecuteResponse.notFound();
                 };
             } else {
