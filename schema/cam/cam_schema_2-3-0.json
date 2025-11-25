@@ -1,0 +1,1130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/cam",
+  "$references": [
+    {
+      "name": "CAM TS 103 900",
+      "version": "2.2.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/cam_ts103900/-/tree/v2.2.1"
+    },
+    {
+      "$comment": "This technical specification file (TS) is hereby considered right over the European standard one (EN); meaning that for any difference that may be present between those files this schema will prefer what is defined in the technical specification",
+      "name": "CDD TS 102 894-2",
+      "version": "2.3.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/cdd_ts102894_2/-/tree/v2.3.1"
+    }
+  ],
+  "description": "CAM JSON schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "message_type",
+    "source_uuid",
+    "timestamp",
+    "version",
+    "message"
+  ],
+  "properties": {
+    "message_type": {
+      "type": "string",
+      "description": "Type of the message carried in message property.",
+      "const": "cam"
+    },
+    "message_format": {
+      "enum": [
+        "json/raw",
+        "asn1/uper"
+      ]
+    },
+    "source_uuid": {
+      "type": "string",
+      "description": "Unique id all over the world for the message sender.",
+      "examples": [
+        "com_car_4294967295",
+        "com_application_42"
+      ]
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Timestamp when the message was generated since Unix Epoch (millisecond).",
+      "examples": [
+        1574778515424
+      ],
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
+    },
+    "version": {
+      "type": "string",
+      "description": "JSON message format version.",
+      "const": "2.3.0"
+    },
+    "message": {
+      "type": "object",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "protocol_version",
+            "station_id",
+            "generation_delta_time",
+            "basic_container",
+            "high_frequency_container"
+          ],
+          "properties": {
+            "protocol_version": {
+              "type": "integer",
+              "description": "Version of the ITS message.",
+              "minimum": 0,
+              "maximum": 255,
+              "examples": [
+                1
+              ]
+            },
+            "station_id": {
+              "type": "integer",
+              "description": "Identifier for an ITS-S.",
+              "minimum": 0,
+              "maximum": 4294967295,
+              "examples": [
+                4294967295,
+                42
+              ]
+            },
+            "generation_delta_time": {
+              "type": "integer",
+              "description": "Time of the reference position in the CAM, considered as time of the CAM generation. TimestampIts mod 65 536. TimestampIts represents an integer value in milliseconds since 2004-01-01T00:00:00:000Z. oneMilliSec(1).",
+              "minimum": 0,
+              "maximum": 65535,
+              "examples": [
+                1,
+                1245
+              ]
+            },
+            "basic_container": {
+              "type": "object",
+              "required": [
+                "station_type",
+                "reference_position"
+              ],
+              "properties": {
+                "station_type": {
+                  "$ref": "#/$defs/traffic_participant_type"
+                },
+                "reference_position": {
+                  "$ref": "#/$defs/reference_position_with_confidence"
+                }
+              }
+            },
+            "high_frequency_container": {
+              "type": "object",
+              "oneOf": [
+                {
+                  "required": [
+                    "basic_vehicle_container_high_frequency"
+                  ]
+                },
+                {
+                  "required": [
+                    "rsu_container_high_frequency"
+                  ]
+                }
+              ],
+              "properties": {
+                "basic_vehicle_container_high_frequency": {
+                  "type": "object",
+                  "description": "Detailed information of the Basic Vehicle Container High Frequency.",
+                  "required": [
+                    "heading",
+                    "speed",
+                    "drive_direction",
+                    "vehicle_length",
+                    "vehicle_width",
+                    "longitudinal_acceleration",
+                    "curvature",
+                    "curvature_calculation_mode",
+                    "yaw_rate"
+                  ],
+                  "properties": {
+                    "heading": {
+                      "$ref": "#/$defs/heading"
+                    },
+                    "speed": {
+                      "$ref": "#/$defs/speed"
+                    },
+                    "drive_direction": {
+                      "type": "integer",
+                      "description": "Vehicle drive direction (forward or backward) of the originating ITS-S. forward (0), backward (1), unavailable (2).",
+                      "default": 2,
+                      "minimum": 0,
+                      "maximum": 2
+                    },
+                    "vehicle_length": {
+                      "$ref": "#/$defs/vehicle_length"
+                    },
+                    "vehicle_width": {
+                      "type": "integer",
+                      "description": "Vehicle Width of the vehicle ITS-S that originates the CAM excluding side mirrors and possible similar extensions.",
+                      "default": 62,
+                      "minimum": 1,
+                      "maximum": 62
+                    },
+                    "longitudinal_acceleration": {
+                      "$ref": "#/$defs/acceleration_component"
+                    },
+                    "curvature": {
+                      "$ref": "#/$defs/curvature"
+                    },
+                    "curvature_calculation_mode": {
+                      "type": "integer",
+                      "description": "Whether vehicle yaw-rate is used in the calculation of the curvature of the vehicle ITS-S that originates the CAM. yawRateUsed (0), yawRateNotUsed (1), unavailable (2).",
+                      "default": 2,
+                      "minimum": 0,
+                      "maximum": 2
+                    },
+                    "yaw_rate": {
+                      "$ref": "#/$defs/yaw_rate"
+                    },
+                    "acceleration_control": {
+                      "type": "object",
+                      "description": "Optional component which represents the current status of the vehcile mechnanisms controlling the longitudinal movement of the vehcile ITS-S (e.g. brake pedal, gas pedal, etc. engaged) that originate the CAM.",
+                      "required": [
+                        "brake_pedal_engaged",
+                        "gas_pedal_engaged",
+                        "emergency_brake_engaged",
+                        "collision_warning_engaged",
+                        "acc_engaged",
+                        "cruise_control_engaged",
+                        "speed_limiter_engaged"
+                      ],
+                      "properties": {
+                        "brake_pedal_engaged": {
+                          "type": "boolean",
+                          "description": "Indicates whether the brake pedal is engaged or not."
+                        },
+                        "gas_pedal_engaged": {
+                          "type": "boolean",
+                          "description": "Indicates whether the gas pedal is engaged or not."
+                        },
+                        "emergency_brake_engaged": {
+                          "type": "boolean",
+                          "description": "Indicates whether the emergency brake is engaged or not."
+                        },
+                        "collision_warning_engaged": {
+                          "type": "boolean",
+                          "description": "Indicates whether the collision warning system is engaged or not."
+                        },
+                        "acc_engaged": {
+                          "type": "boolean",
+                          "description": "Indicates whether the ACC system is engaged or not."
+                        },
+                        "cruise_control_engaged": {
+                          "type": "boolean",
+                          "description": "Indicates whether the cruise control system is engaged or not."
+                        },
+                        "speed_limiter_engaged": {
+                          "type": "boolean",
+                          "description": "Indicates whether the speed limiter system is engaged or not."
+                        }
+                      }
+                    },
+                    "lane_position": {
+                      "type": "integer",
+                      "description": "Optional component which represents the lanePosition of the referencePosition of a vehicle. offTheRoad (-1), innerHardShoulder (0), outerHardShoulder (14).",
+                      "minimum": -1,
+                      "maximum": 14
+                    },
+                    "steering_wheel_angle": {
+                      "$ref": "#/$defs/steering_wheel_angle"
+                    },
+                    "lateral_acceleration": {
+                      "$ref": "#/$defs/acceleration_component"
+                    },
+                    "vertical_acceleration": {
+                      "$ref": "#/$defs/acceleration_component"
+                    },
+                    "performance_class": {
+                      "type": "integer",
+                      "description": "Optional component characterizes the maximum age of the CAM data elements with regard to the generation delta time. unavailable (0), performanceClassA (1), performanceClassB (2).",
+                      "default": 0,
+                      "minimum": 0,
+                      "maximum": 7
+                    },
+                    "cen_dsrc_tolling_zone": {
+                      "type": "object",
+                      "description": "Optional component which represents the information about the position of a CEN DSRC Tolling Station operating in the 5,8 GHz frequency band.",
+                      "required": [
+                        "protected_zone_latitude",
+                        "protected_zone_longitude"
+                      ],
+                      "properties": {
+                        "protected_zone_latitude": {
+                          "$ref": "#/$defs/latitude_value"
+                        },
+                        "protected_zone_longitude": {
+                          "$ref": "#/$defs/longitude_value"
+                        },
+                        "cen_dsrc_tolling_zone_id": {
+                          "type": "integer",
+                          "description": "Identifier of a protected communication zone.",
+                          "minimum": 0,
+                          "maximum": 134217727
+                        }
+                      }
+                    }
+                  }
+                },
+                "rsu_container_high_frequency": {
+                  "type": "object",
+                  "description": "Basic RSU container high frequency",
+                  "properties": {
+                    "protected_communication_zones_rsu": {
+                      "type": "array",
+                      "description": "Path history, a path with a set of path points",
+                      "minItems": 1,
+                      "maxItems": 16,
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "protected_zone_type",
+                          "protected_zone_latitude",
+                          "protected_zone_longitude"
+                        ],
+                        "properties": {
+                          "protected_zone_type": {
+                            "type": "integer",
+                            "description": "Type of the protected zone. permanentCenDsrcTolling(0), temporaryCenDsrcTolling(1)",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "expiry_time": {
+                            "type": "integer",
+                            "description": "Optional time at which the validity of the protected communication zone will expire.",
+                            "minimum": 0,
+                            "maximum": 4398046511103
+                          },
+                          "protected_zone_latitude": {
+                            "$ref": "#/$defs/latitude_value"
+                          },
+                          "protected_zone_longitude": {
+                            "$ref": "#/$defs/longitude_value"
+                          },
+                          "protected_zone_radius": {
+                            "type": "integer",
+                            "description": "Optional radius of the protected communication zone in metres.",
+                            "minimum": 1,
+                            "maximum": 255
+                          },
+                          "protected_zone_id": {
+                            "type": "integer",
+                            "description": "Optional ID of the protected communication zone.",
+                            "minimum": 0,
+                            "maximum": 134217727
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "low_frequency_container": {
+              "type": "object",
+              "required": [
+                "basic_vehicle_container_low_frequency"
+              ],
+              "properties": {
+                "basic_vehicle_container_low_frequency  ": {
+                  "description": "Basic vehicle container low frequency",
+                  "required": [
+                    "vehicle_role",
+                    "exterior_lights",
+                    "path_history"
+                  ],
+                  "properties": {
+                    "vehicle_role": {
+                      "type": "integer",
+                      "description": "Role of the vehicle ITS-S that originates the CAM. default (0), publicTransport (1), specialTransport (2), dangerousGoods (3), roadWork (4), rescue (5), emergency (6), safetyCar (7), agriculture (8), commercial (9), military (10), roadOperator (11), taxi (12), uvar (13), rfu1 (14), rfu2 (15)",
+                      "default": 0,
+                      "minimum": 0,
+                      "maximum": 15
+                    },
+                    "exterior_lights": {
+                      "type": "object",
+                      "description": "Status of the most important exterior lights switches of the vehicle ITS-S that originates the CAM.",
+                      "required": [
+                        "low_beam_headlights_on",
+                        "high_beam_headlights_on",
+                        "left_turn_signal_on",
+                        "right_turn_signal_on",
+                        "daytime_running_lights_on",
+                        "reverse_light_on",
+                        "fog_light_on",
+                        "parking_lights_on"
+                      ],
+                      "properties": {
+                        "low_beam_headlights_on": {
+                          "type": "boolean",
+                          "description": "When the low beam head light switch is on."
+                        },
+                        "high_beam_headlights_on": {
+                          "type": "boolean",
+                          "description": "when the high beam head light switch is on"
+                        },
+                        "left_turn_signal_on": {
+                          "type": "boolean",
+                          "description": "When the left turnSignal switch is on."
+                        },
+                        "right_turn_signal_on": {
+                          "type": "boolean",
+                          "description": "When the right turn signal switch is on."
+                        },
+                        "daytime_running_lights_on": {
+                          "type": "boolean",
+                          "description": "When the daytime running light switch is on."
+                        },
+                        "reverse_light_on": {
+                          "type": "boolean",
+                          "description": "When the reverse light switch is on."
+                        },
+                        "fog_light_on": {
+                          "type": "boolean",
+                          "description": "When the tail fog light switch is on."
+                        },
+                        "parking_lights_on": {
+                          "type": "boolean",
+                          "description": "When the parking light switch is on."
+                        }
+                      }
+                    },
+                    "path_history": {
+                      "type": "array",
+                      "description": "Vehicle's recent movement over some past time and/or distance.",
+                      "minItems": 0,
+                      "maxItems": 40,
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "path_position"
+                        ],
+                        "properties": {
+                          "path_position": {
+                            "$ref": "#/$defs/delta_reference_position"
+                          },
+                          "path_delta_time": {
+                            "type": "integer",
+                            "description": "Optional travel time separated from a waypoint to the predefined reference position.",
+                            "minimum": 1,
+                            "maximum": 65535
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "special_vehicle_container": {
+              "type": "object",
+              "oneOf": [
+                {
+                  "required": [
+                    "public_transport_container"
+                  ]
+                },
+                {
+                  "required": [
+                    "special_transport_container"
+                  ]
+                },
+                {
+                  "required": [
+                    "dangerous_goods_container"
+                  ]
+                },
+                {
+                  "required": [
+                    "road_works_container_basic"
+                  ]
+                },
+                {
+                  "required": [
+                    "rescue_container"
+                  ]
+                },
+                {
+                  "required": [
+                    "emergency_container"
+                  ]
+                },
+                {
+                  "required": [
+                    "safety_car_container"
+                  ]
+                }
+              ],
+              "properties": {
+                "public_transport_container": {
+                  "type": "object",
+                  "description": "If the vehicleRole component is set to publicTransport(1) this container shall be present.",
+                  "required": [
+                    "embarkation_status"
+                  ],
+                  "properties": {
+                    "embarkation_status": {
+                      "type": "boolean",
+                      "description": "Passenger embarkation is currently ongoing."
+                    },
+                    "pt_activation": {
+                      "type": "object",
+                      "description": "Optional component used for controlling traffic lights, barriers, bollards, etc.",
+                      "required": [
+                        "pt_activation_type",
+                        "pt_activation_data"
+                      ],
+                      "properties": {
+                        "pt_activation_type": {
+                          "type": "integer",
+                          "description": "Type of activation. undefinedCodingType (0), r09-16CodingType (1), vdv-50149CodingType (2).",
+                          "default": 0,
+                          "minimum": 0,
+                          "maximum": 255
+                        },
+                        "pt_activation_data": {
+                          "type": "string",
+                          "description": "Data of activation.",
+                          "minLength": 1,
+                          "maxLength": 20
+                        }
+                      }
+                    }
+                  }
+                },
+                "special_transport_container": {
+                  "type": "object",
+                  "description": "If the vehicleRole component is set to specialTransport(2) this container shall be present.",
+                  "required": [
+                    "special_transport_type",
+                    "light_bar_siren_in_use"
+                  ],
+                  "properties": {
+                    "special_transport_type": {
+                      "type": "object",
+                      "description": "Vehicle is carrying goods in the special transport conditions.",
+                      "required": [
+                        "heavy_load",
+                        "excess_width",
+                        "excess_length",
+                        "excess_height"
+                      ],
+                      "properties": {
+                        "heavy_load": {
+                          "type": "boolean",
+                          "description": "Vehicle is carrying goods with heavy load."
+                        },
+                        "excess_width": {
+                          "type": "boolean",
+                          "description": "Vehicle is carrying goods in excess of width."
+                        },
+                        "excess_length": {
+                          "type": "boolean",
+                          "description": "Vehicle is carrying goods in excess of length."
+                        },
+                        "excess_height": {
+                          "type": "boolean",
+                          "description": "Vehicle is carrying goods in excess of height."
+                        }
+                      }
+                    },
+                    "light_bar_siren_in_use": {
+                      "$ref": "#/$defs/light_bar_siren_in_use"
+                    }
+                  }
+                },
+                "dangerous_goods_container": {
+                  "type": "object",
+                  "description": "If the vehicleRole component is set to dangerousGoods(3) this container shall be present.",
+                  "required": [
+                    "dangerous_goods_basic"
+                  ],
+                  "properties": {
+                    "dangerous_goods_basic": {
+                      "type": "integer",
+                      "description": "Type of the dangerous goods being carried by a heavy vehicle. explosives1 (0), explosives2 (1), explosives3 (2), explosives4 (3), explosives5 (4), explosives6 (5), flammableGases (6), nonFlammableGases (7), toxicGases (8), flammableLiquids (9), flammableSolids (10), substancesLiableToSpontaneousCombustion (11), substancesEmittingFlammableGasesUponContactWithWater (12), oxidizingSubstances (13), organicPeroxides (14), toxicSubstances (15), infectiousSubstances (16), radioactiveMaterial (17), corrosiveSubstances (18), miscellaneousDangerousSubstances (19).",
+                      "minimum": 0,
+                      "maximum": 19
+                    }
+                  }
+                },
+                "road_works_container_basic": {
+                  "type": "object",
+                  "description": "If the vehicleRole component is set to roadWork(4) this container shall be present.",
+                  "required": [
+                    "light_bar_siren_in_use"
+                  ],
+                  "properties": {
+                    "road_works_sub_cause_code": {
+                      "type": "integer",
+                      "description": "Optional component, in case the originating ITS-S is mounted to a vehicle ITS-S participating to roadwork. unavailable (0), majorRoadworks (1),roadMarkingWork (2), slowMovingRoadMaintenance (3), shortTermStationaryRoadworks (4), streetCleaning (5), winterService (6), setupPhase (7), remodellingPhase (8), dismantlingPhase (9).",
+                      "minimum": 0,
+                      "maximum": 255
+                    },
+                    "light_bar_siren_in_use": {
+                      "$ref": "#/$defs/light_bar_siren_in_use"
+                    },
+                    "closed_lanes": {
+                      "type": "object",
+                      "description": "Optional component which provides information about the opening/closure status of the lanes ahead.",
+                      "properties": {
+                        "inner_hard_shoulder_status": {
+                          "type": "integer",
+                          "description": "Optional and shall be included if an inner hard shoulder is present and the information is known. availableForStopping(0), closed(1), availableForDriving(2).",
+                          "minimum": 0,
+                          "maximum": 2
+                        },
+                        "outer_hard_shoulder_status": {
+                          "type": "integer",
+                          "description": "Optional and shall be included if an outer hard shoulder is present and the information is known. availableForStopping(0), closed(1), availableForDriving(2).",
+                          "minimum": 0,
+                          "maximum": 2
+                        },
+                        "driving_lane_status": {
+                          "type": "object",
+                          "description": "Optional and shall be included if the information is known.",
+                          "required": [
+                            "lane_1_closed",
+                            "lane_2_closed",
+                            "lane_3_closed",
+                            "lane_4_closed",
+                            "lane_5_closed",
+                            "lane_6_closed",
+                            "lane_7_closed",
+                            "lane_8_closed",
+                            "lane_9_closed",
+                            "lane_10_closed",
+                            "lane_11_closed",
+                            "lane_12_closed",
+                            "lane_13_closed"
+                          ],
+                          "properties": {
+                            "lane_1_closed": {
+                              "type": "boolean",
+                              "description": "Indicates whether lane 1 is closed or not."
+                            },
+                            "lane_2_closed": {
+                              "type": "boolean",
+                              "description": "Indicates whether lane 2 is closed or not."
+                            },
+                            "lane_3_closed": {
+                              "type": "boolean",
+                              "description": "Indicates whether lane 3 is closed or not."
+                            },
+                            "lane_4_closed": {
+                              "type": "boolean",
+                              "description": "Indicates whether lane 4 is closed or not."
+                            },
+                            "lane_5_closed": {
+                              "type": "boolean",
+                              "description": "Indicates whether lane 5 is closed or not."
+                            },
+                            "lane_6_closed": {
+                              "type": "boolean",
+                              "description": "Indicates whether lane 6 is closed or not."
+                            },
+                            "lane_7_closed": {
+                              "type": "boolean",
+                              "description": "Indicates whether lane 7 is closed or not."
+                            },
+                            "lane_8_closed": {
+                              "type": "boolean",
+                              "description": "Indicates whether lane 8 is closed or not."
+                            },
+                            "lane_9_closed": {
+                              "type": "boolean",
+                              "description": "Indicates whether lane 9 is closed or not."
+                            },
+                            "lane_10_closed": {
+                              "type": "boolean",
+                              "description": "Indicates whether lane 10 is closed or not."
+                            },
+                            "lane_11_closed": {
+                              "type": "boolean",
+                              "description": "Indicates whether lane 11 is closed or not."
+                            },
+                            "lane_12_closed": {
+                              "type": "boolean",
+                              "description": "Indicates whether lane 12 is closed or not."
+                            },
+                            "lane_13_closed": {
+                              "type": "boolean",
+                              "description": "Indicates whether lane 13 is closed or not."
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "rescue_container": {
+                  "type": "object",
+                  "description": "If the vehicleRole component is set to rescue(5) this container shall be present.",
+                  "required": [
+                    "light_bar_siren_in_use"
+                  ],
+                  "properties": {
+                    "light_bar_siren_in_use": {
+                      "$ref": "#/$defs/light_bar_siren_in_use"
+                    }
+                  }
+                },
+                "emergency_container": {
+                  "type": "object",
+                  "description": "If the vehicleRole component is set to emergency(6) this container shall be present.",
+                  "required": [
+                    "light_bar_siren_in_use"
+                  ],
+                  "properties": {
+                    "light_bar_siren_in_use": {
+                      "$ref": "#/$defs/light_bar_siren_in_use"
+                    },
+                    "incident_indication": {
+                      "type": "object",
+                      "description": "Optional incident related to the roadworks to provide additional information of the roadworks zone.",
+                      "required": [
+                        "cc_and_scc"
+                      ],
+                      "properties": {
+                        "cc_and_scc": {
+                          "$comment": "Choice has been made not to use CauseCodeV2 object as defined in DENM TS CDD, because it would require a object definition for each cause just to hold the subcause code; Using the deprecated CauseCode instead",
+                          "$ref": "#/$defs/cause_code"
+                        }
+                      }
+                    },
+                    "emergency_priority": {
+                      "type": "object",
+                      "description": "Optional component represent right of way indicator of the vehicle ITS-S that originates the CAM PDU.",
+                      "required": [
+                        "request_for_right_of_way",
+                        "request_for_free_crossing_at_a_traffic_light"
+                      ],
+                      "properties": {
+                        "request_for_right_of_way": {
+                          "type": "boolean",
+                          "description": "When the vehicle is requesting/assuming the right of way."
+                        },
+                        "request_for_free_crossing_at_a_traffic_light": {
+                          "type": "boolean",
+                          "description": "When the vehicle is requesting/assuming the right to pass at a (red) traffic light."
+                        }
+                      }
+                    }
+                  }
+                },
+                "safety_car_container": {
+                  "type": "object",
+                  "description": "If the vehicleRole component is set to safetyCar(7) this container shall be present.",
+                  "required": [
+                    "light_bar_siren_in_use"
+                  ],
+                  "properties": {
+                    "light_bar_siren_in_use": {
+                      "$ref": "#/$defs/light_bar_siren_in_use"
+                    },
+                    "incident_indication": {
+                      "type": "object",
+                      "description": "Optional incident related to the roadworks to provide additional information of the roadworks zone.",
+                      "required": [
+                        "cc_and_scc"
+                      ],
+                      "properties": {
+                        "cc_and_scc": {
+                          "$comment": "Choice has been made not to use CauseCodeV2 object as defined in DENM TS CDD, because it would require a object definition for each cause just to hold the subcause code; Using the deprecated CauseCode instead.",
+                          "$ref": "#/$defs/cause_code"
+                        }
+                      }
+                    },
+                    "traffic_rule": {
+                      "type": "integer",
+                      "description": "Optional rule indicates whether vehicles are allowed to overtake a safety car that is originating this CAM. noPassing(0), noPassingForTrucks(1), passToRight(2), passToLeft(3), passToLeftOrRight (4).",
+                      "minimum": 0,
+                      "maximum": 4
+                    },
+                    "speed_limit": {
+                      "type": "integer",
+                      "description": "Optional speed indicates whether a speed limit is applied to vehicles following the safety car.",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "version",
+            "payload"
+          ],
+          "properties": {
+            "version": {
+              "description": "ASN.1 PDU version",
+              "examples": [
+                "ETSI EN 302 637-2 v1.4.1"
+              ],
+              "type": "string"
+            },
+            "payload": {
+              "description": "Base64-encoded ASN.1 binary payload",
+              "type": "string"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "angle_value": {
+      "type": "integer",
+      "description": "Angle value in degrees described in the WGS84 reference system with respect to the WGS84 north.",
+      "default": 3601,
+      "minimum": 0,
+      "maximum": 3601
+    },
+    "position_confidence_ellipse": {
+      "type": "object",
+      "required": [
+        "semi_major",
+        "semi_minor",
+        "semi_major_orientation"
+      ],
+      "properties": {
+        "semi_major": {
+          "type": "integer",
+          "description": "Half of length of the major axis, i.e. distance between the centre point and major axis point of the position accuracy ellipse.",
+          "default": 4095,
+          "minimum": 0,
+          "maximum": 4095
+        },
+        "semi_minor": {
+          "type": "integer",
+          "description": "Half of length of the minor axis, i.e. distance between the centre point and minor axis point of the position accuracy ellipse.",
+          "default": 4095,
+          "minimum": 0,
+          "maximum": 4095
+        },
+        "semi_major_orientation": {
+          "$ref": "#/$defs/angle_value"
+        }
+      }
+    },
+    "latitude_value": {
+      "type": "integer",
+      "description": "Latitude of the geographical point.",
+      "default": 900000001,
+      "minimum": -900000000,
+      "maximum": 900000001
+    },
+    "longitude_value": {
+      "type": "integer",
+      "description": "Longitude of the geographical point.",
+      "default": 1800000001,
+      "minimum": -1800000000,
+      "maximum": 1800000001
+    },
+    "altitude": {
+      "type": "object",
+      "description": "Altitude and an altitude accuracy of the geographical point.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Altitude of a geographical point.",
+          "default": 800001,
+          "minimum": -100000,
+          "maximum": 800001
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Confidence level of the altitudeValue.",
+          "default": 15,
+          "minimum": 0,
+          "maximum": 15
+        }
+      }
+    },
+    "reference_position_with_confidence": {
+      "type": "object",
+      "description": "Position within a geographic coordinate system together with a confidence ellipse.",
+      "required": [
+        "latitude",
+        "longitude",
+        "position_confidence_ellipse",
+        "altitude"
+      ],
+      "properties": {
+        "latitude": {
+          "$ref": "#/$defs/latitude_value"
+        },
+        "longitude": {
+          "$ref": "#/$defs/longitude_value"
+        },
+        "position_confidence_ellipse": {
+          "$ref": "#/$defs/position_confidence_ellipse"
+        },
+        "altitude": {
+          "$ref": "#/$defs/altitude"
+        }
+      }
+    },
+    "traffic_participant_type": {
+      "description": "Type of a traffic participant. unknown(0), pedestrian(1), cyclist(2), moped(3), motorcycle(4), passengerCar(5), bus(6), lightTruck(7), heavyTruck(8), trailer(9), specialVehicles(10), tram(11), roadSideUnit(15).",
+      "type": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 255
+    },
+    "heading": {
+      "description": "Heading in a WGS84 co-ordinates system.",
+      "type": "object",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Heading value.",
+          "default": 3601,
+          "minimum": 0,
+          "maximum": 3601
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Confidence value of the heading value with a predefined confidence level.",
+          "default": 127,
+          "minimum": 1,
+          "maximum": 127
+        }
+      }
+    },
+    "speed": {
+      "type": "object",
+      "description": "Speed and associated confidence value.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Speed value.",
+          "default": 16383,
+          "minimum": 0,
+          "maximum": 16383
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Confidence value of the speed value.",
+          "default": 127,
+          "minimum": 1,
+          "maximum": 127
+        }
+      }
+    },
+    "vehicle_length": {
+      "type": "object",
+      "description": "Length of vehicle and accuracy indication information.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Length of vehicle.",
+          "default": 1023,
+          "minimum": 1,
+          "maximum": 1023
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Indication of the length value confidence. noTrailerPresent (0), trailerPresentWithKnownLength (1), trailerPresentWithUnknownLength (2), trailerPresenceIsUnknown (3), unavailable (4).",
+          "default": 4,
+          "minimum": 0,
+          "maximum": 4
+        }
+      }
+    },
+    "acceleration_component": {
+      "type": "object",
+      "description": "Acceleration component along with a confidence value.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Value of the component.",
+          "minimum": -160,
+          "maximum": 161,
+          "default": 161
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Confidence value of the value.",
+          "minimum": 0,
+          "maximum": 102,
+          "default": 102
+        }
+      }
+    },
+    "curvature": {
+      "type": "object",
+      "description": "Curvature of the vehicle trajectory and the associated confidence value.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Detected curvature of the vehicle trajectory.",
+          "default": 1023,
+          "minimum": -1023,
+          "maximum": 1023
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Along with a confidence value of the curvature value with a predefined confidence level. onePerMeter-0-00002 (0),onePerMeter-0-0001 (1),onePerMeter-0-0005 (2),onePerMeter-0-002 (3),onePerMeter-0-01 (4),onePerMeter-0-1 (5),outOfRange (6),unavailable (7).",
+          "minimum": 0,
+          "maximum": 7
+        }
+      }
+    },
+    "yaw_rate": {
+      "type": "object",
+      "description": "Yaw rate of vehicle at a point in time.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Yaw rate value at a point in time.",
+          "default": 32767,
+          "minimum": -32766,
+          "maximum": 32767
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Confidence value associated to the yaw rate value. degSec-000-01 (0), degSec-000-05 (1), degSec-000-10 (2), degSec-001-00 (3), degSec-005-00 (4),degSec-010-00 (5),degSec-100-00 (6),outOfRange (7),unavailable (8).",
+          "default": 8,
+          "minimum": 0,
+          "maximum": 8
+        }
+      }
+    },
+    "steering_wheel_angle": {
+      "type": "object",
+      "description": "Steering wheel angle of the vehicle at certain point in time.",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "Steering wheel angle value.",
+          "default": 512,
+          "minimum": -511,
+          "maximum": 512
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Confidence value of the steering wheel angle value.",
+          "default": 127,
+          "minimum": 1,
+          "maximum": 127
+        }
+      }
+    },
+    "delta_reference_position": {
+      "type": "object",
+      "description": "Geographical point position as a 3 dimensional offset position to a geographical reference point.",
+      "required": [
+        "delta_latitude",
+        "delta_longitude",
+        "delta_altitude"
+      ],
+      "properties": {
+        "delta_latitude": {
+          "type": "integer",
+          "description": "Delta latitude offset with regards to the latitude value of the reference position.",
+          "default": 131072,
+          "minimum": -131071,
+          "maximum": 131072
+        },
+        "delta_longitude": {
+          "type": "integer",
+          "description": "Delta longitude offset with regards to the longitude value of the reference position.",
+          "default": 131072,
+          "minimum": -131071,
+          "maximum": 131072
+        },
+        "delta_altitude": {
+          "type": "integer",
+          "description": "Delta altitude offset with regards to the altitude value of the reference position.",
+          "default": 12800,
+          "minimum": -12700,
+          "maximum": 12800
+        }
+      }
+    },
+    "light_bar_siren_in_use": {
+      "type": "object",
+      "description": "Status of light bar and any sort of audible alarm system besides the horn.",
+      "required": [
+        "light_bar_activated",
+        "siren_activated"
+      ],
+      "properties": {
+        "light_bar_activated": {
+          "type": "boolean",
+          "description": "When the light bar is activated."
+        },
+        "siren_activated": {
+          "type": "boolean",
+          "description": "When the siren is activated."
+        }
+      }
+    },
+    "cause_code": {
+      "type": "object",
+      "description": "Representation of the cause code value of a traffic event.",
+      "required": [
+        "cause"
+      ],
+      "properties": {
+        "cause": {
+          "type": "integer",
+          "description": "Main cause of a detected event. trafficCondition (1), accident (2), roadworks (3), impassability (5), adverseWeatherCondition-Adhesion (6), aquaplaning (7), hazardousLocation-SurfaceCondition (9), hazardousLocation-ObstacleOnTheRoad (10), hazardousLocation-AnimalOnTheRoad (11), humanPresenceOnTheRoad (12), wrongWayDriving (14), rescueAndRecoveryWorkInProgress (15), adverseWeatherCondition-ExtremeWeatherCondition (17), adverseWeatherCondition-Visibility (18), adverseWeatherCondition-Precipitation (19), violence (20), slowVehicle (26), dangerousEndOfQueue (27), publicTransportVehicleApproaching (28), vehicleBreakdown (91), postCrash (92), humanProblem (93), stationaryVehicle (94), emergencyVehicleApproaching (95), hazardousLocation-DangerousCurve (96), collisionRisk (97), signalViolation (98), dangerousSituation (99), railwayLevelCrossing (100).",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "subcause": {
+          "type": "integer",
+          "description": "Subordinate cause of a detected event. trafficCondition (1): unavailable (0), increasedVolumeOfTraffic (1), trafficJamSlowlyIncreasing (2), trafficJamIncreasing (3), trafficJamStronglyIncreasing (4), trafficJam (5), trafficJamSlightlyDecreasing (6), trafficJamDecreasing (7), trafficJamStronglyDecreasing (8), trafficJamStable (9). accident (2): unavailable (0), multiVehicleAccident (1), heavyAccident (2), accidentInvolvingLorry (3), accidentInvolvingBus (4), accidentInvolvingHazardousMaterials (5), accidentOnOppositeLane (6), unsecuredAccident (7), assistanceRequested (8). roadworks (3): unavailable (0), majorRoadworks (1), roadMarkingWork (2), slowMovingRoadMaintenance (3), shortTermStationaryRoadworks (4), streetCleaning (5), winterService (6), setupPhase (7), remodellingPhase (8), dismantlingPhase (9). impassability (5): unavailable (0), flooding (1), dangerOfAvalanches (2), blastingOfAvalanches (3), landslips (4), chemicalSpillage (5), winterClosure (6), sinkhole (7), earthquakeDamage (8), fallenTrees (9), rockfalls (10), sewerOverflow (11), stormDamage (12), subsidence (13), burstPipe (14), burstWaterMain (15), fallenPowerCables (16), snowDrifts (17). adverseWeatherCondition-Adhesion (6): unavailable (0), heavyFrostOnRoad (1), fuelOnRoad (2), mudOnRoad (3), snowOnRoad (4), iceOnRoad (5), blackIceOnRoad (6), oilOnRoad (7), looseChippings (8), instantBlackIce (9), roadsSalted (10). aquaplaning (7): none. hazardousLocation-SurfaceCondition (9): unavailable (0), rockfalls (1), earthquakeDamage (2), sewerCollapse (3), subsidence (4), snowDrifts (5), stormDamage (6), burstPipe (7), volcanoEruption (8), fallingIce (9), fire (10), flooding (11). hazardousLocation-ObstacleOnTheRoad (10): unavailable (0), shedLoad (1), partsOfVehicles (2), partsOfTyres (3), bigObjects (4), fallenTrees (5), hubCaps (6), waitingVehicles (7). hazardousLocation-AnimalOnTheRoad (11): unavailable (0), wildAnimals (1), herdOfAnimals (2), smallAnimals (3), largeAnimals (4), wildAnimalsSmall (5), wildAnimalsLarge (6), domesticAnimals (7), domesticAnimalsSmall (8), domesticAnimalsLarge (9). humanPresenceOnTheRoad (12): unavailable (0), childrenOnRoadway (1), cyclistOnRoadway (2), motorcyclistOnRoadway (3), pedestrian (4), ordinary-pedestrian (5), road-worker (6), first-responder (7), lightVruVehicle (8), bicyclist (9), wheelchair-user (10), horse-and-rider (11), rollerskater (12), e-scooter (13), personal-transporter (14), pedelec (15), speed-pedelec (16), ptw (17), moped (18), motorcycle (19), motorcycle-and-sidecar-right (20), motorcycle-and-sidecar-left (21). wrongWayDriving (14): unavailable (0), wrongLane (1), wrongDirection (2). rescueAndRecoveryWorkInProgress (15): unavailable (0), emergencyVehicles (1), rescueHelicopterLanding (2), policeActivityOngoing (3), medicalEmergencyOngoing (4), childAbductionInProgress (5), prioritizedVehicle (6), rescueAndRecoveryVehicle (7). adverseWeatherCondition-ExtremeWeatherCondition (17): unavailable (0), strongWinds (1), damagingHail (2), hurricane (3), thunderstorm (4), tornado (5), blizzard (6). adverseWeatherCondition-Visibility (18): unavailable (0), fog (1), smoke (2), heavySnowfall (3), heavyRain (4), heavyHail (5), lowSunGlare (6), sandstorms (7), swarmsOfInsects (8). adverseWeatherCondition-Precipitation (19): unavailable (0), heavyRain (1), heavySnowfall (2), softHail (3). violence (20): none. slowVehicle (26): none. dangerousEndOfQueue (27): unavailable (0), suddenEndOfQueue (1), queueOverHill (2), queueAroundBend (3), queueInTunnel (4). publicTransportVehicleApproaching (28): none. vehicleBreakdown (91): unavailable (0), lackOfFuel (1), lackOfBatteryPower (2), engineProblem (3), transmissionProblem (4), engineCoolingProblem (5), brakingSystemProblem (6), steeringProblem (7), tyrePuncture (8), tyrePressureProblem (9), vehicleOnFire (10). postCrash (92): unavailable (0), accidentWithoutECallTriggered (1), accidentWithECallManuallyTriggered (2), accidentWithECallAutomaticallyTriggered (3), accidentWithECallTriggeredWithoutAccessToCellularNetwork (4). humanProblem (93): unavailable (0), glycemiaProblem (1), heartProblem (2). stationaryVehicle (94): unavailable (0), humanProblem (1), vehicleBreakdown (2), postCrash (3), publicTransportStop (4), carryingDangerousGoods (5), vehicleOnFire (6). emergencyVehicleApproaching (95): unavailable (0), emergencyVehicleApproaching (1), prioritizedVehicleApproaching (2). hazardousLocation-DangerousCurve (96): unavailable (0), dangerousLeftTurnCurve (1), dangerousRightTurnCurve (2), multipleCurvesStartingWithUnknownTurningDirection (3), multipleCurvesStartingWithLeftTurn (4), multipleCurvesStartingWithRightTurn (5). collisionRisk (97): unavailable (0), longitudinalCollisionRisk (1), crossingCollisionRisk (2), lateralCollisionRisk (3), vulnerableRoadUser (4), collisionRiskWithPedestrian (5), collisionRiskWithCyclist (6), collisionRiskWithMotorVehicle (7). signalViolation (98): unavailable (0), stopSignViolation (1), trafficLightViolation (2), turningRegulationViolation (3). dangerousSituation (99): unavailable (0), emergencyElectronicBrakeEngaged (1), preCrashSystemEngaged (2), espEngaged (3), absEngaged (4), aebEngaged (5), brakeWarningEngaged (6), collisionRiskWarningEngaged (7). railwayLevelCrossing (100): unavailable (0), doNotCrossAbnormalSituation (1), closed (2), unguarded (3), nominal (4), trainApproaching (5).",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 255
+        }
+      }
+    }
+  }
+}
