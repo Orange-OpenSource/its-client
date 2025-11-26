@@ -3,9 +3,11 @@ name: Swift ITSClient
 on:
   push:
     branches:
-      - main
+      - master
       - develop
       - 'swift-*'
+    tags:
+      - '*'
 
   pull_request:
     types:
