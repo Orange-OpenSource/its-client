@@ -267,7 +267,6 @@ public class Lwm2mClient {
         if (security != null) {
             initializer.setInstancesForObject(LwM2mId.SECURITY, security);
         }
-        initializer.setInstancesForObject(LwM2mId.SECURITY, getSecurity(lwm2mConfig));
         initializer.setInstancesForObject(LwM2mId.SERVER, getServer(lwm2mConfig));
         initializer.setInstancesForObject(LwM2mId.DEVICE, lwm2mDevice.getDevice());
         if (lwm2mInstances != null) {
