@@ -33,10 +33,14 @@ public class Lwm2mExample {
     }
 
     private static void bootstrapExample() {
-        Lwm2mInstance[] lwm2mInstances = new Lwm2mInstance[] {
-                new Lwm2mIoT3Identity(),
-                new Lwm2mIoT3ServiceEndpoint()
-        };
+        int maxInstanceNb = 20;
+        Lwm2mInstance[] lwm2mInstances = new Lwm2mInstance[maxInstanceNb];
+        for(int i = 0; i < maxInstanceNb; i++) {
+            // create one instance of IoT3Identity
+            if(i == 0) lwm2mInstances[i] = new Lwm2mIoT3Identity();
+            // and multiple instances of IoT3ServiceEndpoints
+            else lwm2mInstances[i] = new Lwm2mIoT3ServiceEndpoint();
+        }
 
         // instantiate LwM2M client
         Lwm2mClient lwm2mClient = new Lwm2mClient(
@@ -70,12 +74,14 @@ public class Lwm2mExample {
                                 }
                                 if(lwm2mInstance instanceof Lwm2mIoT3ServiceEndpoint endpoint) {
                                     IoT3ServiceEndpoint ioT3ServiceEndpoint = endpoint.toModel();
-                                    System.out.println("IoT3ServiceEndpoint:"
-                                            + "\nService name: " + ioT3ServiceEndpoint.getServiceName()
-                                            + "\nPayload: " + ioT3ServiceEndpoint.getPayload()
-                                            + "\nURI: " + ioT3ServiceEndpoint.getServiceUri()
-                                            + "\nTopic root: " + ioT3ServiceEndpoint.getTopicRoot()
-                                            + "\nServer public key: " + Arrays.toString(ioT3ServiceEndpoint.getServerPublicKey()));
+                                    if(!ioT3ServiceEndpoint.getServiceName().isEmpty()) {
+                                        System.out.println("IoT3ServiceEndpoint:"
+                                                + "\nService name: " + ioT3ServiceEndpoint.getServiceName()
+                                                + "\nPayload: " + ioT3ServiceEndpoint.getPayload()
+                                                + "\nURI: " + ioT3ServiceEndpoint.getServiceUri()
+                                                + "\nTopic root: " + ioT3ServiceEndpoint.getTopicRoot()
+                                                + "\nServer public key: " + Arrays.toString(ioT3ServiceEndpoint.getServerPublicKey()));
+                                    }
                                 }
                             }
                         } else {
