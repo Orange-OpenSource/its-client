@@ -28,6 +28,7 @@ import org.eclipse.leshan.client.object.Server;
 import org.eclipse.leshan.client.observer.LwM2mClientObserver;
 import org.eclipse.leshan.client.request.UplinkRequestSender;
 import org.eclipse.leshan.client.resource.BaseInstanceEnablerFactory;
+import org.eclipse.leshan.client.resource.LwM2mInstanceEnabler;
 import org.eclipse.leshan.client.resource.LwM2mObjectTree;
 import org.eclipse.leshan.client.resource.ObjectsInitializer;
 import org.eclipse.leshan.client.resource.listener.ObjectsListenerAdapter;
@@ -41,10 +42,7 @@ import org.eclipse.leshan.core.request.*;
 import org.eclipse.leshan.core.util.Hex;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
 
@@ -273,10 +271,23 @@ public class Lwm2mClient {
         initializer.setInstancesForObject(LwM2mId.SERVER, getServer(lwm2mConfig));
         initializer.setInstancesForObject(LwM2mId.DEVICE, lwm2mDevice.getDevice());
         if (lwm2mInstances != null) {
-            for (Lwm2mInstance lwm2mInstance : lwm2mInstances) {
-                BaseInstanceEnablerFactory factory = lwm2mInstance.getInstanceEnablerFactory();
-                initializer.setInstancesForObject(lwm2mInstance.getObjectId(), factory.create());
-                initializer.setFactoryForObject(lwm2mInstance.getObjectId(), factory);
+            Map<Integer, List<LwM2mInstanceEnabler>> instancesByObject = new HashMap<>();
+            Map<Integer, BaseInstanceEnablerFactory> factoryByObject = new HashMap<>();
+
+            for (Lwm2mInstance instance : lwm2mInstances) {
+                BaseInstanceEnablerFactory factory = instance.getInstanceEnablerFactory();
+                instancesByObject
+                        .computeIfAbsent(instance.getObjectId(), k -> new ArrayList<>())
+                        .add(factory.create());
+                // keep the first factory for a given object
+                factoryByObject.putIfAbsent(instance.getObjectId(), factory);
+            }
+
+            for (Map.Entry<Integer, List<LwM2mInstanceEnabler>> entry : instancesByObject.entrySet()) {
+                int objectId = entry.getKey();
+                List<LwM2mInstanceEnabler> instances = entry.getValue();
+                initializer.setInstancesForObject(objectId, instances.toArray(new LwM2mInstanceEnabler[0]));
+                initializer.setFactoryForObject(objectId, factoryByObject.get(objectId));
             }
         }
         return initializer;
