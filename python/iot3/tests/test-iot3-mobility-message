@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import json
 import math
 import time
 import iot3.mobility
@@ -56,6 +55,7 @@ msg = CPM(
 assert "station_data_container" not in msg["message"]
 assert len(msg["message"]["perceived_object_container"]) == 0
 
+#-----------------------------------------------------------------------------------------
 print("CPM of a car with some P.O...")
 msg = CPM(
     uuid="test_1234",
@@ -67,33 +67,35 @@ msg = CPM(
     perceived_objects=[
         CPM.PerceivedObject(
             object_id= 27,
-            time_of_measurement= time.time(),
+            measurement_delta_time=0.128,
             x_distance= 12,
             y_distance= -16,
             object_age= 127,
         ),
         CPM.PerceivedObject(
             object_id= 42,
-            time_of_measurement= time.time(),
+            measurement_delta_time=-1.640,
             x_distance= 63,
             y_distance= -32,
             object_age= 255,
-            confidence=7,
+            quality=7,
         ),
     ],
 )
-assert "station_data_container" in msg["message"]
+assert "originating_vehicle_container" in msg["message"]
 assert len(msg["message"]["perceived_object_container"]) == 2
 
 print("CPM with a new P.O...")
 msg.add_perceived_object(
     perceived_object=CPM.PerceivedObject(
         object_id= 12,
-        time_of_measurement= time.time(),
+        measurement_delta_time=1.280,
         x_distance= 1,
         y_distance= -2,
         object_age= 3,
-        confidence=15,
+        quality=15,
+        object_class=CPM.PerceivedObject.Vehicle.motorcycle,
+        object_class_confidence=50,
     ),
 )
 assert len(msg["message"]["perceived_object_container"]) == 3
@@ -104,7 +106,9 @@ for po in msg.perceived_objects:
     assert type(po) is CPM.PerceivedObject
     count += 1
 assert count == 3
-assert po.confidence == 15
+assert po.quality == 15
+assert po.object_class["vehicle"] == Message.StationType.motorcycle
+assert po.object_class_confidence == 50
 
 print("CPM serialisation...")
 json_msg = msg.to_json()
@@ -114,7 +118,9 @@ msg = iot3.mobility.message_from_json(msg_json=json_msg)
 assert msg.msg_type == "cpm"
 assert msg["message"]["management_container"]["station_type"] == Message.StationType.passengerCar
 assert len(msg["message"]["perceived_object_container"]) == 3
+assert po.object_class["vehicle"] == Message.StationType.motorcycle
 
+#-----------------------------------------------------------------------------------------
 print("DENM with nothing set...")
 msg = DENM(
     uuid="test_1234",
@@ -207,6 +213,7 @@ assert msg.termination == DENM.TerminationType.isNegation
 # UNIX time: seconds as a float, ETSI time: ms as an int; => delta max = 1ms
 assert math.fabs(detect_time - msg.detection_time) < 10 ** -3
 
+#-----------------------------------------------------------------------------------------
 print("Invalid generic message...")
 try:
     msg = Message()
