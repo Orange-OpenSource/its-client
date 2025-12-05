@@ -22,6 +22,7 @@ DEFAULTS = {
         "password": None,
     },
     "local": {
+        "port": 1883,
         "username": None,
         "password": None,
         "client_id": "iqm",
@@ -68,7 +69,7 @@ def main():
     # configparser.ConfigParser() only accepts strings as values, but we
     # need None for some defaults, so make it a true dict() of dicts()s,
     # which is easier to work with.
-    cfg = {s: {k: cfg[s][k] for k in cfg[s]} for s in cfg if s != "DEFAULT"}
+    cfg = {s: {k: cfg[s][k] for k in cfg[s]} for s in cfg.sections()}
 
     def _set_default(section, key, default):
         if section not in cfg:
