@@ -4,7 +4,6 @@
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
 from __future__ import annotations
-import configparser
 import iot3.core.mqtt
 import iot3.core.otel
 import logging
@@ -12,12 +11,13 @@ import random
 import time
 from . import authority
 from . import filters
+from its_iqm.helpers import str2bool
 
 
 class IQM:
     def __init__(
         self: IQM,
-        cfg: configparser.ConfigParser,
+        cfg: dict,
     ):
         logging.info("create")
         self.cfg = cfg
@@ -91,6 +91,14 @@ class IQM:
             self.filters[new_filter.type].append(new_filter)
 
         logging.info("create local qm")
+        conn = dict()
+        try:
+            conn["socket_path"] = cfg["local"]["socket-path"]
+        except KeyError:
+            conn["host"] = cfg["local"]["host"]
+            conn["port"] = int(cfg["local"]["port"])
+            conn["tls"] = str2bool(cfg["local"].get("tls"))
+            conn["websocket_path"] = cfg["local"].get("websocket_path")
 
         qm_data = {
             "copy_qm": None,
@@ -101,9 +109,9 @@ class IQM:
 
         self.local_qm = iot3.core.mqtt.MqttClient(
             client_id=cfg["local"]["client_id"],
-            socket_path=cfg["local"]["socket-path"],
             username=cfg["local"]["username"],
             password=cfg["local"]["password"],
+            **conn,
             msg_cb=self.qm_copy_cb,
             msg_cb_data=qm_data,
             span_ctxmgr_cb=self.span_cb,
