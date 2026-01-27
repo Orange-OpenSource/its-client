@@ -58,6 +58,16 @@
       "description": "JSON message format version.",
       "const": "2.4.0-dev"
     },
+    "linked_station_id": {
+      "type": "integer",
+      "description": "Identifier for a linked ITS-S, as a trailer or a platooning pair.",
+      "minimum": 0,
+      "maximum": 4294967295,
+      "examples": [
+        4294967295,
+        42
+      ]
+    },
     "message": {
       "type": "object",
       "oneOf": [
