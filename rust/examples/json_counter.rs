@@ -74,7 +74,7 @@ async fn main() {
                 }
                 total += 1;
 
-                if total % 1000 == 0 {
+                if total.is_multiple_of(1000) {
                     println!("Received {total} messages including {json} as JSON");
                 }
             }
