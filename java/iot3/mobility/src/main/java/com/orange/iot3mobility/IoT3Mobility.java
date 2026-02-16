@@ -15,6 +15,11 @@ import com.orange.iot3core.IoT3CoreCallback;
 import com.orange.iot3core.bootstrap.BootstrapConfig;
 import com.orange.iot3core.clients.lwm2m.model.*;
 import com.orange.iot3mobility.its.EtsiUtils;
+import com.orange.iot3mobility.message.EtsiConverter;
+import com.orange.iot3mobility.message.cam.CamHelper;
+import com.orange.iot3mobility.message.cam.v113.model.CamEnvelope113;
+import com.orange.iot3mobility.message.cam.v230.model.CamEnvelope230;
+import com.orange.iot3mobility.message.cam.v230.model.CamStructuredData;
 import com.orange.iot3mobility.roadobjects.HazardType;
 import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.its.json.JsonValue;
@@ -31,6 +36,7 @@ import com.orange.iot3mobility.roadobjects.RoadHazard;
 import com.orange.iot3mobility.roadobjects.RoadSensor;
 import com.orange.iot3mobility.roadobjects.RoadUser;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Arrays;
@@ -49,6 +55,7 @@ public class IoT3Mobility {
 
     private final IoT3Core ioT3Core;
     private final RoIManager roIManager;
+    private final CamHelper camHelper = new CamHelper();
 
     private final String uuid;
     private final String context;
@@ -376,6 +383,42 @@ public class IoT3Mobility {
 
         // send the message only if the client is connected
         if(isConnected()) ioT3Core.mqttPublish(topic, cam.getJsonCAM().toString(), false, 0, 1);
+    }
+
+    /**
+     * Send a CAM - Cooperative Awareness Message - v1.1.3
+     *
+     * @param camV113 the CAM representing your current state
+     */
+    public void sendCam(CamEnvelope113 camV113) throws IOException {
+        // build the topic
+        double latitude = EtsiConverter.latitudeDegrees(camV113.message().basicContainer().referencePosition().latitude());
+        double longitude = EtsiConverter.latitudeDegrees(camV113.message().basicContainer().referencePosition().longitude());
+        String quadkey = QuadTileHelper.latLngToQuadKey(latitude, longitude, 22);
+        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
+        String topic = context + "/inQueue/v2x/cam/" + uuid + geoExtension;
+
+        // send the message only if the client is connected
+        if(isConnected()) ioT3Core.mqttPublish(topic, camHelper.toJson(camV113), false, 0, 1);
+    }
+
+    /**
+     * Send a CAM - Cooperative Awareness Message - v2.3.0
+     *
+     * @param camV230 the CAM representing your current state - JSON version only
+     */
+    public void sendCam(CamEnvelope230 camV230) throws IOException {
+        if(camV230.message() instanceof CamStructuredData cam) {
+            // build the topic
+            double latitude = EtsiConverter.latitudeDegrees(cam.basicContainer().referencePosition().latitude());
+            double longitude = EtsiConverter.latitudeDegrees(cam.basicContainer().referencePosition().longitude());
+            String quadkey = QuadTileHelper.latLngToQuadKey(latitude, longitude, 22);
+            String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
+            String topic = context + "/inQueue/v2x/cam/" + uuid + geoExtension;
+
+            // send the message only if the client is connected
+            if(isConnected()) ioT3Core.mqttPublish(topic, camHelper.toJson(camV230), false, 0, 1);
+        }
     }
 
     /**
