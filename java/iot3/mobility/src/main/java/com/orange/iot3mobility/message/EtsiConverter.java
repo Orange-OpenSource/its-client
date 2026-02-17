@@ -17,24 +17,12 @@ public final class EtsiConverter {
     // -------------------------------------------------------------------------
 
     /**
-     * generationDeltaTime: 0..65535 in steps of 1 ms.
-     * <p>
-     * ETSI -> SI
-     */
-    public static double generationDeltaTimeSeconds(int generationDeltaTimeEtsi) {
-        return generationDeltaTimeEtsi / 1000.0;
-    }
-
-    /**
      * SI -> ETSI
-     * @param seconds time in seconds
+     * @param etsiTimestampMs UNIX timestamp in milliseconds
      * @return encoded value in milliseconds (clamped to 0..65535)
      */
-    public static int generationDeltaTimeEtsi(double seconds) {
-        long ms = Math.round(seconds * 1000.0);
-        if (ms < 0) ms = 0;
-        if (ms > 65535L) ms = 65535L;
-        return (int) ms;
+    public static int generationDeltaTimeEtsi(long etsiTimestampMs) {
+        return (int) etsiTimestampMs % 65536;
     }
 
     /**
@@ -89,21 +77,21 @@ public final class EtsiConverter {
     /**
      * Altitude in CAM (example):
      * value in [0..800001] with:
-     *   altitudeMeters = value * 0.01 - 1000.0
+     *   altitudeMeters = value * 0.01
      * <p>
      * ETSI -> SI (meters)
      */
     public static double altitudeMeters(int altitudeEtsi) {
-        return altitudeEtsi * 0.01 - 1000.0;
+        return altitudeEtsi * 0.01;
     }
 
     /**
      * SI -> ETSI.
      * Inverse of altitudeMeters():
-     *   value = (altitudeMeters + 1000.0) / 0.01
+     *   value = altitudeMeters / 0.01
      */
     public static int altitudeEtsi(double altitudeMeters) {
-        long etsi = Math.round((altitudeMeters + 1000.0) / 0.01);
+        long etsi = Math.round((altitudeMeters) / 0.01);
         if (etsi < 0L) etsi = 0L;
         if (etsi > 800001L) etsi = 800001L;
         return (int) etsi;
@@ -295,8 +283,12 @@ public final class EtsiConverter {
     /**
      * SI -> ETSI.
      */
-    public static int yawRateEtsi(double yawRateRadPerSec) {
+    public static int yawRateEtsiFromRadiansPerSecond(double yawRateRadPerSec) {
         double yawDegPerSec = Math.toDegrees(yawRateRadPerSec);
+        return yawRateEtsiFromDegreesPerSecond(yawDegPerSec);
+    }
+
+    public static int yawRateEtsiFromDegreesPerSecond(double yawDegPerSec) {
         long etsi = Math.round(yawDegPerSec / 0.01);
         if (etsi < -32766L) etsi = -32766L;
         if (etsi >  32767L) etsi =  32767L;

@@ -17,16 +17,14 @@ import com.orange.iot3core.clients.lwm2m.model.*;
 import com.orange.iot3mobility.its.EtsiUtils;
 import com.orange.iot3mobility.message.EtsiConverter;
 import com.orange.iot3mobility.message.cam.CamHelper;
-import com.orange.iot3mobility.message.cam.v113.model.CamEnvelope113;
+import com.orange.iot3mobility.message.cam.v113.model.*;
 import com.orange.iot3mobility.message.cam.v230.model.CamEnvelope230;
 import com.orange.iot3mobility.message.cam.v230.model.CamStructuredData;
 import com.orange.iot3mobility.roadobjects.HazardType;
 import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.its.json.JsonValue;
 import com.orange.iot3mobility.its.json.Position;
-import com.orange.iot3mobility.its.json.cam.BasicContainer;
 import com.orange.iot3mobility.its.json.cam.CAM;
-import com.orange.iot3mobility.its.json.cam.HighFrequencyContainer;
 import com.orange.iot3mobility.its.json.cpm.CPM;
 import com.orange.iot3mobility.its.json.denm.*;
 import com.orange.iot3mobility.managers.*;
@@ -332,41 +330,37 @@ public class IoT3Mobility {
      */
     public void sendPosition(StationType stationType, LatLng position, float altitude,
                              float heading, float speed, float acceleration, float yawRate) {
-        // check for out of scope values before building the CAM
-        altitude = Utils.clamp(altitude, -1000, 8000);
-        heading = Utils.normalizeAngle(heading);
-        speed = Utils.clamp(speed, 0, 163);
-        acceleration = Utils.clamp(acceleration, -16, 16);
-        yawRate = Utils.clamp(yawRate, -327, 327);
-
         // build the CAM
-        CAM cam = new CAM.CAMBuilder()
-                .header(
-                        JsonValue.Origin.SELF.value(),
-                        JsonValue.Version.CURRENT_CAM.value(),
-                        uuid,
-                        TrueTime.getAccurateTime())
-                .pduHeader(
-                        2,
-                        stationId,
-                        (int) (TrueTime.getAccurateETSITime() % 65536))
-                .basicContainer(
-                        new BasicContainer(
-                                stationType.getId(),
-                                new Position(
-                                        (long) (position.getLatitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
-                                        (long) (position.getLongitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
-                                        (int) (altitude * 100))))
-                .highFreqContainer(
-                        new HighFrequencyContainer.HighFrequencyContainerBuilder()
-                                .heading((int) (heading * 10))
-                                .speed((int) (speed * 100))
-                                .longitudinalAcceleration((int) (acceleration * 10))
-                                .yawRate((int) (yawRate * 10))
+        CamEnvelope113 camEnvelope113 = CamEnvelope113.builder()
+                .origin("self")
+                .sourceUuid(uuid)
+                .timestamp(TrueTime.getAccurateTime())
+                .message(CamMessage113.builder()
+                        .protocolVersion(2)
+                        .stationId(stationId)
+                        .generationDeltaTime(EtsiConverter.generationDeltaTimeEtsi(TrueTime.getAccurateETSITime()))
+                        .basicContainer(BasicContainer.builder()
+                                .stationType(stationType.getId())
+                                .referencePosition(new ReferencePosition(
+                                        EtsiConverter.latitudeEtsi(position.getLatitude()),
+                                        EtsiConverter.longitudeEtsi(position.getLongitude()),
+                                        EtsiConverter.altitudeEtsi(altitude)))
                                 .build())
+                        .highFrequencyContainer(HighFrequencyContainer.builder()
+                                .heading(EtsiConverter.headingEtsiFromDegrees(heading))
+                                .speed(EtsiConverter.speedEtsiFromMetersPerSecond(speed))
+                                .longitudinalAcceleration(EtsiConverter.accelerationEtsi(acceleration))
+                                .yawRate(EtsiConverter.yawRateEtsiFromDegreesPerSecond(yawRate))
+                                .build())
+                        .build())
                 .build();
 
-        sendCam(cam);
+
+        try {
+            sendCam(camEnvelope113);
+        } catch (IOException e) {
+            throw new RuntimeException(e); // TODO
+        }
     }
 
     /**
