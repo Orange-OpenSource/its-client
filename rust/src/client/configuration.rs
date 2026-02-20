@@ -67,8 +67,8 @@ impl Configuration {
         section: Option<&'static str>,
         key: &'static str,
     ) -> Result<T, ConfigurationError> {
-        if self.custom_settings.is_some() {
-            match get_optional(section, key, self.custom_settings.as_ref().unwrap()) {
+        if let Some(custom_settings) = &self.custom_settings {
+            match get_optional(section, key, custom_settings) {
                 Ok(result) => match result {
                     Some(value) => Ok(value),
                     _ => Err(FieldNotFound(key)),
@@ -81,14 +81,8 @@ impl Configuration {
     }
 
     pub fn set<T: Into<String>>(&mut self, section: Option<&str>, key: &str, value: T) {
-        if self.custom_settings.is_none() {
-            self.custom_settings = Some(Ini::default())
-        }
-        self.custom_settings
-            .as_mut()
-            .unwrap()
-            .with_section(section)
-            .set(key, value);
+        let custom_settings = self.custom_settings.get_or_insert_with(Ini::default);
+        custom_settings.with_section(section).set(key, value);
     }
 
     /// Get a list of values from configuration, separated by commas
@@ -97,8 +91,8 @@ impl Configuration {
         section: Option<&'static str>,
         key: &'static str,
     ) -> Result<Vec<T>, ConfigurationError> {
-        if self.custom_settings.is_some() {
-            match get_optional_list(section, key, self.custom_settings.as_ref().unwrap()) {
+        if let Some(custom_settings) = &self.custom_settings {
+            match get_optional_list(section, key, custom_settings) {
                 Ok(result) => match result {
                     Some(values) => Ok(values),
                     None => Ok(Vec::new()), // Return empty vec if not found
@@ -611,8 +605,10 @@ use_tls = false
 
     #[test]
     fn get_list_no_custom_settings_error() {
-        let mut configuration = Configuration::default();
-        configuration.custom_settings = None;
+        let configuration = Configuration {
+            custom_settings: None,
+            ..Default::default()
+        };
         let result = configuration.get_list::<String>(Some("test"), "list_field");
         assert!(matches!(result, Err(NoCustomSettings)));
     }
@@ -648,7 +644,7 @@ use_tls = false
     // Tests for get_optional_list functionality
     #[test]
     fn get_optional_list_ok() {
-        let mut properties = ini::Properties::new();
+        let mut properties = Properties::new();
         properties.insert("test_list", "a,b,c".to_string());
         let result = get_optional_list_from_properties::<String>("test_list", &properties).unwrap();
         assert_eq!(
@@ -659,14 +655,14 @@ use_tls = false
 
     #[test]
     fn get_optional_list_missing_field() {
-        let properties = ini::Properties::new();
+        let properties = Properties::new();
         let result = get_optional_list_from_properties::<String>("missing", &properties).unwrap();
         assert!(result.is_none());
     }
 
     #[test]
     fn get_optional_list_type_error() {
-        let mut properties = ini::Properties::new();
+        let mut properties = Properties::new();
         properties.insert("test_list", "not_a_number,123".to_string());
         let result = get_optional_list_from_properties::<u32>("test_list", &properties);
         assert!(result.is_err());

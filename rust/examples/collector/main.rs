@@ -821,8 +821,10 @@ mod tests {
 
     #[test]
     fn receiver_configuration_no_custom_settings() {
-        let mut configuration = Configuration::default();
-        configuration.custom_settings = None;
+        let configuration = Configuration {
+            custom_settings: None,
+            ..Default::default()
+        };
         let receiver_config = ReceiverConfiguration::try_from(&configuration).unwrap();
         assert_eq!(receiver_config.topic_list, vec!["#"]); // Should use default
         assert_eq!(receiver_config.route_level, None,);
