@@ -1,13 +1,10 @@
-# Software Name: its-vehicle
-# SPDX-FileCopyrightText: Copyright (c) 2023 Orange
-# SPDX-License-Identifier: MIT
-# Author: Yann E. MORIN <yann.morin@orange.com>
-
 import datetime
 import hashlib
 import json
+
+from iot3.mobility.gnss import compute_position_confidence_ellipse
+from its_vehicle.gpsd import GNSSReport
 from . import ETSI, SI2ETSI
-from ..gpsd import GNSSReport
 
 
 class CooperativeAwarenessMessage:
@@ -17,11 +14,11 @@ class CooperativeAwarenessMessage:
         uuid: str,
         gnss_report: GNSSReport,
     ):
+        confidence_ellipse = compute_position_confidence_ellipse(gnss_report)
+
         self.cam = dict(
             {
-                "type": "cam",
-                "origin": "self",
-                "version": "1.1.3",
+                "message_type": "cam",
                 "source_uuid": uuid,
                 "timestamp": (
                     SI2ETSI.seconds(
@@ -30,6 +27,7 @@ class CooperativeAwarenessMessage:
                         0,
                     )
                 ),
+                "version": "2.4.0",
                 "message": {
                     "protocol_version": 1,
                     "station_id": self.station_id(uuid),
@@ -49,46 +47,59 @@ class CooperativeAwarenessMessage:
                                 SI2ETSI.DECI_MICRO_DEGREE,
                                 1800000001,
                             ),
-                            "altitude": SI2ETSI.meters(
-                                gnss_report.altitude,
-                                SI2ETSI.CENTI_METER,
-                                800001,
-                            ),
-                        },
-                        "confidence": {
-                            "position_confidence_ellipse": {
-                                "semi_major_confidence": 10,
-                                "semi_minor_confidence": 50,
-                                "semi_major_orientation": 1,
+                            # Position confidence ellipse with RTK precision
+                            "position_confidence_ellipse": confidence_ellipse,
+                            "altitude": {
+                                "value": SI2ETSI.meters(
+                                    gnss_report.altitude,
+                                    SI2ETSI.CENTI_METER,
+                                    800001,
+                                ),
+                                "confidence": 1,  # altitude confidence
                             },
-                            "altitude": 1,
                         },
                     },
                     "high_frequency_container": {
-                        "heading": SI2ETSI.degrees(
-                            gnss_report.track,
-                            SI2ETSI.DECI_DEGREE,
-                            3601,
-                        ),
-                        "speed": SI2ETSI.meters_per_second(
-                            gnss_report.speed,
-                            SI2ETSI.CENTI_METER_PER_SECOND,
-                            16383,
-                        ),
-                        "longitudinal_acceleration": (
-                            SI2ETSI.meters_per_second_second(
-                                gnss_report.acceleration,
-                                SI2ETSI.DECI_METER_PER_SECOND_SECOND,
-                                161,
-                            )
-                        ),
-                        "drive_direction": 0,
-                        "vehicle_length": 40,
-                        "vehicle_width": 20,
-                        "confidence": {
-                            "heading": 2,
-                            "speed": 3,
-                            "vehicle_length": 0,
+                        "basic_vehicle_container_high_frequency": {
+                            "heading": {
+                                "value": SI2ETSI.degrees(
+                                    gnss_report.track,
+                                    SI2ETSI.DECI_DEGREE,
+                                    3601,
+                                ),
+                                "confidence": 2,
+                            },
+                            "speed": {
+                                "value": SI2ETSI.meters_per_second(
+                                    gnss_report.speed,
+                                    SI2ETSI.CENTI_METER_PER_SECOND,
+                                    16383,
+                                ),
+                                "confidence": 3,
+                            },
+                            "longitudinal_acceleration": {
+                                "value": SI2ETSI.meters_per_second_second(
+                                    gnss_report.acceleration,
+                                    SI2ETSI.DECI_METER_PER_SECOND_SECOND,
+                                    161,
+                                ),
+                                "confidence": 102,
+                            },
+                            "drive_direction": 0,
+                            "vehicle_length": {
+                                "value": 40,
+                                "confidence": 0,
+                            },
+                            "vehicle_width": 20,
+                            "curvature": {
+                                "value": 1023,  # unavailable
+                                "confidence": 7,  # unavailable
+                            },
+                            "curvature_calculation_mode": 2,  # unavailable
+                            "yaw_rate": {
+                                "value": 32767,  # unavailable
+                                "confidence": 8,  # unavailable
+                            },
                         },
                     },
                 },
@@ -97,6 +108,7 @@ class CooperativeAwarenessMessage:
 
     @staticmethod
     def station_id(uuid: str) -> int:
+        # Generate station ID from UUID hash (first 6 hex chars)
         return int(
             hashlib.sha256(uuid.encode()).hexdigest()[:6],
             16,

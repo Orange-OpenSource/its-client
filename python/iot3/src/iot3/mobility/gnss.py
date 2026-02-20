@@ -41,11 +41,14 @@ class GNSSReport:
     :param horizontal_error: Error in horizontal (2D) measurement.
     :param altitude_error: Error in altitude measurement.
     :param true_heading: True headings (may or may not be equal to track,
-                         above), in degrees
+                           above), in degrees
     :param true_heading_r: True headings (may or may not be equal to track,
                            above), in radians
     :param magnetic_heading: Magnetic heading, in degrees
     :param magnetic_heading_r: Magnetic heading, in radians
+    :param major: Semi-major axis standard deviation (1-sigma) from GST, in meters
+    :param minor: Semi-minor axis standard deviation (1-sigma) from GST, in meters
+    :param orient: Semi-major axis orientation from GST, in degrees from true North
     """
 
     timestamp: float = None
@@ -64,6 +67,9 @@ class GNSSReport:
     magnetic_heading: float | None = None
     true_heading_r: float | None = None
     magnetic_heading_r: float | None = None
+    major: float | None = None
+    minor: float | None = None
+    orient: float | None = None
 
     # Frozen dataclasses do not allow directly setting their attributes,
     # neither directly with dot notation nor with setattr(), so we must
@@ -152,6 +158,68 @@ class GNSSReport:
                 object.__setattr__(self, field, deg)
 
 
+_ALTITUDE_CONFIDENCE_THRESHOLDS = [
+    (0.01, 0),
+    (0.02, 1),
+    (0.05, 2),
+    (0.10, 3),
+    (0.20, 4),
+    (0.50, 5),
+    (1.00, 6),
+    (2.00, 7),
+    (5.00, 8),
+    (10.00, 9),
+    (20.00, 10),
+    (50.00, 11),
+    (100.00, 12),
+    (200.00, 13),
+]
+
+
+def _altitude_error_to_confidence(altitude_error: float | None) -> int:
+    if altitude_error is None:
+        return 15
+    for threshold, confidence in _ALTITUDE_CONFIDENCE_THRESHOLDS:
+        if altitude_error <= threshold:
+            return confidence
+    return 14
+
+
+_POSITION_CONFIDENCE_95_FACTOR = 2.0
+
+
+def compute_position_confidence_ellipse(
+    gnss_report: GNSSReport,
+) -> dict:
+    ellipse = {
+        "semi_major": 4095,
+        "semi_minor": 4095,
+        "semi_major_orientation": 3601,
+    }
+
+    if gnss_report.major is not None:
+        major_cm = min(
+            int(gnss_report.major * _POSITION_CONFIDENCE_95_FACTOR * 100), 4094
+        )
+        ellipse["semi_major"] = major_cm
+    if gnss_report.minor is not None:
+        minor_cm = min(
+            int(gnss_report.minor * _POSITION_CONFIDENCE_95_FACTOR * 100), 4094
+        )
+        ellipse["semi_minor"] = minor_cm
+    if gnss_report.orient is not None:
+        orient_decideg = int(gnss_report.orient * 10) % 3600
+        ellipse["semi_major_orientation"] = orient_decideg
+
+    if gnss_report.major is None and gnss_report.horizontal_error is not None:
+        eph_cm = min(int(gnss_report.horizontal_error * 100), 4094)
+        ellipse["semi_major"] = eph_cm
+        ellipse["semi_minor"] = eph_cm
+        ellipse["semi_major_orientation"] = 0
+
+    return ellipse
+
+
 class GNSS:
     """Simple abstraction to a gpsd daemon.
 
@@ -226,14 +294,23 @@ class GNSS:
         params["altitude_error"] = tpv.get("epv")
 
         try:
-            att = last["att"]
-        except KeyError:
+            att = json.loads(last["att"]["msg"])
+        except (KeyError, json.JSONDecodeError):
             # Not all GNSS devices provide attitude data
             pass
         else:
             params["acceleration"] = att.get("acc_len")
             params["true_heading"] = att.get("heading")
             params["magnetic_heading"] = att.get("mheading")
+
+        try:
+            gst = json.loads(last["gst"]["msg"])
+        except (KeyError, json.JSONDecodeError):
+            pass
+        else:
+            params["major"] = gst.get("major")
+            params["minor"] = gst.get("minor")
+            params["orient"] = gst.get("orient")
 
         return GNSSReport(**params)
 
@@ -307,7 +384,7 @@ class GNSS:
                 msg_class = msg["class"].lower()
             except KeyError:
                 continue
-            if msg_class in ["tpv", "att"]:
+            if msg_class in ["tpv", "att", "gst"]:
                 # Only store those messages we need
                 self._last[msg_class] = {
                     "timestamp": time.time(),

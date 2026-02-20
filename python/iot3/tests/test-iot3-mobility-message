@@ -7,18 +7,62 @@ from iot3.mobility.etsi import Message
 from iot3.mobility.cam import CAM
 from iot3.mobility.cpm import CPM
 from iot3.mobility.denm import DENM
-from iot3.mobility.gnss import GNSSReport
+from iot3.mobility.gnss import GNSSReport, compute_position_confidence_ellipse
 
+
+print("CAM version is 2.4.0...")
+msg = CAM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(),
+)
+assert msg["message_type"] == "cam"
+assert msg["version"] == "2.4.0"
+
+print("CAM with RTK data from fake gpsd (centimeter-level precision)...")
+rtk_gnss_report = GNSSReport(
+    latitude=43.635212,
+    longitude=1.374562,
+    altitude=123.45,
+    speed=15.0,
+    track=45.0,
+    acceleration=1.2,
+    major=0.01,
+    minor=0.008,
+    orient=30.0,
+    altitude_error=0.02,
+)
+msg = CAM(
+    uuid="test_1234",
+    gnss_report=rtk_gnss_report,
+)
+ellipse = msg["message"]["basic_container"]["reference_position"]["position_confidence_ellipse"]
+assert ellipse["semi_major"] == 2
+assert ellipse["semi_minor"] == 1
+assert ellipse["semi_major_orientation"] == 300
+assert msg["message"]["basic_container"]["reference_position"]["altitude"]["confidence"] == 1
+print(f"  RTK confidence ellipse: semi_major={ellipse['semi_major']}cm, semi_minor={ellipse['semi_minor']}cm, orient={ellipse['semi_major_orientation']}daG")
+print(f"  RTK altitude confidence: {msg['message']['basic_container']['reference_position']['altitude']['confidence']}")
 
 print("CAM with nothing available...")
 msg = CAM(
     uuid="test_1234",
     gnss_report=GNSSReport(),
 )
+try:
+    _ = msg["origin"]
+    raise RuntimeError("origin should not be present")
+except KeyError:
+    pass
 assert msg["message"]["basic_container"]["reference_position"]["latitude"] == 900000001
 assert (
     msg["message"]["basic_container"]["reference_position"]["longitude"] == 1800000001
 )
+assert msg["message"]["basic_container"]["reference_position"]["altitude"]["value"] == 800001
+assert msg["message"]["basic_container"]["reference_position"]["altitude"]["confidence"] == 15
+assert msg["message"]["basic_container"]["reference_position"]["position_confidence_ellipse"]["semi_major"] == 4095
+assert msg["message"]["basic_container"]["reference_position"]["position_confidence_ellipse"]["semi_minor"] == 4095
+assert msg["message"]["basic_container"]["reference_position"]["position_confidence_ellipse"]["semi_major_orientation"] == 3601
+assert "basic_vehicle_container_high_frequency" in msg._message["message"]["high_frequency_container"]
 
 print("CAM with latitude and longitude...")
 msg = CAM(
@@ -34,6 +78,49 @@ assert msg["message"]["basic_container"]["reference_position"]["longitude"] == 1
 # Check with properties (SI values, degrees); ~6mm at Equator on surface of Earth
 assert math.fabs(msg.latitude - 43.6352120) < 5 * 10 ** -8
 assert math.fabs(msg.longitude - 1.3745620) < 5 * 10 ** -8
+# Check new structure
+assert msg["message"]["basic_container"]["reference_position"]["altitude"]["value"] == 800001
+assert msg["message"]["basic_container"]["reference_position"]["altitude"]["confidence"] == 15
+
+print("CAM with all GNSS fields...")
+msg = CAM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(
+        latitude=43.635212,
+        longitude=1.374562,
+        altitude=123.45,
+        speed=15.0,
+        track=45.0,
+        acceleration=1.2,
+        horizontal_error=0.5,
+        altitude_error=0.3,
+    ),
+)
+assert math.fabs(msg.altitude - 123.45) < 0.005
+hf = msg["message"]["high_frequency_container"]["basic_vehicle_container_high_frequency"]
+assert hf["heading"]["value"] == 450
+assert hf["speed"]["value"] == 1500
+assert hf["longitudinal_acceleration"]["value"] == 12
+ellipse = msg["message"]["basic_container"]["reference_position"]["position_confidence_ellipse"]
+assert ellipse["semi_major"] == 50
+assert ellipse["semi_minor"] == 50
+assert ellipse["semi_major_orientation"] == 0
+
+print("CAM position_confidence_ellipse from GST data...")
+msg = CAM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(
+        latitude=43.635212,
+        longitude=1.374562,
+        major=0.8,
+        minor=0.5,
+        orient=30.0,
+    ),
+)
+ellipse = msg["message"]["basic_container"]["reference_position"]["position_confidence_ellipse"]
+assert ellipse["semi_major"] == 160
+assert ellipse["semi_minor"] == 100
+assert ellipse["semi_major_orientation"] == 300
 
 print("CAM serialisation...")
 json_msg = msg.to_json()
@@ -43,6 +130,126 @@ msg = iot3.mobility.message_from_json(msg_json=json_msg)
 assert msg.msg_type == "cam"
 assert math.fabs(msg.latitude - 43.6352120) < 5 * 10 ** -8
 assert math.fabs(msg.longitude - 1.3745620) < 5 * 10 ** -8
+
+print("compute_position_confidence_ellipse with no data...")
+ellipse = compute_position_confidence_ellipse(GNSSReport())
+assert ellipse["semi_major"] == 4095
+assert ellipse["semi_minor"] == 4095
+assert ellipse["semi_major_orientation"] == 3601
+
+print("compute_position_confidence_ellipse with horizontal_error...")
+ellipse = compute_position_confidence_ellipse(GNSSReport(horizontal_error=2.0))
+assert ellipse["semi_major"] == 200
+assert ellipse["semi_minor"] == 200
+assert ellipse["semi_major_orientation"] == 0
+
+print("compute_position_confidence_ellipse with GST data...")
+ellipse = compute_position_confidence_ellipse(GNSSReport(major=1.5, minor=0.8, orient=45.0))
+assert ellipse["semi_major"] == 300
+assert ellipse["semi_minor"] == 160
+assert ellipse["semi_major_orientation"] == 450
+
+print("compute_position_confidence_ellipse with GST major only...")
+ellipse = compute_position_confidence_ellipse(GNSSReport(major=1.0))
+assert ellipse["semi_major"] == 200
+assert ellipse["semi_minor"] == 4095
+assert ellipse["semi_major_orientation"] == 3601
+
+print("compute_position_confidence_ellipse with GST minor only...")
+ellipse = compute_position_confidence_ellipse(GNSSReport(minor=0.5))
+assert ellipse["semi_major"] == 4095
+assert ellipse["semi_minor"] == 100
+assert ellipse["semi_major_orientation"] == 3601
+
+print("compute_position_confidence_ellipse with GST orient only...")
+ellipse = compute_position_confidence_ellipse(GNSSReport(orient=90.0))
+assert ellipse["semi_major"] == 4095
+assert ellipse["semi_minor"] == 4095
+assert ellipse["semi_major_orientation"] == 900
+
+print("compute_position_confidence_ellipse with GST major+minor, no orient...")
+ellipse = compute_position_confidence_ellipse(GNSSReport(major=1.2, minor=0.6))
+assert ellipse["semi_major"] == 240
+assert ellipse["semi_minor"] == 120
+assert ellipse["semi_major_orientation"] == 3601
+
+print("compute_position_confidence_ellipse with GST major+orient, no minor...")
+ellipse = compute_position_confidence_ellipse(GNSSReport(major=2.0, orient=30.0))
+assert ellipse["semi_major"] == 400
+assert ellipse["semi_minor"] == 4095
+assert ellipse["semi_major_orientation"] == 300
+
+print("compute_position_confidence_ellipse with GST minor+orient, no major...")
+ellipse = compute_position_confidence_ellipse(GNSSReport(minor=0.3, orient=45.0))
+assert ellipse["semi_major"] == 4095
+assert ellipse["semi_minor"] == 60
+assert ellipse["semi_major_orientation"] == 450
+
+print("compute_position_confidence_ellipse: GST major takes priority over horizontal_error...")
+ellipse = compute_position_confidence_ellipse(GNSSReport(
+    major=1.0, minor=0.5, horizontal_error=9.99,
+))
+assert ellipse["semi_major"] == 200
+assert ellipse["semi_minor"] == 100
+assert ellipse["semi_major_orientation"] == 3601
+
+print("compute_position_confidence_ellipse: horizontal_error fallback when no major...")
+ellipse = compute_position_confidence_ellipse(GNSSReport(horizontal_error=5.0))
+assert ellipse["semi_major"] == 500
+assert ellipse["semi_minor"] == 500
+assert ellipse["semi_major_orientation"] == 0
+
+print("compute_position_confidence_ellipse: horizontal_error ignored when major present...")
+ellipse = compute_position_confidence_ellipse(GNSSReport(
+    major=0.5, horizontal_error=9.99,
+))
+assert ellipse["semi_major"] == 100
+assert ellipse["semi_minor"] == 4095
+assert ellipse["semi_major_orientation"] == 3601
+
+print("compute_position_confidence_ellipse: values exceeding SemiAxisLength outOfRange...")
+ellipse = compute_position_confidence_ellipse(GNSSReport(
+    major=25.0, minor=25.0, orient=10.0,
+))
+assert ellipse["semi_major"] == 4094
+assert ellipse["semi_minor"] == 4094
+assert ellipse["semi_major_orientation"] == 100
+
+print("compute_position_confidence_ellipse: orientation wrapping (360° → 0°)...")
+ellipse = compute_position_confidence_ellipse(GNSSReport(major=1.0, orient=360.0))
+assert ellipse["semi_major"] == 200
+assert ellipse["semi_major_orientation"] == 0
+
+print("compute_position_confidence_ellipse: orientation wrapping (>360°)...")
+ellipse = compute_position_confidence_ellipse(GNSSReport(major=1.0, orient=450.0))
+assert ellipse["semi_major_orientation"] == 900
+
+print("GNSSReport with GST fields...")
+report = GNSSReport(major=0.5, minor=0.3, orient=90.0)
+assert report.major == 0.5
+assert report.minor == 0.3
+assert report.orient == 90.0
+
+print("CAM altitude confidence from altitude_error...")
+msg = CAM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(
+        latitude=43.635212,
+        longitude=1.374562,
+        altitude_error=0.3,
+    ),
+)
+assert msg["message"]["basic_container"]["reference_position"]["altitude"]["confidence"] == 5
+
+print("CAM altitude confidence unavailable...")
+msg = CAM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(
+        latitude=43.635212,
+        longitude=1.374562,
+    ),
+)
+assert msg["message"]["basic_container"]["reference_position"]["altitude"]["confidence"] == 15
 
 print("CPM with no P.O...")
 msg = CPM(
@@ -223,7 +430,7 @@ msg = DENM(
     cause=DENM.Cause.trafficCondition,
 )
 # UNIX time is a float that encodes seconds, while ETSI time is an int that
-# encodes miliseconds, so we should not have a delta of 1ms or more
+# encodes milliseconds, so we should not have a delta of 1ms or more
 assert math.fabs(detect_time - msg.detection_time) < 10 ** -3
 
 seq_num = msg.sequence_number

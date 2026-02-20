@@ -36,14 +36,16 @@ class GNSSReport:
     acceleration: float | None = None
     # Orientation from true North (geographic North, not magnetic North!)
     track: float | None = None
-    # Semi-major/minor and orientation for error ellipse
-    major: float | None = None
-    minor: float | None = None
-    orient: float | None = None
+    # Semi-major/minor standard deviations and orientation from GST message
+    major: float | None = None  # 1-sigma standard deviation (meters)
+    minor: float | None = None  # 1-sigma standard deviation (meters)
+    orient: float | None = None  # orientation in degrees
     # True and magnetic headings (true heading may or may not be equal to
     # track, above)
     true_heading: float | None = None
     magnetic_heading: float | None = None
+    # Horizontal error estimate from TPV (eph), in meters
+    horizontal_error: float | None = None
 
 
 class GNSSProvider:
@@ -349,6 +351,8 @@ class GNSSProvider:
             extras["major"] = self._data["GST"].get("major", None)
             extras["minor"] = self._data["GST"].get("minor", None)
             extras["orient"] = self._data["GST"].get("orient", None)
+
+        extras["horizontal_error"] = tpv.get("eph", None)
 
         self.data = GNSSReport(
             timestamp=time.time(),
