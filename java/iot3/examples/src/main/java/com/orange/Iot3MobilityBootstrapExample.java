@@ -8,13 +8,16 @@ import com.orange.iot3mobility.IoT3MobilityCallback;
 import com.orange.iot3mobility.TrueTime;
 import com.orange.iot3mobility.Utils;
 import com.orange.iot3mobility.its.EtsiUtils;
+import com.orange.iot3mobility.message.cam.core.CamCodec;
+import com.orange.iot3mobility.message.cam.core.CamVersion;
+import com.orange.iot3mobility.message.cam.v113.model.CamEnvelope113;
+import com.orange.iot3mobility.message.cam.v230.model.CamEnvelope230;
 import com.orange.iot3mobility.roadobjects.HazardType;
 import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.its.json.JsonValue;
 import com.orange.iot3mobility.its.json.Position;
 import com.orange.iot3mobility.its.json.PositionConfidence;
 import com.orange.iot3mobility.its.json.PositionConfidenceEllipse;
-import com.orange.iot3mobility.its.json.cam.CAM;
 import com.orange.iot3mobility.its.json.cpm.*;
 import com.orange.iot3mobility.its.json.denm.DENM;
 import com.orange.iot3mobility.managers.IoT3RoadHazardCallback;
@@ -125,12 +128,6 @@ public class Iot3MobilityBootstrapExample {
                 System.out.println("New Road User: " + roadUser.getUuid());
                 LatLng position = roadUser.getPosition();
                 System.out.println("Road User position: " + position);
-                // the CAM on which this object is based can still be accessed
-                CAM originalCam = roadUser.getCam();
-                double latitude = originalCam.getBasicContainer().getPosition().getLatitudeDegree();
-                double longitude = originalCam.getBasicContainer().getPosition().getLongitudeDegree();
-                LatLng camPosition = new LatLng(latitude, longitude);
-                System.out.println("CAM position: " + camPosition);
             }
 
             @Override
@@ -146,9 +143,15 @@ public class Iot3MobilityBootstrapExample {
             }
 
             @Override
-            public void camArrived(CAM cam) {
+            public void camArrived(CamCodec.CamFrame<?> camFrame) {
                 // if you want to directly process the raw CAM messages
-                System.out.println("CAM received: " + cam.getJsonCAM());
+                if(camFrame.version().equals(CamVersion.V1_1_3)) {
+                    CamEnvelope113 camEnvelope113 = (CamEnvelope113) camFrame.envelope();
+                    System.out.println("Raw CAM v1.1.3: " + camEnvelope113);
+                } else if(camFrame.version().equals(CamVersion.V2_3_0)) {
+                    CamEnvelope230 camEnvelope230 = (CamEnvelope230) camFrame.envelope();
+                    System.out.println("Raw CAM v2.3.0: " + camEnvelope230);
+                }
             }
         });
 
