@@ -311,7 +311,7 @@ public class IoT3Mobility {
 
     private void processMessage(String topic, String message) {
         if(ioT3RawMessageCallback != null) ioT3RawMessageCallback.messageArrived(message);
-        if(topic.contains("/cam/")) RoadUserManager.processCam(message);
+        if(topic.contains("/cam/")) RoadUserManager.processCam(message, camHelper);
         else if(topic.contains("/cpm/")) RoadSensorManager.processCpm(message);
         else if(topic.contains("/denm/")) RoadHazardManager.processDenm(message);
     }
