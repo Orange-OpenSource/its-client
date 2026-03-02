@@ -24,7 +24,6 @@ import com.orange.iot3mobility.roadobjects.HazardType;
 import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.its.json.JsonValue;
 import com.orange.iot3mobility.its.json.Position;
-import com.orange.iot3mobility.its.json.cam.CAM;
 import com.orange.iot3mobility.its.json.cpm.CPM;
 import com.orange.iot3mobility.its.json.denm.*;
 import com.orange.iot3mobility.managers.*;
@@ -39,6 +38,8 @@ import java.net.URI;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Mobility SDK based on the Orange IoT3.0 platform.
@@ -50,6 +51,8 @@ import java.util.ArrayList;
  * </ul>
  */
 public class IoT3Mobility {
+
+    private static final Logger LOGGER = Logger.getLogger(IoT3Mobility.class.getName());
 
     private final IoT3Core ioT3Core;
     private final RoIManager roIManager;
@@ -318,7 +321,7 @@ public class IoT3Mobility {
 
     /**
      * Share your position and dynamic parameters with other road users.
-     * Builds a CAM and uses {@link #sendCam(CAM)}
+     * Builds a CAM v1.1.3 and uses {@link #sendCam(CamEnvelope113)}
      *
      * @param stationType your road user type
      * @param position your position (latitude, longitude in degrees)
@@ -355,28 +358,13 @@ public class IoT3Mobility {
                         .build())
                 .build();
 
+        LOGGER.log(Level.INFO, "Sending CAM v1.1.3: " + camEnvelope113);
 
         try {
             sendCam(camEnvelope113);
         } catch (IOException e) {
-            throw new RuntimeException(e); // TODO
+            LOGGER.log(Level.WARNING, "CAM generation error: " + e);
         }
-    }
-
-    /**
-     * Send a CAM - Cooperative Awareness Message
-     *
-     * @param cam the CAM representing your current state
-     */
-    public void sendCam(CAM cam) {
-        // build the topic
-        String quadkey = QuadTileHelper.latLngToQuadKey(cam.getBasicContainer().getPosition().getLatitudeDegree(),
-                cam.getBasicContainer().getPosition().getLongitudeDegree(), 22);
-        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
-        String topic = context + "/inQueue/v2x/cam/" + uuid + geoExtension;
-
-        // send the message only if the client is connected
-        if(isConnected()) ioT3Core.mqttPublish(topic, cam.getJsonCAM().toString(), false, 0, 1);
     }
 
     /**
