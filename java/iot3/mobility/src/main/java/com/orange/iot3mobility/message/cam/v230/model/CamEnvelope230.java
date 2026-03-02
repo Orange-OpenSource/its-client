@@ -29,18 +29,16 @@ public record CamEnvelope230(
      * </ul>
      */
     public static final class Builder {
-        private String messageType;
+        private final String messageType;
         private String messageFormat;
         private String sourceUuid;
         private Long timestamp;
-        private String version;
+        private final String version;
         private CamMessage230 message;
 
-        private Builder() {}
-
-        public Builder messageType(String messageType) {
-            this.messageType = messageType;
-            return this;
+        private Builder() {
+            this.messageType = "cam";
+            this.version = "2.3.0";
         }
 
         public Builder messageFormat(String messageFormat) {
@@ -55,11 +53,6 @@ public record CamEnvelope230(
 
         public Builder timestamp(long timestamp) {
             this.timestamp = timestamp;
-            return this;
-        }
-
-        public Builder version(String version) {
-            this.version = version;
             return this;
         }
 
