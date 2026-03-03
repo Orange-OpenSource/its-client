@@ -332,7 +332,7 @@ public class IoT3Mobility {
      * @param yawRate your rotational acceleration in deg/s² [-327 - 327]
      */
     public void sendPosition(StationType stationType, LatLng position, float altitude,
-                             float heading, float speed, float acceleration, float yawRate) {
+                             float heading, float speed, float acceleration, float yawRate) throws IOException {
         // build the CAM
         CamEnvelope113 camEnvelope113 = CamEnvelope113.builder()
                 .origin("self")
@@ -357,14 +357,7 @@ public class IoT3Mobility {
                                 .build())
                         .build())
                 .build();
-
-        LOGGER.log(Level.INFO, "Sending CAM v1.1.3: " + camEnvelope113);
-
-        try {
-            sendCam(camEnvelope113);
-        } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "CAM generation error: " + e);
-        }
+        sendCam(camEnvelope113);
     }
 
     /**
