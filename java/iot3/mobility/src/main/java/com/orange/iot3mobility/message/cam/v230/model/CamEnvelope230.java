@@ -20,11 +20,11 @@ public record CamEnvelope230(
      * <p>
      * Mandatory fields:
      * <ul>
-     * <li>messageType</li>
-     * <li>messageFormat</li>
+     * <li>messageType - hardcoded (cam)</li>
+     * <li>messageFormat - see {@link MessageFormat}</li>
      * <li>sourceUuid</li>
      * <li>timestamp</li>
-     * <li>version</li>
+     * <li>version - hardcoded (2.3.0)</li>
      * <li>message</li>
      * </ul>
      */
