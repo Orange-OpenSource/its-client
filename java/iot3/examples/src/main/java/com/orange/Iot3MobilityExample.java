@@ -30,6 +30,7 @@ import com.orange.iot3mobility.roadobjects.RoadUser;
 import com.orange.iot3mobility.roadobjects.SensorObject;
 import com.orange.lwm2m.model.CustomLwm2mConnectivityStatisticsExample;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -238,7 +239,11 @@ public class Iot3MobilityExample {
 
     private static void sendTestCam() {
         LatLng position = new LatLng(48.625218, 2.243448); // center point of UTAC TEQMO
-        ioT3Mobility.sendPosition(StationType.PASSENGER_CAR, position, 0, 0, 0, 0, 0);
+        try {
+            ioT3Mobility.sendPosition(StationType.PASSENGER_CAR, position, 0, 0, 0, 0, 0);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void sendTestDenm() {
