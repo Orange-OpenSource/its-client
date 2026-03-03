@@ -14,6 +14,11 @@ public record HighFrequencyConfidence(
         return new Builder();
     }
 
+    /**
+     * Builder for HighFrequencyConfidence.
+     * <p>
+     * All fields are optional.
+     */
     public static final class Builder {
         private Integer heading;
         private Integer speed;

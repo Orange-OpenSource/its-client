@@ -11,6 +11,16 @@ public record LowFrequencyContainer(
         return new Builder();
     }
 
+    /**
+     * Builder for LowFrequencyContainer.
+     * <p>
+     * Mandatory fields:
+     * <ul>
+     * <li>vehicleRole</li>
+     * <li>exteriorLights</li>
+     * <li>pathHistory</li>
+     * </ul>
+     */
     public static final class Builder {
         private Integer vehicleRole;
         private String exteriorLights;

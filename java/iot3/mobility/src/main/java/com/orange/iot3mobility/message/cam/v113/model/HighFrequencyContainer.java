@@ -20,6 +20,11 @@ public record HighFrequencyContainer(
         return new Builder();
     }
 
+    /**
+     * Builder for BasicContainer.
+     * <p>
+     * All fields are optional.
+     */
     public static final class Builder {
         private Integer heading;
         private Integer speed;

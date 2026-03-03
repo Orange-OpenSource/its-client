@@ -9,6 +9,15 @@ public record BasicContainer(
         return new Builder();
     }
 
+    /**
+     * Builder for BasicContainer.
+     * <p>
+     * Mandatory fields:
+     * <ul>
+     * <li>stationType</li>
+     * <li>referencePosition</li>
+     * </ul>
+     */
     public static final class Builder {
         private Integer stationType;
         private ReferencePosition referencePosition;

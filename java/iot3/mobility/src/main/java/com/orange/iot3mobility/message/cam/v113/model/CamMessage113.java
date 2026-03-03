@@ -13,6 +13,18 @@ public record CamMessage113(
         return new Builder();
     }
 
+    /**
+     * Builder for CamMessage113.
+     * <p>
+     * Mandatory fields:
+     * <ul>
+     * <li>protocolVersion</li>
+     * <li>stationId</li>
+     * <li>generationDeltaTime</li>
+     * <li>basicContainer</li>
+     * <li>highFrequencyContainer</li>
+     * </ul>
+     */
     public static final class Builder {
         private Integer protocolVersion;
         private Long stationId;

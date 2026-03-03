@@ -12,6 +12,19 @@ public record CamEnvelope113(
         return new Builder();
     }
 
+    /**
+     * Builder for CamEnvelope113.
+     * <p>
+     * Mandatory fields:
+     * <ul>
+     * <li>type - hardcoded (cam)</li>
+     * <li>origin</li>
+     * <li>version - hardcoded (1.1.3)</li>
+     * <li>sourceUuid</li>
+     * <li>timestamp</li>
+     * <li>message</li>
+     * </ul>
+     */
     public static final class Builder {
         private final String type;
         private String origin;
