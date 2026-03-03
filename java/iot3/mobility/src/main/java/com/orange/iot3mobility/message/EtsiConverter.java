@@ -18,11 +18,11 @@ public final class EtsiConverter {
 
     /**
      * SI -> ETSI
-     * @param etsiTimestampMs UNIX timestamp in milliseconds
+     * @param etsiTimestampMs ETSI timestamp in milliseconds
      * @return encoded value in milliseconds (clamped to 0..65535)
      */
     public static int generationDeltaTimeEtsi(long etsiTimestampMs) {
-        return (int) etsiTimestampMs % 65536;
+        return (int) (etsiTimestampMs & 0xFFFF); // equivalent to % 65536 but ensures positive result
     }
 
     /**
