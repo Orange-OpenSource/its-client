@@ -1,13 +1,24 @@
 package com.orange.iot3mobility.message.cam.v113.model;
 
+/**
+ * CAM v1.1.3
+ *
+ * @param protocolVersion version of the ITS message and/or communication protocol
+ * @param stationId identifier for an ITS-S [0 - 4294967295]
+ * @param generationDeltaTime time of the reference position in the CAM, considered as time of the CAM generation.
+ *                            TimestampIts mod 65 536. TimestampIts represents an integer value in milliseconds since
+ *                            2004-01-01T00:00:00:000Z. oneMilliSec(1)
+ * @param basicContainer {@link BasicContainer}
+ * @param highFrequencyContainer {@link HighFrequencyContainer}
+ * @param lowFrequencyContainer {@link LowFrequencyContainer}
+ */
 public record CamMessage113(
         int protocolVersion,
         long stationId,
         int generationDeltaTime,
         BasicContainer basicContainer,
         HighFrequencyContainer highFrequencyContainer,
-        LowFrequencyContainer lowFrequencyContainer,
-        SpecialVehicleContainer specialVehicleContainer) {
+        LowFrequencyContainer lowFrequencyContainer) {
 
     public static Builder builder() {
         return new Builder();
@@ -32,7 +43,6 @@ public record CamMessage113(
         private BasicContainer basicContainer;
         private HighFrequencyContainer highFrequencyContainer;
         private LowFrequencyContainer lowFrequencyContainer;
-        private SpecialVehicleContainer specialVehicleContainer;
 
         private Builder() {}
 
@@ -66,11 +76,6 @@ public record CamMessage113(
             return this;
         }
 
-        public Builder specialVehicleContainer(SpecialVehicleContainer specialVehicleContainer) {
-            this.specialVehicleContainer = specialVehicleContainer;
-            return this;
-        }
-
         public CamMessage113 build() {
             return new CamMessage113(
                     requireNonNull(protocolVersion, "protocol_version"),
@@ -78,8 +83,7 @@ public record CamMessage113(
                     requireNonNull(generationDeltaTime, "generation_delta_time"),
                     requireNonNull(basicContainer, "basic_container"),
                     requireNonNull(highFrequencyContainer, "high_frequency_container"),
-                    lowFrequencyContainer,
-                    specialVehicleContainer);
+                    lowFrequencyContainer);
         }
 
         private static <T> T requireNonNull(T value, String field) {

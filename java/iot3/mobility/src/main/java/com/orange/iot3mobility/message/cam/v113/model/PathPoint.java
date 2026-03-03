@@ -1,5 +1,12 @@
 package com.orange.iot3mobility.message.cam.v113.model;
 
+/**
+ * PathPoint v1.1.3
+ *
+ * @param deltaPosition {@link DeltaReferencePosition}
+ * @param deltaTime time traveled by the detecting ITS-S since the previous detected event point
+ *                  (generation_delta_time). tenMilliSecondsInPast(1)
+ */
 public record PathPoint(
         DeltaReferencePosition deltaPosition,
         Integer deltaTime) {}

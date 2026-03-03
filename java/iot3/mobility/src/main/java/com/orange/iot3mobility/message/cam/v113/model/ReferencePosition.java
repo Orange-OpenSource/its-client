@@ -1,5 +1,12 @@
 package com.orange.iot3mobility.message.cam.v113.model;
 
+/**
+ * ReferencePosition v1.1.3
+ *
+ * @param latitude Unit: 0.1 microdegree. oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10), unavailable(900000001)
+ * @param longitude Unit: 0.1 microdegree. oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(1800000001)
+ * @param altitude Unit: 0.01 meter. referenceEllipsoidSurface(0), oneCentimeter(1), unavailable(800001)
+ */
 public record ReferencePosition(
         int latitude,
         int longitude,

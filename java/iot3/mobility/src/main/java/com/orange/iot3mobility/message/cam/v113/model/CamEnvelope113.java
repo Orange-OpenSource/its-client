@@ -1,5 +1,15 @@
 package com.orange.iot3mobility.message.cam.v113.model;
 
+/**
+ * CamEnvelope113 - base class to build a CAM v1.1.3 with its header
+ *
+ * @param type message type (cam)
+ * @param origin {@link Origin}
+ * @param version json message format version (1.1.3)
+ * @param sourceUuid identifier
+ * @param timestamp Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01)
+ * @param message {@link CamMessage113}
+ */
 public record CamEnvelope113(
         String type,
         String origin,
