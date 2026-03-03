@@ -18,7 +18,7 @@ public record CamEnvelope113(
      * Mandatory fields:
      * <ul>
      * <li>type - hardcoded (cam)</li>
-     * <li>origin</li>
+     * <li>origin - see {@link Origin}</li>
      * <li>version - hardcoded (1.1.3)</li>
      * <li>sourceUuid</li>
      * <li>timestamp</li>

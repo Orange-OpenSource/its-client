@@ -335,7 +335,7 @@ public class IoT3Mobility {
                              float heading, float speed, float acceleration, float yawRate) throws IOException {
         // build the CAM
         CamEnvelope113 camEnvelope113 = CamEnvelope113.builder()
-                .origin("self")
+                .origin(Origin.SELF.value)
                 .sourceUuid(uuid)
                 .timestamp(TrueTime.getAccurateTime())
                 .message(CamMessage113.builder()
