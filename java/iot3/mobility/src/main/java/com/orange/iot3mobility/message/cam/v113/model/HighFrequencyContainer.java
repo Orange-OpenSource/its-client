@@ -8,9 +8,9 @@ package com.orange.iot3mobility.message.cam.v113.model;
  * @param driveDirection forward (0), backward (1), unavailable (2)
  * @param vehicleLength tenCentimeters(1), outOfRange(1022), unavailable(1023)
  * @param vehicleWidth tenCentimeters(1), outOfRange(61), unavailable(62)
- * @param curvature whether the yaw rate is used to calculate the curvature: yawRateUsed(0), yawRateNotUsed(1),
- *                  unavailable(2)
- * @param curvatureCalculationMode straight(0), unavailable(1023)
+ * @param curvature straight(0), unavailable(1023)
+ * @param curvatureCalculationMode Whether the yaw rate is used to calculate the curvature: yawRateUsed(0),
+ *                                 yawRateNotUsed(1), unavailable(2)
  * @param longitudinalAcceleration Unit: 0.1 m/s2. pointOneMeterPerSecSquaredForward(1),
  *                                 pointOneMeterPerSecSquaredBackward(-1), unavailable(161)
  * @param yawRate Unit: 0.01 degree/s: straight(0), degSec-000-01ToRight(-1), degSec-000-01ToLeft(1), unavailable(32767)

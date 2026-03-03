@@ -6,7 +6,19 @@ import com.orange.iot3mobility.message.cam.v230.model.lowfrequencycontainer.LowF
 import com.orange.iot3mobility.message.cam.v230.model.specialvehiclecontainer.SpecialVehicleContainer;
 
 /**
- * Structured JSON CAM payload (protocolVersion + containers).
+ * CAM v2.3.0
+ * <p>
+ * Structured JSON CAM payload.
+ *
+ * @param protocolVersion Version of the ITS message
+ * @param stationId Identifier for an ITS-S
+ * @param generationDeltaTime Time of the reference position in the CAM, considered as time of the CAM generation.
+ *                            TimestampIts mod 65 536. TimestampIts represents an integer value in milliseconds since
+ *                            2004-01-01T00:00:00:000Z. oneMilliSec(1)
+ * @param basicContainer {@link BasicContainer}
+ * @param highFrequencyContainer {@link HighFrequencyContainer}
+ * @param lowFrequencyContainer Optional {@link LowFrequencyContainer}
+ * @param specialVehicleContainer Optional {@link SpecialVehicleContainer}
  */
 public record CamStructuredData(
         int protocolVersion,

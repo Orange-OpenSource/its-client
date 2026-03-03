@@ -1,5 +1,19 @@
 package com.orange.iot3mobility.message.cam.v230.model.specialvehiclecontainer;
 
+/**
+ * SpecialVehiclePayload v2.3.0
+ * <p>
+ * One of :
+ * <ul>
+ *     <li>{@link EmergencyContainer}</li>
+ *     <li>{@link DangerousGoodsContainer}</li>
+ *     <li>{@link PublicTransportContainer}</li>
+ *     <li>{@link RescueContainer}</li>
+ *     <li>{@link RoadWorksContainer}</li>
+ *     <li>{@link SafetyCarContainer}</li>
+ *     <li>{@link SpecialTransportContainer}</li>
+ * </ul>
+ */
 public sealed interface SpecialVehiclePayload
         permits EmergencyContainer,
         DangerousGoodsContainer,

@@ -1,5 +1,13 @@
 package com.orange.iot3mobility.message.cam.v230.model.basiccontainer;
 
+import com.orange.iot3mobility.message.StationType;
+
+/**
+ * BasicContainer v2.3.0
+ *
+ * @param stationType {@link StationType} Integer value
+ * @param referencePosition {@link ReferencePosition}
+ */
 public record BasicContainer(
         int stationType,
         ReferencePosition referencePosition) {

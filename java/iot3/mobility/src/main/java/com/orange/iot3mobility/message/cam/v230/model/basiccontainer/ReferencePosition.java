@@ -1,5 +1,15 @@
 package com.orange.iot3mobility.message.cam.v230.model.basiccontainer;
 
+/**
+ * ReferencePosition v2.3.0
+ * <p>
+ * Position within a geographic coordinate system together with a confidence ellipse.
+ *
+ * @param latitude Latitude of the geographical point. Unit: 0,1 microdegree
+ * @param longitude Longitude of the geographical point. Unit: 0,1 microdegree
+ * @param positionConfidenceEllipse {@link PositionConfidenceEllipse}
+ * @param altitude {@link Altitude}
+ */
 public record ReferencePosition(
         int latitude,
         int longitude,

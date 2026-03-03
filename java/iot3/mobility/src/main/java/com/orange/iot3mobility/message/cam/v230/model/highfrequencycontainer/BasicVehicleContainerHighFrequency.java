@@ -1,5 +1,30 @@
 package com.orange.iot3mobility.message.cam.v230.model.highfrequencycontainer;
 
+/**
+ * BasicVehicleContainerHighFrequency v2.3.0
+ *
+ * @param heading {@link Heading}
+ * @param speed {@link Speed}
+ * @param driveDirection Vehicle drive direction (forward or backward) of the originating ITS-S. forward (0),
+ *                       backward (1), unavailable (2)
+ * @param vehicleLength {@link VehicleLength}
+ * @param vehicleWidth Vehicle Width of the vehicle ITS-S that originates the CAM excluding side mirrors and possible
+ *                     similar extensions. outOfRange  (61), unavailable (62)
+ * @param longitudinalAcceleration Longitudinal {@link AccelerationComponent}
+ * @param curvature {@link Curvature}
+ * @param curvatureCalculationMode Whether vehicle yaw-rate is used in the calculation of the curvature of the vehicle
+ *                                 ITS-S that originates the CAM. yawRateUsed (0), yawRateNotUsed (1), unavailable (2)
+ * @param yawRate {@link YawRate}
+ * @param accelerationControl Optional {@link AccelerationControl}
+ * @param lanePosition Optional component which represents the lanePosition of the referencePosition of a vehicle.
+ *                     offTheRoad (-1), innerHardShoulder (0), outerHardShoulder (14)
+ * @param steeringWheelAngle Optional {@link SteeringWheelAngle}
+ * @param lateralAcceleration Optional lateral {@link AccelerationComponent}
+ * @param verticalAcceleration Optional vertical {@link AccelerationComponent}
+ * @param performanceClass Optional component which characterizes the maximum age of the CAM data elements with regard
+ *                         to the generation delta time. unavailable (0), performanceClassA (1), performanceClassB (2)
+ * @param cenDsrcTollingZone Optional {@link CenDsrcTollingZone}
+ */
 public record BasicVehicleContainerHighFrequency(
         Heading heading,
         Speed speed,

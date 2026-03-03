@@ -1,7 +1,20 @@
 package com.orange.iot3mobility.message.cam.v230.model;
 
 /**
- * Top-level CAM envelope for version 2.3.0.
+ * CamEnvelope230 - base class to build a JSON CAM v2.3.0 with its header
+ * <p>
+ * This 2.3.0 version corresponds to the following ETSI references:
+ * <ul>
+ *     <li>CAM TS 103 900 - version 2.2.1</li>
+ *     <li>CDD TS 102 894-2 - version 2.3.1</li>
+ * </ul>
+ *
+ * @param messageType Type of the message carried in message property (cam)
+ * @param messageFormat {@link MessageFormat}
+ * @param sourceUuid Unique id for the message sender
+ * @param timestamp Timestamp when the message was generated since Unix Epoch (millisecond)
+ * @param version JSON message format version (2.3.0)
+ * @param message {@link CamMessage230}
  */
 public record CamEnvelope230(
         String messageType,

@@ -1,7 +1,12 @@
 package com.orange.iot3mobility.message.cam.v230.model;
 
 /**
+ * CamAsn1Payload v2.3.0
+ * <p>
  * Base64-encoded ASN.1 payload alternative.
+ *
+ * @param version ASN.1 PDU version
+ * @param payload Base64-encoded ASN.1 binary payload
  */
 public record CamAsn1Payload(
         String version,

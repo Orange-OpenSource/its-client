@@ -1,5 +1,16 @@
 package com.orange.iot3mobility.message.cam.v230.model.highfrequencycontainer;
 
+/**
+ * ProtectedCommunicationZone v2.3.0
+ *
+ * @param protectedZoneType Type of the protected zone. permanentCenDsrcTolling (0), temporaryCenDsrcTolling (1)
+ * @param expiryTime Optional time at which the validity of the protected communication zone will expire. ITS timestamp
+ * @param protectedZoneLatitude Latitude of the centre point of the protected communication zone. Unit: 0,1 microdegree
+ * @param protectedZoneLongitude Longitude of the centre point of the protected communication zone. Unit: 0,1
+ *                               microdegree
+ * @param protectedZoneRadius Optional radius of the protected communication zone in metres
+ * @param protectedZoneId Optional ID of the protected communication zone
+ */
 public record ProtectedCommunicationZone(
         int protectedZoneType,
         Long expiryTime,
