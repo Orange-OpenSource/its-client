@@ -30,7 +30,7 @@ public final class CamReader113 {
             CamMessage113 message = null;
 
             while (parser.nextToken() != JsonToken.END_OBJECT) {
-                String field = parser.getCurrentName();
+                String field = parser.currentName();
                 parser.nextToken();
                 switch (field) {
                     case "type" -> type = parser.getValueAsString();
@@ -68,7 +68,7 @@ public final class CamReader113 {
         SpecialVehicleContainer special = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "protocol_version" -> protocolVersion = parser.getIntValue();
@@ -103,7 +103,7 @@ public final class CamReader113 {
         PositionConfidence confidence = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "station_type" -> stationType = parser.getIntValue();
@@ -123,7 +123,7 @@ public final class CamReader113 {
         Integer lat = null, lon = null, alt = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "latitude" -> lat = parser.getIntValue();
@@ -144,7 +144,7 @@ public final class CamReader113 {
         Integer altitude = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "position_confidence_ellipse" -> ellipse = readEllipse(parser);
@@ -162,7 +162,7 @@ public final class CamReader113 {
         Integer semiMajor = null, semiMinor = null, orientation = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "semi_major_confidence" -> semiMajor = parser.getIntValue();
@@ -196,7 +196,7 @@ public final class CamReader113 {
         HighFrequencyConfidence confidence = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "heading" -> heading = parser.getIntValue();
@@ -240,7 +240,7 @@ public final class CamReader113 {
         Integer longitudinal = null, curvature = null, lateral = null, vertical = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "heading" -> heading = parser.getIntValue();
@@ -272,7 +272,7 @@ public final class CamReader113 {
         List<PathPoint> history = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "vehicle_role" -> vehicleRole = parser.getIntValue();
@@ -302,7 +302,7 @@ public final class CamReader113 {
         Integer deltaTime = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "path_position" -> delta = readDeltaPosition(parser);
@@ -318,7 +318,7 @@ public final class CamReader113 {
         Integer lat = null, lon = null, alt = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "delta_latitude" -> lat = parser.getIntValue();
@@ -342,7 +342,7 @@ public final class CamReader113 {
 
     private static void expect(JsonToken actual, JsonToken expected) throws JsonParseException {
         if (actual != expected) {
-            throw new JsonParseException((JsonParser) null, "Expected " + expected + " but got " + actual);
+            throw new JsonParseException(null, "Expected " + expected + " but got " + actual);
         }
     }
 }

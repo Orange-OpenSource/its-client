@@ -41,7 +41,7 @@ public final class CamReader230 {
             CamMessage230 payload = null;
 
             while (parser.nextToken() != JsonToken.END_OBJECT) {
-                String field = parser.getCurrentName();
+                String field = parser.currentName();
                 parser.nextToken();
                 switch (field) {
                     case "message_type" -> messageType = parser.getValueAsString();
@@ -85,7 +85,7 @@ public final class CamReader230 {
         String asn1Payload = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "protocol_version" -> {
@@ -160,7 +160,7 @@ public final class CamReader230 {
         ReferencePosition reference = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "station_type" -> stationType = parser.getIntValue();
@@ -181,7 +181,7 @@ public final class CamReader230 {
         Altitude altitude = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "latitude" -> lat = parser.getIntValue();
@@ -205,7 +205,7 @@ public final class CamReader230 {
         Integer orientation = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "semi_major" -> semiMajor = parser.getIntValue();
@@ -226,7 +226,7 @@ public final class CamReader230 {
         Integer confidence = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "value" -> value = parser.getIntValue();
@@ -249,7 +249,7 @@ public final class CamReader230 {
         RsuContainerHighFrequency rsu = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "basic_vehicle_container_high_frequency" ->
@@ -291,7 +291,7 @@ public final class CamReader230 {
         CenDsrcTollingZone cenZone = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "heading" -> heading = readHeading(parser);
@@ -338,7 +338,7 @@ public final class CamReader230 {
         List<ProtectedCommunicationZone> zones = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("protected_communication_zones_rsu".equals(field)) {
                 zones = readProtectedZones(parser);
@@ -370,7 +370,7 @@ public final class CamReader230 {
         Integer zoneId = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "protected_zone_type" -> type = parser.getIntValue();
@@ -401,7 +401,7 @@ public final class CamReader230 {
         BasicVehicleContainerLowFrequency basic = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("basic_vehicle_container_low_frequency".equals(field)
                     || "basic_vehicle_container_low_frequency  ".equals(field)) { // schema typo
@@ -420,7 +420,7 @@ public final class CamReader230 {
         List<PathPoint> history = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "vehicle_role" -> vehicleRole = parser.getIntValue();
@@ -447,7 +447,7 @@ public final class CamReader230 {
         Boolean parking = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "low_beam_headlights_on" -> lowBeam = parser.getBooleanValue();
@@ -487,7 +487,7 @@ public final class CamReader230 {
         Integer deltaTime = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "path_position" -> delta = readDeltaReferencePosition(parser);
@@ -505,7 +505,7 @@ public final class CamReader230 {
         Integer alt = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "delta_latitude" -> lat = parser.getIntValue();
@@ -529,7 +529,7 @@ public final class CamReader230 {
         SpecialVehiclePayload payload = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             payload = switch (field) {
                 case "public_transport_container" -> readPublicTransport(parser);
@@ -554,7 +554,7 @@ public final class CamReader230 {
         PtActivation activation = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("embarkation_status".equals(field)) {
                 embarkation = parser.getBooleanValue();
@@ -575,7 +575,7 @@ public final class CamReader230 {
         String data = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("pt_activation_type".equals(field)) {
                 type = parser.getIntValue();
@@ -596,7 +596,7 @@ public final class CamReader230 {
         LightBarSiren lightBar = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("special_transport_type".equals(field)) {
                 type = readSpecialTransportType(parser);
@@ -616,7 +616,7 @@ public final class CamReader230 {
         Boolean heavy = null, width = null, length = null, height = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "heavy_load" -> heavy = parser.getBooleanValue();
@@ -638,7 +638,7 @@ public final class CamReader230 {
         Integer goods = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("dangerous_goods_basic".equals(field)) {
                 goods = parser.getIntValue();
@@ -657,7 +657,7 @@ public final class CamReader230 {
         ClosedLanes closedLanes = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "road_works_sub_cause_code" -> subCause = parser.getIntValue();
@@ -676,7 +676,7 @@ public final class CamReader230 {
         DrivingLaneStatus status = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("inner_hard_shoulder_status".equals(field)) {
                 inner = parser.getIntValue();
@@ -696,7 +696,7 @@ public final class CamReader230 {
         Boolean[] lanes = new Boolean[13];
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if (field.startsWith("lane_") && field.endsWith("_closed")) {
                 int index = Integer.parseInt(field.substring(5, field.length() - 7)) - 1;
@@ -720,7 +720,7 @@ public final class CamReader230 {
         LightBarSiren lightBar = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            if ("light_bar_siren_in_use".equals(parser.getCurrentName())) {
+            if ("light_bar_siren_in_use".equals(parser.currentName())) {
                 parser.nextToken();
                 lightBar = readLightBar(parser);
             } else {
@@ -737,7 +737,7 @@ public final class CamReader230 {
         EmergencyPriority priority = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "light_bar_siren_in_use" -> lightBar = readLightBar(parser);
@@ -757,7 +757,7 @@ public final class CamReader230 {
         Integer speedLimit = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "light_bar_siren_in_use" -> lightBar = readLightBar(parser);
@@ -775,7 +775,7 @@ public final class CamReader230 {
         CauseCode causeCode = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            if ("cc_and_scc".equals(parser.getCurrentName())) {
+            if ("cc_and_scc".equals(parser.currentName())) {
                 parser.nextToken();
                 causeCode = readCauseCode(parser);
             } else {
@@ -791,7 +791,7 @@ public final class CamReader230 {
         Integer subcause = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("cause".equals(field)) {
                 cause = parser.getIntValue();
@@ -810,7 +810,7 @@ public final class CamReader230 {
         Boolean freeCrossing = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("request_for_right_of_way".equals(field)) {
                 rightOfWay = parser.getBooleanValue();
@@ -831,7 +831,7 @@ public final class CamReader230 {
         Boolean siren = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("light_bar_activated".equals(field)) {
                 lightBar = parser.getBooleanValue();
@@ -856,7 +856,7 @@ public final class CamReader230 {
         Integer confidence = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("value".equals(field)) {
                 value = parser.getIntValue();
@@ -877,7 +877,7 @@ public final class CamReader230 {
         Integer confidence = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("value".equals(field)) {
                 value = parser.getIntValue();
@@ -898,7 +898,7 @@ public final class CamReader230 {
         Integer confidence = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("value".equals(field)) {
                 value = parser.getIntValue();
@@ -919,7 +919,7 @@ public final class CamReader230 {
         Integer confidence = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("value".equals(field)) {
                 value = parser.getIntValue();
@@ -940,7 +940,7 @@ public final class CamReader230 {
         Integer confidence = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("value".equals(field)) {
                 value = parser.getIntValue();
@@ -961,7 +961,7 @@ public final class CamReader230 {
         Integer confidence = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("value".equals(field)) {
                 value = parser.getIntValue();
@@ -982,7 +982,7 @@ public final class CamReader230 {
         Integer confidence = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("value".equals(field)) {
                 value = parser.getIntValue();
@@ -1002,7 +1002,7 @@ public final class CamReader230 {
         Boolean brake = null, gas = null, emergency = null, collision = null, acc = null, cruise = null, limiter = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             switch (field) {
                 case "brake_pedal_engaged" -> brake = parser.getBooleanValue();
@@ -1032,7 +1032,7 @@ public final class CamReader230 {
         Integer zoneId = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String field = parser.getCurrentName();
+            String field = parser.currentName();
             parser.nextToken();
             if ("protected_zone_latitude".equals(field)) {
                 latitude = parser.getIntValue();
