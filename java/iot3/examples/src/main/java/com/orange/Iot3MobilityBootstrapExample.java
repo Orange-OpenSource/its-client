@@ -226,7 +226,7 @@ public class Iot3MobilityBootstrapExample {
     private static void sendTestCam() {
         LatLng position = new LatLng(48.625218, 2.243448); // center point of UTAC TEQMO
         try {
-            ioT3Mobility.sendPosition(StationType.PASSENGER_CAR, position, 0, 0, 0, 0, 0);
+            ioT3Mobility.sendPosition(StationType.PASSENGER_CAR, position, 0, 0, 0, 0, 0, CamVersion.V1_1_3);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
