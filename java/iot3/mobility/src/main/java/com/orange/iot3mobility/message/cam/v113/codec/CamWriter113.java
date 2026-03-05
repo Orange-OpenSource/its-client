@@ -48,11 +48,6 @@ public final class CamWriter113 {
             writeLowFrequency(gen, msg.lowFrequencyContainer());
         }
 
-        if (msg.specialVehicleContainer() != null) {
-            gen.writeFieldName("special_vehicle_container");
-            gen.writeStartObject();
-            gen.writeEndObject();
-        }
         gen.writeEndObject();
     }
 

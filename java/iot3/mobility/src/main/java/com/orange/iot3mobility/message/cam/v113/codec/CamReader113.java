@@ -65,7 +65,6 @@ public final class CamReader113 {
         BasicContainer basic = null;
         HighFrequencyContainer high = null;
         LowFrequencyContainer low = null;
-        SpecialVehicleContainer special = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
             String field = parser.currentName();
@@ -77,11 +76,6 @@ public final class CamReader113 {
                 case "basic_container" -> basic = readBasic(parser);
                 case "high_frequency_container" -> high = readHighFrequency(parser);
                 case "low_frequency_container" -> low = readLowFrequency(parser);
-                case "special_vehicle_container" -> {
-                    expect(parser.getCurrentToken(), JsonToken.START_OBJECT);
-                    parser.skipChildren();
-                    special = new SpecialVehicleContainer();
-                }
                 default -> parser.skipChildren();
             }
         }
@@ -92,8 +86,7 @@ public final class CamReader113 {
                 requireField(generationDelta, "generation_delta_time"),
                 requireField(basic, "basic_container"),
                 requireField(high, "high_frequency_container"),
-                low,
-                special);
+                low);
     }
 
     private BasicContainer readBasic(JsonParser parser) throws IOException {
