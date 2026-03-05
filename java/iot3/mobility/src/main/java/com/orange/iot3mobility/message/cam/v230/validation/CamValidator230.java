@@ -120,9 +120,6 @@ public final class CamValidator230 {
         checkRange("high_frequency_container.curvature_calculation_mode", container.curvatureCalculationMode(), 0, 2);
         validateYawRate("high_frequency_container.yaw_rate", container.yawRate());
 
-        if (container.accelerationControl() == null) {
-            throw new CamValidationException("high_frequency_container.acceleration_control must be provided");
-        }
         if (container.lanePosition() != null) {
             checkRange("high_frequency_container.lane_position", container.lanePosition(), -1, 14);
         }
