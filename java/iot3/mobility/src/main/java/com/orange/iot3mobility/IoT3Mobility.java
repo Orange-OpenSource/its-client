@@ -17,9 +17,14 @@ import com.orange.iot3core.clients.lwm2m.model.*;
 import com.orange.iot3mobility.its.EtsiUtils;
 import com.orange.iot3mobility.message.EtsiConverter;
 import com.orange.iot3mobility.message.cam.CamHelper;
+import com.orange.iot3mobility.message.cam.core.CamVersion;
 import com.orange.iot3mobility.message.cam.v113.model.*;
+import com.orange.iot3mobility.message.cam.v113.model.HighFrequencyContainer;
 import com.orange.iot3mobility.message.cam.v230.model.CamEnvelope230;
 import com.orange.iot3mobility.message.cam.v230.model.CamStructuredData;
+import com.orange.iot3mobility.message.cam.v230.model.MessageFormat;
+import com.orange.iot3mobility.message.cam.v230.model.basiccontainer.Altitude;
+import com.orange.iot3mobility.message.cam.v230.model.highfrequencycontainer.*;
 import com.orange.iot3mobility.roadobjects.HazardType;
 import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.its.json.JsonValue;
@@ -38,7 +43,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -321,7 +325,6 @@ public class IoT3Mobility {
 
     /**
      * Share your position and dynamic parameters with other road users.
-     * Builds a CAM v1.1.3 and uses {@link #sendCam(CamEnvelope113)}
      *
      * @param stationType your road user type
      * @param position your position (latitude, longitude in degrees)
@@ -330,34 +333,70 @@ public class IoT3Mobility {
      * @param speed your speed in meters per second [0 - 163]
      * @param acceleration your longitudinal acceleration in m/s² [-16 - 16]
      * @param yawRate your rotational acceleration in deg/s² [-327 - 327]
+     * @param camVersion the CAM version you want to emit
      */
     public void sendPosition(StationType stationType, LatLng position, float altitude,
-                             float heading, float speed, float acceleration, float yawRate) throws IOException {
-        // build the CAM
-        CamEnvelope113 camEnvelope113 = CamEnvelope113.builder()
-                .origin(Origin.SELF.value)
-                .sourceUuid(uuid)
-                .timestamp(TrueTime.getAccurateTime())
-                .message(CamMessage113.builder()
-                        .protocolVersion(2)
-                        .stationId(stationId)
-                        .generationDeltaTime(EtsiConverter.generationDeltaTimeEtsi(TrueTime.getAccurateETSITime()))
-                        .basicContainer(BasicContainer.builder()
-                                .stationType(stationType.getId())
-                                .referencePosition(new ReferencePosition(
-                                        EtsiConverter.latitudeEtsi(position.getLatitude()),
-                                        EtsiConverter.longitudeEtsi(position.getLongitude()),
-                                        EtsiConverter.altitudeEtsi(altitude)))
-                                .build())
-                        .highFrequencyContainer(HighFrequencyContainer.builder()
-                                .heading(EtsiConverter.headingEtsiFromDegrees(heading))
-                                .speed(EtsiConverter.speedEtsiFromMetersPerSecond(speed))
-                                .longitudinalAcceleration(EtsiConverter.accelerationEtsi(acceleration))
-                                .yawRate(EtsiConverter.yawRateEtsiFromDegreesPerSecond(yawRate))
-                                .build())
-                        .build())
-                .build();
-        sendCam(camEnvelope113);
+                             float heading, float speed, float acceleration, float yawRate, CamVersion camVersion) throws IOException {
+        if(camVersion == CamVersion.V1_1_3) {
+            CamEnvelope113 camEnvelope113 = CamEnvelope113.builder()
+                    .origin(Origin.SELF.value)
+                    .sourceUuid(uuid)
+                    .timestamp(TrueTime.getAccurateTime())
+                    .message(CamMessage113.builder()
+                            .protocolVersion(2)
+                            .stationId(stationId)
+                            .generationDeltaTime(EtsiConverter.generationDeltaTimeEtsi(TrueTime.getAccurateETSITime()))
+                            .basicContainer(BasicContainer.builder()
+                                    .stationType(stationType.getId())
+                                    .referencePosition(new ReferencePosition(
+                                            EtsiConverter.latitudeEtsi(position.getLatitude()),
+                                            EtsiConverter.longitudeEtsi(position.getLongitude()),
+                                            EtsiConverter.altitudeEtsi(altitude)))
+                                    .build())
+                            .highFrequencyContainer(HighFrequencyContainer.builder()
+                                    .heading(EtsiConverter.headingEtsiFromDegrees(heading))
+                                    .speed(EtsiConverter.speedEtsiFromMetersPerSecond(speed))
+                                    .longitudinalAcceleration(EtsiConverter.accelerationEtsi(acceleration))
+                                    .yawRate(EtsiConverter.yawRateEtsiFromDegreesPerSecond(yawRate))
+                                    .build())
+                            .build())
+                    .build();
+            sendCam(camEnvelope113);
+        } else if(camVersion == CamVersion.V2_3_0) {
+            CamEnvelope230 camEnvelope230 = CamEnvelope230.builder()
+                    .messageFormat(MessageFormat.JSON_RAW.value)
+                    .sourceUuid(uuid)
+                    .timestamp(TrueTime.getAccurateTime())
+                    .message(CamStructuredData.builder()
+                            .protocolVersion(2)
+                            .stationId(stationId)
+                            .generationDeltaTime(EtsiConverter.generationDeltaTimeEtsi(TrueTime.getAccurateETSITime()))
+                            .basicContainer(com.orange.iot3mobility.message.cam.v230.model.basiccontainer.BasicContainer.builder()
+                                    .stationType(stationType.getId())
+                                    .referencePosition(com.orange.iot3mobility.message.cam.v230.model.basiccontainer.ReferencePosition.builder()
+                                            .latitudeLongitude(EtsiConverter.latitudeEtsi(position.latitude),
+                                                    EtsiConverter.longitudeEtsi(position.longitude))
+                                            .positionConfidenceEllipse(new com.orange.iot3mobility.message.cam.v230.model.basiccontainer.PositionConfidenceEllipse(10, 10,
+                                                    EtsiConverter.headingEtsiFromDegrees(heading)))
+                                            .altitude(new Altitude(EtsiConverter.altitudeEtsi(altitude), 15))
+                                            .build())
+                                    .build())
+                            .highFrequencyContainer(BasicVehicleContainerHighFrequency.builder()
+                                    .heading(new Heading(EtsiConverter.headingEtsiFromDegrees(heading), 127))
+                                    .speed(new Speed(EtsiConverter.speedEtsiFromMetersPerSecond(speed), 127))
+                                    .longitudinalAcceleration(new AccelerationComponent(
+                                            EtsiConverter.accelerationEtsi(acceleration), 102))
+                                    .yawRate(new YawRate(EtsiConverter.yawRateEtsiFromDegreesPerSecond(yawRate), 8))
+                                    .driveDirection(2)
+                                    .vehicleLength(new VehicleLength(1023, 4))
+                                    .vehicleWidth(62)
+                                    .curvature(new Curvature(1023, 7))
+                                    .curvatureCalculationMode(2)
+                                    .build())
+                            .build())
+                    .build();
+            sendCam(camEnvelope230);
+        }
     }
 
     /**
