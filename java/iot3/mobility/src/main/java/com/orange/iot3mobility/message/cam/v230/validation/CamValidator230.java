@@ -24,7 +24,6 @@ import java.util.Set;
 public final class CamValidator230 {
 
     private static final long MIN_TIMESTAMP = 1514764800000L;   // 2018-01-01
-    private static final long MAX_TIMESTAMP = 1830297600000L;   // 2027-01-01
     private static final Set<String> MESSAGE_FORMATS = Set.of("json/raw", "asn1/uper");
 
     private CamValidator230() {
@@ -37,7 +36,7 @@ public final class CamValidator230 {
             throw new CamValidationException("message_format must be one of " + MESSAGE_FORMATS);
         }
         requireNotBlank("source_uuid", envelope.sourceUuid());
-        checkRange("timestamp", envelope.timestamp(), MIN_TIMESTAMP, MAX_TIMESTAMP);
+        checkMin("timestamp", envelope.timestamp(), MIN_TIMESTAMP);
         requireEquals("version", envelope.version(), "2.3.0");
 
         CamMessage230 payload = requireNonNull("message", envelope.message());
@@ -387,6 +386,12 @@ public final class CamValidator230 {
     private static void checkRange(String field, long value, long min, long max) {
         if (value < min || value > max) {
             throw new CamValidationException(field + " out of range [" + min + ", " + max + "] (actual=" + value + ")");
+        }
+    }
+
+    private static void checkMin(String field, long value, long min) {
+        if (value < min) {
+            throw new CamValidationException(field + " inferior to min [" + min + "] (actual=" + value + ")");
         }
     }
 
