@@ -210,6 +210,9 @@
 #### Square OkHttp
 - [Source code](https://github.com/square/okhttp)
 
+#### Jackson Core
+- [Source code](https://github.com/FasterXML/jackson-core)
+
 ## Swift
 
 ### License Apache 2.0
