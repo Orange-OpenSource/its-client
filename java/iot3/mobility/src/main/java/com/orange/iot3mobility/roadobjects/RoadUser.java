@@ -8,7 +8,7 @@
 package com.orange.iot3mobility.roadobjects;
 
 import com.orange.iot3mobility.its.StationType;
-import com.orange.iot3mobility.its.json.cam.CAM;
+import com.orange.iot3mobility.messages.cam.core.CamCodec;
 import com.orange.iot3mobility.quadkey.LatLng;
 
 public class RoadUser {
@@ -18,18 +18,18 @@ public class RoadUser {
     private final String uuid;
     private StationType stationType;
     private LatLng position;
-    private float speed; // m/s
-    private float heading; // degree
+    private double speed; // m/s
+    private double heading; // degree
     private long timestamp;
-    private CAM cam;
+    private CamCodec.CamFrame<?> camFrame;
 
-    public RoadUser(String uuid, StationType stationType, LatLng position, float speed, float heading, CAM cam) {
+    public RoadUser(String uuid, StationType stationType, LatLng position, double speed, double heading, CamCodec.CamFrame<?> camFrame) {
         this.uuid = uuid;
         this.setStationType(stationType);
         this.position = position;
         this.speed = speed;
         this.heading = heading;
-        this.cam = cam;
+        this.camFrame = camFrame;
         updateTimestamp();
     }
 
@@ -53,32 +53,32 @@ public class RoadUser {
         this.position = position;
     }
 
-    public float getSpeed() {
+    public double getSpeed() {
         return speed;
     }
 
-    public float getSpeedKmh() {
+    public double getSpeedKmh() {
         return speed * 3.6f;
     }
 
-    public void setSpeed(float speed) {
+    public void setSpeed(double speed) {
         this.speed = speed;
     }
 
-    public float getHeading() {
+    public double getHeading() {
         return heading;
     }
 
-    public void setHeading(float heading) {
+    public void setHeading(double heading) {
         this.heading = heading;
     }
 
-    public void setCam(CAM cam) {
-        this.cam = cam;
+    public void setCamFrame(CamCodec.CamFrame<?> camFrame) {
+        this.camFrame = camFrame;
     }
 
-    public CAM getCam() {
-        return cam;
+    public CamCodec.CamFrame<?> getCamFrame() {
+        return camFrame;
     }
 
     public long getTimestamp() {

@@ -1,0 +1,20 @@
+/*
+ Copyright 2016-2026 Orange
+
+ This software is distributed under the MIT license, see LICENSE.txt file for more details.
+
+ @author Mathieu LEFEBVRE <mathieu1.lefebvre@orange.com>
+ */
+package com.orange.iot3mobility.messages.cam.v230.model.specialvehiclecontainer;
+
+/**
+ * PublicTransportContainer v2.3.0
+ * <p>
+ * If the vehicleRole component is set to publicTransport(1) this container shall be present.
+ *
+ * @param embarkationStatus Passenger embarkation is currently ongoing
+ * @param ptActivation Optional {@link PtActivation} used for controlling traffic lights, barriers, bollards, etc.
+ */
+public record PublicTransportContainer(
+        boolean embarkationStatus,
+        PtActivation ptActivation) implements SpecialVehiclePayload {}
