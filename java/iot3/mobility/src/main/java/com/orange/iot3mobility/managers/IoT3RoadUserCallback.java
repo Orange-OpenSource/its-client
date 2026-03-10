@@ -7,7 +7,7 @@
  */
 package com.orange.iot3mobility.managers;
 
-import com.orange.iot3mobility.message.cam.core.CamCodec;
+import com.orange.iot3mobility.messages.cam.core.CamCodec;
 import com.orange.iot3mobility.roadobjects.RoadUser;
 
 public interface IoT3RoadUserCallback {

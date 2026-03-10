@@ -15,16 +15,16 @@ import com.orange.iot3core.IoT3CoreCallback;
 import com.orange.iot3core.bootstrap.BootstrapConfig;
 import com.orange.iot3core.clients.lwm2m.model.*;
 import com.orange.iot3mobility.its.EtsiUtils;
-import com.orange.iot3mobility.message.EtsiConverter;
-import com.orange.iot3mobility.message.cam.CamHelper;
-import com.orange.iot3mobility.message.cam.core.CamVersion;
-import com.orange.iot3mobility.message.cam.v113.model.*;
-import com.orange.iot3mobility.message.cam.v113.model.HighFrequencyContainer;
-import com.orange.iot3mobility.message.cam.v230.model.CamEnvelope230;
-import com.orange.iot3mobility.message.cam.v230.model.CamStructuredData;
-import com.orange.iot3mobility.message.cam.v230.model.MessageFormat;
-import com.orange.iot3mobility.message.cam.v230.model.basiccontainer.Altitude;
-import com.orange.iot3mobility.message.cam.v230.model.highfrequencycontainer.*;
+import com.orange.iot3mobility.messages.EtsiConverter;
+import com.orange.iot3mobility.messages.cam.CamHelper;
+import com.orange.iot3mobility.messages.cam.core.CamVersion;
+import com.orange.iot3mobility.messages.cam.v113.model.*;
+import com.orange.iot3mobility.messages.cam.v113.model.HighFrequencyContainer;
+import com.orange.iot3mobility.messages.cam.v230.model.CamEnvelope230;
+import com.orange.iot3mobility.messages.cam.v230.model.CamStructuredData;
+import com.orange.iot3mobility.messages.cam.v230.model.MessageFormat;
+import com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.Altitude;
+import com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.*;
 import com.orange.iot3mobility.roadobjects.HazardType;
 import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.its.json.JsonValue;
@@ -371,12 +371,12 @@ public class IoT3Mobility {
                             .protocolVersion(2)
                             .stationId(stationId)
                             .generationDeltaTime(EtsiConverter.generationDeltaTimeEtsi(TrueTime.getAccurateETSITime()))
-                            .basicContainer(com.orange.iot3mobility.message.cam.v230.model.basiccontainer.BasicContainer.builder()
+                            .basicContainer(com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.BasicContainer.builder()
                                     .stationType(stationType.getId())
-                                    .referencePosition(com.orange.iot3mobility.message.cam.v230.model.basiccontainer.ReferencePosition.builder()
+                                    .referencePosition(com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.ReferencePosition.builder()
                                             .latitudeLongitude(EtsiConverter.latitudeEtsi(position.latitude),
                                                     EtsiConverter.longitudeEtsi(position.longitude))
-                                            .positionConfidenceEllipse(new com.orange.iot3mobility.message.cam.v230.model.basiccontainer.PositionConfidenceEllipse(10, 10,
+                                            .positionConfidenceEllipse(new com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.PositionConfidenceEllipse(10, 10,
                                                     EtsiConverter.headingEtsiFromDegrees(heading)))
                                             .altitude(new Altitude(EtsiConverter.altitudeEtsi(altitude), 15))
                                             .build())

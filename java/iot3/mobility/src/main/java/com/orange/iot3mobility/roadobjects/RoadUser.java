@@ -8,7 +8,7 @@
 package com.orange.iot3mobility.roadobjects;
 
 import com.orange.iot3mobility.its.StationType;
-import com.orange.iot3mobility.message.cam.core.CamCodec;
+import com.orange.iot3mobility.messages.cam.core.CamCodec;
 import com.orange.iot3mobility.quadkey.LatLng;
 
 public class RoadUser {

@@ -8,14 +8,14 @@
 package com.orange.iot3mobility.managers;
 
 import com.orange.iot3mobility.its.StationType;
-import com.orange.iot3mobility.message.EtsiConverter;
-import com.orange.iot3mobility.message.cam.CamHelper;
-import com.orange.iot3mobility.message.cam.core.CamCodec;
-import com.orange.iot3mobility.message.cam.core.CamVersion;
-import com.orange.iot3mobility.message.cam.v113.model.CamEnvelope113;
-import com.orange.iot3mobility.message.cam.v230.model.CamEnvelope230;
-import com.orange.iot3mobility.message.cam.v230.model.CamStructuredData;
-import com.orange.iot3mobility.message.cam.v230.model.highfrequencycontainer.BasicVehicleContainerHighFrequency;
+import com.orange.iot3mobility.messages.EtsiConverter;
+import com.orange.iot3mobility.messages.cam.CamHelper;
+import com.orange.iot3mobility.messages.cam.core.CamCodec;
+import com.orange.iot3mobility.messages.cam.core.CamVersion;
+import com.orange.iot3mobility.messages.cam.v113.model.CamEnvelope113;
+import com.orange.iot3mobility.messages.cam.v230.model.CamEnvelope230;
+import com.orange.iot3mobility.messages.cam.v230.model.CamStructuredData;
+import com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.BasicVehicleContainerHighFrequency;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.roadobjects.RoadUser;
 
