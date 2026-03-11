@@ -20,6 +20,7 @@ package com.orange.iot3mobility.messages.cpm.v211.model;
  * @param sourceUuid Unique id for the message sender
  * @param timestamp Timestamp when the message was generated since Unix Epoch (millisecond)
  * @param version JSON message format version (2.1.1)
+ * @param objectIdRotationCount Optional object ID rotation count.
  * @param message {@link CpmMessage211}
  */
 public record CpmEnvelope211(
@@ -27,6 +28,7 @@ public record CpmEnvelope211(
         String sourceUuid,
         long timestamp,
         String version,
+        Integer objectIdRotationCount,
         CpmMessage211 message) {
 
     public static Builder builder() {
@@ -50,6 +52,7 @@ public record CpmEnvelope211(
         private String sourceUuid;
         private Long timestamp;
         private final String version;
+        private Integer objectIdRotationCount;
         private CpmMessage211 message;
 
         private Builder() {
@@ -72,12 +75,18 @@ public record CpmEnvelope211(
             return this;
         }
 
+        public Builder objectIdRotationCount(Integer objectIdRotationCount) {
+            this.objectIdRotationCount = objectIdRotationCount;
+            return this;
+        }
+
         public CpmEnvelope211 build() {
             return new CpmEnvelope211(
                     requireNonNull(messageType, "message_type"),
                     requireNonNull(sourceUuid, "source_uuid"),
                     requireNonNull(timestamp, "timestamp"),
                     requireNonNull(version, "version"),
+                    objectIdRotationCount,
                     requireNonNull(message, "message"));
         }
 
