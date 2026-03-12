@@ -10,11 +10,11 @@ package com.orange.iot3mobility.messages.cpm.v121.model;
 /**
  * CpmEnvelope121 - base class to build a CPM v1.2.1 with its header
  *
- * @param type message type (cpm)
- * @param origin {@link Origin}
- * @param version json message format version (1.2.1)
- * @param sourceUuid identifier
- * @param timestamp Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01)
+ * @param type message type (cpm). Value: cpm.
+ * @param origin {@link Origin}. Value: self, global_application, mec_application, on_board_application.
+ * @param version json message format version (1.2.1). Value: 1.2.1.
+ * @param sourceUuid identifier.
+ * @param timestamp Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01).
  * @param message {@link CpmMessage121}
  */
 public record CpmEnvelope121(

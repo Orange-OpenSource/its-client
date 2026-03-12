@@ -11,6 +11,7 @@ package com.orange.iot3mobility.messages.cpm.v121.model;
  * Origin v1.2.1
  * <p>
  * The entity responsible for this message.
+ * Value: self, global_application, mec_application, on_board_application.
  */
 public enum Origin {
     SELF("self"),
