@@ -375,4 +375,274 @@ public final class EtsiConverter {
     public static double kilometersPerHourToMetersPerSecond(double kmh) {
         return kmh / 3.6;
     }
+
+    // -------------------------------------------------------------------------
+    // CPM-specific helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * CPM distance component in 0.01 m steps, signed (e.g. x_distance, y_distance, z_distance).
+     * <p>
+     * ETSI -> SI (meters)
+     */
+    public static double cpmDistanceMeters(int distanceEtsi) {
+        return distanceEtsi * 0.01;
+    }
+
+    /**
+     * SI -> ETSI for CPM distance components (0.01 m steps, signed).
+     */
+    public static int cpmDistanceEtsi(double distanceMeters) {
+        long etsi = Math.round(distanceMeters / 0.01);
+        if (etsi < -132768L) etsi = -132768L;
+        if (etsi >  132767L) etsi =  132767L;
+        return (int) etsi;
+    }
+
+    /**
+     * CPM speed component in 0.01 m/s steps, signed (e.g. x_speed, y_speed, z_speed).
+     * <p>
+     * ETSI -> SI (m/s)
+     */
+    public static double cpmSpeedMetersPerSecond(int speedEtsi) {
+        return speedEtsi * 0.01;
+    }
+
+    /**
+     * CPM X and Y speed components in 0.01 m/s steps.
+     * <p>
+     * ETSI -> SI (m/s)
+     */
+    public static double cpmDerivedSpeedMetersPerSecond(int xSpeed, int ySpeed) {
+        return Math.sqrt(Math.abs(xSpeed * xSpeed) + Math.abs(ySpeed * ySpeed)) * 0.01;
+    }
+
+    /**
+     * SI -> ETSI for CPM speed components (0.01 m/s steps, signed).
+     */
+    public static int cpmSpeedEtsiFromMetersPerSecond(double speedMps) {
+        long etsi = Math.round(speedMps / 0.01);
+        if (etsi < -16383L) etsi = -16383L;
+        if (etsi >  16383L) etsi =  16383L;
+        return (int) etsi;
+    }
+
+    /**
+     * CPM X and Y speed components in 0.01 m/s steps.
+     */
+    public static double cpmDerivedHeadingDegrees(int xSpeed, int ySpeed) {
+        return (90 - (180 / Math.PI) * Math.atan2(ySpeed, xSpeed)) % 360;
+    }
+
+    /**
+     * CPM attitude angle in 0.1 degree steps (roll/pitch/yaw). Sentinel: 3601 => unavailable.
+     * <p>
+     * ETSI -> SI (degrees). Returns NaN if sentinel.
+     */
+    public static double cpmAngleDegrees(int angleEtsi) {
+        if (angleEtsi >= 3601) {
+            return Double.NaN;
+        }
+        return angleEtsi * 0.1;
+    }
+
+    /**
+     * SI -> ETSI for CPM attitude angles (0.1 degree steps). If NaN, returns sentinel 3601.
+     */
+    public static int cpmAngleEtsiFromDegrees(double angleDegrees) {
+        if (Double.isNaN(angleDegrees)) {
+            return 3601;
+        }
+        double normalized = ((angleDegrees % 360.0) + 360.0) % 360.0;
+        long etsi = Math.round(normalized / 0.1);
+        if (etsi < 0L) etsi = 0L;
+        if (etsi > 3601L) etsi = 3601L;
+        return (int) etsi;
+    }
+
+    /**
+     * CPM angular rate in 0.01 deg/s steps, signed (roll/pitch/yaw rate).
+     * <p>
+     * ETSI -> SI (deg/s)
+     */
+    public static double cpmAngularRateDegreesPerSecond(int rateEtsi) {
+        return rateEtsi * 0.01;
+    }
+
+    /**
+     * ETSI -> SI (rad/s) for CPM angular rate.
+     */
+    public static double cpmAngularRateRadiansPerSecond(int rateEtsi) {
+        return Math.toRadians(cpmAngularRateDegreesPerSecond(rateEtsi));
+    }
+
+    /**
+     * SI -> ETSI for CPM angular rate (0.01 deg/s steps, signed).
+     */
+    public static int cpmAngularRateEtsiFromDegreesPerSecond(double rateDegPerSec) {
+        long etsi = Math.round(rateDegPerSec / 0.01);
+        if (etsi < -32766L) etsi = -32766L;
+        if (etsi >  32767L) etsi =  32767L;
+        return (int) etsi;
+    }
+
+    /**
+     * SI -> ETSI for CPM angular rate (rad/s).
+     */
+    public static int cpmAngularRateEtsiFromRadiansPerSecond(double rateRadPerSec) {
+        return cpmAngularRateEtsiFromDegreesPerSecond(Math.toDegrees(rateRadPerSec));
+    }
+
+    /**
+     * CPM angular acceleration in 0.01 deg/s^2 steps, signed (roll/pitch/yaw acceleration).
+     * <p>
+     * ETSI -> SI (deg/s^2)
+     */
+    public static double cpmAngularAccelerationDegreesPerSecondSquared(int accelEtsi) {
+        return accelEtsi * 0.01;
+    }
+
+    /**
+     * ETSI -> SI (rad/s^2) for CPM angular acceleration.
+     */
+    public static double cpmAngularAccelerationRadiansPerSecondSquared(int accelEtsi) {
+        return Math.toRadians(cpmAngularAccelerationDegreesPerSecondSquared(accelEtsi));
+    }
+
+    /**
+     * SI -> ETSI for CPM angular acceleration (0.01 deg/s^2 steps, signed).
+     */
+    public static int cpmAngularAccelerationEtsiFromDegreesPerSecondSquared(double accelDegPerSec2) {
+        long etsi = Math.round(accelDegPerSec2 / 0.01);
+        if (etsi < -32766L) etsi = -32766L;
+        if (etsi >  32767L) etsi =  32767L;
+        return (int) etsi;
+    }
+
+    /**
+     * SI -> ETSI for CPM angular acceleration (rad/s^2).
+     */
+    public static int cpmAngularAccelerationEtsiFromRadiansPerSecondSquared(double accelRadPerSec2) {
+        return cpmAngularAccelerationEtsiFromDegreesPerSecondSquared(Math.toDegrees(accelRadPerSec2));
+    }
+
+    /**
+     * CPM object dimensions in 0.1 m steps (planar and vertical dimensions).
+     * <p>
+     * ETSI -> SI (meters)
+     */
+    public static double cpmObjectDimensionMeters(int dimensionEtsi) {
+        return dimensionEtsi * 0.1;
+    }
+
+    /**
+     * SI -> ETSI for CPM object dimensions (0.1 m steps).
+     */
+    public static int cpmObjectDimensionEtsi(double dimensionMeters) {
+        long etsi = Math.round(dimensionMeters / 0.1);
+        if (etsi < 0L) etsi = 0L;
+        if (etsi > 1023L) etsi = 1023L;
+        return (int) etsi;
+    }
+
+    /**
+     * CPM longitudinal lane position in 0.1 m steps.
+     * <p>
+     * ETSI -> SI (meters)
+     */
+    public static double cpmLanePositionMeters(int lanePositionEtsi) {
+        return lanePositionEtsi * 0.1;
+    }
+
+    /**
+     * SI -> ETSI for CPM longitudinal lane position (0.1 m steps).
+     */
+    public static int cpmLanePositionEtsi(double lanePositionMeters) {
+        long etsi = Math.round(lanePositionMeters / 0.1);
+        if (etsi < 0L) etsi = 0L;
+        if (etsi > 32767L) etsi = 32767L;
+        return (int) etsi;
+    }
+
+    /**
+     * CPM offsets and sensor positions in 0.01 m steps, signed (Offset.x/y/z, sensor offsets).
+     * <p>
+     * ETSI -> SI (meters)
+     */
+    public static double cpmOffsetMeters(int offsetEtsi) {
+        return offsetEtsi * 0.01;
+    }
+
+    /**
+     * SI -> ETSI for CPM offsets (0.01 m steps, signed).
+     */
+    public static int cpmOffsetEtsi(double offsetMeters) {
+        long etsi = Math.round(offsetMeters / 0.01);
+        if (etsi < -32768L) etsi = -32768L;
+        if (etsi >  32767L) etsi =  32767L;
+        return (int) etsi;
+    }
+
+    /**
+     * CPM range and radius in 0.1 m steps (sensor ranges and area dimensions).
+     * <p>
+     * ETSI -> SI (meters)
+     */
+    public static double cpmRangeMeters(int rangeEtsi) {
+        return rangeEtsi * 0.1;
+    }
+
+    /**
+     * SI -> ETSI for CPM ranges and radii (0.1 m steps).
+     */
+    public static int cpmRangeEtsi(double rangeMeters) {
+        long etsi = Math.round(rangeMeters / 0.1);
+        if (etsi < 0L) etsi = 0L;
+        if (etsi > 10000L) etsi = 10000L;
+        return (int) etsi;
+    }
+
+    /**
+     * CPM opening angles in 0.1 degree steps. Sentinel: 3601 => unavailable.
+     * <p>
+     * ETSI -> SI (degrees). Returns NaN if sentinel.
+     */
+    public static double cpmOpeningAngleDegrees(int angleEtsi) {
+        if (angleEtsi >= 3601) {
+            return Double.NaN;
+        }
+        return angleEtsi * 0.1;
+    }
+
+    /**
+     * SI -> ETSI for CPM opening angles (0.1 degree steps). If NaN, returns sentinel 3601.
+     */
+    public static int cpmOpeningAngleEtsiFromDegrees(double angleDegrees) {
+        if (Double.isNaN(angleDegrees)) {
+            return 3601;
+        }
+        long etsi = Math.round(angleDegrees / 0.1);
+        if (etsi < 0L) etsi = 0L;
+        if (etsi > 3601L) etsi = 3601L;
+        return (int) etsi;
+    }
+
+    /**
+     * CPM correlation coefficient scaled by 100 (range -100..100).
+     * <p>
+     * ETSI -> SI (coefficient in [-1.0..1.0])
+     */
+    public static double cpmCorrelationCoefficient(int correlationEtsi) {
+        return correlationEtsi / 100.0;
+    }
+
+    /**
+     * SI -> ETSI for CPM correlation coefficient scaled by 100.
+     */
+    public static int cpmCorrelationEtsiFromCoefficient(double coefficient) {
+        long etsi = Math.round(coefficient * 100.0);
+        if (etsi < -100L) etsi = -100L;
+        if (etsi >  100L) etsi =  100L;
+        return (int) etsi;
+    }
 }
