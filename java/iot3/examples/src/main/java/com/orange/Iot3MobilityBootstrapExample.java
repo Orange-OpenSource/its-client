@@ -12,6 +12,10 @@ import com.orange.iot3mobility.messages.cam.core.CamCodec;
 import com.orange.iot3mobility.messages.cam.core.CamVersion;
 import com.orange.iot3mobility.messages.cam.v113.model.CamEnvelope113;
 import com.orange.iot3mobility.messages.cam.v230.model.CamEnvelope230;
+import com.orange.iot3mobility.messages.cpm.core.CpmCodec;
+import com.orange.iot3mobility.messages.cpm.core.CpmVersion;
+import com.orange.iot3mobility.messages.cpm.v121.model.CpmEnvelope121;
+import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
 import com.orange.iot3mobility.roadobjects.HazardType;
 import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.its.json.JsonValue;
@@ -190,8 +194,14 @@ public class Iot3MobilityBootstrapExample {
             }
 
             @Override
-            public void cpmArrived(CPM cpm) {
-                System.out.println("CPM received: " + cpm.getJson());
+            public void cpmArrived(CpmCodec.CpmFrame<?> cpmFrame) {
+                if(cpmFrame.version() == CpmVersion.V1_2_1) {
+                    CpmEnvelope121 cpm121 = (CpmEnvelope121) cpmFrame.envelope();
+                    System.out.println("Raw CPM v1.2.1: " + cpm121);
+                } else if(cpmFrame.version() == CpmVersion.V2_1_1) {
+                    CpmEnvelope211 cpm211 = (CpmEnvelope211) cpmFrame.envelope();
+                    System.out.println("Raw CPM v2.1.1: " + cpm211);
+                }
             }
         });
 
