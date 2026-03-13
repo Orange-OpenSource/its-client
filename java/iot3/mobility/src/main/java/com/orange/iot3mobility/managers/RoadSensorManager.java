@@ -7,13 +7,18 @@
  */
 package com.orange.iot3mobility.managers;
 
-import com.orange.iot3mobility.its.json.cpm.CPM;
+import com.orange.iot3mobility.messages.EtsiConverter;
+import com.orange.iot3mobility.messages.cpm.CpmHelper;
+import com.orange.iot3mobility.messages.cpm.core.CpmCodec;
+import com.orange.iot3mobility.messages.cpm.core.CpmVersion;
+import com.orange.iot3mobility.messages.cpm.v121.model.CpmEnvelope121;
+import com.orange.iot3mobility.messages.cpm.v121.model.CpmMessage121;
+import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
+import com.orange.iot3mobility.messages.cpm.v211.model.CpmMessage211;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.roadobjects.RoadSensor;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -38,41 +43,52 @@ public class RoadSensorManager {
         startExpirationCheck();
     }
 
-    public static void processCpm(String message) {
+    public static void processCpm(String message, CpmHelper cpmHelper) {
         if(ioT3RoadSensorCallback != null) {
             try {
-                CPM cpm = CPM.jsonParser(new JSONObject(message));
-                if(cpm == null) {
-                    LOGGER.log(Level.WARNING, TAG, "CPM parsing returned null");
-                } else {
-                    ioT3RoadSensorCallback.cpmArrived(cpm);
-                    //associate the received CPM to a RoadSensor object
-                    String uuid = cpm.getSourceUuid() + "_" + cpm.getStationId();
-                    LatLng position = new LatLng(
-                            cpm.getManagementContainer().getReferencePosition().getLatitudeDegree(),
-                            cpm.getManagementContainer().getReferencePosition().getLongitudeDegree());
-                    if(ROAD_SENSOR_MAP.containsKey(uuid)) {
-                        synchronized (ROAD_SENSOR_MAP) {
-                            RoadSensor roadSensor = ROAD_SENSOR_MAP.get(uuid);
-                            if(roadSensor != null) {
-                                roadSensor.updateTimestamp();
-                                roadSensor.setCpm(cpm);
-                                if(cpm.getPerceivedObjectContainer() != null)
-                                    roadSensor.updateSensorObjects(cpm.getPerceivedObjectContainer().getPerceivedObjects());
-                                ioT3RoadSensorCallback.roadSensorUpdate(roadSensor);
-                            }
-                        }
-                    } else {
-                        RoadSensor roadSensor = new RoadSensor(uuid, position, cpm, ioT3RoadSensorCallback);
-                        if(cpm.getPerceivedObjectContainer() != null)
-                            roadSensor.updateSensorObjects(cpm.getPerceivedObjectContainer().getPerceivedObjects());
-                        addRoadSensor(uuid, roadSensor);
-                        ioT3RoadSensorCallback.newRoadSensor(roadSensor);
-                    }
+                CpmCodec.CpmFrame<?> cpmFrame = cpmHelper.parse(message);
+                ioT3RoadSensorCallback.cpmArrived(cpmFrame);
+
+                String uuid;
+                LatLng position;
+
+                if(cpmFrame.version() == CpmVersion.V1_2_1) {
+                    CpmEnvelope121 cpmEnvelope121 = (CpmEnvelope121) cpmFrame.envelope();
+                    CpmMessage121 cpm121 = cpmEnvelope121.message();
+                    uuid = cpmEnvelope121.sourceUuid() + "_" + cpm121.stationId();
+                    position = new LatLng(
+                            EtsiConverter.latitudeDegrees(cpm121.managementContainer().referencePosition().latitude()),
+                            EtsiConverter.longitudeDegrees(cpm121.managementContainer().referencePosition().longitude()));
+                    updateRoadSensor(uuid, position, cpmFrame);
+                } else if(cpmFrame.version() == CpmVersion.V2_1_1) {
+                    CpmEnvelope211 cpmEnvelope211 = (CpmEnvelope211) cpmFrame.envelope();
+                    CpmMessage211 cpm211 = cpmEnvelope211.message();
+                    uuid = cpmEnvelope211.sourceUuid() + "_" + cpm211.stationId();
+                    position = new LatLng(
+                            EtsiConverter.latitudeDegrees(cpm211.managementContainer().referencePosition().latitude()),
+                            EtsiConverter.longitudeDegrees(cpm211.managementContainer().referencePosition().longitude()));
+                    updateRoadSensor(uuid, position, cpmFrame);
                 }
-            } catch (JSONException e) {
+            } catch (IOException e) {
                 LOGGER.log(Level.WARNING, TAG, "CPM parsing error: " + e);
             }
+        }
+    }
+
+    private static void updateRoadSensor(String uuid, LatLng position, CpmCodec.CpmFrame<?> cpmFrame) {
+        if(ROAD_SENSOR_MAP.containsKey(uuid)) {
+            synchronized (ROAD_SENSOR_MAP) {
+                RoadSensor roadSensor = ROAD_SENSOR_MAP.get(uuid);
+                if(roadSensor != null) {
+                    roadSensor.updateTimestamp();
+                    roadSensor.setCpmFrame(cpmFrame);
+                    ioT3RoadSensorCallback.roadSensorUpdate(roadSensor);
+                }
+            }
+        } else {
+            RoadSensor roadSensor = new RoadSensor(uuid, position, cpmFrame, ioT3RoadSensorCallback);
+            addRoadSensor(uuid, roadSensor);
+            ioT3RoadSensorCallback.newRoadSensor(roadSensor);
         }
     }
 
@@ -113,7 +129,7 @@ public class RoadSensorManager {
     /**
      * Retrieve a read-only list of the Road Sensors in the vicinity.
      *
-     * @return the read-only list of {@link com.orange.iot3mobility.roadobjects.RoadSensor} objects
+     * @return the read-only list of {@link RoadSensor} objects
      */
     public static List<RoadSensor> getRoadSensors() {
         return Collections.unmodifiableList(ROAD_SENSORS);
