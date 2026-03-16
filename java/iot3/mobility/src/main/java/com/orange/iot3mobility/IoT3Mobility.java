@@ -32,7 +32,6 @@ import com.orange.iot3mobility.roadobjects.HazardType;
 import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.its.json.JsonValue;
 import com.orange.iot3mobility.its.json.Position;
-import com.orange.iot3mobility.its.json.cpm.CPM;
 import com.orange.iot3mobility.its.json.denm.*;
 import com.orange.iot3mobility.managers.*;
 import com.orange.iot3mobility.quadkey.LatLng;
@@ -505,24 +504,6 @@ public class IoT3Mobility {
 
         // send the message even if the client is disconnected, so it will be queued
         if(ioT3Core != null) ioT3Core.mqttPublish(topic, denm.getJsonDENM().toString());
-    }
-
-    /**
-     * Send a CPM - Cooperative Perception Message
-     *
-     * @param cpm the CPM representing your sensors and their perceived objects
-     */
-    public void sendCpm(CPM cpm) {
-        // build the topic
-        String quadkey = QuadTileHelper.latLngToQuadKey(
-                cpm.getManagementContainer().getReferencePosition().getLatitudeDegree(),
-                cpm.getManagementContainer().getReferencePosition().getLongitudeDegree(),
-                22);
-        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
-        String topic = context + "/inQueue/v2x/cpm/" + uuid + geoExtension;
-
-        // send the message only if the client is connected
-        if(isConnected()) ioT3Core.mqttPublish(topic, cpm.getJson().toString(), false, 0, 1);
     }
 
     /**
