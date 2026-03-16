@@ -7,7 +7,7 @@ import com.orange.iot3mobility.IoT3Mobility;
 import com.orange.iot3mobility.IoT3MobilityCallback;
 import com.orange.iot3mobility.TrueTime;
 import com.orange.iot3mobility.Utils;
-import com.orange.iot3mobility.its.EtsiUtils;
+import com.orange.iot3mobility.messages.EtsiConverter;
 import com.orange.iot3mobility.messages.cam.core.CamCodec;
 import com.orange.iot3mobility.messages.cam.core.CamVersion;
 import com.orange.iot3mobility.messages.cam.v113.model.CamEnvelope113;
@@ -15,14 +15,22 @@ import com.orange.iot3mobility.messages.cam.v230.model.CamEnvelope230;
 import com.orange.iot3mobility.messages.cpm.core.CpmCodec;
 import com.orange.iot3mobility.messages.cpm.core.CpmVersion;
 import com.orange.iot3mobility.messages.cpm.v121.model.CpmEnvelope121;
+import com.orange.iot3mobility.messages.cpm.v121.model.CpmMessage121;
+import com.orange.iot3mobility.messages.cpm.v121.model.Origin;
+import com.orange.iot3mobility.messages.cpm.v121.model.defs.AreaCircular;
+import com.orange.iot3mobility.messages.cpm.v121.model.defs.Offset;
+import com.orange.iot3mobility.messages.cpm.v121.model.managementcontainer.ManagementConfidence;
+import com.orange.iot3mobility.messages.cpm.v121.model.managementcontainer.ManagementContainer;
+import com.orange.iot3mobility.messages.cpm.v121.model.managementcontainer.ReferencePosition;
+import com.orange.iot3mobility.messages.cpm.v121.model.perceivedobjectcontainer.*;
+import com.orange.iot3mobility.messages.cpm.v121.model.sensorinformationcontainer.DetectionArea;
+import com.orange.iot3mobility.messages.cpm.v121.model.sensorinformationcontainer.SensorInformation;
+import com.orange.iot3mobility.messages.cpm.v121.model.sensorinformationcontainer.SensorInformationContainer;
+import com.orange.iot3mobility.messages.cpm.v121.model.stationdatacontainer.OriginatingRsuContainer;
+import com.orange.iot3mobility.messages.cpm.v121.model.stationdatacontainer.StationDataContainer;
 import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
 import com.orange.iot3mobility.roadobjects.HazardType;
 import com.orange.iot3mobility.its.StationType;
-import com.orange.iot3mobility.its.json.JsonValue;
-import com.orange.iot3mobility.its.json.Position;
-import com.orange.iot3mobility.its.json.PositionConfidence;
-import com.orange.iot3mobility.its.json.PositionConfidenceEllipse;
-import com.orange.iot3mobility.its.json.cpm.*;
 import com.orange.iot3mobility.its.json.denm.DENM;
 import com.orange.iot3mobility.managers.IoT3RoadHazardCallback;
 import com.orange.iot3mobility.managers.IoT3RoadSensorCallback;
@@ -250,78 +258,101 @@ public class Iot3MobilityBootstrapExample {
     private static void sendTestCpm() {
         LatLng position = new LatLng(48.625152, 2.240349); // city area of UTAC TEQMO
 
-        PerceivedObject pedestrianPo = new PerceivedObject.PerceivedObjectBuilder(
-                12, 0, 1500)
-                .distance(-1800 + Utils.randomBetween(-10, 10),
-                        200 + Utils.randomBetween(-10, 10))
-                .speed(0, 0)
-                .objectDimension(10, 10, 20, 0)
-                .classification(List.of(new ClassificationItem(
-                        new ObjectClassSingleVru(
-                                new ObjectVruPedestrian(1)),
+        PerceivedObject pedestrianPo = PerceivedObject.builder()
+                .objectId(15)
+                .timeOfMeasurement(0)
+                .objectAge(1500)
+                .xDistance(-1800 + Utils.randomBetween(-10, 10))
+                .yDistance(200 + Utils.randomBetween(-10, 10))
+                .xSpeed(0)
+                .ySpeed(0)
+                .planarObjectDimension1(10)
+                .planarObjectDimension2(10)
+                .verticalObjectDimension(20)
+                .classification(List.of(new ObjectClassification(
+                        new ObjectClass(null,
+                                new ObjectClassVru(1, null, null, null),
+                                null,
+                                null),
                         100)))
                 .sensorIdList(List.of(123))
                 .confidence(
-                        new PerceivedObjectConfidence.PerceivedObjectConfidenceBuilder(15)
-                                .distance(0, 0)
-                                .speed(0, 0)
+                        PerceivedObjectConfidence.builder()
+                                .object(15)
+                                .planarObjectDimension1(0)
+                                .planarObjectDimension2(0)
+                                .xSpeed(0)
+                                .ySpeed(0)
                                 .build())
                 .build();
 
-        PerceivedObject bicyclePo = new PerceivedObject.PerceivedObjectBuilder(
-                34, 0, 1500)
-                .distance(1500 + Utils.randomBetween(-10, 10),
-                        100 + Utils.randomBetween(-10, 10))
-                .speed(0, 0)
-                .objectDimension(20, 20, 15, 0)
-                .classification(List.of(new ClassificationItem(
-                        new ObjectClassSingleVru(
-                                new ObjectVruBicyclist(1)),
+        PerceivedObject bicyclePo = PerceivedObject.builder()
+                .objectId(34)
+                .timeOfMeasurement(0)
+                .objectAge(1500)
+                .xDistance(1500 + Utils.randomBetween(-10, 10))
+                .yDistance(100 + Utils.randomBetween(-10, 10))
+                .xSpeed(0)
+                .ySpeed(0)
+                .planarObjectDimension1(20)
+                .planarObjectDimension2(20)
+                .verticalObjectDimension(15)
+                .classification(List.of(new ObjectClassification(
+                        new ObjectClass(null,
+                                new ObjectClassVru(null, 1, null, null),
+                                null,
+                                null),
                         100)))
                 .sensorIdList(List.of(123))
                 .confidence(
-                        new PerceivedObjectConfidence.PerceivedObjectConfidenceBuilder(15)
-                                .distance(0, 0)
-                                .speed(0, 0)
+                        PerceivedObjectConfidence.builder()
+                                .object(15)
+                                .planarObjectDimension1(0)
+                                .planarObjectDimension2(0)
+                                .xSpeed(0)
+                                .ySpeed(0)
                                 .build())
                 .build();
 
-        CPM cpm = new CPM.CPMBuilder()
-                .header(JsonValue.Origin.SELF.value(),
-                        JsonValue.Version.CURRENT_CPM.value(),
-                        EXAMPLE_UUID,
-                        TrueTime.getAccurateTime())
-                .pduHeader(2,
-                        123456,
-                        (int) (TrueTime.getAccurateETSITime() % 65536))
-                .managementContainer(
-                        new ManagementContainer(
-                                StationType.ROAD_SIDE_UNIT.getId(),
-                                new Position(
-                                        (long) (position.getLatitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
-                                        (long) (position.getLongitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
-                                        0),
-                                new PositionConfidence(
-                                        new PositionConfidenceEllipse(0, 0, 0),
-                                        0)))
-                .stationDataContainer(
-                        new StationDataContainer(
-                                new OriginatingRsuContainer(
-                                        123, 123, 123)))
-                .sensorInformationContainer(
-                        new SensorInformationContainer(
-                                List.of(new SensorInformation(123, 4,
-                                        new DetectionArea(
-                                                new StationarySensorCircular(
-                                                        new Offset(0, 0, 0),
-                                                        200))))))
-                .perceivedObjectContainer(
-                        new PerceivedObjectContainer(
-                                List.of(pedestrianPo,
-                                        bicyclePo)))
+        CpmEnvelope121 cpmEnvelope121 = CpmEnvelope121.builder()
+                .origin(Origin.SELF.value)
+                .sourceUuid(EXAMPLE_UUID)
+                .timestamp(TrueTime.getAccurateTime())
+                .message(CpmMessage121.builder()
+                        .protocolVersion(2)
+                        .stationId(123456)
+                        .generationDeltaTime(EtsiConverter.generationDeltaTimeEtsi(TrueTime.getAccurateETSITime()))
+                        .managementContainer(ManagementContainer.builder()
+                                .stationType(com.orange.iot3mobility.messages.StationType.ROAD_SIDE_UNIT.value)
+                                .referencePosition(new ReferencePosition(
+                                        EtsiConverter.latitudeEtsi(position.getLatitude()),
+                                        EtsiConverter.longitudeEtsi(position.getLongitude()),
+                                        0))
+                                .confidence(new ManagementConfidence(
+                                        new com.orange.iot3mobility.messages.cpm.v121.model.managementcontainer
+                                                .PositionConfidenceEllipse(4095, 4095, 3601),
+                                        15))
+                                .build())
+                        .stationDataContainer(StationDataContainer.builder()
+                                .originatingRsuContainer(new OriginatingRsuContainer(123, 123, 123))
+                                .build())
+                        .sensorInformationContainer(new SensorInformationContainer(
+                                List.of(new SensorInformation(
+                                        123,
+                                        4,
+                                        DetectionArea.builder()
+                                                .stationarySensorCircular(new AreaCircular(
+                                                        new Offset(0, 0, 0), 200))
+                                                .build()))))
+                        .perceivedObjectContainer(new PerceivedObjectContainer(List.of(pedestrianPo, bicyclePo)))
+                        .build())
                 .build();
 
-        ioT3Mobility.sendCpm(cpm);
+        try {
+            ioT3Mobility.sendCpm(cpmEnvelope121);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
