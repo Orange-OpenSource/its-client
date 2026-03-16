@@ -68,4 +68,240 @@ public record PerceivedObject(
         List<Integer> sensorIdList,
         Integer dynamicStatus,
         List<ObjectClassification> classification,
-        MapPosition matchedPosition) {}
+        MapPosition matchedPosition) {
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private Integer objectId;
+        private Integer timeOfMeasurement;
+        private Integer xDistance;
+        private Integer yDistance;
+        private Integer xSpeed;
+        private Integer ySpeed;
+        private Integer objectAge;
+        private PerceivedObjectConfidence confidence;
+        private Integer zDistance;
+        private Integer zSpeed;
+        private Integer xAcceleration;
+        private Integer yAcceleration;
+        private Integer zAcceleration;
+        private Integer rollAngle;
+        private Integer pitchAngle;
+        private Integer yawAngle;
+        private Integer rollRate;
+        private Integer pitchRate;
+        private Integer yawRate;
+        private Integer rollAcceleration;
+        private Integer pitchAcceleration;
+        private Integer yawAcceleration;
+        private LowerTriangularCorrelationMatrix lowerTriangularCorrelationMatrixColumns;
+        private Integer planarObjectDimension1;
+        private Integer planarObjectDimension2;
+        private Integer verticalObjectDimension;
+        private Integer objectRefPoint;
+        private List<Integer> sensorIdList;
+        private Integer dynamicStatus;
+        private List<ObjectClassification> classification;
+        private MapPosition matchedPosition;
+
+        public Builder objectId(int objectId) {
+            this.objectId = objectId;
+            return this;
+        }
+
+        public Builder timeOfMeasurement(int timeOfMeasurement) {
+            this.timeOfMeasurement = timeOfMeasurement;
+            return this;
+        }
+
+        public Builder xDistance(int xDistance) {
+            this.xDistance = xDistance;
+            return this;
+        }
+
+        public Builder yDistance(int yDistance) {
+            this.yDistance = yDistance;
+            return this;
+        }
+
+        public Builder xSpeed(int xSpeed) {
+            this.xSpeed = xSpeed;
+            return this;
+        }
+
+        public Builder ySpeed(int ySpeed) {
+            this.ySpeed = ySpeed;
+            return this;
+        }
+
+        public Builder objectAge(int objectAge) {
+            this.objectAge = objectAge;
+            return this;
+        }
+
+        public Builder confidence(PerceivedObjectConfidence confidence) {
+            this.confidence = confidence;
+            return this;
+        }
+
+        public Builder zDistance(Integer zDistance) {
+            this.zDistance = zDistance;
+            return this;
+        }
+
+        public Builder zSpeed(Integer zSpeed) {
+            this.zSpeed = zSpeed;
+            return this;
+        }
+
+        public Builder xAcceleration(Integer xAcceleration) {
+            this.xAcceleration = xAcceleration;
+            return this;
+        }
+
+        public Builder yAcceleration(Integer yAcceleration) {
+            this.yAcceleration = yAcceleration;
+            return this;
+        }
+
+        public Builder zAcceleration(Integer zAcceleration) {
+            this.zAcceleration = zAcceleration;
+            return this;
+        }
+
+        public Builder rollAngle(Integer rollAngle) {
+            this.rollAngle = rollAngle;
+            return this;
+        }
+
+        public Builder pitchAngle(Integer pitchAngle) {
+            this.pitchAngle = pitchAngle;
+            return this;
+        }
+
+        public Builder yawAngle(Integer yawAngle) {
+            this.yawAngle = yawAngle;
+            return this;
+        }
+
+        public Builder rollRate(Integer rollRate) {
+            this.rollRate = rollRate;
+            return this;
+        }
+
+        public Builder pitchRate(Integer pitchRate) {
+            this.pitchRate = pitchRate;
+            return this;
+        }
+
+        public Builder yawRate(Integer yawRate) {
+            this.yawRate = yawRate;
+            return this;
+        }
+
+        public Builder rollAcceleration(Integer rollAcceleration) {
+            this.rollAcceleration = rollAcceleration;
+            return this;
+        }
+
+        public Builder pitchAcceleration(Integer pitchAcceleration) {
+            this.pitchAcceleration = pitchAcceleration;
+            return this;
+        }
+
+        public Builder yawAcceleration(Integer yawAcceleration) {
+            this.yawAcceleration = yawAcceleration;
+            return this;
+        }
+
+        public Builder lowerTriangularCorrelationMatrixColumns(LowerTriangularCorrelationMatrix columns) {
+            this.lowerTriangularCorrelationMatrixColumns = columns;
+            return this;
+        }
+
+        public Builder planarObjectDimension1(Integer planarObjectDimension1) {
+            this.planarObjectDimension1 = planarObjectDimension1;
+            return this;
+        }
+
+        public Builder planarObjectDimension2(Integer planarObjectDimension2) {
+            this.planarObjectDimension2 = planarObjectDimension2;
+            return this;
+        }
+
+        public Builder verticalObjectDimension(Integer verticalObjectDimension) {
+            this.verticalObjectDimension = verticalObjectDimension;
+            return this;
+        }
+
+        public Builder objectRefPoint(Integer objectRefPoint) {
+            this.objectRefPoint = objectRefPoint;
+            return this;
+        }
+
+        public Builder sensorIdList(List<Integer> sensorIdList) {
+            this.sensorIdList = sensorIdList;
+            return this;
+        }
+
+        public Builder dynamicStatus(Integer dynamicStatus) {
+            this.dynamicStatus = dynamicStatus;
+            return this;
+        }
+
+        public Builder classification(List<ObjectClassification> classification) {
+            this.classification = classification;
+            return this;
+        }
+
+        public Builder matchedPosition(MapPosition matchedPosition) {
+            this.matchedPosition = matchedPosition;
+            return this;
+        }
+
+        public PerceivedObject build() {
+            return new PerceivedObject(
+                    requireNonNull(objectId, "object_id"),
+                    requireNonNull(timeOfMeasurement, "time_of_measurement"),
+                    requireNonNull(xDistance, "x_distance"),
+                    requireNonNull(yDistance, "y_distance"),
+                    requireNonNull(xSpeed, "x_speed"),
+                    requireNonNull(ySpeed, "y_speed"),
+                    requireNonNull(objectAge, "object_age"),
+                    requireNonNull(confidence, "confidence"),
+                    zDistance,
+                    zSpeed,
+                    xAcceleration,
+                    yAcceleration,
+                    zAcceleration,
+                    rollAngle,
+                    pitchAngle,
+                    yawAngle,
+                    rollRate,
+                    pitchRate,
+                    yawRate,
+                    rollAcceleration,
+                    pitchAcceleration,
+                    yawAcceleration,
+                    lowerTriangularCorrelationMatrixColumns,
+                    planarObjectDimension1,
+                    planarObjectDimension2,
+                    verticalObjectDimension,
+                    objectRefPoint,
+                    sensorIdList,
+                    dynamicStatus,
+                    classification,
+                    matchedPosition);
+        }
+
+        private static <T> T requireNonNull(T value, String field) {
+            if (value == null) {
+                throw new IllegalStateException("Missing field: " + field);
+            }
+            return value;
+        }
+    }
+}

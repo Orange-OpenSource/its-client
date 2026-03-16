@@ -50,4 +50,184 @@ public record PerceivedObjectConfidence(
         Integer planarObjectDimension1,
         Integer planarObjectDimension2,
         Integer verticalObjectDimension,
-        Integer longitudinalLanePosition) {}
+        Integer longitudinalLanePosition) {
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private Integer xDistance;
+        private Integer yDistance;
+        private Integer xSpeed;
+        private Integer ySpeed;
+        private Integer object;
+        private Integer zDistance;
+        private Integer zSpeed;
+        private Integer xAcceleration;
+        private Integer yAcceleration;
+        private Integer zAcceleration;
+        private Integer rollAngle;
+        private Integer pitchAngle;
+        private Integer yawAngle;
+        private Integer rollRate;
+        private Integer pitchRate;
+        private Integer yawRate;
+        private Integer rollAcceleration;
+        private Integer pitchAcceleration;
+        private Integer yawAcceleration;
+        private Integer planarObjectDimension1;
+        private Integer planarObjectDimension2;
+        private Integer verticalObjectDimension;
+        private Integer longitudinalLanePosition;
+
+        public Builder xDistance(int xDistance) {
+            this.xDistance = xDistance;
+            return this;
+        }
+
+        public Builder yDistance(int yDistance) {
+            this.yDistance = yDistance;
+            return this;
+        }
+
+        public Builder xSpeed(int xSpeed) {
+            this.xSpeed = xSpeed;
+            return this;
+        }
+
+        public Builder ySpeed(int ySpeed) {
+            this.ySpeed = ySpeed;
+            return this;
+        }
+
+        public Builder object(int object) {
+            this.object = object;
+            return this;
+        }
+
+        public Builder zDistance(Integer zDistance) {
+            this.zDistance = zDistance;
+            return this;
+        }
+
+        public Builder zSpeed(Integer zSpeed) {
+            this.zSpeed = zSpeed;
+            return this;
+        }
+
+        public Builder xAcceleration(Integer xAcceleration) {
+            this.xAcceleration = xAcceleration;
+            return this;
+        }
+
+        public Builder yAcceleration(Integer yAcceleration) {
+            this.yAcceleration = yAcceleration;
+            return this;
+        }
+
+        public Builder zAcceleration(Integer zAcceleration) {
+            this.zAcceleration = zAcceleration;
+            return this;
+        }
+
+        public Builder rollAngle(Integer rollAngle) {
+            this.rollAngle = rollAngle;
+            return this;
+        }
+
+        public Builder pitchAngle(Integer pitchAngle) {
+            this.pitchAngle = pitchAngle;
+            return this;
+        }
+
+        public Builder yawAngle(Integer yawAngle) {
+            this.yawAngle = yawAngle;
+            return this;
+        }
+
+        public Builder rollRate(Integer rollRate) {
+            this.rollRate = rollRate;
+            return this;
+        }
+
+        public Builder pitchRate(Integer pitchRate) {
+            this.pitchRate = pitchRate;
+            return this;
+        }
+
+        public Builder yawRate(Integer yawRate) {
+            this.yawRate = yawRate;
+            return this;
+        }
+
+        public Builder rollAcceleration(Integer rollAcceleration) {
+            this.rollAcceleration = rollAcceleration;
+            return this;
+        }
+
+        public Builder pitchAcceleration(Integer pitchAcceleration) {
+            this.pitchAcceleration = pitchAcceleration;
+            return this;
+        }
+
+        public Builder yawAcceleration(Integer yawAcceleration) {
+            this.yawAcceleration = yawAcceleration;
+            return this;
+        }
+
+        public Builder planarObjectDimension1(Integer planarObjectDimension1) {
+            this.planarObjectDimension1 = planarObjectDimension1;
+            return this;
+        }
+
+        public Builder planarObjectDimension2(Integer planarObjectDimension2) {
+            this.planarObjectDimension2 = planarObjectDimension2;
+            return this;
+        }
+
+        public Builder verticalObjectDimension(Integer verticalObjectDimension) {
+            this.verticalObjectDimension = verticalObjectDimension;
+            return this;
+        }
+
+        public Builder longitudinalLanePosition(Integer longitudinalLanePosition) {
+            this.longitudinalLanePosition = longitudinalLanePosition;
+            return this;
+        }
+
+        public PerceivedObjectConfidence build() {
+            return new PerceivedObjectConfidence(
+                    requireNonNull(xDistance, "x_distance"),
+                    requireNonNull(yDistance, "y_distance"),
+                    requireNonNull(xSpeed, "x_speed"),
+                    requireNonNull(ySpeed, "y_speed"),
+                    requireNonNull(object, "object"),
+                    zDistance,
+                    zSpeed,
+                    xAcceleration,
+                    yAcceleration,
+                    zAcceleration,
+                    rollAngle,
+                    pitchAngle,
+                    yawAngle,
+                    rollRate,
+                    pitchRate,
+                    yawRate,
+                    rollAcceleration,
+                    pitchAcceleration,
+                    yawAcceleration,
+                    planarObjectDimension1,
+                    planarObjectDimension2,
+                    verticalObjectDimension,
+                    longitudinalLanePosition);
+        }
+
+        private static <T> T requireNonNull(T value, String field) {
+            if (value == null) {
+                throw new IllegalStateException("Missing field: " + field);
+            }
+            return value;
+        }
+    }
+}

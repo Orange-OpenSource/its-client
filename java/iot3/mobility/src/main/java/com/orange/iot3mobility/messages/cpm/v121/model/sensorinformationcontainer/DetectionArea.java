@@ -23,4 +23,58 @@ public record DetectionArea(
         AreaPolygon stationarySensorPolygon,
         AreaCircular stationarySensorCircular,
         AreaEllipse stationarySensorEllipse,
-        AreaRectangle stationarySensorRectangle) {}
+        AreaRectangle stationarySensorRectangle) {
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private VehicleSensor vehicleSensor;
+        private StationarySensorRadial stationarySensorRadial;
+        private AreaPolygon stationarySensorPolygon;
+        private AreaCircular stationarySensorCircular;
+        private AreaEllipse stationarySensorEllipse;
+        private AreaRectangle stationarySensorRectangle;
+
+        public Builder vehicleSensor(VehicleSensor vehicleSensor) {
+            this.vehicleSensor = vehicleSensor;
+            return this;
+        }
+
+        public Builder stationarySensorRadial(StationarySensorRadial stationarySensorRadial) {
+            this.stationarySensorRadial = stationarySensorRadial;
+            return this;
+        }
+
+        public Builder stationarySensorPolygon(AreaPolygon stationarySensorPolygon) {
+            this.stationarySensorPolygon = stationarySensorPolygon;
+            return this;
+        }
+
+        public Builder stationarySensorCircular(AreaCircular stationarySensorCircular) {
+            this.stationarySensorCircular = stationarySensorCircular;
+            return this;
+        }
+
+        public Builder stationarySensorEllipse(AreaEllipse stationarySensorEllipse) {
+            this.stationarySensorEllipse = stationarySensorEllipse;
+            return this;
+        }
+
+        public Builder stationarySensorRectangle(AreaRectangle stationarySensorRectangle) {
+            this.stationarySensorRectangle = stationarySensorRectangle;
+            return this;
+        }
+
+        public DetectionArea build() {
+            return new DetectionArea(
+                    vehicleSensor,
+                    stationarySensorRadial,
+                    stationarySensorPolygon,
+                    stationarySensorCircular,
+                    stationarySensorEllipse,
+                    stationarySensorRectangle);
+        }
+    }
+}
