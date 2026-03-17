@@ -81,22 +81,14 @@ public record PerceivedObjectConfidence(
         private Integer verticalObjectDimension;
         private Integer longitudinalLanePosition;
 
-        public Builder xDistance(int xDistance) {
+        public Builder distance(int xDistance, int yDistance) {
             this.xDistance = xDistance;
-            return this;
-        }
-
-        public Builder yDistance(int yDistance) {
             this.yDistance = yDistance;
             return this;
         }
 
-        public Builder xSpeed(int xSpeed) {
+        public Builder speed(int xSpeed, int ySpeed) {
             this.xSpeed = xSpeed;
-            return this;
-        }
-
-        public Builder ySpeed(int ySpeed) {
             this.ySpeed = ySpeed;
             return this;
         }
@@ -116,12 +108,8 @@ public record PerceivedObjectConfidence(
             return this;
         }
 
-        public Builder xAcceleration(Integer xAcceleration) {
+        public Builder acceleration(Integer xAcceleration, Integer yAcceleration) {
             this.xAcceleration = xAcceleration;
-            return this;
-        }
-
-        public Builder yAcceleration(Integer yAcceleration) {
             this.yAcceleration = yAcceleration;
             return this;
         }
@@ -176,12 +164,8 @@ public record PerceivedObjectConfidence(
             return this;
         }
 
-        public Builder planarObjectDimension1(Integer planarObjectDimension1) {
+        public Builder planarObjectDimension(Integer planarObjectDimension1, Integer planarObjectDimension2) {
             this.planarObjectDimension1 = planarObjectDimension1;
-            return this;
-        }
-
-        public Builder planarObjectDimension2(Integer planarObjectDimension2) {
             this.planarObjectDimension2 = planarObjectDimension2;
             return this;
         }
