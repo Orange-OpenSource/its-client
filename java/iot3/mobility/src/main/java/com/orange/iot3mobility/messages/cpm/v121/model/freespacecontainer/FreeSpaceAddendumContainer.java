@@ -5,6 +5,6 @@ import java.util.List;
 /**
  * Free space addendum container.
  *
- * @param freeSpaceAddenda List of addenda. Size: [1..128].
+ * @param freeSpaceAddenda List of {@link FreeSpaceAddendum}. Size: [1..128].
  */
 public record FreeSpaceAddendumContainer(List<FreeSpaceAddendum> freeSpaceAddenda) {}

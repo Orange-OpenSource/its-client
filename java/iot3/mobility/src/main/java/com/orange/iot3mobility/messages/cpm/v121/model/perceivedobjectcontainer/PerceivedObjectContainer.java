@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Perceived object container.
  *
- * @param perceivedObjects List of perceived objects. Size: [1..128].
+ * @param perceivedObjects List of {@link PerceivedObject}. Size: [1..128].
  */
 public record PerceivedObjectContainer(List<PerceivedObject> perceivedObjects) {}
 

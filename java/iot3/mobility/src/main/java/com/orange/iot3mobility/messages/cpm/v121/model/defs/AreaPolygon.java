@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Polygonal area.
  *
- * @param offsets Polygon points. Size: [3..16].
+ * @param offsets Polygon as a list of {@link Offset} points. Size: [3..16].
  */
 public record AreaPolygon(List<Offset> offsets) {}
 

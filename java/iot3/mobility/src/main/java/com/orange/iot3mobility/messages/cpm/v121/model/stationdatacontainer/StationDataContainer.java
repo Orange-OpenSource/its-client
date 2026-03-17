@@ -2,7 +2,7 @@ package com.orange.iot3mobility.messages.cpm.v121.model.stationdatacontainer;
 
 /**
  * Station data container.
- *
+ * <p>
  * Exactly one of originating_vehicle_container or originating_rsu_container must be provided.
  *
  * @param originatingVehicleContainer Optional {@link OriginatingVehicleContainer}

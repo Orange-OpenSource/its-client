@@ -3,7 +3,9 @@ package com.orange.iot3mobility.messages.cpm.v121.model.managementcontainer;
 /**
  * Management container.
  *
- * @param stationType Station type. Value: unknown(0), pedestrian(1), cyclist(2), moped(3), motorcycle(4), passengerCar(5), bus(6), lightTruck(7), heavyTruck(8), trailer(9), specialVehicles(10), tram(11), roadSideUnit(15).
+ * @param stationType Station type. Value: unknown(0), pedestrian(1), cyclist(2), moped(3), motorcycle(4),
+ *                    passengerCar(5), bus(6), lightTruck(7), heavyTruck(8), trailer(9), specialVehicles(10), tram(11),
+ *                    roadSideUnit(15).
  * @param referencePosition {@link ReferencePosition}
  * @param confidence {@link ManagementConfidence}
  */

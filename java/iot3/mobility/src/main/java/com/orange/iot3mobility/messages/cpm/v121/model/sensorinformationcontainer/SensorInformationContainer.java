@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Sensor information container.
  *
- * @param sensorInformation List of sensor information. Size: [1..128].
+ * @param sensorInformation List of {@link SensorInformation}. Size: [1..128].
  */
 public record SensorInformationContainer(List<SensorInformation> sensorInformation) {}
 
