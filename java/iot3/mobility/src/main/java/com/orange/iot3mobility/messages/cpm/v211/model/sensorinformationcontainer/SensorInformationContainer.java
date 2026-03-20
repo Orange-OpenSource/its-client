@@ -4,6 +4,8 @@ import java.util.List;
 
 /**
  * Sensor information container.
+ *
+ * @param sensorInformation List of {@link SensorInformation} entries.
  */
 public record SensorInformationContainer(List<SensorInformation> sensorInformation) {
 
@@ -29,4 +31,3 @@ public record SensorInformationContainer(List<SensorInformation> sensorInformati
         }
     }
 }
-

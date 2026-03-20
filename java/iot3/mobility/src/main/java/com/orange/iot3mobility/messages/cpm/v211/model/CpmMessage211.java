@@ -17,8 +17,8 @@ import com.orange.iot3mobility.messages.cpm.v211.model.sensorinformationcontaine
 /**
  * CPM v2.1.1
  *
- * @param protocolVersion Version of the ITS message.
- * @param stationId Identifier for an ITS-S.
+ * @param protocolVersion Version of the ITS message (0..255).
+ * @param stationId Identifier for an ITS-S (0..4294967295).
  * @param managementContainer {@link ManagementContainer}
  * @param originatingVehicleContainer Optional {@link OriginatingVehicleContainer}
  * @param originatingRsuContainer Optional {@link OriginatingRsuContainer}

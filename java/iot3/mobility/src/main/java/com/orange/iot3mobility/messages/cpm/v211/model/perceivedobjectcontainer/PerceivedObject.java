@@ -7,7 +7,29 @@ import com.orange.iot3mobility.messages.cpm.v211.model.defs.ObjectDimension;
 import java.util.List;
 
 /**
+ * Perceived object
+ * <p>
  * Information for an individual perceived object.
+ *
+ * @param measurementDeltaTime Time difference from a reference time to the time of the measurement of the object.
+ *                             Unit: ms (-2048..2047).
+ * @param position {@link CartesianPosition3dWithConfidence} of the geometric centre of the object's bounding box
+ *                                                          within the pre-defined coordinate system.
+ * @param objectId Optional. Identifier assigned to a detected object (0..65535).
+ * @param velocity Optional. {@link Velocity} vector of the object within the pre-defined coordinate system.
+ * @param acceleration Optional. {@link Acceleration} vector of the object within the pre-defined coordinate system.
+ * @param angles Optional. {@link EulerAngles} of the object bounding box at the time of measurement.
+ * @param zAngularVelocity Optional. {@link CartesianAngularVelocityComponent} around the z-axis at the time of
+ *                         measurement.
+ * @param lowerTriangularCorrelationMatrices Optional. List of {@link LowerTriangularCorrelationMatrix} entries.
+ * @param objectDimensionZ Optional. {@link ObjectDimension} z-dimension of object bounding box.
+ * @param objectDimensionY Optional. {@link ObjectDimension} y-dimension of object bounding box.
+ * @param objectDimensionX Optional. {@link ObjectDimension} x-dimension of object bounding box.
+ * @param objectAge Optional. Age of the detected object since first detection. Unit: ms (-2048..2047).
+ * @param objectPerceptionQuality Optional. Overall perception quality (0..15). noConfidence (0), fullConfidence (15).
+ * @param sensorIdList Optional. List of sensor-IDs which provided the measurement data (1..128 items).
+ * @param classification Optional. List of {@link ObjectClassification} entries (1..8 items).
+ * @param mapPosition Optional. {@link MapPosition}.
  */
 public record PerceivedObject(
         int measurementDeltaTime,

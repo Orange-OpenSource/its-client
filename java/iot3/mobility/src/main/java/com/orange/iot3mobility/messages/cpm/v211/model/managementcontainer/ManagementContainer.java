@@ -3,12 +3,12 @@ package com.orange.iot3mobility.messages.cpm.v211.model.managementcontainer;
 import com.orange.iot3mobility.messages.cpm.v211.model.defs.ReferencePosition;
 
 /**
- * Management container.
+ * Management container
  *
- * @param referenceTime Reference time for all time related information in the CPM.
+ * @param referenceTime Reference time for all time related information in the CPM. Unit: ms (0..4398046511103).
  * @param referencePosition {@link ReferencePosition}
- * @param segmentationInfo Optional segmentation information.
- * @param messageRateRange Optional planned or expected range of CPM generation rate.
+ * @param segmentationInfo Optional {@link SegmentationInfo}
+ * @param messageRateRange Optional {@link MessageRateRange} planned or expected range of CPM generation rate.
  */
 public record ManagementContainer(
         long referenceTime,

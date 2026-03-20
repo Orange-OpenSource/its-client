@@ -2,6 +2,11 @@ package com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer
 
 /**
  * Acceleration vector of an object.
+ * <p>
+ * Exactly one of {@link PolarAcceleration} or {@link CartesianAcceleration} shall be provided.
+ *
+ * @param polarAcceleration Acceleration in a polar or cylindrical coordinate system.
+ * @param cartesianAcceleration Acceleration in a cartesian coordinate system.
  */
 public record Acceleration(PolarAcceleration polarAcceleration, CartesianAcceleration cartesianAcceleration) {
 
@@ -40,4 +45,3 @@ public record Acceleration(PolarAcceleration polarAcceleration, CartesianAcceler
         }
     }
 }
-

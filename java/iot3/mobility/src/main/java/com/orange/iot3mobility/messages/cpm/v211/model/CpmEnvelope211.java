@@ -16,11 +16,12 @@ package com.orange.iot3mobility.messages.cpm.v211.model;
  *     <li>CDD TS 102 894-2 - version 2.1.1</li>
  * </ul>
  *
- * @param messageType Type of the message carried in message property (cpm)
- * @param sourceUuid Unique id for the message sender
- * @param timestamp Timestamp when the message was generated since Unix Epoch (millisecond)
- * @param version JSON message format version (2.1.1)
- * @param objectIdRotationCount Optional object ID rotation count.
+ * @param messageType Type of the message carried in message property (cpm).
+ * @param sourceUuid Unique id for the message sender.
+ * @param timestamp Timestamp when the message was generated since Unix Epoch (millisecond). Range:
+ *                  1514764800000..1830297600000.
+ * @param version JSON message format version (2.1.1).
+ * @param objectIdRotationCount Optional object ID rotation count (0..255).
  * @param message {@link CpmMessage211}
  */
 public record CpmEnvelope211(

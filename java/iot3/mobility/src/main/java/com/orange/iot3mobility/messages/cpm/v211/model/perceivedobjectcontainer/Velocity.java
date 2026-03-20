@@ -2,6 +2,11 @@ package com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer
 
 /**
  * Velocity vector of an object.
+ * <p>
+ * Exactly one of {@link PolarVelocity} or {@link CartesianVelocity} shall be provided.
+ *
+ * @param polarVelocity Velocity in a polar or cylindrical coordinate system.
+ * @param cartesianVelocity Velocity in a cartesian coordinate system.
  */
 public record Velocity(PolarVelocity polarVelocity, CartesianVelocity cartesianVelocity) {
 
@@ -40,4 +45,3 @@ public record Velocity(PolarVelocity polarVelocity, CartesianVelocity cartesianV
         }
     }
 }
-

@@ -5,7 +5,15 @@ import com.orange.iot3mobility.messages.cpm.v211.model.defs.Angle;
 import java.util.List;
 
 /**
- * Originating vehicle container.
+ * Originating vehicle container
+ *
+ * @param orientationAngle {@link Angle} absolute orientation of the disseminating vehicle in the WGS84 coordinate
+ *                         system with respect to true North. Unit: 0,1 degrees.
+ * @param pitchAngle Optional. {@link Angle} between the ground plane and the current orientation of the vehicle's
+ *                   x-axis with respect to the ground plane about the y-axis according to ISO 8855. Unit: 0,1 degrees.
+ * @param rollAngle Optional. {@link Angle} between the ground plane and the current orientation of a vehicle's y-axis
+ *                  with respect to the ground plane about the x-axis according to ISO 8855. Unit: 0,1 degrees.
+ * @param trailerDataSet Optional. List of {@link TrailerData} for attached trailers.
  */
 public record OriginatingVehicleContainer(
         Angle orientationAngle,
@@ -57,4 +65,3 @@ public record OriginatingVehicleContainer(
         }
     }
 }
-

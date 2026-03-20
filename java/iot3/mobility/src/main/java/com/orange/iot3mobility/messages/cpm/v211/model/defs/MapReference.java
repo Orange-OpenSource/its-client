@@ -2,6 +2,11 @@ package com.orange.iot3mobility.messages.cpm.v211.model.defs;
 
 /**
  * Identifies the MAPEM containing the topology information reference.
+ * <p>
+ * Exactly one of {@link RoadSegment} or {@link Intersection} shall be provided.
+ *
+ * @param roadSegment Road segment reference.
+ * @param intersection Intersection reference.
  */
 public record MapReference(RoadSegment roadSegment, Intersection intersection) {
 

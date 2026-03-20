@@ -2,6 +2,15 @@ package com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer
 
 /**
  * Object class, one of vehicle, vru, group or other.
+ * <p>
+ * Exactly one option shall be provided.
+ *
+ * @param vehicle Vehicle subclass. Examples: unknown (0), pedestrian (1), cyclist (2), moped (3), motorcycle (4),
+ *                passengerCar (5), bus (6), lightTruck (7), heavyTruck (8), trailer (9), specialVehicle (10),
+ *                tram (11), lightVruVehicle (12), animal (13), agricultural (14), roadSideUnit (15).
+ * @param vru {@link ObjectClassVru} for VRU subclasses.
+ * @param group {@link ObjectClassGroup} for VRU group/cluster information.
+ * @param other Other subclasses. Examples: unknown (0), singleObject (1), multipleObjects (2), bulkMaterial (3).
  */
 public record ObjectClass(
         Integer vehicle,
@@ -66,4 +75,3 @@ public record ObjectClass(
         }
     }
 }
-

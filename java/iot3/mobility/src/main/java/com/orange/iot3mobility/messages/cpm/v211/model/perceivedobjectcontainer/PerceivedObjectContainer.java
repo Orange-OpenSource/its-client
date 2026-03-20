@@ -4,6 +4,8 @@ import java.util.List;
 
 /**
  * Perceived object container.
+ *
+ * @param perceivedObjects List of {@link PerceivedObject} entries.
  */
 public record PerceivedObjectContainer(List<PerceivedObject> perceivedObjects) {
 
@@ -29,4 +31,3 @@ public record PerceivedObjectContainer(List<PerceivedObject> perceivedObjects) {
         }
     }
 }
-

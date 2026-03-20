@@ -5,7 +5,9 @@ import com.orange.iot3mobility.messages.cpm.v211.model.defs.MapReference;
 import java.util.List;
 
 /**
- * Originating RSU container.
+ * Originating RSU container
+ *
+ * @param mapReferences List of {@link MapReference} identifying MAPEM topology references for perceived objects.
  */
 public record OriginatingRsuContainer(List<MapReference> mapReferences) {
 
@@ -31,4 +33,3 @@ public record OriginatingRsuContainer(List<MapReference> mapReferences) {
         }
     }
 }
-

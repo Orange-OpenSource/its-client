@@ -12,8 +12,8 @@ package com.orange.iot3mobility.messages.cpm.v211.model.defs;
  * <p>
  * Position within a geographic coordinate system together with a confidence ellipse.
  *
- * @param latitude Latitude of the geographical point. Unit: 0,1 microdegree
- * @param longitude Longitude of the geographical point. Unit: 0,1 microdegree
+ * @param latitude Latitude of the geographical point. Unit: 0,1 microdegree. unavailable (900000001).
+ * @param longitude Longitude of the geographical point. Unit: 0,1 microdegree. unavailable (1800000001).
  * @param positionConfidenceEllipse {@link PositionConfidenceEllipse}
  * @param altitude {@link Altitude}
  */

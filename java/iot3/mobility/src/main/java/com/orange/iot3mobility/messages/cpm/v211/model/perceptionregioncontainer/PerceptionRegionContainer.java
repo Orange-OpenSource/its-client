@@ -4,6 +4,8 @@ import java.util.List;
 
 /**
  * Perception region container.
+ *
+ * @param perceptionRegions List of {@link PerceptionRegion} entries.
  */
 public record PerceptionRegionContainer(List<PerceptionRegion> perceptionRegions) {
 
@@ -29,4 +31,3 @@ public record PerceptionRegionContainer(List<PerceptionRegion> perceptionRegions
         }
     }
 }
-

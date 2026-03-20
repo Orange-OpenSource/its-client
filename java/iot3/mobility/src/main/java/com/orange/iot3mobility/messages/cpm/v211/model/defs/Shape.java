@@ -2,6 +2,16 @@ package com.orange.iot3mobility.messages.cpm.v211.model.defs;
 
 /**
  * Definition of a geographical area or volume, based on different options.
+ * <p>
+ * Exactly one of {@link Rectangular}, {@link Circular}, {@link Polygonal}, {@link Elliptical}, {@link Radial} or
+ * {@link RadialShapes} shall be provided.
+ *
+ * @param rectangular Rectangular shape definition.
+ * @param circular Circular shape definition.
+ * @param polygonal Polygonal shape definition.
+ * @param elliptical Elliptical shape definition.
+ * @param radial Radial shape definition.
+ * @param radialShapes Set of radial shapes with an offset reference point.
  */
 public record Shape(
         Rectangular rectangular,
