@@ -5,9 +5,7 @@ import com.orange.iot3core.clients.lwm2m.model.Lwm2mDevice;
 import com.orange.iot3core.clients.lwm2m.model.Lwm2mServer;
 import com.orange.iot3mobility.IoT3Mobility;
 import com.orange.iot3mobility.IoT3MobilityCallback;
-import com.orange.iot3mobility.TrueTime;
 import com.orange.iot3mobility.Utils;
-import com.orange.iot3mobility.messages.EtsiConverter;
 import com.orange.iot3mobility.messages.cam.core.CamCodec;
 import com.orange.iot3mobility.messages.cam.core.CamVersion;
 import com.orange.iot3mobility.messages.cam.v113.model.CamEnvelope113;
@@ -15,19 +13,6 @@ import com.orange.iot3mobility.messages.cam.v230.model.CamEnvelope230;
 import com.orange.iot3mobility.messages.cpm.core.CpmCodec;
 import com.orange.iot3mobility.messages.cpm.core.CpmVersion;
 import com.orange.iot3mobility.messages.cpm.v121.model.CpmEnvelope121;
-import com.orange.iot3mobility.messages.cpm.v121.model.CpmMessage121;
-import com.orange.iot3mobility.messages.cpm.v121.model.Origin;
-import com.orange.iot3mobility.messages.cpm.v121.model.defs.AreaCircular;
-import com.orange.iot3mobility.messages.cpm.v121.model.defs.Offset;
-import com.orange.iot3mobility.messages.cpm.v121.model.managementcontainer.ManagementConfidence;
-import com.orange.iot3mobility.messages.cpm.v121.model.managementcontainer.ManagementContainer;
-import com.orange.iot3mobility.messages.cpm.v121.model.managementcontainer.ReferencePosition;
-import com.orange.iot3mobility.messages.cpm.v121.model.perceivedobjectcontainer.*;
-import com.orange.iot3mobility.messages.cpm.v121.model.sensorinformationcontainer.DetectionArea;
-import com.orange.iot3mobility.messages.cpm.v121.model.sensorinformationcontainer.SensorInformation;
-import com.orange.iot3mobility.messages.cpm.v121.model.sensorinformationcontainer.SensorInformationContainer;
-import com.orange.iot3mobility.messages.cpm.v121.model.stationdatacontainer.OriginatingRsuContainer;
-import com.orange.iot3mobility.messages.cpm.v121.model.stationdatacontainer.StationDataContainer;
 import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
 import com.orange.iot3mobility.roadobjects.HazardType;
 import com.orange.iot3mobility.its.StationType;
@@ -43,7 +28,6 @@ import com.orange.iot3mobility.roadobjects.SensorObject;
 import com.orange.lwm2m.model.CustomLwm2mConnectivityStatisticsExample;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -249,18 +233,18 @@ public class Iot3MobilityExample {
 
     private static synchronized void startSendingMessages() {
         ScheduledExecutorService messageScheduler = Executors.newScheduledThreadPool(1);
-        messageScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendTestCam, 1, 1, TimeUnit.SECONDS);
+        messageScheduler.scheduleWithFixedDelay(() -> sendTestCam(CamVersion.V1_1_3), 1, 1, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendTestDenm, 1, 10, TimeUnit.SECONDS);
-        messageScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendTestCpm, 1, 1, TimeUnit.SECONDS);
+        messageScheduler.scheduleWithFixedDelay(() -> sendTestCpm(CpmVersion.V1_2_1), 1, 1, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendTestConnStat, 1, 1, TimeUnit.SECONDS);
     }
 
-    private static void sendTestCam() {
+    private static void sendTestCam(CamVersion camVersion) {
         LatLng position = new LatLng(48.625218, 2.243448); // center point of UTAC TEQMO
         try {
-            ioT3Mobility.sendPosition(StationType.PASSENGER_CAR, position, 0, 0, 0, 0, 0, CamVersion.V1_1_3);
+            ioT3Mobility.sendPosition(StationType.PASSENGER_CAR, position, 0, 0, 0, 0, 0, camVersion);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.out.println("CAM ERROR: " + e);
         }
     }
 
@@ -269,93 +253,39 @@ public class Iot3MobilityExample {
         ioT3Mobility.sendHazard(HazardType.ACCIDENT_NO_SUBCAUSE, position, 10, 7, StationType.PASSENGER_CAR);
     }
 
-    private static void sendTestCpm() {
+    private static void sendTestCpm(CpmVersion cpmVersion) {
         LatLng position = new LatLng(48.625152, 2.240349); // city area of UTAC TEQMO
+        int pedestrianX = -1800 + Utils.randomBetween(-10, 10);
+        int pedestrianY = 200 + Utils.randomBetween(-10, 10);
+        int bicycleX = 1500 + Utils.randomBetween(-10, 10);
+        int bicycleY = 100 + Utils.randomBetween(-10, 10);
 
         try {
-            PerceivedObject pedestrianPo = PerceivedObject.builder()
-                    .objectId(15)
-                    .timeOfMeasurement(0)
-                    .objectAge(1500)
-                    .distance(-1800 + Utils.randomBetween(-10, 10), 200 + Utils.randomBetween(-10, 10))
-                    .speed(0, 0)
-                    .planarObjectDimension(10, 10)
-                    .verticalObjectDimension(20)
-                    .classification(List.of(new ObjectClassification(
-                            new ObjectClass(null,
-                                    new ObjectClassVru(1, null, null, null),
-                                    null,
-                                    null),
-                            100)))
-                    .sensorIdList(List.of(123))
-                    .confidence(
-                            PerceivedObjectConfidence.builder()
-                                    .object(15)
-                                    .distance(4095, 4095)
-                                    .speed(0, 0)
-                                    .build())
-                    .build();
+            if(cpmVersion == CpmVersion.V1_2_1) {
+                CpmEnvelope121 cpmEnvelope121 = CpmV121Factory.createTestCpmEnvelope(
+                        position,
+                        EXAMPLE_UUID,
+                        pedestrianX,
+                        pedestrianY,
+                        bicycleX,
+                        bicycleY);
 
-            PerceivedObject bicyclePo = PerceivedObject.builder()
-                    .objectId(34)
-                    .timeOfMeasurement(0)
-                    .objectAge(1500)
-                    .distance(1500 + Utils.randomBetween(-10, 10), 100 + Utils.randomBetween(-10, 10))
-                    .speed(0, 0)
-                    .planarObjectDimension(20, 20)
-                    .verticalObjectDimension(15)
-                    .classification(List.of(new ObjectClassification(
-                            new ObjectClass(null,
-                                    new ObjectClassVru(null, 1, null, null),
-                                    null,
-                                    null),
-                            100)))
-                    .sensorIdList(List.of(123))
-                    .confidence(
-                            PerceivedObjectConfidence.builder()
-                                    .object(15)
-                                    .distance(4095, 4095)
-                                    .speed(0, 0)
-                                    .build())
-                    .build();
+                System.out.println("Sending CPM v1.2.1: " + cpmEnvelope121);
 
-            CpmEnvelope121 cpmEnvelope121 = CpmEnvelope121.builder()
-                    .origin(Origin.SELF.value)
-                    .sourceUuid(EXAMPLE_UUID)
-                    .timestamp(TrueTime.getAccurateTime())
-                    .message(CpmMessage121.builder()
-                            .protocolVersion(2)
-                            .stationId(123456)
-                            .generationDeltaTime(EtsiConverter.generationDeltaTimeEtsi(TrueTime.getAccurateETSITime()))
-                            .managementContainer(ManagementContainer.builder()
-                                    .stationType(com.orange.iot3mobility.messages.StationType.ROAD_SIDE_UNIT.value)
-                                    .referencePosition(new ReferencePosition(
-                                            EtsiConverter.latitudeEtsi(position.getLatitude()),
-                                            EtsiConverter.longitudeEtsi(position.getLongitude()),
-                                            0))
-                                    .confidence(new ManagementConfidence(
-                                            new com.orange.iot3mobility.messages.cpm.v121.model.managementcontainer
-                                                    .PositionConfidenceEllipse(4095, 4095, 3601),
-                                            15))
-                                    .build())
-                            .stationDataContainer(StationDataContainer.builder()
-                                    .originatingRsuContainer(new OriginatingRsuContainer(123, 123, 123))
-                                    .build())
-                            .sensorInformationContainer(new SensorInformationContainer(
-                                    List.of(new SensorInformation(
-                                            123,
-                                            4,
-                                            DetectionArea.builder()
-                                                    .stationarySensorCircular(new AreaCircular(
-                                                            new Offset(0, 0, 0), 200))
-                                                    .build()))))
-                            .perceivedObjectContainer(new PerceivedObjectContainer(List.of(pedestrianPo, bicyclePo)))
-                            .build())
-                    .build();
+                ioT3Mobility.sendCpm(cpmEnvelope121);
+            } else if(cpmVersion == CpmVersion.V2_1_1) {
+                CpmEnvelope211 cpmEnvelope211 = CpmV211Factory.createTestCpmEnvelope(
+                        position,
+                        EXAMPLE_UUID,
+                        pedestrianX,
+                        pedestrianY,
+                        bicycleX,
+                        bicycleY);
 
-            System.out.println("Sending CPM: " + cpmEnvelope121);
+                System.out.println("Sending CPM v2.1.1: " + cpmEnvelope211);
 
-            ioT3Mobility.sendCpm(cpmEnvelope121);
+                ioT3Mobility.sendCpm(cpmEnvelope211);
+            }
         } catch (Exception e) {
             System.out.println("CPM ERROR: " + e);
         }
