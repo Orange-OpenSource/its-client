@@ -5,20 +5,17 @@ import com.orange.iot3core.bootstrap.BootstrapConfig;
 import com.orange.iot3core.bootstrap.BootstrapHelper;
 import com.orange.iot3mobility.IoT3Mobility;
 import com.orange.iot3mobility.IoT3MobilityCallback;
-import com.orange.iot3mobility.TrueTime;
 import com.orange.iot3mobility.Utils;
-import com.orange.iot3mobility.its.EtsiUtils;
 import com.orange.iot3mobility.messages.cam.core.CamCodec;
 import com.orange.iot3mobility.messages.cam.core.CamVersion;
 import com.orange.iot3mobility.messages.cam.v113.model.CamEnvelope113;
 import com.orange.iot3mobility.messages.cam.v230.model.CamEnvelope230;
+import com.orange.iot3mobility.messages.cpm.core.CpmCodec;
+import com.orange.iot3mobility.messages.cpm.core.CpmVersion;
+import com.orange.iot3mobility.messages.cpm.v121.model.CpmEnvelope121;
+import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
 import com.orange.iot3mobility.roadobjects.HazardType;
 import com.orange.iot3mobility.its.StationType;
-import com.orange.iot3mobility.its.json.JsonValue;
-import com.orange.iot3mobility.its.json.Position;
-import com.orange.iot3mobility.its.json.PositionConfidence;
-import com.orange.iot3mobility.its.json.PositionConfidenceEllipse;
-import com.orange.iot3mobility.its.json.cpm.*;
 import com.orange.iot3mobility.its.json.denm.DENM;
 import com.orange.iot3mobility.managers.IoT3RoadHazardCallback;
 import com.orange.iot3mobility.managers.IoT3RoadSensorCallback;
@@ -31,7 +28,6 @@ import com.orange.iot3mobility.roadobjects.SensorObject;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -190,8 +186,14 @@ public class Iot3MobilityBootstrapExample {
             }
 
             @Override
-            public void cpmArrived(CPM cpm) {
-                System.out.println("CPM received: " + cpm.getJson());
+            public void cpmArrived(CpmCodec.CpmFrame<?> cpmFrame) {
+                if(cpmFrame.version() == CpmVersion.V1_2_1) {
+                    CpmEnvelope121 cpm121 = (CpmEnvelope121) cpmFrame.envelope();
+                    System.out.println("Raw CPM v1.2.1: " + cpm121);
+                } else if(cpmFrame.version() == CpmVersion.V2_1_1) {
+                    CpmEnvelope211 cpm211 = (CpmEnvelope211) cpmFrame.envelope();
+                    System.out.println("Raw CPM v2.1.1: " + cpm211);
+                }
             }
         });
 
@@ -218,17 +220,17 @@ public class Iot3MobilityBootstrapExample {
 
     private static synchronized void startSendingMessages() {
         ScheduledExecutorService messageScheduler = Executors.newScheduledThreadPool(1);
-        messageScheduler.scheduleWithFixedDelay(Iot3MobilityBootstrapExample::sendTestCam, 1, 1, TimeUnit.SECONDS);
+        messageScheduler.scheduleWithFixedDelay(() -> sendTestCam(CamVersion.V1_1_3), 1, 1, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(Iot3MobilityBootstrapExample::sendTestDenm, 1, 10, TimeUnit.SECONDS);
-        messageScheduler.scheduleWithFixedDelay(Iot3MobilityBootstrapExample::sendTestCpm, 1, 1, TimeUnit.SECONDS);
+        messageScheduler.scheduleWithFixedDelay(() -> sendTestCpm(CpmVersion.V1_2_1), 1, 1, TimeUnit.SECONDS);
     }
 
-    private static void sendTestCam() {
+    private static void sendTestCam(CamVersion camVersion) {
         LatLng position = new LatLng(48.625218, 2.243448); // center point of UTAC TEQMO
         try {
-            ioT3Mobility.sendPosition(StationType.PASSENGER_CAR, position, 0, 0, 0, 0, 0, CamVersion.V1_1_3);
+            ioT3Mobility.sendPosition(StationType.PASSENGER_CAR, position, 0, 0, 0, 0, 0, camVersion);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.out.println("CAM ERROR: " + e);
         }
     }
 
@@ -237,81 +239,42 @@ public class Iot3MobilityBootstrapExample {
         ioT3Mobility.sendHazard(HazardType.ACCIDENT_NO_SUBCAUSE, position, 10, 7, StationType.PASSENGER_CAR);
     }
 
-    private static void sendTestCpm() {
+    private static void sendTestCpm(CpmVersion cpmVersion) {
         LatLng position = new LatLng(48.625152, 2.240349); // city area of UTAC TEQMO
+        int pedestrianX = -1800 + Utils.randomBetween(-10, 10);
+        int pedestrianY = 200 + Utils.randomBetween(-10, 10);
+        int bicycleX = 1500 + Utils.randomBetween(-10, 10);
+        int bicycleY = 100 + Utils.randomBetween(-10, 10);
 
-        PerceivedObject pedestrianPo = new PerceivedObject.PerceivedObjectBuilder(
-                12, 0, 1500)
-                .distance(-1800 + Utils.randomBetween(-10, 10),
-                        200 + Utils.randomBetween(-10, 10))
-                .speed(0, 0)
-                .objectDimension(10, 10, 20, 0)
-                .classification(List.of(new ClassificationItem(
-                        new ObjectClassSingleVru(
-                                new ObjectVruPedestrian(1)),
-                        100)))
-                .sensorIdList(List.of(123))
-                .confidence(
-                        new PerceivedObjectConfidence.PerceivedObjectConfidenceBuilder(15)
-                                .distance(0, 0)
-                                .speed(0, 0)
-                                .build())
-                .build();
-
-        PerceivedObject bicyclePo = new PerceivedObject.PerceivedObjectBuilder(
-                34, 0, 1500)
-                .distance(1500 + Utils.randomBetween(-10, 10),
-                        100 + Utils.randomBetween(-10, 10))
-                .speed(0, 0)
-                .objectDimension(20, 20, 15, 0)
-                .classification(List.of(new ClassificationItem(
-                        new ObjectClassSingleVru(
-                                new ObjectVruBicyclist(1)),
-                        100)))
-                .sensorIdList(List.of(123))
-                .confidence(
-                        new PerceivedObjectConfidence.PerceivedObjectConfidenceBuilder(15)
-                                .distance(0, 0)
-                                .speed(0, 0)
-                                .build())
-                .build();
-
-        CPM cpm = new CPM.CPMBuilder()
-                .header(JsonValue.Origin.SELF.value(),
-                        JsonValue.Version.CURRENT_CPM.value(),
+        try {
+            if(cpmVersion == CpmVersion.V1_2_1) {
+                CpmEnvelope121 cpmEnvelope121 = CpmV121Factory.createTestCpmEnvelope(
+                        position,
                         EXAMPLE_UUID,
-                        TrueTime.getAccurateTime())
-                .pduHeader(2,
-                        123456,
-                        (int) (TrueTime.getAccurateETSITime() % 65536))
-                .managementContainer(
-                        new ManagementContainer(
-                                StationType.ROAD_SIDE_UNIT.getId(),
-                                new Position(
-                                        (long) (position.getLatitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
-                                        (long) (position.getLongitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
-                                        0),
-                                new PositionConfidence(
-                                        new PositionConfidenceEllipse(0, 0, 0),
-                                        0)))
-                .stationDataContainer(
-                        new StationDataContainer(
-                                new OriginatingRsuContainer(
-                                        123, 123, 123)))
-                .sensorInformationContainer(
-                        new SensorInformationContainer(
-                                List.of(new SensorInformation(123, 4,
-                                        new DetectionArea(
-                                                new StationarySensorCircular(
-                                                        new Offset(0, 0, 0),
-                                                        200))))))
-                .perceivedObjectContainer(
-                        new PerceivedObjectContainer(
-                                List.of(pedestrianPo,
-                                        bicyclePo)))
-                .build();
+                        pedestrianX,
+                        pedestrianY,
+                        bicycleX,
+                        bicycleY);
 
-        ioT3Mobility.sendCpm(cpm);
+                System.out.println("Sending CPM v1.2.1: " + cpmEnvelope121);
+
+                ioT3Mobility.sendCpm(cpmEnvelope121);
+            } else if(cpmVersion == CpmVersion.V2_1_1) {
+                CpmEnvelope211 cpmEnvelope211 = CpmV211Factory.createTestCpmEnvelope(
+                        position,
+                        EXAMPLE_UUID,
+                        pedestrianX,
+                        pedestrianY,
+                        bicycleX,
+                        bicycleY);
+
+                System.out.println("Sending CPM v2.1.1: " + cpmEnvelope211);
+
+                ioT3Mobility.sendCpm(cpmEnvelope211);
+            }
+        } catch (Exception e) {
+            System.out.println("CPM ERROR: " + e);
+        }
     }
 
 }

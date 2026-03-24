@@ -14,18 +14,14 @@ public class SensorObject {
     private static final int LIFETIME = 1500; // 1.5 seconds
 
     private final String uuid;
-    private int type;
+    private SensorObjectType type;
     private LatLng position;
-    private float speed; // m/s
-    private float heading; // degree
+    private double speed; // m/s
+    private double heading; // degree
     private int infoQuality;
     private long timestamp;
 
-    public SensorObject(String uuid, int type, LatLng position, float speed, float heading) {
-        this(uuid, type, position, speed, heading, 3);
-    }
-
-    public SensorObject(String uuid, int type, LatLng position, float speed, float heading, int infoQuality) {
+    public SensorObject(String uuid, SensorObjectType type, LatLng position, double speed, double heading, int infoQuality) {
         this.uuid = uuid;
         this.type = type;
         this.position = position;
@@ -39,11 +35,11 @@ public class SensorObject {
         return uuid;
     }
 
-    public int getType() {
+    public SensorObjectType getType() {
         return type;
     }
 
-    public void setType(int type) {
+    public void setType(SensorObjectType type) {
         this.type = type;
     }
 
@@ -55,23 +51,23 @@ public class SensorObject {
         this.position = position;
     }
 
-    public float getSpeed() {
+    public double getSpeed() {
         return speed;
     }
 
-    public float getSpeedKmh() {
+    public double getSpeedKmh() {
         return speed * 3.6f;
     }
 
-    public void setSpeed(float speed) {
+    public void setSpeed(double speed) {
         this.speed = speed;
     }
 
-    public float getHeading() {
+    public double getHeading() {
         return heading;
     }
 
-    public void setHeading(float heading) {
+    public void setHeading(double heading) {
         this.heading = heading;
     }
 

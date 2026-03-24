@@ -7,7 +7,7 @@
  */
 package com.orange.iot3mobility.managers;
 
-import com.orange.iot3mobility.its.json.cpm.CPM;
+import com.orange.iot3mobility.messages.cpm.core.CpmCodec;
 import com.orange.iot3mobility.roadobjects.RoadSensor;
 import com.orange.iot3mobility.roadobjects.SensorObject;
 
@@ -25,6 +25,6 @@ public interface IoT3RoadSensorCallback {
 
     void sensorObjectExpired(SensorObject sensorObject);
 
-    void cpmArrived(CPM cpm);
+    void cpmArrived(CpmCodec.CpmFrame<?> cpmFrame);
 
 }

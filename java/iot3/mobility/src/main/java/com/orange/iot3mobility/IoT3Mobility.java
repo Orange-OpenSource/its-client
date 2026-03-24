@@ -25,11 +25,13 @@ import com.orange.iot3mobility.messages.cam.v230.model.CamStructuredData;
 import com.orange.iot3mobility.messages.cam.v230.model.MessageFormat;
 import com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.Altitude;
 import com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.*;
+import com.orange.iot3mobility.messages.cpm.CpmHelper;
+import com.orange.iot3mobility.messages.cpm.v121.model.CpmEnvelope121;
+import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
 import com.orange.iot3mobility.roadobjects.HazardType;
 import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.its.json.JsonValue;
 import com.orange.iot3mobility.its.json.Position;
-import com.orange.iot3mobility.its.json.cpm.CPM;
 import com.orange.iot3mobility.its.json.denm.*;
 import com.orange.iot3mobility.managers.*;
 import com.orange.iot3mobility.quadkey.LatLng;
@@ -61,6 +63,7 @@ public class IoT3Mobility {
     private final IoT3Core ioT3Core;
     private final RoIManager roIManager;
     private final CamHelper camHelper = new CamHelper();
+    private final CpmHelper cpmHelper = new CpmHelper();
 
     private final String uuid;
     private final String context;
@@ -319,7 +322,7 @@ public class IoT3Mobility {
     private void processMessage(String topic, String message) {
         if(ioT3RawMessageCallback != null) ioT3RawMessageCallback.messageArrived(message);
         if(topic.contains("/cam/")) RoadUserManager.processCam(message, camHelper);
-        else if(topic.contains("/cpm/")) RoadSensorManager.processCpm(message);
+        else if(topic.contains("/cpm/")) RoadSensorManager.processCpm(message, cpmHelper);
         else if(topic.contains("/denm/")) RoadHazardManager.processDenm(message);
     }
 
@@ -504,21 +507,39 @@ public class IoT3Mobility {
     }
 
     /**
-     * Send a CPM - Cooperative Perception Message
+     * Send a CPM - Cooperative Perception Message - v1.2.1
      *
-     * @param cpm the CPM representing your sensors and their perceived objects
+     * @param cpmV121 the CPM representing sensors and their perceived objects
      */
-    public void sendCpm(CPM cpm) {
+    public void sendCpm(CpmEnvelope121 cpmV121) throws IOException {
         // build the topic
         String quadkey = QuadTileHelper.latLngToQuadKey(
-                cpm.getManagementContainer().getReferencePosition().getLatitudeDegree(),
-                cpm.getManagementContainer().getReferencePosition().getLongitudeDegree(),
+                EtsiConverter.latitudeDegrees(cpmV121.message().managementContainer().referencePosition().latitude()),
+                EtsiConverter.longitudeDegrees(cpmV121.message().managementContainer().referencePosition().longitude()),
                 22);
         String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
         String topic = context + "/inQueue/v2x/cpm/" + uuid + geoExtension;
 
         // send the message only if the client is connected
-        if(isConnected()) ioT3Core.mqttPublish(topic, cpm.getJson().toString(), false, 0, 1);
+        if(isConnected()) ioT3Core.mqttPublish(topic, cpmHelper.toJson(cpmV121), false, 0, 1);
+    }
+
+    /**
+     * Send a CPM - Cooperative Perception Message - v2.1.1
+     *
+     * @param cpmV211 the CPM representing sensors and their perceived objects
+     */
+    public void sendCpm(CpmEnvelope211 cpmV211) throws IOException {
+        // build the topic
+        String quadkey = QuadTileHelper.latLngToQuadKey(
+                EtsiConverter.latitudeDegrees(cpmV211.message().managementContainer().referencePosition().latitude()),
+                EtsiConverter.longitudeDegrees(cpmV211.message().managementContainer().referencePosition().longitude()),
+                22);
+        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
+        String topic = context + "/inQueue/v2x/cpm/" + uuid + geoExtension;
+
+        // send the message only if the client is connected
+        if(isConnected()) ioT3Core.mqttPublish(topic, cpmHelper.toJson(cpmV211), false, 0, 1);
     }
 
     /**
