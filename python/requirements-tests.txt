@@ -4,10 +4,10 @@ backports.tarfile==1.2.0
 black==24.10.0
 build==1.2.2.post1
 certifi==2024.8.30
-cffi==1.17.1
+cffi==2.0.0
 charset-normalizer==3.4.0
 click==8.1.7
-cryptography==44.0.1
+cryptography==46.0.6
 docutils==0.21.2
 id==1.5.0
 idna==3.10
