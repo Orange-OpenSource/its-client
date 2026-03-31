@@ -5,7 +5,7 @@
 
  @author Mathieu LEFEBVRE <mathieu1.lefebvre@orange.com>
  */
-package com.orange.iot3mobility.messages.denm.v220.model;
+package com.orange.iot3mobility.messages.denm.v220.model.path;
 
 /**
  * DenmPathPosition220 - path position.
@@ -14,7 +14,7 @@ package com.orange.iot3mobility.messages.denm.v220.model;
  * @param longitude Longitude of the geographical point. Range: -1800000000 to 1800000001
  * @param altitude Unit: 0.01 meter. referenceEllipsoidSurface(0), oneCentimeter(1), unavailable(800001)
  */
-public record DenmPathPosition(
+public record PathPosition(
         int latitude,
         int longitude,
         int altitude) {

@@ -11,7 +11,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
 import com.orange.iot3mobility.messages.denm.v220.model.DenmMessage220;
-import com.orange.iot3mobility.messages.denm.v220.model.DenmPathElement;
+import com.orange.iot3mobility.messages.denm.v220.model.path.PathElement;
 import com.orange.iot3mobility.messages.denm.v220.model.alacartecontainer.AlacarteContainer;
 import com.orange.iot3mobility.messages.denm.v220.model.defs.Altitude;
 import com.orange.iot3mobility.messages.denm.v220.model.defs.DeltaReferencePosition;
@@ -81,9 +81,9 @@ public final class DenmWriter220 {
         gen.writeEndObject();
     }
 
-    private void writePath(JsonGenerator gen, List<DenmPathElement> path) throws IOException {
+    private void writePath(JsonGenerator gen, List<PathElement> path) throws IOException {
         gen.writeStartArray();
-        for (DenmPathElement element : path) {
+        for (PathElement element : path) {
             gen.writeStartObject();
             gen.writeFieldName("position");
             gen.writeStartObject();

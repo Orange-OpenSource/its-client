@@ -12,8 +12,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.orange.iot3mobility.messages.denm.v113.model.DenmEnvelope113;
 import com.orange.iot3mobility.messages.denm.v113.model.DenmMessage113;
-import com.orange.iot3mobility.messages.denm.v113.model.DenmPathElement;
-import com.orange.iot3mobility.messages.denm.v113.model.DenmPathPosition;
+import com.orange.iot3mobility.messages.denm.v113.model.path.PathElement;
+import com.orange.iot3mobility.messages.denm.v113.model.path.PathPosition;
 import com.orange.iot3mobility.messages.denm.v113.model.alacartecontainer.AlacarteContainer;
 import com.orange.iot3mobility.messages.denm.v113.model.locationcontainer.DeltaReferencePosition;
 import com.orange.iot3mobility.messages.denm.v113.model.locationcontainer.LocationConfidence;
@@ -53,7 +53,7 @@ public final class DenmReader113 {
             String version = null;
             String sourceUuid = null;
             Long timestamp = null;
-            List<DenmPathElement> path = null;
+            List<PathElement> path = null;
             DenmMessage113 message = null;
 
             while (parser.nextToken() != JsonToken.END_OBJECT) {
@@ -85,18 +85,18 @@ public final class DenmReader113 {
         }
     }
 
-    private List<DenmPathElement> readPath(JsonParser parser) throws IOException {
+    private List<PathElement> readPath(JsonParser parser) throws IOException {
         expect(parser.getCurrentToken(), JsonToken.START_ARRAY);
-        List<DenmPathElement> elements = new ArrayList<>();
+        List<PathElement> elements = new ArrayList<>();
         while (parser.nextToken() != JsonToken.END_ARRAY) {
             elements.add(readPathElement(parser));
         }
         return elements;
     }
 
-    private DenmPathElement readPathElement(JsonParser parser) throws IOException {
+    private PathElement readPathElement(JsonParser parser) throws IOException {
         expect(parser.getCurrentToken(), JsonToken.START_OBJECT);
-        DenmPathPosition position = null;
+        PathPosition position = null;
         String messageType = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
@@ -109,12 +109,12 @@ public final class DenmReader113 {
             }
         }
 
-        return new DenmPathElement(
+        return new PathElement(
                 requireField(position, "path.position"),
                 requireField(messageType, "path.message_type"));
     }
 
-    private DenmPathPosition readPathPosition(JsonParser parser) throws IOException {
+    private PathPosition readPathPosition(JsonParser parser) throws IOException {
         expect(parser.getCurrentToken(), JsonToken.START_OBJECT);
         Integer latitude = null;
         Integer longitude = null;
@@ -131,7 +131,7 @@ public final class DenmReader113 {
             }
         }
 
-        return new DenmPathPosition(
+        return new PathPosition(
                 requireField(latitude, "path.position.latitude"),
                 requireField(longitude, "path.position.longitude"),
                 requireField(altitude, "path.position.altitude"));

@@ -7,6 +7,8 @@
  */
 package com.orange.iot3mobility.messages.denm.v113.model;
 
+import com.orange.iot3mobility.messages.denm.v113.model.path.PathElement;
+
 import java.util.List;
 
 /**
@@ -18,7 +20,7 @@ import java.util.List;
  * @param sourceUuid identifier. Example: UNKNOWN, CCU6, MEC2
  * @param timestamp Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01)
  * @param path Optional. Root source path (ordered list). Each element includes a position (lat/lon/alt) and a message
- *             type. See {@link DenmPathElement}
+ *             type. See {@link PathElement}
  * @param message {@link DenmMessage113}
  */
 public record DenmEnvelope113(
@@ -27,7 +29,7 @@ public record DenmEnvelope113(
         String version,
         String sourceUuid,
         long timestamp,
-        List<DenmPathElement> path,
+        List<PathElement> path,
         DenmMessage113 message) {
 
     public static Builder builder() {
@@ -53,7 +55,7 @@ public record DenmEnvelope113(
         private final String version;
         private String sourceUuid;
         private Long timestamp;
-        private List<DenmPathElement> path;
+        private List<PathElement> path;
         private DenmMessage113 message;
 
         private Builder() {
@@ -76,7 +78,7 @@ public record DenmEnvelope113(
             return this;
         }
 
-        public Builder path(List<DenmPathElement> path) {
+        public Builder path(List<PathElement> path) {
             this.path = path;
             return this;
         }

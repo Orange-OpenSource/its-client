@@ -5,15 +5,15 @@
 
  @author Mathieu LEFEBVRE <mathieu1.lefebvre@orange.com>
  */
-package com.orange.iot3mobility.messages.denm.v113.model;
+package com.orange.iot3mobility.messages.denm.v220.model.path;
 
 /**
- * DenmPathElement113 - path element.
+ * DenmPathElement220 - path element.
  *
- * @param position {@link DenmPathPosition}
+ * @param position {@link PathPosition}
  * @param messageType message type (denm, cam, cpm, po)
  */
-public record DenmPathElement(
-        DenmPathPosition position,
+public record PathElement(
+        PathPosition position,
         String messageType) {
 }

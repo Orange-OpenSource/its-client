@@ -9,8 +9,8 @@ package com.orange.iot3mobility.messages.denm.v113.validation;
 
 import com.orange.iot3mobility.messages.denm.v113.model.DenmEnvelope113;
 import com.orange.iot3mobility.messages.denm.v113.model.DenmMessage113;
-import com.orange.iot3mobility.messages.denm.v113.model.DenmPathElement;
-import com.orange.iot3mobility.messages.denm.v113.model.DenmPathPosition;
+import com.orange.iot3mobility.messages.denm.v113.model.path.PathElement;
+import com.orange.iot3mobility.messages.denm.v113.model.path.PathPosition;
 import com.orange.iot3mobility.messages.denm.v113.model.alacartecontainer.AlacarteContainer;
 import com.orange.iot3mobility.messages.denm.v113.model.locationcontainer.DeltaReferencePosition;
 import com.orange.iot3mobility.messages.denm.v113.model.locationcontainer.LocationConfidence;
@@ -177,17 +177,17 @@ public final class DenmValidator113 {
         }
     }
 
-    private static void validatePath(List<DenmPathElement> path) {
+    private static void validatePath(List<PathElement> path) {
         checkSize("path", path.size(), 1, Integer.MAX_VALUE);
         for (int i = 0; i < path.size(); i++) {
-            DenmPathElement element = requireNonNull("path[" + i + "]", path.get(i));
+            PathElement element = requireNonNull("path[" + i + "]", path.get(i));
             validatePathPosition("path[" + i + "].position", element.position());
             requireEnum("path[" + i + "].message_type", element.messageType(),
                     List.of("denm", "cam", "cpm", "po"));
         }
     }
 
-    private static void validatePathPosition(String prefix, DenmPathPosition position) {
+    private static void validatePathPosition(String prefix, PathPosition position) {
         requireNonNull(prefix, position);
         checkRange(prefix + ".latitude", position.latitude(), -900000000, 900000001);
         checkRange(prefix + ".longitude", position.longitude(), -1800000000, 1800000001);

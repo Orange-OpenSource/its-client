@@ -5,7 +5,7 @@
 
  @author Mathieu LEFEBVRE <mathieu1.lefebvre@orange.com>
  */
-package com.orange.iot3mobility.messages.denm.v113.model;
+package com.orange.iot3mobility.messages.denm.v113.model.path;
 
 /**
  * DenmPathPosition113 - path position.
@@ -14,7 +14,7 @@ package com.orange.iot3mobility.messages.denm.v113.model;
  * @param longitude Unit: 0.1 microdegree. oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(1800000001)
  * @param altitude Unit: 0.01 meter. referenceEllipsoidSurface(0), oneCentimeter(1), unavailable(800001)
  */
-public record DenmPathPosition(
+public record PathPosition(
         int latitude,
         int longitude,
         int altitude) {
