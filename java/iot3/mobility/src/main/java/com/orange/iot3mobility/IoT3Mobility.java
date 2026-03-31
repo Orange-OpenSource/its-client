@@ -14,8 +14,8 @@ import com.orange.iot3core.IoT3Core;
 import com.orange.iot3core.IoT3CoreCallback;
 import com.orange.iot3core.bootstrap.BootstrapConfig;
 import com.orange.iot3core.clients.lwm2m.model.*;
-import com.orange.iot3mobility.its.EtsiUtils;
 import com.orange.iot3mobility.messages.EtsiConverter;
+import com.orange.iot3mobility.messages.StationType;
 import com.orange.iot3mobility.messages.cam.CamHelper;
 import com.orange.iot3mobility.messages.cam.core.CamVersion;
 import com.orange.iot3mobility.messages.cam.v113.model.*;
@@ -31,11 +31,6 @@ import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
 import com.orange.iot3mobility.messages.denm.DenmHelper;
 import com.orange.iot3mobility.messages.denm.v113.model.DenmEnvelope113;
 import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
-import com.orange.iot3mobility.roadobjects.HazardType;
-import com.orange.iot3mobility.its.StationType;
-import com.orange.iot3mobility.its.json.JsonValue;
-import com.orange.iot3mobility.its.json.Position;
-import com.orange.iot3mobility.its.json.denm.*;
 import com.orange.iot3mobility.managers.*;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.quadkey.QuadTileHelper;
@@ -354,7 +349,7 @@ public class IoT3Mobility {
                             .stationId(stationId)
                             .generationDeltaTime(EtsiConverter.generationDeltaTimeEtsi(TrueTime.getAccurateETSITime()))
                             .basicContainer(BasicContainer.builder()
-                                    .stationType(stationType.getId())
+                                    .stationType(stationType.value)
                                     .referencePosition(new ReferencePosition(
                                             EtsiConverter.latitudeEtsi(position.getLatitude()),
                                             EtsiConverter.longitudeEtsi(position.getLongitude()),
@@ -379,7 +374,7 @@ public class IoT3Mobility {
                             .stationId(stationId)
                             .generationDeltaTime(EtsiConverter.generationDeltaTimeEtsi(TrueTime.getAccurateETSITime()))
                             .basicContainer(com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.BasicContainer.builder()
-                                    .stationType(stationType.getId())
+                                    .stationType(stationType.value)
                                     .referencePosition(com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.ReferencePosition.builder()
                                             .latitudeLongitude(EtsiConverter.latitudeEtsi(position.latitude),
                                                     EtsiConverter.longitudeEtsi(position.longitude))
@@ -440,74 +435,6 @@ public class IoT3Mobility {
             // send the message only if the client is connected
             if(isConnected()) ioT3Core.mqttPublish(topic, camHelper.toJson(camV230), false, 0, 1);
         }
-    }
-
-    /**
-     * Inform other road users of a road hazard.
-     * Builds a DENM and uses {@link #sendDenm(DENM)}
-     *
-     * @param hazardType the type of the reported hazard
-     * @param position the hazard's position (latitude, longitude in degrees)
-     * @param lifetime the lifetimes of this hazard in seconds [0 - 86400]
-     * @param infoQuality the quality of this hazard information [0 - 7]
-     * @param stationType your road user type
-     */
-    public void sendHazard(HazardType hazardType, LatLng position, int lifetime, int infoQuality,
-                           StationType stationType) {
-        // check for out of scope values before building the DENM
-        lifetime = (int) Utils.clamp(lifetime, 0, 86400);
-        infoQuality = (int) Utils.clamp(infoQuality, 0, 7);
-
-        // build the DENM
-        DENM denm = new DENM.DENMBuilder()
-                .header(
-                        JsonValue.Origin.SELF.value(),
-                        JsonValue.Version.CURRENT_DENM.value(),
-                        uuid,
-                        TrueTime.getAccurateTime())
-                .pduHeader(
-                        2,
-                        stationId)
-                .managementContainer(
-                        new ManagementContainer(
-                                new ActionId(
-                                        stationId,
-                                        EtsiUtils.getNextSequenceNumber()),
-                                TrueTime.getAccurateETSITime(),
-                                TrueTime.getAccurateETSITime(),
-                                new Position(
-                                        (long)(position.getLatitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
-                                        (long)(position.getLongitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
-                                        0),
-                                lifetime,
-                                stationType.getId()))
-                .situationContainer(
-                        new SituationContainer(
-                                infoQuality,
-                                new EventType(
-                                        hazardType.getCause(),
-                                        hazardType.getSubcause())))
-                .build();
-
-        sendDenm(denm);
-    }
-
-    /**
-     * Send a DENM - Decentralized Environment Notification Message
-     *
-     * @param denm the DENM representing a road event
-     */
-    public void sendDenm(DENM denm) {
-        // build the topic
-        String quadkey = QuadTileHelper.latLngToQuadKey(
-                denm.getManagementContainer().getEventPosition().getLatitudeDegree(),
-                denm.getManagementContainer().getEventPosition().getLongitudeDegree(),
-                22);
-        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
-        String topic = context + "/inQueue/v2x/denm/" + uuid + geoExtension;
-
-        // send the message even if the client is disconnected, so it will be queued
-        if(ioT3Core != null) ioT3Core.mqttPublish(topic, denm.getJsonDENM().toString());
     }
 
     /**

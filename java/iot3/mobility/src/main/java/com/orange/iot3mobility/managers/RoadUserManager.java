@@ -7,8 +7,8 @@
  */
 package com.orange.iot3mobility.managers;
 
-import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.messages.EtsiConverter;
+import com.orange.iot3mobility.messages.StationType;
 import com.orange.iot3mobility.messages.cam.CamHelper;
 import com.orange.iot3mobility.messages.cam.core.CamCodec;
 import com.orange.iot3mobility.messages.cam.core.CamVersion;
@@ -61,7 +61,7 @@ public class RoadUserManager {
                 if(camFrame.version().equals(CamVersion.V1_1_3)) {
                     CamEnvelope113 camEnvelope113 = (CamEnvelope113) camFrame.envelope();
                     uuid = camEnvelope113.sourceUuid() + "_" + camEnvelope113.message().stationId();
-                    stationType = StationType.fromId(camEnvelope113.message().basicContainer().stationType());
+                    stationType = StationType.fromValue(camEnvelope113.message().basicContainer().stationType());
                     position = new LatLng(
                             EtsiConverter.latitudeDegrees(camEnvelope113.message().basicContainer().referencePosition().latitude()),
                             EtsiConverter.longitudeDegrees(camEnvelope113.message().basicContainer().referencePosition().longitude()));
@@ -72,7 +72,7 @@ public class RoadUserManager {
                     CamEnvelope230 camEnvelope230 = (CamEnvelope230) camFrame.envelope();
                     if(camEnvelope230.message() instanceof CamStructuredData cam) {
                         uuid = camEnvelope230.sourceUuid() + "_" + cam.stationId();
-                        stationType = StationType.fromId(cam.basicContainer().stationType());
+                        stationType = StationType.fromValue(cam.basicContainer().stationType());
                         position = new LatLng(
                                 EtsiConverter.latitudeDegrees(cam.basicContainer().referencePosition().latitude()),
                                 EtsiConverter.longitudeDegrees(cam.basicContainer().referencePosition().longitude()));

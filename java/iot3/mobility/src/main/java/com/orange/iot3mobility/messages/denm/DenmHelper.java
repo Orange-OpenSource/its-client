@@ -17,10 +17,11 @@ import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Calendar;
 import java.util.Objects;
 
 /**
- * High-level helper around DenmCodec.
+ * High-level helper around DenmCodec. Also provides DENM a sequence number helper method.
  * <p>
  * - Manages a shared JsonFactory and DenmCodec instance.
  * - Provides String-based APIs (convenient for MQTT payloads).
@@ -127,6 +128,36 @@ public final class DenmHelper {
         ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
         denmCodec.write(version, envelope, out);
         return out.toString(StandardCharsets.UTF_8);
+    }
+
+    // ---------------------------------------------------------------------
+    // Sequence number helper
+    // ---------------------------------------------------------------------
+
+    private static int localSequenceNumber = initLocalSequenceNumber();
+
+    /**
+     * Simple way to avoid getting the same sequence number after a restart (can cause issues to identify DENMs).
+     */
+    private static int initLocalSequenceNumber() {
+        Calendar c = Calendar.getInstance();
+        int h = c.get(Calendar.HOUR_OF_DAY);
+        int m = c.get(Calendar.MINUTE);
+        int s = c.get(Calendar.SECOND);
+
+        int secondsSinceMidnight = h * 3600 + m * 60 + s; // 0..86399
+        return secondsSinceMidnight % 65536;              // 0..65535
+    }
+
+    /**
+     * Helper method incrementing your DENM sequence number.
+     *
+     * @return the next sequence number for a new DENM
+     */
+    public static int getNextSequenceNumber() {
+        localSequenceNumber++;
+        if(localSequenceNumber > 65535) localSequenceNumber = 0;
+        return localSequenceNumber;
     }
 }
 

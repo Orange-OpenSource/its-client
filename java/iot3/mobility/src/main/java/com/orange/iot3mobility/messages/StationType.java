@@ -33,4 +33,11 @@ public enum StationType {
     StationType(int value) {
         this.value = value;
     }
+
+    public static StationType fromValue(int value) {
+        for(StationType stationType: StationType.values()) {
+            if(stationType.value == value) return stationType;
+        }
+        return UNKNOWN;
+    }
 }

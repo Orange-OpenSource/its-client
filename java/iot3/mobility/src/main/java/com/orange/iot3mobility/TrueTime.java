@@ -7,7 +7,7 @@
  */
 package com.orange.iot3mobility;
 
-import com.orange.iot3mobility.its.EtsiUtils;
+import com.orange.iot3mobility.messages.EtsiConverter;
 
 import org.apache.commons.net.ntp.NTPUDPClient;
 import org.apache.commons.net.ntp.TimeInfo;
@@ -54,16 +54,8 @@ public class TrueTime {
         return System.currentTimeMillis() - deltaNtpTime;
     }
 
-    public static long getAccurateTimeSec(){
-        return getAccurateTime() / 1000;
-    }
-
     public static long getAccurateETSITime(){
-        return getAccurateTime() - EtsiUtils.DELTA_1970_2004_MILLISEC;
-    }
-
-    public static long getAccurateETSITimeSec(){
-        return (getAccurateTime() / 1000) - EtsiUtils.DELTA_1970_2004_SEC;
+        return EtsiConverter.unixToEtsiTimestampMs(getAccurateTime());
     }
 
     public static void setDefaultTimeServerAddress(String address){
