@@ -64,19 +64,19 @@ public final class DenmWriter220 {
         gen.writeStartObject();
         gen.writeNumberField("protocol_version", message.protocolVersion());
         gen.writeNumberField("station_id", message.stationId());
-        gen.writeFieldName("management");
-        writeManagement(gen, message.management());
-        if (message.situation() != null) {
-            gen.writeFieldName("situation");
-            writeSituation(gen, message.situation());
+        gen.writeFieldName("management_container");
+        writeManagement(gen, message.managementContainer());
+        if (message.situationContainer() != null) {
+            gen.writeFieldName("situation_container");
+            writeSituation(gen, message.situationContainer());
         }
-        if (message.location() != null) {
-            gen.writeFieldName("location");
-            writeLocation(gen, message.location());
+        if (message.locationContainer() != null) {
+            gen.writeFieldName("location_container");
+            writeLocation(gen, message.locationContainer());
         }
-        if (message.alacarte() != null) {
-            gen.writeFieldName("alacarte");
-            writeAlacarte(gen, message.alacarte());
+        if (message.alacarteContainer() != null) {
+            gen.writeFieldName("alacarte_container");
+            writeAlacarte(gen, message.alacarteContainer());
         }
         gen.writeEndObject();
     }

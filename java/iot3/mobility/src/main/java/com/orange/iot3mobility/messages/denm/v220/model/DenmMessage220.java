@@ -17,18 +17,18 @@ import com.orange.iot3mobility.messages.denm.v220.model.situationcontainer.Situa
  *
  * @param protocolVersion protocol version
  * @param stationId station identifier
- * @param management {@link ManagementContainer}
- * @param situation Optional. {@link SituationContainer}
- * @param location Optional. {@link LocationContainer}
- * @param alacarte Optional. {@link AlacarteContainer}
+ * @param managementContainer {@link ManagementContainer}
+ * @param situationContainer Optional. {@link SituationContainer}
+ * @param locationContainer Optional. {@link LocationContainer}
+ * @param alacarteContainer Optional. {@link AlacarteContainer}
  */
 public record DenmMessage220(
         int protocolVersion,
         long stationId,
-        ManagementContainer management,
-        SituationContainer situation,
-        LocationContainer location,
-        AlacarteContainer alacarte) {
+        ManagementContainer managementContainer,
+        SituationContainer situationContainer,
+        LocationContainer locationContainer,
+        AlacarteContainer alacarteContainer) {
 
     public static Builder builder() {
         return new Builder();
@@ -37,10 +37,10 @@ public record DenmMessage220(
     public static final class Builder {
         private Integer protocolVersion;
         private Long stationId;
-        private ManagementContainer management;
-        private SituationContainer situation;
-        private LocationContainer location;
-        private AlacarteContainer alacarte;
+        private ManagementContainer managementContainer;
+        private SituationContainer situationContainer;
+        private LocationContainer locationContainer;
+        private AlacarteContainer alacarteContainer;
 
         public Builder protocolVersion(int protocolVersion) {
             this.protocolVersion = protocolVersion;
@@ -52,23 +52,23 @@ public record DenmMessage220(
             return this;
         }
 
-        public Builder management(ManagementContainer management) {
-            this.management = management;
+        public Builder managementContainer(ManagementContainer managementContainer) {
+            this.managementContainer = managementContainer;
             return this;
         }
 
-        public Builder situation(SituationContainer situation) {
-            this.situation = situation;
+        public Builder situationContainer(SituationContainer situationContainer) {
+            this.situationContainer = situationContainer;
             return this;
         }
 
-        public Builder location(LocationContainer location) {
-            this.location = location;
+        public Builder locationContainer(LocationContainer locationContainer) {
+            this.locationContainer = locationContainer;
             return this;
         }
 
-        public Builder alacarte(AlacarteContainer alacarte) {
-            this.alacarte = alacarte;
+        public Builder alacarteContainer(AlacarteContainer alacarteContainer) {
+            this.alacarteContainer = alacarteContainer;
             return this;
         }
 
@@ -76,10 +76,10 @@ public record DenmMessage220(
             return new DenmMessage220(
                     requireNonNull(protocolVersion, "protocol_version"),
                     requireNonNull(stationId, "station_id"),
-                    requireNonNull(management, "management"),
-                    situation,
-                    location,
-                    alacarte);
+                    requireNonNull(managementContainer, "management_container"),
+                    situationContainer,
+                    locationContainer,
+                    alacarteContainer);
         }
 
         private static <T> T requireNonNull(T value, String field) {

@@ -50,20 +50,20 @@ public final class DenmValidator220 {
         requireNonNull("message", msg);
         checkRange("protocol_version", msg.protocolVersion(), 0, 255);
         checkRange("station_id", msg.stationId(), 0, 4294967295L);
-        validateManagement(msg.management());
-        if (msg.situation() != null) {
-            validateSituation(msg.situation());
+        validateManagement(msg.managementContainer());
+        if (msg.situationContainer() != null) {
+            validateSituation(msg.situationContainer());
         }
-        if (msg.location() != null) {
-            validateLocation(msg.location());
+        if (msg.locationContainer() != null) {
+            validateLocation(msg.locationContainer());
         }
-        if (msg.alacarte() != null) {
-            validateAlacarte(msg.alacarte());
+        if (msg.alacarteContainer() != null) {
+            validateAlacarte(msg.alacarteContainer());
         }
     }
 
     private static void validateManagement(ManagementContainer container) {
-        requireNonNull("management", container);
+        requireNonNull("management_container", container);
         validateActionId(container.actionId());
         checkRange("detection_time", container.detectionTime(), 0L, 4398046511103L);
         checkRange("reference_time", container.referenceTime(), 0L, 4398046511103L);
@@ -103,7 +103,7 @@ public final class DenmValidator220 {
     }
 
     private static void validateSituation(SituationContainer situation) {
-        requireNonNull("situation", situation);
+        requireNonNull("situation_container", situation);
         requireNonNull("information_quality", situation.informationQuality());
         checkRange("information_quality", situation.informationQuality(), 0, 7);
         requireNonNull("event_type", situation.eventType());
@@ -145,7 +145,7 @@ public final class DenmValidator220 {
     }
 
     private static void validateLocation(LocationContainer location) {
-        requireNonNull("location", location);
+        requireNonNull("location_container", location);
         if (location.eventSpeed() != null) {
             validateEventSpeed(location.eventSpeed());
         }
@@ -194,8 +194,8 @@ public final class DenmValidator220 {
     }
 
     private static void validateAlacarte(AlacarteContainer alacarte) {
-        checkRange("alacarte.lane_position", alacarte.lanePosition(), -1, 14);
-        checkRange("alacarte.positioning_solution", alacarte.positioningSolution(), 0, 6);
+        checkRange("alacarte_container.lane_position", alacarte.lanePosition(), -1, 14);
+        checkRange("alacarte_container.positioning_solution", alacarte.positioningSolution(), 0, 6);
     }
 
     private static void validatePath(List<PathElement> path) {
