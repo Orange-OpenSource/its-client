@@ -8,13 +8,18 @@
 package com.orange.iot3mobility.managers;
 
 import com.orange.iot3mobility.TrueTime;
-import com.orange.iot3mobility.its.json.JsonUtil;
-import com.orange.iot3mobility.its.json.denm.DENM;
+import com.orange.iot3mobility.messages.denm.DenmHelper;
+import com.orange.iot3mobility.messages.denm.core.DenmCodec;
+import com.orange.iot3mobility.messages.denm.core.DenmVersion;
+import com.orange.iot3mobility.messages.denm.v113.model.DenmEnvelope113;
+import com.orange.iot3mobility.messages.denm.v113.model.DenmMessage113;
+import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
+import com.orange.iot3mobility.messages.denm.v220.model.DenmMessage220;
 import com.orange.iot3mobility.roadobjects.RoadHazard;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -39,46 +44,67 @@ public class RoadHazardManager {
         startExpirationCheck();
     }
 
-    public static void processDenm(String message) {
+    public static void processDenm(String message, DenmHelper denmHelper) {
         if(ioT3RoadHazardCallback != null) {
             try {
-                DENM denm = DENM.jsonParser(new JSONObject(message));
-                if(denm == null) {
-                    LOGGER.log(Level.WARNING, TAG, "DENM parsing returned null");
-                } else {
-                    ioT3RoadHazardCallback.denmArrived(denm);
-                    //associate the received DENM to a RoadHazard object
-                    String uuid = denm.getManagementContainer().getActionId().getOriginatingStationId()
-                            + "_" + denm.getManagementContainer().getActionId().getSequenceNumber();
-                    int lifetime = denm.getManagementContainer().getValidityDuration() * 1000; // to ms
-                    long timestamp = denm.getTimestamp();
-                    boolean expired = TrueTime.getAccurateTime() - timestamp > lifetime;
-                    boolean terminate = denm.getManagementContainer().getTermination() != JsonUtil.UNKNOWN;
-                    if(ROAD_HAZARD_MAP.containsKey(uuid)) {
-                        synchronized (ROAD_HAZARD_MAP) {
-                            RoadHazard roadHazard = ROAD_HAZARD_MAP.get(uuid);
-                            if(roadHazard != null) {
-                                if(terminate) {
-                                    ROAD_HAZARD_MAP.values().remove(roadHazard);
-                                    synchronized (ROAD_HAZARDS) {
-                                        ROAD_HAZARDS.remove(roadHazard);
-                                    }
-                                    ioT3RoadHazardCallback.roadHazardExpired(roadHazard);
-                                } else {
-                                    roadHazard.setDenm(denm);
-                                    ioT3RoadHazardCallback.roadHazardUpdate(roadHazard);
-                                }
-                            }
-                        }
-                    } else if(!terminate && !expired) {
-                        RoadHazard roadHazard = new RoadHazard(uuid, denm);
-                        addRoadHazard(uuid, roadHazard);
-                        ioT3RoadHazardCallback.newRoadHazard(roadHazard);
-                    }
+                DenmCodec.DenmFrame<?> denmFrame = denmHelper.parse(message);
+                ioT3RoadHazardCallback.denmArrived(denmFrame);
+
+                String uuid;
+                int lifetime;
+                long timestamp;
+                boolean expired;
+                boolean terminate;
+
+                if(denmFrame.version().equals(DenmVersion.V1_1_3)) {
+                    DenmEnvelope113 denmEnvelope113 = (DenmEnvelope113) denmFrame.envelope();
+                    DenmMessage113 denm113 = denmEnvelope113.message();
+                    timestamp = denmEnvelope113.timestamp();
+                    uuid = denm113.managementContainer().actionId().originatingStationId() + "_"
+                            + denm113.managementContainer().actionId().sequenceNumber();
+                    lifetime = denm113.managementContainer().validityDuration() * 1000;
+                    expired = TrueTime.getAccurateTime() - timestamp > lifetime;
+                    terminate = denm113.managementContainer().termination() != null;
+                    createOrUpdateRoadHazard(uuid, expired, terminate, denmFrame);
+                } else if(denmFrame.version().equals(DenmVersion.V2_2_0)) {
+                    DenmEnvelope220 denmEnvelope220 = (DenmEnvelope220) denmFrame.envelope();
+                    DenmMessage220 denm220 = denmEnvelope220.message();
+                    timestamp = denmEnvelope220.timestamp();
+                    uuid = denm220.managementContainer().actionId().originatingStationId() + "_"
+                            + denm220.managementContainer().actionId().sequenceNumber();
+                    lifetime = denm220.managementContainer().validityDuration() * 1000;
+                    expired = TrueTime.getAccurateTime() - timestamp > lifetime;
+                    terminate = denm220.managementContainer().termination() != null;
+                    createOrUpdateRoadHazard(uuid, expired, terminate, denmFrame);
                 }
-            } catch (JSONException e) {
+            } catch (JSONException | IOException e) {
                 LOGGER.log(Level.WARNING, TAG, "DENM parsing error: " + e);
             }
+        }
+    }
+
+    private static void createOrUpdateRoadHazard(String uuid, boolean expired, boolean terminate,
+                                                 DenmCodec.DenmFrame<?> denmFrame) {
+        if(ROAD_HAZARD_MAP.containsKey(uuid)) {
+            synchronized (ROAD_HAZARD_MAP) {
+                RoadHazard roadHazard = ROAD_HAZARD_MAP.get(uuid);
+                if(roadHazard != null) {
+                    if(terminate) {
+                        ROAD_HAZARD_MAP.values().remove(roadHazard);
+                        synchronized (ROAD_HAZARDS) {
+                            ROAD_HAZARDS.remove(roadHazard);
+                        }
+                        ioT3RoadHazardCallback.roadHazardExpired(roadHazard);
+                    } else {
+                        roadHazard.setDenmFrame(denmFrame);
+                        ioT3RoadHazardCallback.roadHazardUpdate(roadHazard);
+                    }
+                }
+            }
+        } else if(!terminate && !expired) {
+            RoadHazard roadHazard = new RoadHazard(uuid, denmFrame);
+            addRoadHazard(uuid, roadHazard);
+            ioT3RoadHazardCallback.newRoadHazard(roadHazard);
         }
     }
 

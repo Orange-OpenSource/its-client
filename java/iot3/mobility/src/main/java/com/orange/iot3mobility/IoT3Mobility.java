@@ -28,6 +28,9 @@ import com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.*;
 import com.orange.iot3mobility.messages.cpm.CpmHelper;
 import com.orange.iot3mobility.messages.cpm.v121.model.CpmEnvelope121;
 import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
+import com.orange.iot3mobility.messages.denm.DenmHelper;
+import com.orange.iot3mobility.messages.denm.v113.model.DenmEnvelope113;
+import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
 import com.orange.iot3mobility.roadobjects.HazardType;
 import com.orange.iot3mobility.its.StationType;
 import com.orange.iot3mobility.its.json.JsonValue;
@@ -51,8 +54,8 @@ import java.util.logging.Logger;
  * Mobility SDK based on the Orange IoT3.0 platform.
  * <br>IoT3Mobility takes advantage of the IoT3Core to propose:
  * <ul>
- * <li>Transparent management of V2X messages (road users, road hazards, road sensors),</li>
- * <li>Share your location and see other road users around you,</li>
+ * <li>Transparent managementContainer of V2X messages (road users, road hazards, road sensors),</li>
+ * <li>Share your locationContainer and see other road users around you,</li>
  * <li>Be alerted of road hazards in your vicinity.</li>
  * </ul>
  */
@@ -64,6 +67,7 @@ public class IoT3Mobility {
     private final RoIManager roIManager;
     private final CamHelper camHelper = new CamHelper();
     private final CpmHelper cpmHelper = new CpmHelper();
+    private final DenmHelper denmHelper = new DenmHelper();
 
     private final String uuid;
     private final String context;
@@ -323,7 +327,7 @@ public class IoT3Mobility {
         if(ioT3RawMessageCallback != null) ioT3RawMessageCallback.messageArrived(message);
         if(topic.contains("/cam/")) RoadUserManager.processCam(message, camHelper);
         else if(topic.contains("/cpm/")) RoadSensorManager.processCpm(message, cpmHelper);
-        else if(topic.contains("/denm/")) RoadHazardManager.processDenm(message);
+        else if(topic.contains("/denm/")) RoadHazardManager.processDenm(message, denmHelper);
     }
 
     /**
@@ -504,6 +508,42 @@ public class IoT3Mobility {
 
         // send the message even if the client is disconnected, so it will be queued
         if(ioT3Core != null) ioT3Core.mqttPublish(topic, denm.getJsonDENM().toString());
+    }
+
+    /**
+     * Send a DENM - Decentralized Environment Notification Message - v1.1.3
+     *
+     * @param denmV113 the DENM representing a road event
+     */
+    public void sendDenm(DenmEnvelope113 denmV113) throws IOException {
+        // build the topic
+        String quadkey = QuadTileHelper.latLngToQuadKey(
+                EtsiConverter.latitudeDegrees(denmV113.message().managementContainer().eventPosition().latitude()),
+                EtsiConverter.longitudeDegrees(denmV113.message().managementContainer().eventPosition().longitude()),
+                22);
+        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
+        String topic = context + "/inQueue/v2x/denm/" + uuid + geoExtension;
+
+        // send the message even if the client is disconnected, so it will be queued
+        if(ioT3Core != null) ioT3Core.mqttPublish(topic, denmHelper.toJson(denmV113));
+    }
+
+    /**
+     * Send a DENM - Decentralized Environment Notification Message - v2.2.0
+     *
+     * @param denmV220 the DENM representing a road event
+     */
+    public void sendDenm(DenmEnvelope220 denmV220) throws IOException {
+        // build the topic
+        String quadkey = QuadTileHelper.latLngToQuadKey(
+                EtsiConverter.latitudeDegrees(denmV220.message().managementContainer().eventPosition().latitude()),
+                EtsiConverter.longitudeDegrees(denmV220.message().managementContainer().eventPosition().longitude()),
+                22);
+        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
+        String topic = context + "/inQueue/v2x/denm/" + uuid + geoExtension;
+
+        // send the message even if the client is disconnected, so it will be queued
+        if(ioT3Core != null) ioT3Core.mqttPublish(topic, denmHelper.toJson(denmV220));
     }
 
     /**
