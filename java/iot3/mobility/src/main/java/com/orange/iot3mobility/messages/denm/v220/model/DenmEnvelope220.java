@@ -18,8 +18,7 @@ import java.util.List;
  * @param sourceUuid identifier. Example: com_car_4294967295, com_application_42
  * @param timestamp Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01)
  * @param version json message format version (2.2.0)
- * @param path Optional. Root source path (ordered list). Each element includes a position (lat/lon/alt) and a message
- *             type. See {@link PathElement}
+ * @param path Optional. Root source path (ordered list of {@link PathElement})
  * @param message {@link DenmMessage220}
  */
 public record DenmEnvelope220(

@@ -17,10 +17,10 @@ import com.orange.iot3mobility.messages.denm.v113.model.situationcontainer.Situa
  *
  * @param protocolVersion protocol version
  * @param stationId station identifier
- * @param managementContainer {@link com.orange.iot3mobility.messages.denm.v113.model.managementcontainer.ManagementContainer}
- * @param situationContainer Optional. {@link com.orange.iot3mobility.messages.denm.v113.model.situationcontainer.SituationContainer}
- * @param locationContainer Optional. {@link com.orange.iot3mobility.messages.denm.v113.model.locationcontainer.LocationContainer}
- * @param alacarteContainer Optional. {@link com.orange.iot3mobility.messages.denm.v113.model.alacartecontainer.AlacarteContainer}
+ * @param managementContainer {@link ManagementContainer}
+ * @param situationContainer Optional. {@link SituationContainer}
+ * @param locationContainer Optional. {@link LocationContainer}
+ * @param alacarteContainer Optional. {@link AlacarteContainer}
  */
 public record DenmMessage113(
         int protocolVersion,

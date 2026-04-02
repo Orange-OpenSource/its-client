@@ -15,8 +15,8 @@ import com.orange.iot3mobility.messages.denm.v220.model.defs.PositionConfidenceE
  *
  * @param latitude Latitude of the geographical point. Range: -900000000 to 900000001
  * @param longitude Longitude of the geographical point. Range: -1800000000 to 1800000001
- * @param positionConfidenceEllipse confidence ellipse
- * @param altitude altitude (value + confidence)
+ * @param positionConfidenceEllipse {@link PositionConfidenceEllipse}
+ * @param altitude {@link Altitude}
  */
 public record ReferencePosition(
         int latitude,

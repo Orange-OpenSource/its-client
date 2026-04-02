@@ -17,10 +17,9 @@ import java.util.List;
  * @param type message type (denm)
  * @param origin {@link Origin}
  * @param version json message format version (1.1.3)
- * @param sourceUuid identifier. Example: UNKNOWN, CCU6, MEC2
+ * @param sourceUuid identifier
  * @param timestamp Unit: millisecond. The timestamp when the message was generated since Unix Epoch (1970/01/01)
- * @param path Optional. Root source path (ordered list). Each element includes a position (lat/lon/alt) and a message
- *             type. See {@link PathElement}
+ * @param path Optional. List of {@link PathElement})
  * @param message {@link DenmMessage113}
  */
 public record DenmEnvelope113(
