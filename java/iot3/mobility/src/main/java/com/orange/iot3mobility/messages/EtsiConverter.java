@@ -15,6 +15,8 @@ package com.orange.iot3mobility.messages;
  */
 public final class EtsiConverter {
 
+    public static final long DELTA_1970_2004_MILLISEC = 1072915200000L;
+
     private EtsiConverter() {
         // Utility class
     }
@@ -37,6 +39,15 @@ public final class EtsiConverter {
      */
     public static double epochMillisToSeconds(long epochMillis) {
         return epochMillis / 1000.0;
+    }
+
+    /**
+     * UNIX -> ETSI
+     * @param unixTimestampMs UNIX timestamp in milliseconds
+     * @return ETSI timestamp in milliseconds
+     */
+    public static long unixToEtsiTimestampMs(long unixTimestampMs) {
+        return unixTimestampMs - DELTA_1970_2004_MILLISEC;
     }
 
     // -------------------------------------------------------------------------

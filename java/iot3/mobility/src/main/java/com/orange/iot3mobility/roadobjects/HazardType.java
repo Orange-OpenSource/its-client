@@ -217,4 +217,13 @@ public enum HazardType {
         return subcause;
     }
 
+    public static HazardType getHazardType(int cause, int subcause) {
+        for(HazardType hazard: HazardType.values()) {
+            if(hazard.getCause() == cause && hazard.getSubcause() == subcause) {
+                return hazard;
+            }
+        }
+        return UNDEFINED;
+    }
+
 }

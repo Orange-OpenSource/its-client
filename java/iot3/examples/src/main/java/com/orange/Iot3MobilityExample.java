@@ -6,6 +6,7 @@ import com.orange.iot3core.clients.lwm2m.model.Lwm2mServer;
 import com.orange.iot3mobility.IoT3Mobility;
 import com.orange.iot3mobility.IoT3MobilityCallback;
 import com.orange.iot3mobility.Utils;
+import com.orange.iot3mobility.messages.StationType;
 import com.orange.iot3mobility.messages.cam.core.CamCodec;
 import com.orange.iot3mobility.messages.cam.core.CamVersion;
 import com.orange.iot3mobility.messages.cam.v113.model.CamEnvelope113;
@@ -14,9 +15,11 @@ import com.orange.iot3mobility.messages.cpm.core.CpmCodec;
 import com.orange.iot3mobility.messages.cpm.core.CpmVersion;
 import com.orange.iot3mobility.messages.cpm.v121.model.CpmEnvelope121;
 import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
+import com.orange.iot3mobility.messages.denm.core.DenmCodec;
+import com.orange.iot3mobility.messages.denm.core.DenmVersion;
+import com.orange.iot3mobility.messages.denm.v113.model.DenmEnvelope113;
+import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
 import com.orange.iot3mobility.roadobjects.HazardType;
-import com.orange.iot3mobility.its.StationType;
-import com.orange.iot3mobility.its.json.denm.DENM;
 import com.orange.iot3mobility.managers.IoT3RoadHazardCallback;
 import com.orange.iot3mobility.managers.IoT3RoadSensorCallback;
 import com.orange.iot3mobility.managers.IoT3RoadUserCallback;
@@ -27,7 +30,6 @@ import com.orange.iot3mobility.roadobjects.RoadUser;
 import com.orange.iot3mobility.roadobjects.SensorObject;
 import com.orange.lwm2m.model.CustomLwm2mConnectivityStatisticsExample;
 
-import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -125,8 +127,14 @@ public class Iot3MobilityExample {
             }
 
             @Override
-            public void denmArrived(DENM denm) {
-                System.out.println("DENM received: " + denm.getJsonDENM());
+            public void denmArrived(DenmCodec.DenmFrame<?> denmFrame) {
+                if(denmFrame.version().equals(DenmVersion.V1_1_3)) {
+                    DenmEnvelope113 denmEnvelope113 = (DenmEnvelope113) denmFrame.envelope();
+                    System.out.println("Raw DENM v1.1.3: " + denmEnvelope113);
+                } else if(denmFrame.version().equals(DenmVersion.V2_2_0)) {
+                    DenmEnvelope220 denmEnvelope220 = (DenmEnvelope220) denmFrame.envelope();
+                    System.out.println("Raw DENM v2.2.0: " + denmEnvelope220);
+                }
             }
         });
 
@@ -234,7 +242,7 @@ public class Iot3MobilityExample {
     private static synchronized void startSendingMessages() {
         ScheduledExecutorService messageScheduler = Executors.newScheduledThreadPool(1);
         messageScheduler.scheduleWithFixedDelay(() -> sendTestCam(CamVersion.V1_1_3), 1, 1, TimeUnit.SECONDS);
-        messageScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendTestDenm, 1, 10, TimeUnit.SECONDS);
+        messageScheduler.scheduleWithFixedDelay(() -> sendTestDenm(DenmVersion.V1_1_3), 1, 5, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(() -> sendTestCpm(CpmVersion.V1_2_1), 1, 1, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendTestConnStat, 1, 1, TimeUnit.SECONDS);
     }
@@ -243,14 +251,34 @@ public class Iot3MobilityExample {
         LatLng position = new LatLng(48.625218, 2.243448); // center point of UTAC TEQMO
         try {
             ioT3Mobility.sendPosition(StationType.PASSENGER_CAR, position, 0, 0, 0, 0, 0, camVersion);
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.out.println("CAM ERROR: " + e);
         }
     }
 
-    private static void sendTestDenm() {
+    private static void sendTestDenm(DenmVersion denmVersion) {
         LatLng position = new LatLng(48.626059, 2.247904); // planar area of UTAC TEQMO
-        ioT3Mobility.sendHazard(HazardType.ACCIDENT_NO_SUBCAUSE, position, 10, 7, StationType.PASSENGER_CAR);
+        HazardType hazardType = HazardType.ACCIDENT_NO_SUBCAUSE;
+        StationType stationType = StationType.PASSENGER_CAR;
+        try {
+            if(denmVersion == DenmVersion.V1_1_3) {
+                DenmEnvelope113 denmEnvelope113 = DenmV113Factory.createTestDenmEnvelope(
+                        EXAMPLE_UUID,
+                        hazardType,
+                        position,
+                        stationType);
+                ioT3Mobility.sendDenm(denmEnvelope113);
+            } else if(denmVersion == DenmVersion.V2_2_0) {
+                DenmEnvelope220 denmEnvelope220 = DenmV220Factory.createTestDenmEnvelope(
+                        EXAMPLE_UUID,
+                        hazardType,
+                        position,
+                        stationType);
+                ioT3Mobility.sendDenm(denmEnvelope220);
+            }
+        } catch (Exception e) {
+            System.out.println("DENM ERROR: " + e);
+        }
     }
 
     private static void sendTestCpm(CpmVersion cpmVersion) {

@@ -14,8 +14,8 @@ import com.orange.iot3core.IoT3Core;
 import com.orange.iot3core.IoT3CoreCallback;
 import com.orange.iot3core.bootstrap.BootstrapConfig;
 import com.orange.iot3core.clients.lwm2m.model.*;
-import com.orange.iot3mobility.its.EtsiUtils;
 import com.orange.iot3mobility.messages.EtsiConverter;
+import com.orange.iot3mobility.messages.StationType;
 import com.orange.iot3mobility.messages.cam.CamHelper;
 import com.orange.iot3mobility.messages.cam.core.CamVersion;
 import com.orange.iot3mobility.messages.cam.v113.model.*;
@@ -28,11 +28,9 @@ import com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.*;
 import com.orange.iot3mobility.messages.cpm.CpmHelper;
 import com.orange.iot3mobility.messages.cpm.v121.model.CpmEnvelope121;
 import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
-import com.orange.iot3mobility.roadobjects.HazardType;
-import com.orange.iot3mobility.its.StationType;
-import com.orange.iot3mobility.its.json.JsonValue;
-import com.orange.iot3mobility.its.json.Position;
-import com.orange.iot3mobility.its.json.denm.*;
+import com.orange.iot3mobility.messages.denm.DenmHelper;
+import com.orange.iot3mobility.messages.denm.v113.model.DenmEnvelope113;
+import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
 import com.orange.iot3mobility.managers.*;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.quadkey.QuadTileHelper;
@@ -51,8 +49,8 @@ import java.util.logging.Logger;
  * Mobility SDK based on the Orange IoT3.0 platform.
  * <br>IoT3Mobility takes advantage of the IoT3Core to propose:
  * <ul>
- * <li>Transparent management of V2X messages (road users, road hazards, road sensors),</li>
- * <li>Share your location and see other road users around you,</li>
+ * <li>Transparent managementContainer of V2X messages (road users, road hazards, road sensors),</li>
+ * <li>Share your locationContainer and see other road users around you,</li>
  * <li>Be alerted of road hazards in your vicinity.</li>
  * </ul>
  */
@@ -64,6 +62,7 @@ public class IoT3Mobility {
     private final RoIManager roIManager;
     private final CamHelper camHelper = new CamHelper();
     private final CpmHelper cpmHelper = new CpmHelper();
+    private final DenmHelper denmHelper = new DenmHelper();
 
     private final String uuid;
     private final String context;
@@ -323,7 +322,7 @@ public class IoT3Mobility {
         if(ioT3RawMessageCallback != null) ioT3RawMessageCallback.messageArrived(message);
         if(topic.contains("/cam/")) RoadUserManager.processCam(message, camHelper);
         else if(topic.contains("/cpm/")) RoadSensorManager.processCpm(message, cpmHelper);
-        else if(topic.contains("/denm/")) RoadHazardManager.processDenm(message);
+        else if(topic.contains("/denm/")) RoadHazardManager.processDenm(message, denmHelper);
     }
 
     /**
@@ -350,7 +349,7 @@ public class IoT3Mobility {
                             .stationId(stationId)
                             .generationDeltaTime(EtsiConverter.generationDeltaTimeEtsi(TrueTime.getAccurateETSITime()))
                             .basicContainer(BasicContainer.builder()
-                                    .stationType(stationType.getId())
+                                    .stationType(stationType.value)
                                     .referencePosition(new ReferencePosition(
                                             EtsiConverter.latitudeEtsi(position.getLatitude()),
                                             EtsiConverter.longitudeEtsi(position.getLongitude()),
@@ -375,7 +374,7 @@ public class IoT3Mobility {
                             .stationId(stationId)
                             .generationDeltaTime(EtsiConverter.generationDeltaTimeEtsi(TrueTime.getAccurateETSITime()))
                             .basicContainer(com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.BasicContainer.builder()
-                                    .stationType(stationType.getId())
+                                    .stationType(stationType.value)
                                     .referencePosition(com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.ReferencePosition.builder()
                                             .latitudeLongitude(EtsiConverter.latitudeEtsi(position.latitude),
                                                     EtsiConverter.longitudeEtsi(position.longitude))
@@ -439,71 +438,39 @@ public class IoT3Mobility {
     }
 
     /**
-     * Inform other road users of a road hazard.
-     * Builds a DENM and uses {@link #sendDenm(DENM)}
+     * Send a DENM - Decentralized Environment Notification Message - v1.1.3
      *
-     * @param hazardType the type of the reported hazard
-     * @param position the hazard's position (latitude, longitude in degrees)
-     * @param lifetime the lifetimes of this hazard in seconds [0 - 86400]
-     * @param infoQuality the quality of this hazard information [0 - 7]
-     * @param stationType your road user type
+     * @param denmV113 the DENM representing a road event
      */
-    public void sendHazard(HazardType hazardType, LatLng position, int lifetime, int infoQuality,
-                           StationType stationType) {
-        // check for out of scope values before building the DENM
-        lifetime = (int) Utils.clamp(lifetime, 0, 86400);
-        infoQuality = (int) Utils.clamp(infoQuality, 0, 7);
-
-        // build the DENM
-        DENM denm = new DENM.DENMBuilder()
-                .header(
-                        JsonValue.Origin.SELF.value(),
-                        JsonValue.Version.CURRENT_DENM.value(),
-                        uuid,
-                        TrueTime.getAccurateTime())
-                .pduHeader(
-                        2,
-                        stationId)
-                .managementContainer(
-                        new ManagementContainer(
-                                new ActionId(
-                                        stationId,
-                                        EtsiUtils.getNextSequenceNumber()),
-                                TrueTime.getAccurateETSITime(),
-                                TrueTime.getAccurateETSITime(),
-                                new Position(
-                                        (long)(position.getLatitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
-                                        (long)(position.getLongitude() * EtsiUtils.ETSI_COORDINATES_FACTOR),
-                                        0),
-                                lifetime,
-                                stationType.getId()))
-                .situationContainer(
-                        new SituationContainer(
-                                infoQuality,
-                                new EventType(
-                                        hazardType.getCause(),
-                                        hazardType.getSubcause())))
-                .build();
-
-        sendDenm(denm);
-    }
-
-    /**
-     * Send a DENM - Decentralized Environment Notification Message
-     *
-     * @param denm the DENM representing a road event
-     */
-    public void sendDenm(DENM denm) {
+    public void sendDenm(DenmEnvelope113 denmV113) throws IOException {
         // build the topic
         String quadkey = QuadTileHelper.latLngToQuadKey(
-                denm.getManagementContainer().getEventPosition().getLatitudeDegree(),
-                denm.getManagementContainer().getEventPosition().getLongitudeDegree(),
+                EtsiConverter.latitudeDegrees(denmV113.message().managementContainer().eventPosition().latitude()),
+                EtsiConverter.longitudeDegrees(denmV113.message().managementContainer().eventPosition().longitude()),
                 22);
         String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
         String topic = context + "/inQueue/v2x/denm/" + uuid + geoExtension;
 
         // send the message even if the client is disconnected, so it will be queued
-        if(ioT3Core != null) ioT3Core.mqttPublish(topic, denm.getJsonDENM().toString());
+        if(ioT3Core != null) ioT3Core.mqttPublish(topic, denmHelper.toJson(denmV113));
+    }
+
+    /**
+     * Send a DENM - Decentralized Environment Notification Message - v2.2.0
+     *
+     * @param denmV220 the DENM representing a road event
+     */
+    public void sendDenm(DenmEnvelope220 denmV220) throws IOException {
+        // build the topic
+        String quadkey = QuadTileHelper.latLngToQuadKey(
+                EtsiConverter.latitudeDegrees(denmV220.message().managementContainer().eventPosition().latitude()),
+                EtsiConverter.longitudeDegrees(denmV220.message().managementContainer().eventPosition().longitude()),
+                22);
+        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
+        String topic = context + "/inQueue/v2x/denm/" + uuid + geoExtension;
+
+        // send the message even if the client is disconnected, so it will be queued
+        if(ioT3Core != null) ioT3Core.mqttPublish(topic, denmHelper.toJson(denmV220));
     }
 
     /**
