@@ -8,9 +8,20 @@ package com.orange.iot3mobility.messages.cpm.v211.validation;
 import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
 import com.orange.iot3mobility.messages.cpm.v211.model.CpmMessage211;
 import com.orange.iot3mobility.messages.cpm.v211.model.defs.Altitude;
+import com.orange.iot3mobility.messages.cpm.v211.model.defs.Angle;
+import com.orange.iot3mobility.messages.cpm.v211.model.defs.CartesianCoordinateWithConfidence;
+import com.orange.iot3mobility.messages.cpm.v211.model.defs.CartesianPosition3dWithConfidence;
 import com.orange.iot3mobility.messages.cpm.v211.model.defs.PositionConfidenceEllipse;
 import com.orange.iot3mobility.messages.cpm.v211.model.defs.ReferencePosition;
+import com.orange.iot3mobility.messages.cpm.v211.model.defs.Speed;
+import com.orange.iot3mobility.messages.cpm.v211.model.defs.VelocityComponent;
+import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.CartesianVelocity;
+import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.PerceivedObject;
+import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.PerceivedObjectContainer;
+import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.PolarVelocity;
+import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.Velocity;
 import com.orange.iot3mobility.messages.cpm.v211.model.managementcontainer.ManagementContainer;
+import com.orange.iot3mobility.messages.cpm.v211.model.managementcontainer.SegmentationInfo;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -20,6 +31,17 @@ class CpmValidator211Test {
     @Test
     void validateEnvelopeAcceptsMinimalValid() {
         CpmValidator211.validateEnvelope(validEnvelope());
+    }
+
+    @Test
+    void validateEnvelopeRejectsTimestampOutOfRange() {
+        CpmEnvelope211 envelope = CpmEnvelope211.builder()
+                .sourceUuid("com_application_42")
+                .timestamp(1L)
+                .message(validMessage())
+                .build();
+
+        assertThrows(CpmValidationException.class, () -> CpmValidator211.validateEnvelope(envelope));
     }
 
     @Test
@@ -34,6 +56,133 @@ class CpmValidator211Test {
         assertThrows(CpmValidationException.class, () -> CpmValidator211.validateEnvelope(envelope));
     }
 
+    @Test
+    void validatePerceivedObjectRejectsVelocityWithBothOptions() {
+        CartesianPosition3dWithConfidence position = new CartesianPosition3dWithConfidence(
+                new CartesianCoordinateWithConfidence(0, 1),
+                new CartesianCoordinateWithConfidence(0, 1),
+                null);
+        PolarVelocity polar = new PolarVelocity(new Speed(0, 1), new Angle(0, 1), new VelocityComponent(0, 1));
+        CartesianVelocity cartesian = new CartesianVelocity(
+                new VelocityComponent(0, 1),
+                new VelocityComponent(0, 1),
+                null);
+        Velocity velocity = new Velocity(polar, cartesian);
+        PerceivedObject object = PerceivedObject.builder()
+                .measurementDeltaTime(0)
+                .position(position)
+                .velocity(velocity)
+                .build();
+        PerceivedObjectContainer perceivedObjectContainer = PerceivedObjectContainer.builder()
+                .perceivedObjects(java.util.List.of(object))
+                .build();
+
+        CpmMessage211 message = CpmMessage211.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .managementContainer(validManagement())
+                .perceivedObjectContainer(perceivedObjectContainer)
+                .build();
+        CpmEnvelope211 envelope = CpmEnvelope211.builder()
+                .sourceUuid("com_application_42")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+
+        assertThrows(CpmValidationException.class, () -> CpmValidator211.validateEnvelope(envelope));
+    }
+
+    @Test
+    void validateManagementRejectsSegmentationInfoOutOfRange() {
+        ManagementContainer management = ManagementContainer.builder()
+                .referenceTime(0)
+                .referencePosition(validReferencePosition())
+                .segmentationInfo(new SegmentationInfo(0, 1))
+                .build();
+        CpmMessage211 message = CpmMessage211.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .managementContainer(management)
+                .build();
+        CpmEnvelope211 envelope = CpmEnvelope211.builder()
+                .sourceUuid("com_application_42")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+
+        assertThrows(CpmValidationException.class, () -> CpmValidator211.validateEnvelope(envelope));
+    }
+
+    @Test
+    void validateManagementRejectsReferenceTimeOutOfRange() {
+        ManagementContainer management = ManagementContainer.builder()
+                .referenceTime(4398046511104L)
+                .referencePosition(validReferencePosition())
+                .build();
+        CpmMessage211 message = CpmMessage211.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .managementContainer(management)
+                .build();
+        CpmEnvelope211 envelope = CpmEnvelope211.builder()
+                .sourceUuid("com_application_42")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+
+        assertThrows(CpmValidationException.class, () -> CpmValidator211.validateEnvelope(envelope));
+    }
+
+    @Test
+    void validateManagementRejectsReferenceLatitudeOutOfRange() {
+        ReferencePosition reference = ReferencePosition.builder()
+                .latitudeLongitude(900000002, 0)
+                .positionConfidenceEllipse(new PositionConfidenceEllipse(0, 0, 0))
+                .altitude(new Altitude(0, 0))
+                .build();
+        ManagementContainer management = ManagementContainer.builder()
+                .referenceTime(0)
+                .referencePosition(reference)
+                .build();
+        CpmMessage211 message = CpmMessage211.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .managementContainer(management)
+                .build();
+        CpmEnvelope211 envelope = CpmEnvelope211.builder()
+                .sourceUuid("com_application_42")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+
+        assertThrows(CpmValidationException.class, () -> CpmValidator211.validateEnvelope(envelope));
+    }
+
+    @Test
+    void validateManagementRejectsReferenceLongitudeOutOfRange() {
+        ReferencePosition reference = ReferencePosition.builder()
+                .latitudeLongitude(0, 1800000002)
+                .positionConfidenceEllipse(new PositionConfidenceEllipse(0, 0, 0))
+                .altitude(new Altitude(0, 0))
+                .build();
+        ManagementContainer management = ManagementContainer.builder()
+                .referenceTime(0)
+                .referencePosition(reference)
+                .build();
+        CpmMessage211 message = CpmMessage211.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .managementContainer(management)
+                .build();
+        CpmEnvelope211 envelope = CpmEnvelope211.builder()
+                .sourceUuid("com_application_42")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+
+        assertThrows(CpmValidationException.class, () -> CpmValidator211.validateEnvelope(envelope));
+    }
+
     private static CpmEnvelope211 validEnvelope() {
         return CpmEnvelope211.builder()
                 .sourceUuid("com_application_42")
@@ -43,23 +192,27 @@ class CpmValidator211Test {
     }
 
     private static CpmMessage211 validMessage() {
+        return CpmMessage211.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .managementContainer(validManagement())
+                .build();
+    }
+
+    private static ManagementContainer validManagement() {
+        return ManagementContainer.builder()
+                .referenceTime(0)
+                .referencePosition(validReferencePosition())
+                .build();
+    }
+
+    private static ReferencePosition validReferencePosition() {
         PositionConfidenceEllipse ellipse = new PositionConfidenceEllipse(0, 0, 0);
         Altitude altitude = new Altitude(0, 0);
-        ReferencePosition reference = ReferencePosition.builder()
+        return ReferencePosition.builder()
                 .latitudeLongitude(0, 0)
                 .positionConfidenceEllipse(ellipse)
                 .altitude(altitude)
                 .build();
-        ManagementContainer management = ManagementContainer.builder()
-                .referenceTime(0)
-                .referencePosition(reference)
-                .build();
-
-        return CpmMessage211.builder()
-                .protocolVersion(1)
-                .stationId(42)
-                .managementContainer(management)
-                .build();
     }
 }
-

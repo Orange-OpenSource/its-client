@@ -66,6 +66,176 @@ class CamValidator113Test {
         assertThrows(CamValidationException.class, () -> CamValidator113.validateEnvelope(envelope));
     }
 
+    @Test
+    void validateHighFrequencyRejectsInvalidAccelerationControl() {
+        CamMessage113 message = CamMessage113.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .generationDeltaTime(1)
+                .basicContainer(validBasic())
+                .highFrequencyContainer(HighFrequencyContainer.builder()
+                        .accelerationControl("1010102")
+                        .build())
+                .build();
+
+        CamEnvelope113 envelope = CamEnvelope113.builder()
+                .origin("self")
+                .sourceUuid("CCU6")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+
+        assertThrows(CamValidationException.class, () -> CamValidator113.validateEnvelope(envelope));
+    }
+
+    @Test
+    void validateLowFrequencyRejectsInvalidExteriorLights() {
+        LowFrequencyContainer low = LowFrequencyContainer.builder()
+                .vehicleRole(0)
+                .exteriorLights("0101012")
+                .pathHistory(List.of(new PathPoint(new DeltaReferencePosition(0, 0, 0), 1)))
+                .build();
+
+        CamMessage113 message = CamMessage113.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .generationDeltaTime(1)
+                .basicContainer(validBasic())
+                .highFrequencyContainer(HighFrequencyContainer.builder().build())
+                .lowFrequencyContainer(low)
+                .build();
+
+        CamEnvelope113 envelope = CamEnvelope113.builder()
+                .origin("self")
+                .sourceUuid("CCU6")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+
+        assertThrows(CamValidationException.class, () -> CamValidator113.validateEnvelope(envelope));
+    }
+
+    @Test
+    void validateHighFrequencyRejectsHeadingOutOfRange() {
+        CamMessage113 message = CamMessage113.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .generationDeltaTime(1)
+                .basicContainer(validBasic())
+                .highFrequencyContainer(HighFrequencyContainer.builder()
+                        .heading(4000)
+                        .build())
+                .build();
+
+        CamEnvelope113 envelope = CamEnvelope113.builder()
+                .origin("self")
+                .sourceUuid("CCU6")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+
+        assertThrows(CamValidationException.class, () -> CamValidator113.validateEnvelope(envelope));
+    }
+
+    @Test
+    void validateLowFrequencyRejectsPathDeltaTimeOutOfRange() {
+        LowFrequencyContainer low = LowFrequencyContainer.builder()
+                .vehicleRole(0)
+                .exteriorLights("00000000")
+                .pathHistory(List.of(new PathPoint(new DeltaReferencePosition(0, 0, 0), 0)))
+                .build();
+
+        CamMessage113 message = CamMessage113.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .generationDeltaTime(1)
+                .basicContainer(validBasic())
+                .highFrequencyContainer(HighFrequencyContainer.builder().build())
+                .lowFrequencyContainer(low)
+                .build();
+
+        CamEnvelope113 envelope = CamEnvelope113.builder()
+                .origin("self")
+                .sourceUuid("CCU6")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+
+        assertThrows(CamValidationException.class, () -> CamValidator113.validateEnvelope(envelope));
+    }
+
+    @Test
+    void validateBasicContainerRejectsLatitudeOutOfRange() {
+        BasicContainer basic = BasicContainer.builder()
+                .stationType(5)
+                .referencePosition(new ReferencePosition(900000002, 0, 0))
+                .build();
+
+        CamMessage113 message = CamMessage113.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .generationDeltaTime(1)
+                .basicContainer(basic)
+                .highFrequencyContainer(HighFrequencyContainer.builder().build())
+                .build();
+
+        CamEnvelope113 envelope = CamEnvelope113.builder()
+                .origin("self")
+                .sourceUuid("CCU6")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+
+        assertThrows(CamValidationException.class, () -> CamValidator113.validateEnvelope(envelope));
+    }
+
+    @Test
+    void validateBasicContainerRejectsAltitudeOutOfRange() {
+        BasicContainer basic = BasicContainer.builder()
+                .stationType(5)
+                .referencePosition(new ReferencePosition(0, 0, -100001))
+                .build();
+
+        CamMessage113 message = CamMessage113.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .generationDeltaTime(1)
+                .basicContainer(basic)
+                .highFrequencyContainer(HighFrequencyContainer.builder().build())
+                .build();
+
+        CamEnvelope113 envelope = CamEnvelope113.builder()
+                .origin("self")
+                .sourceUuid("CCU6")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+
+        assertThrows(CamValidationException.class, () -> CamValidator113.validateEnvelope(envelope));
+    }
+
+    @Test
+    void validateHighFrequencyRejectsSpeedOutOfRange() {
+        CamMessage113 message = CamMessage113.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .generationDeltaTime(1)
+                .basicContainer(validBasic())
+                .highFrequencyContainer(HighFrequencyContainer.builder()
+                        .speed(20000)
+                        .build())
+                .build();
+
+        CamEnvelope113 envelope = CamEnvelope113.builder()
+                .origin("self")
+                .sourceUuid("CCU6")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+
+        assertThrows(CamValidationException.class, () -> CamValidator113.validateEnvelope(envelope));
+    }
+
     private static CamEnvelope113 validEnvelope() {
         return CamEnvelope113.builder()
                 .origin("self")
@@ -92,4 +262,3 @@ class CamValidator113Test {
                 .build();
     }
 }
-
