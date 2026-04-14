@@ -30,6 +30,33 @@ class CamValidator230Test {
     }
 
     @Test
+    void validateEnvelopeAcceptsFullyPopulatedMessage() {
+        LowFrequencyContainer low = new LowFrequencyContainer(
+                new BasicVehicleContainerLowFrequency(
+                        0,
+                        new ExteriorLights(true, false, false, false, false, false, false, false),
+                        List.of(new PathPoint(new DeltaReferencePosition(0, 0, 0), 1))));
+
+        CamStructuredData message = CamStructuredData.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .generationDeltaTime(1)
+                .basicContainer(validBasicContainer())
+                .highFrequencyContainer(validHighFrequencyContainer())
+                .lowFrequencyContainer(low)
+                .build();
+
+        CamEnvelope230 envelope = CamEnvelope230.builder()
+                .messageFormat("json/raw")
+                .sourceUuid("com_car_42")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+
+        CamValidator230.validateEnvelope(envelope);
+    }
+
+    @Test
     void validateEnvelopeRejectsMessageFormatMismatch() {
         CamEnvelope230 envelope = CamEnvelope230.builder()
                 .messageFormat("asn1/uper")

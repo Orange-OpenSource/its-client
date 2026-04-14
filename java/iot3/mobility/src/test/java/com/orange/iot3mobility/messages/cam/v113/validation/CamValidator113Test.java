@@ -22,6 +22,59 @@ class CamValidator113Test {
     }
 
     @Test
+    void validateEnvelopeAcceptsFullyPopulatedMessage() {
+        BasicContainer basic = BasicContainer.builder()
+                .stationType(5)
+                .referencePosition(new ReferencePosition(0, 0, 0))
+                .positionConfidence(new PositionConfidence(new PositionConfidenceEllipse(0, 0, 0), 0))
+                .build();
+
+        HighFrequencyContainer hf = HighFrequencyContainer.builder()
+                .heading(0)
+                .speed(0)
+                .driveDirection(0)
+                .vehicleSize(10, 10)
+                .curvature(0)
+                .curvatureCalculationMode(0)
+                .longitudinalAcceleration(0)
+                .yawRate(0)
+                .accelerationControl("0000000")
+                .lanePosition(0)
+                .lateralAcceleration(0)
+                .verticalAcceleration(0)
+                .highFrequencyConfidence(HighFrequencyConfidence.builder()
+                        .heading(1).speed(1).vehicleLength(0).yawRate(0)
+                        .longitudinalAcceleration(0).curvature(0)
+                        .lateralAcceleration(0).verticalAcceleration(0)
+                        .build())
+                .build();
+
+        LowFrequencyContainer lf = LowFrequencyContainer.builder()
+                .vehicleRole(0)
+                .exteriorLights("00000000")
+                .pathHistory(List.of(new PathPoint(new DeltaReferencePosition(0, 0, 0), 1)))
+                .build();
+
+        CamMessage113 message = CamMessage113.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .generationDeltaTime(1)
+                .basicContainer(basic)
+                .highFrequencyContainer(hf)
+                .lowFrequencyContainer(lf)
+                .build();
+
+        CamEnvelope113 envelope = CamEnvelope113.builder()
+                .origin("self")
+                .sourceUuid("CCU6")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+
+        CamValidator113.validateEnvelope(envelope);
+    }
+
+    @Test
     void validateEnvelopeRejectsInvalidOrigin() {
         CamEnvelope113 envelope = new CamEnvelope113(
                 "cam",

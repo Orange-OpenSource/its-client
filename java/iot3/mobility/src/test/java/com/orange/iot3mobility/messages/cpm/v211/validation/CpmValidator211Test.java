@@ -11,17 +11,20 @@ import com.orange.iot3mobility.messages.cpm.v211.model.defs.Altitude;
 import com.orange.iot3mobility.messages.cpm.v211.model.defs.Angle;
 import com.orange.iot3mobility.messages.cpm.v211.model.defs.CartesianCoordinateWithConfidence;
 import com.orange.iot3mobility.messages.cpm.v211.model.defs.CartesianPosition3dWithConfidence;
+import com.orange.iot3mobility.messages.cpm.v211.model.defs.MessageRateHz;
 import com.orange.iot3mobility.messages.cpm.v211.model.defs.PositionConfidenceEllipse;
 import com.orange.iot3mobility.messages.cpm.v211.model.defs.ReferencePosition;
 import com.orange.iot3mobility.messages.cpm.v211.model.defs.Speed;
 import com.orange.iot3mobility.messages.cpm.v211.model.defs.VelocityComponent;
+import com.orange.iot3mobility.messages.cpm.v211.model.managementcontainer.ManagementContainer;
+import com.orange.iot3mobility.messages.cpm.v211.model.managementcontainer.MessageRateRange;
+import com.orange.iot3mobility.messages.cpm.v211.model.managementcontainer.SegmentationInfo;
+import com.orange.iot3mobility.messages.cpm.v211.model.originatingvehiclecontainer.OriginatingVehicleContainer;
 import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.CartesianVelocity;
 import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.PerceivedObject;
 import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.PerceivedObjectContainer;
 import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.PolarVelocity;
 import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.Velocity;
-import com.orange.iot3mobility.messages.cpm.v211.model.managementcontainer.ManagementContainer;
-import com.orange.iot3mobility.messages.cpm.v211.model.managementcontainer.SegmentationInfo;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -31,6 +34,50 @@ class CpmValidator211Test {
     @Test
     void validateEnvelopeAcceptsMinimalValid() {
         CpmValidator211.validateEnvelope(validEnvelope());
+    }
+
+    @Test
+    void validateEnvelopeAcceptsFullyPopulatedMessage() {
+        ManagementContainer management = ManagementContainer.builder()
+                .referenceTime(0)
+                .referencePosition(validReferencePosition())
+                .segmentationInfo(new SegmentationInfo(1, 1))
+                .messageRateRange(new MessageRateRange(new MessageRateHz(1, 0), new MessageRateHz(10, 0)))
+                .build();
+
+        OriginatingVehicleContainer ovc = OriginatingVehicleContainer.builder()
+                .orientationAngle(new Angle(0, 1))
+                .build();
+
+        CartesianPosition3dWithConfidence position = new CartesianPosition3dWithConfidence(
+                new CartesianCoordinateWithConfidence(0, 1),
+                new CartesianCoordinateWithConfidence(0, 1),
+                null);
+        PerceivedObject obj = PerceivedObject.builder()
+                .measurementDeltaTime(0)
+                .position(position)
+                .objectId(1)
+                .build();
+        PerceivedObjectContainer perceivedObjects = PerceivedObjectContainer.builder()
+                .perceivedObjects(java.util.List.of(obj))
+                .build();
+
+        CpmMessage211 message = CpmMessage211.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .managementContainer(management)
+                .originatingVehicleContainer(ovc)
+                .perceivedObjectContainer(perceivedObjects)
+                .build();
+
+        CpmEnvelope211 envelope = CpmEnvelope211.builder()
+                .sourceUuid("com_application_42")
+                .timestamp(1514764800000L)
+                .objectIdRotationCount(10)
+                .message(message)
+                .build();
+
+        CpmValidator211.validateEnvelope(envelope);
     }
 
     @Test
