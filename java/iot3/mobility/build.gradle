@@ -28,6 +28,8 @@ dependencies {
 
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
+    // Mockito for mock-based unit tests.
+    testImplementation 'org.mockito:mockito-core:5.11.0'
 }
 
 tasks.named('test') {

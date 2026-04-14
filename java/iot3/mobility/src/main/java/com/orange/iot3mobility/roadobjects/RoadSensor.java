@@ -71,6 +71,7 @@ public class RoadSensor {
     public void updateSensorObjects() {
         if(cpmFrame != null && cpmFrame.version() == CpmVersion.V1_2_1) {
             CpmEnvelope121 cpmEnvelope121 = (CpmEnvelope121) cpmFrame.envelope();
+            if(cpmEnvelope121.message().perceivedObjectContainer() == null) return;
             List<PerceivedObject> perceivedObjects = cpmEnvelope121.message().perceivedObjectContainer().perceivedObjects();
 
             if(!perceivedObjects.isEmpty()) {
