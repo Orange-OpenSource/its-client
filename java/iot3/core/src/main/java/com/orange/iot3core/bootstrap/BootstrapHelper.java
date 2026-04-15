@@ -8,7 +8,6 @@
 package com.orange.iot3core.bootstrap;
 
 import okhttp3.*;
-import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -75,8 +74,8 @@ public class BootstrapHelper {
                 if (statusCode >= 400 && statusCode < 600) {
                     bootstrapCallback.boostrapError(new Throwable("Error: " + statusCode + " - " + responseBody));
                 } else {
-                    JSONObject jsonResponse = new JSONObject(responseBody);
                     try {
+                        JSONObject jsonResponse = new JSONObject(responseBody);
                         BootstrapConfig bootstrapConfig = new BootstrapConfig(jsonResponse);
                         bootstrapCallback.boostrapSuccess(bootstrapConfig);
                     }
