@@ -24,6 +24,17 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
-      - name: Java iot3-core
+      - name: Java iot3-core test
         working-directory: java/iot3
-        run: ./gradlew :core:build
+        run: ./gradlew :core:test
+
+      - name: Publish test failure results
+        uses: actions/upload-artifact@v4
+        if: failure()   # upload only if tests fail
+        with:
+          name: Java iot3-core test-failure-results
+          path: java/iot3/core/build/reports/tests/test/
+
+      - name: Java iot3-core build
+        working-directory: java/iot3
+        run: ./gradlew :core:build -x test   # skip re-running tests
