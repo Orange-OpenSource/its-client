@@ -19,11 +19,17 @@ import com.orange.iot3mobility.messages.denm.core.DenmCodec;
 import com.orange.iot3mobility.messages.denm.core.DenmVersion;
 import com.orange.iot3mobility.messages.denm.v113.model.DenmEnvelope113;
 import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
-import com.orange.iot3mobility.roadobjects.HazardType;
+import com.orange.iot3mobility.messages.mapem.core.MapemCodec;
+import com.orange.iot3mobility.messages.mapem.core.MapemVersion;
+import com.orange.iot3mobility.messages.mapem.v200.model.MapemEnvelope200;
+import com.orange.iot3mobility.managers.IoT3RoadGeometryCallback;
 import com.orange.iot3mobility.managers.IoT3RoadHazardCallback;
 import com.orange.iot3mobility.managers.IoT3RoadSensorCallback;
 import com.orange.iot3mobility.managers.IoT3RoadUserCallback;
 import com.orange.iot3mobility.quadkey.LatLng;
+import com.orange.iot3mobility.roadobjects.HazardType;
+import com.orange.iot3mobility.roadobjects.LaneGeometry;
+import com.orange.iot3mobility.roadobjects.RoadGeometry;
 import com.orange.iot3mobility.roadobjects.RoadHazard;
 import com.orange.iot3mobility.roadobjects.RoadSensor;
 import com.orange.iot3mobility.roadobjects.RoadUser;
@@ -218,6 +224,42 @@ public class Iot3MobilityExample {
             }
         });
 
+        // set the RoadGeometryCallback to be informed of MAPEM-derived intersections and road segments
+        // in the corresponding Region of Interest (RoI)
+        ioT3Mobility.setRoadGeometryCallback(new IoT3RoadGeometryCallback() {
+            @Override
+            public void mapemArrived(MapemCodec.MapemFrame<?> mapemFrame) {
+                if (mapemFrame.version() == MapemVersion.V2_0_0) {
+                    MapemEnvelope200 mapem200 = (MapemEnvelope200) mapemFrame.envelope();
+                    System.out.println("Raw MAPEM v2.0.0: " + mapem200);
+                }
+            }
+
+            @Override
+            public void newRoadGeometry(RoadGeometry roadGeometry) {
+                System.out.println("New Road Geometry: " + roadGeometry.getUuid()
+                        + " | Intersections: " + roadGeometry.getIntersections().size()
+                        + " | Segments: " + roadGeometry.getSegments().size());
+                roadGeometry.getIntersections().forEach(intersection -> {
+                    System.out.println("  Intersection " + intersection.getIntersectionId()
+                            + " | ref: " + intersection.getRefPoint()
+                            + " | revision: " + intersection.getRevision());
+                    for (LaneGeometry lane : intersection.getLanes()) {
+                        System.out.println("    Lane " + lane.laneId()
+                                + " | nodes: " + lane.centerLine().size()
+                                + " | direction: " + lane.directionalUse());
+                    }
+                });
+            }
+
+            @Override
+            public void roadGeometryUpdated(RoadGeometry roadGeometry) {
+                System.out.println("Road Geometry updated: " + roadGeometry.getUuid()
+                        + " | Intersections: " + roadGeometry.getIntersections().size()
+                        + " | Segments: " + roadGeometry.getSegments().size());
+            }
+        });
+
         // set the RawMessageCallback to be informed of any message being received by the SDK, before treatment
         // this callback is intended for users who prefer to process messages themselves
         ioT3Mobility.setRawMessageCallback(message -> System.out.println("Raw message received: " + message));
@@ -237,6 +279,7 @@ public class Iot3MobilityExample {
         ioT3Mobility.setRoadUserRoI(roiPosition, 16, true);
         ioT3Mobility.setRoadHazardRoI(roiPosition, 16, true);
         ioT3Mobility.setRoadSensorRoI(roiPosition, 16, true);
+        ioT3Mobility.setMapRoI(roiPosition, 16, true);
     }
 
     private static synchronized void startSendingMessages() {
@@ -244,6 +287,7 @@ public class Iot3MobilityExample {
         messageScheduler.scheduleWithFixedDelay(() -> sendTestCam(CamVersion.V1_1_3), 1, 1, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(() -> sendTestDenm(DenmVersion.V1_1_3), 1, 5, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(() -> sendTestCpm(CpmVersion.V1_2_1), 1, 1, TimeUnit.SECONDS);
+        messageScheduler.scheduleWithFixedDelay(() -> sendTestMapem(), 1, 5, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendTestConnStat, 1, 1, TimeUnit.SECONDS);
     }
 
@@ -316,6 +360,19 @@ public class Iot3MobilityExample {
             }
         } catch (Exception e) {
             System.out.println("CPM ERROR: " + e);
+        }
+    }
+
+    private static void sendTestMapem() {
+        LatLng position = new LatLng(48.624500, 2.244100); // intersection area of UTAC TEQMO
+        try {
+            MapemEnvelope200 mapemEnvelope200 = MapemV200Factory.createTestMapemEnvelope(
+                    EXAMPLE_UUID,
+                    position);
+            System.out.println("Sending MAPEM v2.0.0: " + mapemEnvelope200);
+            ioT3Mobility.sendMapem(mapemEnvelope200);
+        } catch (Exception e) {
+            System.out.println("MAPEM ERROR: " + e);
         }
     }
 
