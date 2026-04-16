@@ -31,11 +31,16 @@ import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
 import com.orange.iot3mobility.messages.denm.DenmHelper;
 import com.orange.iot3mobility.messages.denm.v113.model.DenmEnvelope113;
 import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
+import com.orange.iot3mobility.messages.mapem.MapemHelper;
+import com.orange.iot3mobility.messages.mapem.v200.model.MapemEnvelope200;
 import com.orange.iot3mobility.managers.*;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.quadkey.QuadTileHelper;
 import com.orange.iot3mobility.roadobjects.RoadHazard;
+import com.orange.iot3mobility.roadobjects.RoadGeometry;
+import com.orange.iot3mobility.roadobjects.RoadIntersection;
 import com.orange.iot3mobility.roadobjects.RoadSensor;
+import com.orange.iot3mobility.roadobjects.RoadSegment;
 import com.orange.iot3mobility.roadobjects.RoadUser;
 
 import java.io.IOException;
@@ -63,6 +68,7 @@ public class IoT3Mobility {
     private final CamHelper camHelper = new CamHelper();
     private final CpmHelper cpmHelper = new CpmHelper();
     private final DenmHelper denmHelper = new DenmHelper();
+    private final MapemHelper mapemHelper = new MapemHelper();
 
     private final String uuid;
     private final String context;
@@ -310,6 +316,28 @@ public class IoT3Mobility {
     }
 
     /**
+     * Sets the Region of Interest (RoI) for road geometry (MAPEM) based on a specific
+     * geographical position and zoom level.
+     *
+     * @param position the LatLng representing the target geographical position for the RoI.
+     * @param level the zoom level for the RoI, which should be between 1 and 22.
+     * @param withNeighborTiles include neighboring tiles around the computed target tile.
+     */
+    public void setMapRoI(LatLng position, int level, boolean withNeighborTiles) {
+        if(roIManager != null) roIManager.setMapRoI(position, level, withNeighborTiles);
+    }
+
+    /**
+     * Set up the road geometry callback to be informed of MAPEM-derived intersection and segment updates
+     * in the RoI defined with {@link #setMapRoI(LatLng, int, boolean)}.
+     *
+     * @param ioT3RoadGeometryCallback the callback for new/updated intersections and road segments
+     */
+    public void setRoadGeometryCallback(IoT3RoadGeometryCallback ioT3RoadGeometryCallback) {
+        RoadGeometryManager.init(ioT3RoadGeometryCallback);
+    }
+
+    /**
      * Set up the raw message callback to be informed of any message being received.
      *
      * @param ioT3RawMessageCallback the callback to be informed upon message reception, before treatment.
@@ -323,6 +351,7 @@ public class IoT3Mobility {
         if(topic.contains("/cam/")) RoadUserManager.processCam(message, camHelper);
         else if(topic.contains("/cpm/")) RoadSensorManager.processCpm(message, cpmHelper);
         else if(topic.contains("/denm/")) RoadHazardManager.processDenm(message, denmHelper);
+        else if(topic.contains("/mapem/")) RoadGeometryManager.processMapem(message, mapemHelper);
     }
 
     /**
@@ -510,6 +539,36 @@ public class IoT3Mobility {
     }
 
     /**
+     * Send a MAPEM - Map Extended Message - v2.0.0.
+     * The publish topic is derived from the reference point of the first intersection (or road segment
+     * if no intersections are present).
+     *
+     * @param mapemV200 the MAPEM message describing map geometry
+     */
+    public void sendMapem(MapemEnvelope200 mapemV200) throws IOException {
+        // derive publish position from the first intersection ref_point, fallback to road segment
+        double lat;
+        double lon;
+        if (mapemV200.message().intersections() != null && !mapemV200.message().intersections().isEmpty()) {
+            var refPoint = mapemV200.message().intersections().get(0).refPoint();
+            lat = EtsiConverter.latitudeDegrees(refPoint.latitude());
+            lon = EtsiConverter.longitudeDegrees(refPoint.longitude());
+        } else if (mapemV200.message().roadSegments() != null && !mapemV200.message().roadSegments().isEmpty()) {
+            var refPoint = mapemV200.message().roadSegments().get(0).refPoint();
+            lat = EtsiConverter.latitudeDegrees(refPoint.latitude());
+            lon = EtsiConverter.longitudeDegrees(refPoint.longitude());
+        } else {
+            return; // nothing to send
+        }
+
+        String quadkey = QuadTileHelper.latLngToQuadKey(lat, lon, 22);
+        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
+        String topic = context + "/inQueue/v2x/mapem/" + uuid + geoExtension;
+
+        if(isConnected()) ioT3Core.mqttPublish(topic, mapemHelper.toJson(mapemV200), false, 0, 1);
+    }
+
+    /**
      * Retrieve a read-only list of the Road Users in the vicinity.
      *
      * @return the read-only list of {@link com.orange.iot3mobility.roadobjects.RoadUser} objects
@@ -534,6 +593,41 @@ public class IoT3Mobility {
      */
     public static List<RoadSensor> getRoadSensors() {
         return RoadSensorManager.getRoadSensors();
+    }
+
+/**
+ * Retrieve a read-only list of all known road geometry containers (one per MAPEM source).
+ *
+ * @return the read-only list of {@link com.orange.iot3mobility.roadobjects.RoadGeometry} objects
+ */
+public static List<RoadGeometry> getRoadGeometries() {
+    return RoadGeometryManager.getRoadGeometries();
+}
+
+/**
+ * Retrieve a flat read-only list of all known road intersections across all MAPEM sources.
+ *
+ * @return the read-only list of {@link RoadIntersection} objects
+ */
+public static List<RoadIntersection> getRoadIntersections() {
+        return RoadGeometryManager.getRoadIntersections();
+    }
+
+    /**
+     * Retrieve a read-only list of all known road segments.
+     *
+     * @return the read-only list of {@link RoadSegment} objects
+     */
+    public static List<RoadSegment> getRoadSegments() {
+        return RoadGeometryManager.getRoadSegments();
+    }
+
+    /**
+     * Remove all stored road geometry (intersections and road segments).
+     * Call this when leaving a geographic area to avoid unbounded memory growth.
+     */
+    public static void clearRoadGeometry() {
+        RoadGeometryManager.clear();
     }
 
     /**
