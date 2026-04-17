@@ -22,7 +22,10 @@ import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
 import com.orange.iot3mobility.messages.mapem.core.MapemCodec;
 import com.orange.iot3mobility.messages.mapem.core.MapemVersion;
 import com.orange.iot3mobility.messages.mapem.v200.model.MapemEnvelope200;
-import com.orange.iot3mobility.managers.IoT3RoadGeometryCallback;
+import com.orange.iot3mobility.messages.spatem.core.SpatemCodec;
+import com.orange.iot3mobility.messages.spatem.core.SpatemVersion;
+import com.orange.iot3mobility.messages.spatem.v200.model.SpatemEnvelope200;
+import com.orange.iot3mobility.managers.IoT3IntersectionCallback;
 import com.orange.iot3mobility.managers.IoT3RoadHazardCallback;
 import com.orange.iot3mobility.managers.IoT3RoadSensorCallback;
 import com.orange.iot3mobility.managers.IoT3RoadUserCallback;
@@ -34,6 +37,8 @@ import com.orange.iot3mobility.roadobjects.RoadHazard;
 import com.orange.iot3mobility.roadobjects.RoadSensor;
 import com.orange.iot3mobility.roadobjects.RoadUser;
 import com.orange.iot3mobility.roadobjects.SensorObject;
+import com.orange.iot3mobility.roadobjects.SignalGroup;
+import com.orange.iot3mobility.roadobjects.SignalController;
 import com.orange.lwm2m.model.CustomLwm2mConnectivityStatisticsExample;
 
 import java.util.concurrent.Executors;
@@ -224,9 +229,10 @@ public class Iot3MobilityExample {
             }
         });
 
-        // set the RoadGeometryCallback to be informed of MAPEM-derived intersections and road segments
-        // in the corresponding Region of Interest (RoI)
-        ioT3Mobility.setRoadGeometryCallback(new IoT3RoadGeometryCallback() {
+        // set the unified IntersectionCallback to be informed of MAPEM-derived geometry
+        // and SPATEM-derived signal controller updates in the corresponding Region of Interest (RoI).
+        // Position resolution between signal groups and intersection geometry is automatic.
+        ioT3Mobility.setIntersectionCallback(new IoT3IntersectionCallback() {
             @Override
             public void mapemArrived(MapemCodec.MapemFrame<?> mapemFrame) {
                 if (mapemFrame.version() == MapemVersion.V2_0_0) {
@@ -244,10 +250,10 @@ public class Iot3MobilityExample {
                     System.out.println("  Intersection " + intersection.getIntersectionId()
                             + " | ref: " + intersection.getRefPoint()
                             + " | revision: " + intersection.getRevision());
-                    for (LaneGeometry lane : intersection.getLanes()) {
-                        System.out.println("    Lane " + lane.laneId()
-                                + " | nodes: " + lane.centerLine().size()
-                                + " | direction: " + lane.directionalUse());
+                    for (LaneGeometry laneGeometry : intersection.getLanes()) {
+                        System.out.println("    Lane " + laneGeometry.laneId()
+                                + " | nodes: " + laneGeometry.centerLine().size()
+                                + " | direction: " + laneGeometry.directionalUse());
                     }
                 });
             }
@@ -257,6 +263,47 @@ public class Iot3MobilityExample {
                 System.out.println("Road Geometry updated: " + roadGeometry.getUuid()
                         + " | Intersections: " + roadGeometry.getIntersections().size()
                         + " | Segments: " + roadGeometry.getSegments().size());
+            }
+
+            @Override
+            public void spatemArrived(SpatemCodec.SpatemFrame<?> spatemFrame) {
+                if (spatemFrame.version() == SpatemVersion.V2_0_0) {
+                    SpatemEnvelope200 spatem200 = (SpatemEnvelope200) spatemFrame.envelope();
+                    System.out.println("Raw SPATEM v2.0.0: " + spatem200);
+                }
+            }
+
+            @Override
+            public void newSignalController(SignalController signalController) {
+                System.out.println("New Signal Controller: " + signalController.getUuid()
+                        + " | Intersection: " + signalController.getIntersectionId()
+                        + " | Signal groups: " + signalController.getSignalGroups().size());
+                for (SignalGroup signalGroup : signalController.getSignalGroups()) {
+                    System.out.println("  Signal group " + signalGroup.getId()
+                            + " | color: " + signalGroup.getColor()
+                            + (signalGroup.isBlinking() ? " (blinking)" : "")
+                            + " | phase: " + signalGroup.getPhase()
+                            + " | minEndTime: " + signalGroup.getMinEndTime()
+                            + " | position: " + signalGroup.getPosition());
+                }
+            }
+
+            @Override
+            public void signalControllerUpdated(SignalController signalController) {
+                System.out.println("Signal Controller updated: " + signalController.getUuid());
+                for (SignalGroup signalGroup : signalController.getSignalGroups()) {
+                    System.out.println("  Signal group " + signalGroup.getId()
+                            + " | color: " + signalGroup.getColor()
+                            + (signalGroup.isBlinking() ? " (blinking)" : "")
+                            + " | phase: " + signalGroup.getPhase()
+                            + " | minEndTime: " + signalGroup.getMinEndTime()
+                            + " | position: " + signalGroup.getPosition());
+                }
+            }
+
+            @Override
+            public void signalControllerExpired(SignalController signalController) {
+                System.out.println("Signal Controller has expired: " + signalController.getUuid());
             }
         });
 
@@ -279,7 +326,7 @@ public class Iot3MobilityExample {
         ioT3Mobility.setRoadUserRoI(roiPosition, 16, true);
         ioT3Mobility.setRoadHazardRoI(roiPosition, 16, true);
         ioT3Mobility.setRoadSensorRoI(roiPosition, 16, true);
-        ioT3Mobility.setMapRoI(roiPosition, 16, true);
+        ioT3Mobility.setIntersectionRoI(roiPosition, 16, true);
     }
 
     private static synchronized void startSendingMessages() {
@@ -287,7 +334,8 @@ public class Iot3MobilityExample {
         messageScheduler.scheduleWithFixedDelay(() -> sendTestCam(CamVersion.V1_1_3), 1, 1, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(() -> sendTestDenm(DenmVersion.V1_1_3), 1, 5, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(() -> sendTestCpm(CpmVersion.V1_2_1), 1, 1, TimeUnit.SECONDS);
-        messageScheduler.scheduleWithFixedDelay(() -> sendTestMapem(), 1, 5, TimeUnit.SECONDS);
+        messageScheduler.scheduleWithFixedDelay(() -> sendTestMapem(), 1, 20, TimeUnit.SECONDS);
+        messageScheduler.scheduleWithFixedDelay(() -> sendTestSpatem(), 1, 1, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendTestConnStat, 1, 1, TimeUnit.SECONDS);
     }
 
@@ -373,6 +421,18 @@ public class Iot3MobilityExample {
             ioT3Mobility.sendMapem(mapemEnvelope200);
         } catch (Exception e) {
             System.out.println("MAPEM ERROR: " + e);
+        }
+    }
+
+    private static void sendTestSpatem() {
+        // fallback position matches the intersection reference point used in MapemV200Factory
+        LatLng intersectionPosition = new LatLng(48.624500, 2.244100);
+        try {
+            SpatemEnvelope200 spatemEnvelope200 = SpatemV200Factory.createTestSpatemEnvelope(EXAMPLE_UUID);
+            System.out.println("Sending SPATEM v2.0.0: " + spatemEnvelope200);
+            ioT3Mobility.sendSpatem(spatemEnvelope200, intersectionPosition);
+        } catch (Exception e) {
+            System.out.println("SPATEM ERROR: " + e);
         }
     }
 
