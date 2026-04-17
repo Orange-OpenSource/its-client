@@ -101,20 +101,26 @@ public class RoadGeometryManager {
         boolean anyUpdate = false;
 
         if (envelope.message().intersections() != null) {
-            for (IntersectionGeometry ig : envelope.message().intersections()) {
-                int regionId = ig.id().region() != null ? ig.id().region() : 0;
-                LatLng refPoint = toLatLng(ig.refPoint());
-                anyUpdate |= roadGeometry.updateIntersection(
-                        refPoint, ig.revision(), regionId, ig.id().id(), frame);
+            for (IntersectionGeometry intersectionGeometry : envelope.message().intersections()) {
+                int regionId = intersectionGeometry.id().region() != null ? intersectionGeometry.id().region() : 0;
+                LatLng refPoint = toLatLng(intersectionGeometry.refPoint());
+                boolean updated = roadGeometry.updateIntersection(
+                        refPoint, intersectionGeometry.revision(), regionId, intersectionGeometry.id().id(), frame);
+                if (updated) {
+                    // Notify SignalControllerManager so SPATEM signal groups get their positions resolved
+                    RoadIntersection roadIntersection = roadGeometry.getIntersection(regionId, intersectionGeometry.id().id());
+                    if (roadIntersection != null) SignalControllerManager.tryResolvePositions(roadIntersection);
+                }
+                anyUpdate |= updated;
             }
         }
 
         if (envelope.message().roadSegments() != null) {
-            for (RoadSegmentData rs : envelope.message().roadSegments()) {
-                int regionId = rs.id().region() != null ? rs.id().region() : 0;
-                LatLng refPoint = toLatLng(rs.refPoint());
+            for (RoadSegmentData roadSegmentData : envelope.message().roadSegments()) {
+                int regionId = roadSegmentData.id().region() != null ? roadSegmentData.id().region() : 0;
+                LatLng refPoint = toLatLng(roadSegmentData.refPoint());
                 anyUpdate |= roadGeometry.updateSegment(
-                        refPoint, rs.revision(), regionId, rs.id().id(), frame);
+                        refPoint, roadSegmentData.revision(), regionId, roadSegmentData.id().id(), frame);
             }
         }
 
@@ -144,22 +150,22 @@ public class RoadGeometryManager {
      * Retrieve a flat read-only list of all known road intersections across all sources.
      */
     public static List<RoadIntersection> getRoadIntersections() {
-        List<RoadIntersection> all = new ArrayList<>();
+        List<RoadIntersection> roadIntersections = new ArrayList<>();
         synchronized (ROAD_GEOMETRIES) {
-            for (RoadGeometry rg : ROAD_GEOMETRIES) all.addAll(rg.getIntersections());
+            for (RoadGeometry roadGeometry : ROAD_GEOMETRIES) roadIntersections.addAll(roadGeometry.getIntersections());
         }
-        return Collections.unmodifiableList(all);
+        return Collections.unmodifiableList(roadIntersections);
     }
 
     /**
      * Retrieve a flat read-only list of all known road segments across all sources.
      */
     public static List<RoadSegment> getRoadSegments() {
-        List<RoadSegment> all = new ArrayList<>();
+        List<RoadSegment> roadSegments = new ArrayList<>();
         synchronized (ROAD_GEOMETRIES) {
-            for (RoadGeometry rg : ROAD_GEOMETRIES) all.addAll(rg.getSegments());
+            for (RoadGeometry roadGeometry : ROAD_GEOMETRIES) roadSegments.addAll(roadGeometry.getSegments());
         }
-        return Collections.unmodifiableList(all);
+        return Collections.unmodifiableList(roadSegments);
     }
 
     /**
@@ -167,7 +173,7 @@ public class RoadGeometryManager {
      */
     public static void clear() {
         synchronized (ROAD_GEOMETRY_MAP) {
-            for (RoadGeometry rg : ROAD_GEOMETRIES) rg.clearChildren();
+            for (RoadGeometry roadGeometry : ROAD_GEOMETRIES) roadGeometry.clearChildren();
             ROAD_GEOMETRIES.clear();
             ROAD_GEOMETRY_MAP.clear();
         }

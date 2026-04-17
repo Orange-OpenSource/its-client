@@ -66,6 +66,17 @@ public class RoadGeometry {
         return Collections.unmodifiableList(segments);
     }
 
+    /**
+     * Look up a specific intersection by its region and intersection IDs.
+     *
+     * @param regionId       region ID (0 when absent)
+     * @param intersectionId local intersection ID
+     * @return the matching {@link RoadIntersection}, or {@code null} if not found
+     */
+    public synchronized RoadIntersection getIntersection(int regionId, int intersectionId) {
+        return intersectionMap.get(regionId + "_" + intersectionId);
+    }
+
     // -------------------------------------------------------------------------
     // Internal update (called by RoadGeometryManager)
     // -------------------------------------------------------------------------

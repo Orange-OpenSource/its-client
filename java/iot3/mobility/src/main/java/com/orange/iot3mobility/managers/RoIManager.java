@@ -25,16 +25,19 @@ public class RoIManager {
     private String subscriptionDenmTopicBase = "/outQueue/v2x/denm/+";
     private String subscriptionDenmTopicPrivate = "/outQueue/v2x/denm/";
     private String subscriptionMapemTopicBase = "/outQueue/v2x/mapem/+";
+    private String subscriptionSpatemTopicBase = "/outQueue/v2x/spatem/+";
 
     private String currentCamKey;
     private String currentCpmKey;
     private String currentDenmKey;
     private String currentMapemKey;
+    private String currentSpatemKey;
 
     private final ArrayList<String> CURRENT_CAM_KEYS = new ArrayList<>();
     private final ArrayList<String> CURRENT_CPM_KEYS = new ArrayList<>();
     private final ArrayList<String> CURRENT_DENM_KEYS = new ArrayList<>();
     private final ArrayList<String> CURRENT_MAPEM_KEYS = new ArrayList<>();
+    private final ArrayList<String> CURRENT_SPATEM_KEYS = new ArrayList<>();
 
     public RoIManager(IoT3Core ioT3Core, String uuid, String topicRoot) {
         this.ioT3Core = ioT3Core;
@@ -46,6 +49,7 @@ public class RoIManager {
         subscriptionCpmTopicBase = topicRoot + subscriptionCpmTopicBase;
         subscriptionDenmTopicPrivate = topicRoot + subscriptionDenmTopicPrivate + uuid;
         subscriptionMapemTopicBase = topicRoot + subscriptionMapemTopicBase;
+        subscriptionSpatemTopicBase = topicRoot + subscriptionSpatemTopicBase;
 
         ioT3Core.mqttSubscribe(subscriptionDenmTopicPrivate);
     }
@@ -139,7 +143,7 @@ public class RoIManager {
      * @param withNeighborTiles include neighboring tiles around the computed target tile,
      *                          i.e. the RoI will be 1 tile or 9 tiles
      */
-    public void setMapRoI(LatLng position, int level, boolean withNeighborTiles) {
+    public void setRoadGeometryRoI(LatLng position, int level, boolean withNeighborTiles) {
         String quadkey = QuadTileHelper.latLngToQuadKey(position.latitude, position.longitude,
                 level);
         if(!quadkey.equals(currentMapemKey)) {
@@ -149,6 +153,42 @@ public class RoIManager {
             CURRENT_MAPEM_KEYS.addAll(tileKeys);
             currentMapemKey = quadkey;
         }
+    }
+
+    /**
+     * Sets the Region of Interest (RoI) for traffic lights (SPATEM) based on a specific
+     * geographical position and zoom level.
+     *
+     * @param position          the LatLng representing the target geographical position for the RoI.
+     * @param level             the zoom level for the RoI, which should be between 1 and 22.
+     * @param withNeighborTiles include neighboring tiles around the computed target tile.
+     */
+    public void setTrafficLightRoI(LatLng position, int level, boolean withNeighborTiles) {
+        String quadkey = QuadTileHelper.latLngToQuadKey(position.latitude, position.longitude,
+                level);
+        if(!quadkey.equals(currentSpatemKey)) {
+            ArrayList<String> tileKeys = getTiles(quadkey, withNeighborTiles);
+            updateSubscriptions(tileKeys, CURRENT_SPATEM_KEYS, subscriptionSpatemTopicBase, level < 22);
+            CURRENT_SPATEM_KEYS.clear();
+            CURRENT_SPATEM_KEYS.addAll(tileKeys);
+            currentSpatemKey = quadkey;
+        }
+    }
+
+    /**
+     * Sets the Region of Interest (RoI) for both road geometry (MAPEM) and signal phase and timing
+     * (SPATEM) simultaneously, using the same position and zoom level.
+     * <p>
+     * Equivalent to calling {@link #setRoadGeometryRoI} and {@link #setTrafficLightRoI} with the same parameters.
+     * Position resolution between SPATEM signal groups and MAPEM intersection geometry is automatic.
+     *
+     * @param position          the LatLng representing the target geographical position for the RoI.
+     * @param level             the zoom level for the RoI, which should be between 1 and 22.
+     * @param withNeighborTiles include neighboring tiles around the computed target tile.
+     */
+    public void setIntersectionRoI(LatLng position, int level, boolean withNeighborTiles) {
+        setRoadGeometryRoI(position, level, withNeighborTiles);
+        setTrafficLightRoI(position, level, withNeighborTiles);
     }
 
     private ArrayList<String> getTiles(String quadkey, boolean withNeighborTiles) {
