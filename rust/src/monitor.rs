@@ -34,6 +34,7 @@ pub fn trace_exchange(
         Message::MAPEM(map) => format_mapem_trace(map),
         Message::SPATEM(spat) => format_spatem_trace(spat),
         Message::CAM113(cam) => format_cam_113_trace(cam),
+        Message::CAMBinary(_) => "CAM(binary)".to_string(),
     };
     println!(
         "{} {} {} {} {} at {}",

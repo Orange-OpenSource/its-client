@@ -42,6 +42,12 @@ pub struct Exchange {
     pub version: String,
     pub message: Message,
 
+    /// The format of the message.
+    pub message_format: Option<String>,
+
+    /// The identifier for a linked ITS-S, as a trailer or a platooning pair.
+    pub linked_station_id: Option<u32>,
+
     /// The path of the object that generated the message.
     /// It is a list of PathElement, each one containing the position of the object
     /// when it sent a message, the type of the message and optionally the id of the
@@ -94,6 +100,8 @@ impl Exchange {
             path,
             timestamp,
             message,
+            message_format: None,
+            linked_station_id: None,
             object_id_rotation_count,
         })
     }
@@ -883,5 +891,108 @@ mod tests {
     fn it_should_panic_when_deserializing_a_denm_with_protocol_version_bigger_than_u8() {
         let json = bad_denm_with_protocol_version_u32();
         let _: Exchange = serde_json::from_str(json).unwrap();
+    }
+
+    #[test]
+    fn it_can_deserialize_cam_240_with_linked_station_id() {
+        let json = r#"{
+            "message_type": "cam",
+            "source_uuid": "com_car_42",
+            "timestamp": 1574778515424,
+            "version": "2.4.0",
+            "message_format": "json/raw",
+            "linked_station_id": 123456,
+            "message": {
+                "protocol_version": 1,
+                "station_id": 42,
+                "generation_delta_time": 1000,
+                "basic_container": {
+                    "station_type": 5,
+                    "reference_position": {
+                        "latitude": 436352386,
+                        "longitude": -2969740,
+                        "altitude": { "value": 20976, "confidence": 1 },
+                        "position_confidence_ellipse": {
+                            "semi_major": 10,
+                            "semi_minor": 50,
+                            "semi_major_orientation": 1
+                        }
+                    }
+                },
+                "high_frequency_container": {
+                    "basic_vehicle_container_high_frequency": {
+                        "heading": { "value": 3156, "confidence": 2 },
+                        "speed": { "value": 200, "confidence": 3 },
+                        "drive_direction": 0,
+                        "vehicle_length": { "value": 40, "confidence": 0 },
+                        "vehicle_width": 20,
+                        "longitudinal_acceleration": { "value": 0, "confidence": 102 },
+                        "curvature": { "value": 0, "confidence": 7 },
+                        "curvature_calculation_mode": 2,
+                        "yaw_rate": { "value": 0, "confidence": 8 }
+                    }
+                }
+            }
+        }"#;
+
+        let exchange: Exchange = serde_json::from_str(json).unwrap();
+        assert_eq!(exchange.message_type, "cam");
+        assert_eq!(exchange.version, "2.4.0");
+        assert_eq!(exchange.message_format, Some("json/raw".to_string()));
+        assert_eq!(exchange.linked_station_id, Some(123456));
+    }
+
+    #[test]
+    fn it_can_deserialize_cam_240_binary_payload() {
+        let json = r#"{
+            "message_type": "cam",
+            "source_uuid": "com_car_42",
+            "timestamp": 1574778515424,
+            "version": "2.4.0",
+            "message_format": "asn1/uper",
+            "message": {
+                "version": "ETSI EN 302 637-2 v1.4.1",
+                "payload": "AQIDBA=="
+            }
+        }"#;
+
+        let exchange: Exchange = serde_json::from_str(json).unwrap();
+        assert_eq!(exchange.message_type, "cam");
+        assert_eq!(exchange.version, "2.4.0");
+        assert_eq!(exchange.message_format, Some("asn1/uper".to_string()));
+        assert_eq!(exchange.linked_station_id, None);
+    }
+
+    #[test]
+    fn it_can_deserialize_cpm_211() {
+        let json = r#"{
+            "message_type": "cpm",
+            "source_uuid": "com_application_12345",
+            "timestamp": 1574778515424,
+            "version": "2.1.1",
+            "object_id_rotation_count": 3,
+            "message": {
+                "protocol_version": 2,
+                "station_id": 99999,
+                "management_container": {
+                    "reference_time": 4398046511103,
+                    "reference_position": {
+                        "latitude": 436352386,
+                        "longitude": -2969740,
+                        "altitude": { "value": 20976, "confidence": 1 },
+                        "position_confidence_ellipse": {
+                            "semi_major": 10,
+                            "semi_minor": 50,
+                            "semi_major_orientation": 1
+                        }
+                    }
+                }
+            }
+        }"#;
+
+        let exchange: Exchange = serde_json::from_str(json).unwrap();
+        assert_eq!(exchange.message_type, "cpm");
+        assert_eq!(exchange.version, "2.1.1");
+        assert_eq!(exchange.object_id_rotation_count, Some(3));
     }
 }

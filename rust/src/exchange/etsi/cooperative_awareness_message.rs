@@ -35,9 +35,9 @@ use serde::{Deserialize, Serialize};
 /// Represents a Cooperative Awareness Message (CAM) according to an ETSI standard.
 ///
 /// This message is used to describe the information about itself.
-/// It implements the schema defined in the [CAM version 2.2.0][1].
+/// It implements the schema defined in the [CAM version 2.4.0][1].
 ///
-/// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/cam/cam_schema_2-2-0.json
+/// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/cam/cam_schema_2-4-0.json
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CooperativeAwarenessMessage {
