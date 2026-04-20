@@ -9,6 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+pub mod binary_message;
 pub mod content;
 pub mod content_error;
 pub mod information;
@@ -19,6 +20,7 @@ use crate::exchange::etsi::cooperative_awareness_message_113::CooperativeAwarene
 use crate::exchange::etsi::decentralized_environmental_notification_message::DecentralizedEnvironmentalNotificationMessage;
 use crate::exchange::etsi::map_extended_message::MAPExtendedMessage;
 use crate::exchange::etsi::signal_phase_and_timing_extended_message::SignalPhaseAndTimingExtendedMessage;
+use crate::exchange::message::binary_message::BinaryMessage;
 use crate::exchange::message::content::Content;
 use crate::exchange::message::content_error::ContentError;
 use crate::exchange::mortal::Mortal;
@@ -36,7 +38,7 @@ pub enum Message {
     DENM(DecentralizedEnvironmentalNotificationMessage),
     MAPEM(MAPExtendedMessage),
     SPATEM(SignalPhaseAndTimingExtendedMessage),
-
+    BM(BinaryMessage),
     CAM113(CooperativeAwarenessMessage113),
 }
 
@@ -48,6 +50,7 @@ impl Message {
             Self::DENM(v) => v,
             Self::MAPEM(v) => v,
             Self::SPATEM(v) => v,
+            Self::BM(v) => v,
             Self::CAM113(v) => v,
         }
     }
