@@ -56,7 +56,7 @@ public class SensorObject {
     }
 
     public double getSpeedKmh() {
-        return speed * 3.6f;
+        return speed * 3.6;
     }
 
     public void setSpeed(double speed) {

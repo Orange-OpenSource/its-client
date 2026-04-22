@@ -69,7 +69,7 @@ class RoadUserTest {
     void getSpeedKmhConvertsCorrectly() {
         // 13.89 m/s * 3.6 = 50.004 km/h
         RoadUser user = makeRoadUser(StationType.PASSENGER_CAR);
-        assertEquals(13.89 * 3.6f, user.getSpeedKmh(), 0.01);
+        assertEquals(13.89 * 3.6, user.getSpeedKmh(), 0.01);
     }
 
     @Test

@@ -67,8 +67,8 @@ class SensorObjectTest {
 
     @Test
     void getSpeedKmhConvertsCorrectly() {
-        // 13.89 m/s * 3.6f ≈ 50.0 km/h
-        assertEquals(13.89 * 3.6f, makeSensorObject().getSpeedKmh(), 0.01);
+        // 13.89 m/s * 3.6 ≈ 50.0 km/h
+        assertEquals(13.89 * 3.6, makeSensorObject().getSpeedKmh(), 0.01);
     }
 
     // -------------------------------------------------------------------------
