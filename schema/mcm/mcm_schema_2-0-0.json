@@ -1,0 +1,810 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/mcm",
+  "description": "This type represents the Manoeuvre Coordination Block at a given facility.",
+  "$references": [
+    {
+      "$comment": "This technical specification file (TS) is hereby considered right over the European standard one (EN); meaning that for any difference that may be present between those files this schema will prefer what is defined in the technical specification",
+      "name": "MCM TS 103 561",
+      "version": "1.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/mcm_ts103561/-/tree/v1.1"
+    },
+    {
+      "$comment": "This technical specification file (TS) is hereby considered right over the European standard one (EN); meaning that for any difference that may be present between those files this schema will prefer what is defined in the technical specification",
+      "name": "CDD TS 102 894-2",
+      "version": "4.2",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/cdd_ts102894_2/-/tree/v4.2"
+    }
+  ],
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "message_type",
+    "source_uuid",
+    "timestamp",
+    "version",
+    "message"
+  ],
+  "properties": {
+    "message_type": {
+      "type": "string",
+      "description": "Type of the message carried in message property.",
+      "const": "mcm"
+    },
+    "message_format": {
+      "enum": [
+        "json/raw",
+        "asn1/uper"
+      ]
+    },
+    "source_uuid": {
+      "type": "string",
+      "description": "Unique id all over the world for the message sender.",
+      "examples": [
+        "com_car_4294967295",
+        "com_application_42"
+      ]
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Timestamp when the message was generated since Unix Epoch (millisecond).",
+      "examples": [
+        1574778515424
+      ],
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
+    },
+    "version": {
+      "type": "string",
+      "description": "JSON message format version.",
+      "const": "2.0.0"
+    },
+    "message": {
+      "type": "object",
+      "description": "MCM payload — either a structured JSON object (json/raw) or a binary ASN.1 UPER frame (asn1/uper).",
+      "oneOf": [
+        {
+          "title": "json/raw",
+          "description": "Structured JSON representation of the MCM fields.",
+          "type": "object",
+          "required": [
+            "protocol_version",
+            "station_id",
+            "generation_delta_time",
+            "station_type",
+            "itss_role",
+            "position",
+            "mcm_data"
+          ],
+          "properties": {
+            "protocol_version": {
+              "type": "integer",
+              "description": "The DE represents an ordinal number that indicates the position of an element in a set",
+              "minimum": 0,
+              "maximum": 255
+            },
+            "station_id": {
+              "type": "integer",
+              "description": "This DE represents the identifier of an ITS-S. The ITS-S ID may be a pseudonym. It may change over space and/or over time",
+              "minimum": 0,
+              "maximum": 4294967295
+            },
+            "generation_delta_time": {
+              "type": "integer",
+              "description": "This DE represents a timestamp based on TimestampIts modulo 65 536. This means that generationDeltaTime = TimestampIts mod 65 536",
+              "minimum": 0,
+              "maximum": 65535
+            },
+            "station_type": {
+              "type": "integer",
+              "description": "Type of originating ITS-S (VRU Portable Device, vehicle (vehicle type) or roadside unit or central station). vruPortableDevice(0), vehicle(1), roadsideUnit(2), centralStation(3)",
+              "minimum": 0,
+              "maximum": 3
+            },
+            "itss_role": {
+              "type": "integer",
+              "description": "The role of the originating ITS-S can only be identified once the MC is accepted by all relevant participants. notAvailable(0), coordinatingItss(1), notCoordinatingSubjectVehicle(2), targetVehicle(3)",
+              "minimum": 0,
+              "maximum": 3,
+              "default": 0
+            },
+            "position": {
+              "$ref": "#/$defs/reference_position",
+              "description": "Time relative delta of the latest WGS84 geographic position of the originating ITS-S as obtained by the MCS at the time of MCM generation (only for vehicle ITS-S)"
+            },
+            "mcm_data": {
+              "type": "object",
+              "oneOf": [
+                {
+                  "required": [
+                    "vehicle_manoeuvre_container"
+                  ]
+                },
+                {
+                  "required": [
+                    "advised_manoeuvre_container"
+                  ]
+                }
+              ],
+              "properties": {
+                "vehicle_manoeuvre_container": {
+                  "type": "object",
+                  "required": [
+                    "mcm_generic_current_state_container",
+                    "vehicle_current_state_container",
+                    "submaneuvres"
+                  ],
+                  "properties": {
+                    "mcm_generic_current_state_container": {
+                      "type": "object",
+                      "required": [
+                        "mcm_type",
+                        "manoeuvre_id",
+                        "concept"
+                      ],
+                      "properties": {
+                        "mcm_type": {
+                          "type": "integer",
+                          "description": "type of manoeuvre coordination message. intent(0), request(1), response(2), reservation(3), termination(4), cancellationRequest(5), emergencyManoeuvreReservation(6), executionStatus(7), offer(8)",
+                          "minimum": 0,
+                          "maximum": 8
+                        },
+                        "manoeuvre_id": {
+                          "type": "integer",
+                          "description": "MCS session ID (its-s ID provided in header and integer modulo 256)",
+                          "minimum": 0,
+                          "maximum": 255
+                        },
+                        "concept": {
+                          "type": "integer",
+                          "description": "agreementSeeking(0), prescriptive(1)",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "rational": {
+                          "type": "object",
+                          "oneOf": [
+                            {
+                              "required": [
+                                "manoeuvre_cooperation_goal"
+                              ]
+                            },
+                            {
+                              "required": [
+                                "manoeuvre_cooperation_cost"
+                              ]
+                            }
+                          ],
+                          "properties": {
+                            "manoeuvre_cooperation_goal": {
+                              "type": "integer",
+                              "description": "vehicleInterception(0), roadSafety(1), humanHelth(2), emergencyIntervention(3), roadOperatorIntervention(4), localTrafficManagement(5), globalTrafficManagement(6)",
+                              "minimum": 0,
+                              "maximum": 6
+                            },
+                            "manoeuvre_cooperation_cost": {
+                              "type": "integer",
+                              "minimum": -1000,
+                              "maximum": 1000
+                            }
+                          },
+                          "description": "Rational to be associated to an offer, intent, advice or a request. Depending on the manoeuvre coordination concept being used"
+                        },
+                        "execution_status": {
+                          "type": "integer",
+                          "description": "Only present in MCM type 7 and type 4. started(0), inProgress(1), completed(2), terminated(3), chained(4)",
+                          "minimum": 0,
+                          "maximum": 4
+                        }
+                      }
+                    },
+                    "vehicle_current_state_container": {
+                      "type": "object",
+                      "required": [
+                        "manoeuvre_overall_strategy",
+                        "vehicle_speed",
+                        "vehicle_heading",
+                        "vehicle_size"
+                      ],
+                      "properties": {
+                        "manoeuvre_overall_strategy": {
+                          "$ref": "#/$defs/manoeuvre_strategy"
+                        },
+                        "vehicle_speed": {
+                          "$ref": "#/$defs/speed"
+                        },
+                        "vehicle_heading": {
+                          "$ref": "#/$defs/wgs84_angle"
+                        },
+                        "vehicle_size": {
+                          "type": "object",
+                          "required": [
+                            "vehicle_type",
+                            "vehicle_lenth",
+                            "vehicle_width",
+                            "vehicle_height"
+                          ],
+                          "properties": {
+                            "vehicle_type": {
+                              "type": "integer",
+                              "description": "This DE represents the vehicle type according to ISO 3833 [22]. A \"term No\" refers to the number of the corresponding term and its definition in ISO 3833",
+                              "minimum": 0,
+                              "maximum": 255
+                            },
+                            "vehicle_transported_goods": {
+                              "description": "The DE indicates if a vehicle is carrying goods in the special transport conditions",
+                              "type": "object",
+                              "required": [
+                                "heavy_load",
+                                "excess_width",
+                                "excess_length",
+                                "excess_height"
+                              ],
+                              "properties": {
+                                "heavy_load": {
+                                  "type": "boolean",
+                                  "description": "heavyLoad bit."
+                                },
+                                "excess_width": {
+                                  "type": "boolean",
+                                  "description": "excessWidth bit."
+                                },
+                                "excess_length": {
+                                  "type": "boolean",
+                                  "description": "excessLength bit."
+                                },
+                                "excess_height": {
+                                  "type": "boolean",
+                                  "description": "excessHeight bit."
+                                }
+                              }
+                            },
+                            "vehicle_lenth": {
+                              "$ref": "#/$defs/vehicle_length"
+                            },
+                            "vehicle_width": {
+                              "type": "integer",
+                              "description": "This DE represents the width of a vehicle, excluding side mirrors and possible similar extensions",
+                              "minimum": 1,
+                              "maximum": 62
+                            },
+                            "vehicle_height": {
+                              "type": "integer",
+                              "description": "This DE represents the height of the vehicle, measured from the ground to the highest point, excluding any antennas. In case vehicles are equipped with adjustable ride heights, camper shells, and any other equipment which may result in varying height, the largest possible height shall be used",
+                              "minimum": 1,
+                              "maximum": 128
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "submaneuvres": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "submanoeuvre_id",
+                          "temporal_charateristics",
+                          "kinematics_characteristics"
+                        ],
+                        "properties": {
+                          "submanoeuvre_id": {
+                            "type": "integer",
+                            "description": "Unique ID of the sub manoeuvre",
+                            "minimum": 0,
+                            "maximum": 255
+                          },
+                          "submanoeuvre_strategy": {
+                            "$ref": "#/$defs/manoeuvre_strategy"
+                          },
+                          "reference_trajectory": {
+                            "$ref": "#/$defs/trajectory"
+                          },
+                          "target_road_resource_i_container": {
+                            "$ref": "#/$defs/trr_description",
+                            "description": "Type 3 is selected when reference trajectory is used"
+                          },
+                          "temporal_charateristics": {
+                            "$ref": "#/$defs/temporal_characteristics"
+                          },
+                          "kinematics_characteristics": {
+                            "type": "null"
+                          }
+                        }
+                      }
+                    },
+                    "manoeuvre_advice": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/manoeuvre_advice"
+                      }
+                    }
+                  }
+                },
+                "advised_manoeuvre_container": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/manoeuvre_advice"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "title": "asn1/uper",
+          "description": "ASN.1 UPER binary encoding, base64-encoded.",
+          "type": "object",
+          "required": [
+            "version",
+            "payload"
+          ],
+          "properties": {
+            "version": {
+              "type": "string",
+              "description": "ASN.1 PDU version.",
+              "examples": [
+                "ETSI TS 103 561 v1.1.1"
+              ]
+            },
+            "payload": {
+              "type": "string",
+              "contentEncoding": "base64",
+              "description": "Base64-encoded ASN.1 UPER binary payload."
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "reference_position": {
+      "description": "A position within a geographic coordinate system together with a confidence ellipse.",
+      "type": "object",
+      "required": [
+        "latitude",
+        "longitude",
+        "position_confidence_ellipse",
+        "altitude"
+      ],
+      "properties": {
+        "latitude": {
+          "type": "integer",
+          "description": "This DE represents the absolute geographical latitude in a WGS84 coordinate system, providing a range of 90 degrees in north or in south hemisphere. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE",
+          "minimum": -900000000,
+          "maximum": 900000001
+        },
+        "longitude": {
+          "type": "integer",
+          "description": "This DE represents the absolute geographical longitude in a WGS84 coordinate system, providing a range of 180 degrees to the east or to the west of the prime meridian. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE",
+          "minimum": -1800000000,
+          "maximum": 1800000001
+        },
+        "position_confidence_ellipse": {
+          "$ref": "#/$defs/pos_confidence_ellipse"
+        },
+        "altitude": {
+          "$ref": "#/$defs/altitude"
+        }
+      }
+    },
+    "pos_confidence_ellipse": {
+      "description": "This DF indicates the horizontal position confidence ellipse which represents the estimated accuracy with a confidence level of 95  %. The centre of the ellipse shape corresponds to the reference position point for which the position accuracy is evaluated.",
+      "type": "object",
+      "required": [
+        "semi_major_confidence",
+        "semi_minor_confidence",
+        "semi_major_orientation"
+      ],
+      "properties": {
+        "semi_major_confidence": {
+          "type": "integer",
+          "description": "This DE indicates the horizontal position confidence value which represents the estimated absolute position accuracy, in one of the axis direction as defined in a shape of ellipse with a confidence level of 95 %",
+          "minimum": 0,
+          "maximum": 4095
+        },
+        "semi_minor_confidence": {
+          "type": "integer",
+          "description": "This DE indicates the horizontal position confidence value which represents the estimated absolute position accuracy, in one of the axis direction as defined in a shape of ellipse with a confidence level of 95 %",
+          "minimum": 0,
+          "maximum": 4095
+        },
+        "semi_major_orientation": {
+          "type": "integer",
+          "description": "This DE represents the orientation of the horizontal velocity vector with regards to the WGS84 north. When the information is not available, the DE shall be set to 3 601. The value 3600 shall not be used",
+          "minimum": 0,
+          "maximum": 3601
+        }
+      }
+    },
+    "altitude": {
+      "description": "This DF provides the altitude and confidence level of an altitude information in a WGS84 coordinate system. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE.",
+      "type": "object",
+      "required": [
+        "altitude_value",
+        "altitude_confidence"
+      ],
+      "properties": {
+        "altitude_value": {
+          "type": "integer",
+          "description": "This DE represents the altitude value in a WGS84 coordinate system. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE",
+          "minimum": -100000,
+          "maximum": 800001
+        },
+        "altitude_confidence": {
+          "type": "integer",
+          "description": "This DE indicates the altitude confidence value which represents the estimated absolute accuracy of an altitude value of a geographical point with a default confidence level of 95 %. If required, the confidence level can be defined by the corresponding standards applying this DE. alt-000-01(0), alt-000-02(1), alt-000-05(2), alt-000-10(3), alt-000-20(4), alt-000-50(5), alt-001-00(6), alt-002-00(7), alt-005-00(8), alt-010-00(9), alt-020-00(10), alt-050-00(11), alt-100-00(12), alt-200-00(13), outOfRange(14), unavailable(15)",
+          "minimum": 0,
+          "maximum": 15,
+          "default": 15
+        }
+      }
+    },
+    "wgs84_angle": {
+      "description": "This DF represents an angular component along with a confidence value in the WGS84 coordinate system. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE.",
+      "type": "object",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "This DE represents an angle value in degrees described in the WGS84 reference system with respect to the WGS84 north. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE. When the information is not available, the DE shall be set to 3 601. The value 3600 shall not be used",
+          "minimum": 0,
+          "maximum": 3601
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "This DE indicates the angle confidence value which represents the estimated accuracy of an angle value with a default confidence level of 95 %. If required, the confidence level can be defined by the corresponding standards applying this DE",
+          "minimum": 1,
+          "maximum": 127
+        }
+      }
+    },
+    "speed": {
+      "description": "This DF represents the speed and associated confidence value.",
+      "type": "object",
+      "required": [
+        "speed_value",
+        "speed_confidence"
+      ],
+      "properties": {
+        "speed_value": {
+          "type": "integer",
+          "description": "This DE represents a speed value, i.e. the magnitude of the velocity-vector",
+          "minimum": 0,
+          "maximum": 16383
+        },
+        "speed_confidence": {
+          "type": "integer",
+          "description": "This DE indicates the speed confidence value which represents the estimated absolute accuracy of a speed value with a default confidence level of 95 %. If required, the confidence level can be defined by the corresponding standards applying this DE",
+          "minimum": 1,
+          "maximum": 127
+        }
+      }
+    },
+    "vehicle_length": {
+      "description": "This DF represents the length of vehicle and accuracy indication information.",
+      "type": "object",
+      "required": [
+        "vehicle_length_value",
+        "vehicle_length_confidence_indication"
+      ],
+      "properties": {
+        "vehicle_length_value": {
+          "type": "integer",
+          "description": "This DE represents the length of a vehicle",
+          "minimum": 1,
+          "maximum": 1023
+        },
+        "vehicle_length_confidence_indication": {
+          "type": "integer",
+          "description": "This DE provides information about the presence of a trailer. noTrailerPresent(0), trailerPresentWithKnownLength(1), trailerPresentWithUnknownLength(2), trailerPresenceIsUnknown(3), unavailable(4)",
+          "minimum": 0,
+          "maximum": 4,
+          "default": 2
+        }
+      }
+    },
+    "manoeuvre_strategy": {
+      "type": "string",
+      "enum": [
+        "undefined",
+        "transit_to_human_driven_mode",
+        "transit_to_automated_driving_mode",
+        "drive_straight",
+        "turn_left",
+        "turn_right",
+        "u_turn",
+        "move_backward",
+        "overtake",
+        "accelerate",
+        "slow_down",
+        "stop",
+        "go_to_left_lane",
+        "go_to_right_lane",
+        "get_on_highway",
+        "exit_highway",
+        "stop_and_wait",
+        "emergency_brake_and_stop",
+        "reset_stop_and_restart_moving",
+        "stay_in_lane",
+        "reset_stay_in_lane",
+        "stay_away",
+        "reset_stay_away",
+        "follow_me",
+        "existing_group",
+        "temporarily_disband_an_existing_group",
+        "constitute_a_temporarily_group",
+        "disband_a_temporarily_group",
+        "take_tolling_lane"
+      ]
+    },
+    "current_state_advised_change": {
+      "type": "string",
+      "enum": [
+        "transit_to_human_driving_mode",
+        "transit_to_automated_driving_mode",
+        "leave_group",
+        "emergency_brake_triggering",
+        "stay_in_lane",
+        "stop",
+        "reset_stop",
+        "reset_stay_in_lane",
+        "stay_away_of_vehicle_sith_station_id",
+        "reset_stay_away_of_vehicle",
+        "follow_me_with_min_time_inter_distance",
+        "join_group"
+      ]
+    },
+    "advised_trr_container": {
+      "type": "object",
+      "required": [
+        "trr_description",
+        "temporal_characteristics",
+        "kinematics_characteristics"
+      ],
+      "properties": {
+        "trr_description": {
+          "$ref": "#/$defs/trr_description"
+        },
+        "temporal_characteristics": {
+          "$ref": "#/$defs/temporal_characteristics"
+        },
+        "kinematics_characteristics": {
+          "type": "null"
+        }
+      }
+    },
+    "manoeuvre_advice": {
+      "type": "object",
+      "required": [
+        "executant_id",
+        "current_state_advised_change",
+        "submaneuvres"
+      ],
+      "properties": {
+        "executant_id": {
+          "type": "integer",
+          "description": "This DE represents the identifier of an ITS-S. The ITS-S ID may be a pseudonym. It may change over space and/or over time",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "current_state_advised_change": {
+          "$ref": "#/$defs/current_state_advised_change"
+        },
+        "submaneuvres": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "submanoeuvre_id"
+            ],
+            "properties": {
+              "submanoeuvre_id": {
+                "type": "integer",
+                "description": "This DE is a general identifier",
+                "minimum": 0,
+                "maximum": 255
+              },
+              "advised_trajectory": {
+                "$ref": "#/$defs/trajectory"
+              },
+              "advised_target_road_resource": {
+                "$ref": "#/$defs/advised_trr_container"
+              }
+            }
+          }
+        }
+      }
+    },
+    "trajectory": {
+      "type": "object",
+      "required": [
+        "way_point_type",
+        "way_points",
+        "longitude_positions",
+        "latitude_positions",
+        "speed"
+      ],
+      "properties": {
+        "way_point_type": {
+          "type": "integer",
+          "description": "startingWayPoint(0), intermediateWayPoint(1), endingWayPoint(2)",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "way_points": {
+          "type": "array",
+          "items": {
+            "type": "null"
+          }
+        },
+        "longitude_positions": {
+          "type": "array",
+          "items": {
+            "type": "null"
+          }
+        },
+        "latitude_positions": {
+          "type": "array",
+          "items": {
+            "type": "null"
+          }
+        },
+        "altitude_positions": {
+          "type": "array",
+          "items": {
+            "type": "null"
+          }
+        },
+        "headings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/wgs84_angle"
+          }
+        },
+        "speed": {
+          "type": "integer",
+          "description": "in meters per second",
+          "minimum": 0,
+          "maximum": 511
+        }
+      }
+    },
+    "trr_description": {
+      "type": "object",
+      "required": [
+        "trr_type",
+        "lane_count",
+        "trr_width",
+        "trr_length"
+      ],
+      "properties": {
+        "trr_type": {
+          "type": "integer",
+          "description": "trrType1(0), trrType2(1), trrType3(2)",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "lane_count": {
+          "type": "integer",
+          "description": "Number of adjacent lanes covered by the TRR surface from the starting lane number with a relavive position for each one",
+          "minimum": 0,
+          "maximum": 31
+        },
+        "starting_lane_number": {
+          "type": "integer",
+          "description": ": identification of the lane in which the executant vehicle starts the submanoeuvre",
+          "minimum": 0,
+          "maximum": 31
+        },
+        "ending_lane_number": {
+          "type": "integer",
+          "description": "Identification of the lane in which the executant vehicle ends the submanoeuvre",
+          "minimum": 0,
+          "maximum": 31
+        },
+        "waypoints": {
+          "type": "array",
+          "items": {
+            "type": "null"
+          }
+        },
+        "heading": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/wgs84_angle"
+          }
+        },
+        "trr_width": {
+          "type": "integer",
+          "description": "computed from the lane count",
+          "minimum": 0,
+          "maximum": 15
+        },
+        "trr_length": {
+          "type": "integer",
+          "description": "computed distance between the starting and ending waypoints",
+          "minimum": 0,
+          "maximum": 4095
+        }
+      }
+    },
+    "temporal_characteristics": {
+      "type": "object",
+      "required": [
+        "t_rr_occupancy_start_time",
+        "t_rr_occupancy_end_time"
+      ],
+      "properties": {
+        "t_rr_occupancy_start_time": {
+          "type": "integer",
+          "description": "LSB unit 1 millisecond: Delta time since the TimesStampIts",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "t_rr_occupancy_end_time": {
+          "type": "integer",
+          "description": "LSB unit 1 millisecond: Delta time since the TimesStampIts",
+          "minimum": 0,
+          "maximum": 65535
+        }
+      }
+    },
+    "altitude_position": {
+      "type": "null"
+    },
+    "latitude_position": {
+      "type": "null"
+    },
+    "longitude_position": {
+      "type": "null"
+    },
+    "manouevre_response": {
+      "type": "string",
+      "enum": [
+        "offer_acceptation",
+        "offer_decline",
+        "request_acceptation",
+        "request_decline"
+      ],
+      "$comment": "This CHOICE has data-carrying variant(s) 'request_decline' that would appear as optional sibling fields in a parent SEQUENCE if this type were used."
+    },
+    "rllc": {
+      "type": "object",
+      "required": [
+        "current_lane"
+      ],
+      "properties": {
+        "current_lane": {
+          "type": "boolean",
+          "description": "currentLane bit."
+        }
+      }
+    },
+    "rrlc": {
+      "type": "object",
+      "required": [
+        "current_lane"
+      ],
+      "properties": {
+        "current_lane": {
+          "type": "boolean",
+          "description": "currentLane bit."
+        }
+      }
+    },
+    "request_decline_reaseon": {
+      "type": "integer",
+      "description": "agreementSeekingUnknown(0), allUnableToConform(1), agreementSeekingUnwanted(2), allUnableToUnderstand(3), allErroneousBehaviourDetected(4), allMissbehaviourDetected(5)",
+      "minimum": 0,
+      "maximum": 5,
+      "default": 0
+    },
+    "way_point": {
+      "type": "null"
+    }
+  }
+}
