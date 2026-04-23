@@ -29,9 +29,9 @@ use std::any::type_name;
 /// Represents a Collective Perception Message (CPM) according to an ETSI standard.
 ///
 /// This message is used to describe information around itself.
-/// It implements the schema defined in the [CPM version 2.1.0][1].
+/// It implements the schema defined in the [CPM version 2.1.1][1].
 ///
-/// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/cpm/cpm_schema_2-1-0.json
+/// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/cpm/cpm_schema_2-1-1.json
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CollectivePerceptionMessage {
