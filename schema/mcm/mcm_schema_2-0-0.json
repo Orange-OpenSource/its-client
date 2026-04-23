@@ -620,57 +620,11 @@
       }
     },
     "trajectory": {
-      "type": "object",
-      "required": [
-        "way_point_type",
-        "way_points",
-        "longitude_positions",
-        "latitude_positions",
-        "speed"
-      ],
-      "properties": {
-        "way_point_type": {
-          "type": "integer",
-          "description": "startingWayPoint(0), intermediateWayPoint(1), endingWayPoint(2)",
-          "minimum": 0,
-          "maximum": 2
-        },
-        "way_points": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/way_point"
-          }
-        },
-        "longitude_positions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/longitude_position"
-          }
-        },
-        "latitude_positions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/latitude_position"
-          }
-        },
-        "altitude_positions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/altitude_position"
-          }
-        },
-        "headings": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/wgs84_angle"
-          }
-        },
-        "speed": {
-          "type": "integer",
-          "description": "in meters per second",
-          "minimum": 0,
-          "maximum": 511
-        }
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {
+        "$ref": "#/$defs/way_point"
       }
     },
     "trr_description": {
@@ -754,13 +708,35 @@
       }
     },
     "altitude_position": {
-      "type": "null"
+      "type": "object",
+      "description": "Altitude value and confidence in WGS84 coordinate system (from ETSI-ITS-CDD Altitude)",
+      "required": ["altitude_value", "altitude_confidence"],
+      "properties": {
+        "altitude_value": {
+          "type": "integer",
+          "description": "Altitude in 0.01 metre steps. negativeOutOfRange(-100000), positiveOutOfRange(800000), unavailable(800001)",
+          "minimum": -100000,
+          "maximum": 800001
+        },
+        "altitude_confidence": {
+          "type": "integer",
+          "description": "alt-000-01(0), alt-000-02(1), alt-000-05(2), alt-000-10(3), alt-000-20(4), alt-000-50(5), alt-001-00(6), alt-002-00(7), alt-005-00(8), alt-010-00(9), alt-020-00(10), alt-050-00(11), alt-100-00(12), alt-200-00(13), outOfRange(14), unavailable(15)",
+          "minimum": 0,
+          "maximum": 15
+        }
+      }
     },
     "latitude_position": {
-      "type": "null"
+      "type": "integer",
+      "description": "Latitude in 10^-7 degree. unavailable(900000001)",
+      "minimum": -900000000,
+      "maximum": 900000001
     },
     "longitude_position": {
-      "type": "null"
+      "type": "integer",
+      "description": "Longitude in 10^-7 degree. valueNotUsed(-1800000000), unavailable(1800000001)",
+      "minimum": -1800000000,
+      "maximum": 1800000001
     },
     "manouevre_response": {
       "type": "string",
@@ -804,7 +780,35 @@
       "default": 0
     },
     "way_point": {
-      "type": "null"
+      "type": "object",
+      "description": "A single point in a trajectory with position, optional altitude/heading, and speed",
+      "required": ["way_point_type", "longitude", "latitude", "speed"],
+      "properties": {
+        "way_point_type": {
+          "type": "integer",
+          "description": "startingWayPoint(0), intermediateWayPoint(1), endingWayPoint(2)",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "longitude": {
+          "$ref": "#/$defs/longitude_position"
+        },
+        "latitude": {
+          "$ref": "#/$defs/latitude_position"
+        },
+        "altitude": {
+          "$ref": "#/$defs/altitude_position"
+        },
+        "heading": {
+          "$ref": "#/$defs/wgs84_angle"
+        },
+        "speed": {
+          "type": "integer",
+          "description": "Speed in metres per second",
+          "minimum": 0,
+          "maximum": 511
+        }
+      }
     },
     "kinematics_characteristics": {
       "type": "null"
