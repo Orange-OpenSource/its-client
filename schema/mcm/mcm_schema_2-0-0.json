@@ -368,10 +368,10 @@
       ],
       "properties": {
         "latitude": {
-          "$ref": "#/$defs/latitude_position"
+          "$ref": "#/$defs/latitude_value"
         },
         "longitude": {
-          "$ref": "#/$defs/longitude_position"
+          "$ref": "#/$defs/longitude_value"
         },
         "position_confidence_ellipse": {
           "$ref": "#/$defs/pos_confidence_ellipse"
@@ -414,12 +414,12 @@
       "description": "This DF provides the altitude and confidence level of an altitude information in a WGS84 coordinate system. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE.",
       "type": "object",
       "required": [
-        "altitude_position",
+        "altitude_value",
         "altitude_confidence"
       ],
       "properties": {
-        "altitude_position": {
-          "$ref": "#/$defs/altitude_position"
+        "altitude_value": {
+          "$ref": "#/$defs/altitude_value"
         },
         "altitude_confidence": {
           "type": "integer",
@@ -697,19 +697,19 @@
         }
       }
     },
-    "altitude_position": {
+    "altitude_value": {
       "type": "integer",
       "description": "Altitude value in a WGS84 coordinate system, in 0.01 metre steps. negativeOutOfRange(-100000), positiveOutOfRange(800000), unavailable(800001)",
       "minimum": -100000,
       "maximum": 800001
     },
-    "latitude_position": {
+    "latitude_value": {
       "type": "integer",
       "description": "Latitude in 10^-7 degree. unavailable(900000001)",
       "minimum": -900000000,
       "maximum": 900000001
     },
-    "longitude_position": {
+    "longitude_value": {
       "type": "integer",
       "description": "Longitude in 10^-7 degree. valueNotUsed(-1800000000), unavailable(1800000001)",
       "minimum": -1800000000,
@@ -768,13 +768,13 @@
           "maximum": 2
         },
         "longitude": {
-          "$ref": "#/$defs/longitude_position"
+          "$ref": "#/$defs/longitude_value"
         },
         "latitude": {
-          "$ref": "#/$defs/latitude_position"
+          "$ref": "#/$defs/latitude_value"
         },
         "altitude": {
-          "$ref": "#/$defs/altitude_position"
+          "$ref": "#/$defs/altitude_value"
         },
         "heading": {
           "$ref": "#/$defs/wgs84_angle"
