@@ -376,8 +376,8 @@
         "position_confidence_ellipse": {
           "$ref": "#/$defs/pos_confidence_ellipse"
         },
-        "altitude_value": {
-          "$ref": "#/$defs/altitude_value"
+        "altitude": {
+          "$ref": "#/$defs/altitude"
         }
       }
     },
@@ -407,6 +407,26 @@
           "description": "This DE represents the orientation of the horizontal velocity vector with regards to the WGS84 north. When the information is not available, the DE shall be set to 3 601. The value 3600 shall not be used",
           "minimum": 0,
           "maximum": 3601
+        }
+      }
+    },
+    "altitude": {
+      "description": "This DF provides the altitude and confidence level of an altitude information in a WGS84 coordinate system. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE.",
+      "type": "object",
+      "required": [
+        "altitude_value",
+        "altitude_confidence"
+      ],
+      "properties": {
+        "altitude_value": {
+          "$ref": "#/$defs/altitude_value"
+        },
+        "altitude_confidence": {
+          "type": "integer",
+          "description": "This DE indicates the altitude confidence value which represents the estimated absolute accuracy of an altitude value of a geographical point with a default confidence level of 95 %. If required, the confidence level can be defined by the corresponding standards applying this DE. alt-000-01(0), alt-000-02(1), alt-000-05(2), alt-000-10(3), alt-000-20(4), alt-000-50(5), alt-001-00(6), alt-002-00(7), alt-005-00(8), alt-010-00(9), alt-020-00(10), alt-050-00(11), alt-100-00(12), alt-200-00(13), outOfRange(14), unavailable(15)",
+          "minimum": 0,
+          "maximum": 15,
+          "default": 15
         }
       }
     },
@@ -753,7 +773,7 @@
         "latitude": {
           "$ref": "#/$defs/latitude_position"
         },
-        "altitude_value": {
+        "altitude": {
           "$ref": "#/$defs/altitude_value"
         },
         "heading": {
