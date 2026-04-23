@@ -36,6 +36,10 @@ dependencies {
 
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
+    // Mockito for mocking MQTT client internals
+    testImplementation 'org.mockito:mockito-core:5.11.0'
+    // OkHttp MockWebServer for BootstrapHelper HTTP tests (same version as production okhttp)
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 }
 
 tasks.named('test') {

@@ -57,6 +57,18 @@ public class MqttClient {
     // client state
     private volatile boolean closed;
 
+    /**
+     * Package-private constructor for unit testing.
+     * Accepts an already-built {@link Mqtt5AsyncClient}, skipping the network connection setup.
+     */
+    MqttClient(Mqtt5AsyncClient injectedClient, MqttCallback callback, OpenTelemetryClient openTelemetryClient) {
+        this.callback = callback;
+        this.openTelemetryClient = openTelemetryClient;
+        this.mqttClient = injectedClient;
+        this.closed = false;
+        injectedClient.publishes(MqttGlobalPublishFilter.SUBSCRIBED, this::processPublish);
+    }
+
     public MqttClient(String serverHost,
                       int serverPort,
                       String username,
@@ -389,7 +401,7 @@ public class MqttClient {
         return isConnected() && mqttClient.getConfig().getSslConfig().isPresent();
     }
 
-    public boolean isValidMqttPubTopic(String topic) {
+    public static boolean isValidMqttPubTopic(String topic) {
         // Check for null or empty string
         if (topic == null || topic.isEmpty()) {
             LOGGER.log(Level.FINER, "Publication topic cannot be null or empty!");
