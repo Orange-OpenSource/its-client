@@ -364,27 +364,20 @@
       "required": [
         "latitude",
         "longitude",
-        "position_confidence_ellipse",
-        "altitude"
+        "position_confidence_ellipse"
       ],
       "properties": {
         "latitude": {
-          "type": "integer",
-          "description": "This DE represents the absolute geographical latitude in a WGS84 coordinate system, providing a range of 90 degrees in north or in south hemisphere. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE",
-          "minimum": -900000000,
-          "maximum": 900000001
+          "$ref": "#/$defs/latitude_position"
         },
         "longitude": {
-          "type": "integer",
-          "description": "This DE represents the absolute geographical longitude in a WGS84 coordinate system, providing a range of 180 degrees to the east or to the west of the prime meridian. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE",
-          "minimum": -1800000000,
-          "maximum": 1800000001
+          "$ref": "#/$defs/longitude_position"
         },
         "position_confidence_ellipse": {
           "$ref": "#/$defs/pos_confidence_ellipse"
         },
-        "altitude": {
-          "$ref": "#/$defs/altitude"
+        "altitude_value": {
+          "$ref": "#/$defs/altitude_value"
         }
       }
     },
@@ -414,29 +407,6 @@
           "description": "This DE represents the orientation of the horizontal velocity vector with regards to the WGS84 north. When the information is not available, the DE shall be set to 3 601. The value 3600 shall not be used",
           "minimum": 0,
           "maximum": 3601
-        }
-      }
-    },
-    "altitude": {
-      "description": "This DF provides the altitude and confidence level of an altitude information in a WGS84 coordinate system. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE.",
-      "type": "object",
-      "required": [
-        "altitude_value",
-        "altitude_confidence"
-      ],
-      "properties": {
-        "altitude_value": {
-          "type": "integer",
-          "description": "This DE represents the altitude value in a WGS84 coordinate system. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE",
-          "minimum": -100000,
-          "maximum": 800001
-        },
-        "altitude_confidence": {
-          "type": "integer",
-          "description": "This DE indicates the altitude confidence value which represents the estimated absolute accuracy of an altitude value of a geographical point with a default confidence level of 95 %. If required, the confidence level can be defined by the corresponding standards applying this DE. alt-000-01(0), alt-000-02(1), alt-000-05(2), alt-000-10(3), alt-000-20(4), alt-000-50(5), alt-001-00(6), alt-002-00(7), alt-005-00(8), alt-010-00(9), alt-020-00(10), alt-050-00(11), alt-100-00(12), alt-200-00(13), outOfRange(14), unavailable(15)",
-          "minimum": 0,
-          "maximum": 15,
-          "default": 15
         }
       }
     },
@@ -707,24 +677,11 @@
         }
       }
     },
-    "altitude_position": {
-      "type": "object",
-      "description": "Altitude value and confidence in WGS84 coordinate system (from ETSI-ITS-CDD Altitude)",
-      "required": ["altitude_value", "altitude_confidence"],
-      "properties": {
-        "altitude_value": {
-          "type": "integer",
-          "description": "Altitude in 0.01 metre steps. negativeOutOfRange(-100000), positiveOutOfRange(800000), unavailable(800001)",
-          "minimum": -100000,
-          "maximum": 800001
-        },
-        "altitude_confidence": {
-          "type": "integer",
-          "description": "alt-000-01(0), alt-000-02(1), alt-000-05(2), alt-000-10(3), alt-000-20(4), alt-000-50(5), alt-001-00(6), alt-002-00(7), alt-005-00(8), alt-010-00(9), alt-020-00(10), alt-050-00(11), alt-100-00(12), alt-200-00(13), outOfRange(14), unavailable(15)",
-          "minimum": 0,
-          "maximum": 15
-        }
-      }
+    "altitude_value": {
+      "type": "integer",
+      "description": "Altitude value in a WGS84 coordinate system, in 0.01 metre steps. negativeOutOfRange(-100000), positiveOutOfRange(800000), unavailable(800001)",
+      "minimum": -100000,
+      "maximum": 800001
     },
     "latitude_position": {
       "type": "integer",
@@ -796,8 +753,8 @@
         "latitude": {
           "$ref": "#/$defs/latitude_position"
         },
-        "altitude": {
-          "$ref": "#/$defs/altitude_position"
+        "altitude_value": {
+          "$ref": "#/$defs/altitude_value"
         },
         "heading": {
           "$ref": "#/$defs/wgs84_angle"
@@ -811,7 +768,10 @@
       }
     },
     "kinematics_characteristics": {
-      "type": "null"
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false,
+      "$comment": "Missing object description in the original MCM ASN.1 specification files (NULL)."
     }
   }
 }
