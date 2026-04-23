@@ -308,7 +308,7 @@
                             "$ref": "#/$defs/temporal_characteristics"
                           },
                           "kinematics_characteristics": {
-                            "type": "null"
+                            "$ref": "#/$defs/kinematics_characteristics"
                           }
                         }
                       }
@@ -573,7 +573,7 @@
           "$ref": "#/$defs/temporal_characteristics"
         },
         "kinematics_characteristics": {
-          "type": "null"
+          "$ref": "#/$defs/kinematics_characteristics"
         }
       }
     },
@@ -638,25 +638,25 @@
         "way_points": {
           "type": "array",
           "items": {
-            "type": "null"
+            "$ref": "#/$defs/way_point"
           }
         },
         "longitude_positions": {
           "type": "array",
           "items": {
-            "type": "null"
+            "$ref": "#/$defs/longitude_position"
           }
         },
         "latitude_positions": {
           "type": "array",
           "items": {
-            "type": "null"
+            "$ref": "#/$defs/latitude_position"
           }
         },
         "altitude_positions": {
           "type": "array",
           "items": {
-            "type": "null"
+            "$ref": "#/$defs/altitude_position"
           }
         },
         "headings": {
@@ -709,7 +709,7 @@
         "waypoints": {
           "type": "array",
           "items": {
-            "type": "null"
+            "$ref": "#/$defs/way_point"
           }
         },
         "heading": {
@@ -804,6 +804,9 @@
       "default": 0
     },
     "way_point": {
+      "type": "null"
+    },
+    "kinematics_characteristics": {
       "type": "null"
     }
   }
