@@ -414,12 +414,12 @@
       "description": "This DF provides the altitude and confidence level of an altitude information in a WGS84 coordinate system. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE.",
       "type": "object",
       "required": [
-        "altitude_value",
+        "altitude_position",
         "altitude_confidence"
       ],
       "properties": {
-        "altitude_value": {
-          "$ref": "#/$defs/altitude_value"
+        "altitude_position": {
+          "$ref": "#/$defs/altitude_position"
         },
         "altitude_confidence": {
           "type": "integer",
@@ -697,7 +697,7 @@
         }
       }
     },
-    "altitude_value": {
+    "altitude_position": {
       "type": "integer",
       "description": "Altitude value in a WGS84 coordinate system, in 0.01 metre steps. negativeOutOfRange(-100000), positiveOutOfRange(800000), unavailable(800001)",
       "minimum": -100000,
@@ -774,7 +774,7 @@
           "$ref": "#/$defs/latitude_position"
         },
         "altitude": {
-          "$ref": "#/$defs/altitude_value"
+          "$ref": "#/$defs/altitude_position"
         },
         "heading": {
           "$ref": "#/$defs/wgs84_angle"
