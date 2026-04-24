@@ -759,7 +759,12 @@
     "way_point": {
       "type": "object",
       "description": "A single point in a trajectory with position, optional altitude/heading, and speed",
-      "required": ["way_point_type", "longitude", "latitude", "speed"],
+      "required": [
+        "way_point_type",
+        "longitude",
+        "latitude",
+        "speed"
+      ],
       "properties": {
         "way_point_type": {
           "type": "integer",
