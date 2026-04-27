@@ -55,13 +55,13 @@ class RoadGeometryManagerTest {
         ((HashMap<?, ?>) mapField.get(null)).clear();
 
         // Also reset TrafficLightManager static state to avoid cross-test interference
-        Field trafficLightsField = TrafficLightManager.class.getDeclaredField("TRAFFIC_LIGHTS");
-        trafficLightsField.setAccessible(true);
-        ((ArrayList<?>) trafficLightsField.get(null)).clear();
+        Field signalControllersField = SignalControllerManager.class.getDeclaredField("SIGNAL_CONTROLLERS");
+        signalControllersField.setAccessible(true);
+        ((ArrayList<?>) signalControllersField.get(null)).clear();
 
-        Field trafficLightMapField = TrafficLightManager.class.getDeclaredField("TRAFFIC_LIGHT_MAP");
-        trafficLightMapField.setAccessible(true);
-        ((HashMap<?, ?>) trafficLightMapField.get(null)).clear();
+        Field signalControllerMapField = SignalControllerManager.class.getDeclaredField("SIGNAL_CONTROLLER_MAP");
+        signalControllerMapField.setAccessible(true);
+        ((HashMap<?, ?>) signalControllerMapField.get(null)).clear();
 
         RoadGeometryManager.init(mockCallback);
     }
