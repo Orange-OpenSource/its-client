@@ -83,6 +83,11 @@ class CollectivePerceptionMessage(etsi.Message):
             multiple_objects = {"other": 2}
             bulk_material = {"other": 3}
 
+        BoundingBox = collections.namedtuple(
+            "BoundingBox",
+            ["width", "length", "height", "heading"],
+        )
+
         object_id: int
         measurement_delta_time: float
         x_distance: float
@@ -93,6 +98,7 @@ class CollectivePerceptionMessage(etsi.Message):
         quality: Optional[int] = 0
         object_class: Optional[Vehicle | Vru | Other] = None
         object_class_confidence: int = 0
+        bounding_box: Optional[BoundingBox] = None
 
     SegmentationInfo = collections.namedtuple(
         "SegmentationInfo",
@@ -315,6 +321,52 @@ class CollectivePerceptionMessage(etsi.Message):
             )
             po["classification"] = list([c])
 
+        if perceived_object.bounding_box is not None:
+            po.update(
+                {
+                    "object_dimension_x": {
+                        "value": etsi.ETSI.si2etsi(
+                            value=perceived_object.bounding_box.length,
+                            scale=etsi.ETSI.DECI_METER,
+                            undef=256,
+                            validity_range={"min": 1, "max": 254},
+                            out_of_range=255,
+                        ),
+                        "confidence": 32,
+                    },
+                    "object_dimension_y": {
+                        "value": etsi.ETSI.si2etsi(
+                            value=perceived_object.bounding_box.width,
+                            scale=etsi.ETSI.DECI_METER,
+                            undef=256,
+                            validity_range={"min": 1, "max": 254},
+                            out_of_range=255,
+                        ),
+                        "confidence": 32,
+                    },
+                    "object_dimension_z": {
+                        "value": etsi.ETSI.si2etsi(
+                            value=perceived_object.bounding_box.height,
+                            scale=etsi.ETSI.DECI_METER,
+                            undef=256,
+                            validity_range={"min": 1, "max": 254},
+                            out_of_range=255,
+                        ),
+                        "confidence": 32,
+                    },
+                    "angles": {
+                        "z_angle": {
+                            "value": etsi.ETSI.si2etsi(
+                                value=perceived_object.bounding_box.heading,
+                                scale=etsi.ETSI.DECI_METER,
+                                undef=3601,
+                            ),
+                            "confidence": 127,
+                        }
+                    },
+                }
+            )
+
         self._message["message"]["perceived_object_container"].append(po)
 
     @property
@@ -473,6 +525,42 @@ class CollectivePerceptionMessage(etsi.Message):
                         "object_class": best["object_class"],
                         "object_class_confidence": best["confidence"],
                     },
+                )
+
+            length = etsi.ETSI.etsi2si(
+                value=po.get("object_dimension_x", {}).get("value"),
+                scale=etsi.ETSI.DECI_METER,
+                undef=256,
+                out_of_range=255,
+            )
+            width = etsi.ETSI.etsi2si(
+                value=po.get("object_dimension_y", {}).get("value"),
+                scale=etsi.ETSI.DECI_METER,
+                undef=256,
+                out_of_range=255,
+            )
+            height = etsi.ETSI.etsi2si(
+                value=po.get("object_dimension_z", {}).get("value"),
+                scale=etsi.ETSI.DECI_METER,
+                undef=256,
+                out_of_range=255,
+            )
+            heading = etsi.ETSI.etsi2si(
+                value=po.get("angles", {}).get("z_angle", {}).get("value"),
+                scale=etsi.ETSI.DECI_METER,
+                undef=3601,
+            )
+
+            # It is acceptable to create a bounding box with an unknown height.
+            # Having jut the footprint of the shape is enough for a lot of
+            # cases, like collision prediction and so on... But any other
+            # value missing would make for a useless bounding box...
+            if all([width is not None, length is not None, heading is not None]):
+                kwargs["bounding_box"] = self.PerceivedObject.BoundingBox(
+                    width=width,
+                    length=length,
+                    height=height,
+                    heading=heading,
                 )
 
             yield self.PerceivedObject(**kwargs)

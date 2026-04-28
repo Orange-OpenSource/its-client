@@ -96,6 +96,12 @@ msg.add_perceived_object(
         quality=15,
         object_class=CPM.PerceivedObject.Vehicle.motorcycle,
         object_class_confidence=50,
+        bounding_box=CPM.PerceivedObject.BoundingBox(
+            length=12.0,
+            width=2.48,
+            height=4.53,
+            heading=57.12,
+        )
     ),
 )
 assert len(msg["message"]["perceived_object_container"]) == 3
@@ -109,6 +115,9 @@ assert count == 3
 assert po.quality == 15
 assert po.object_class["vehicle"] == Message.StationType.motorcycle
 assert po.object_class_confidence == 50
+# CPM perceived objects dimensions only have decimeter-level precision
+assert po.bounding_box.width == 2.5
+assert po.bounding_box.heading == 57.1
 
 print("CPM serialisation...")
 json_msg = msg.to_json()
@@ -120,6 +129,8 @@ assert msg["message"]["management_container"]["station_type"] == Message.Station
 assert len(msg["message"]["perceived_object_container"]) == 3
 po = list(msg.perceived_objects)[-1]
 assert po.object_class["vehicle"] == Message.StationType.motorcycle
+assert po.bounding_box.width == 2.5
+assert po.bounding_box.heading == 57.1
 
 print("CPM with segmentation...")
 msg = CPM(
