@@ -205,7 +205,7 @@ def leapseconds(
         return LeapSeconds
 
 
-def leapseconds_from_listfile(file, now=None, comment="#".encode()):
+def leapseconds_from_listfile(file, now=None):
     """Extract leap seconds from *file*
 
     See /usr/share/zoneinfo/leap-seconds.list
@@ -214,12 +214,12 @@ def leapseconds_from_listfile(file, now=None, comment="#".encode()):
         now = time.time()
     result = []
     for line in file:
-        if not line.startswith(comment):  # skip comments
+        if not line.startswith(b"#"):  # skip comments
             # ntp time, dtai, # day month year
             ntp_time, dtai = line.partition(comment)[0].split()
             utc = NTP_EPOCH + timedelta(seconds=int(ntp_time))
             result.append(LeapSecond(utc, timedelta(seconds=int(dtai))))
-        elif line.startswith("#@".encode()):
+        elif line.startswith(b"#@"):
             ntp_time = line[2:].strip()
             utc = NTP_EPOCH + timedelta(seconds=int(ntp_time))
             if utc.timestamp() < now:
