@@ -35,6 +35,7 @@ Python 2.6+, Python 3, Jython, Pypy support.
 """
 from __future__ import with_statement
 
+import hashlib
 import time
 from collections import namedtuple
 from datetime import datetime, timedelta
@@ -206,27 +207,68 @@ def leapseconds(
 
 
 def leapseconds_from_listfile(file, now=None):
-    """Extract leap seconds from *file*
+    r"""Extract leap seconds from *file*
 
     See /usr/share/zoneinfo/leap-seconds.list
+
+    >>> import io
+    >>> fd = open("/usr/share/zoneinfo/leap-seconds.list", "rb")
+    >>> ls_io = io.BytesIO(fd.read())
+    >>> fd.close()
+    >>> leapseconds_from_listfile(ls_io)[0]
+    LeapSecond(utc=datetime.datetime(1972, 1, 1, 0, 0), dTAI_UTC=datetime.timedelta(seconds=10))
+    >>> ls_io.seek(0)
+    0
+    >>> ls_io2 = io.BytesIO(b''.join(ls_io.readlines()[:-1]))
+    >>> leapseconds_from_listfile(ls_io2)[0]
+    Traceback (most recent call last):
+    ...
+    ValueError: leap-seconds.list has no hash
+    >>> ls_io2.seek(0, 2) and 0
+    0
+    >>> ls_io2.write(b"#h\tda39a3ee 5e6b4b0d 3255bfef 95601890 afd80709\n")  # NUL-hash
+    48
+    >>> ls_io2.seek(0)
+    0
+    >>> leapseconds_from_listfile(ls_io2)[0]    # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    ...
+    ValueError: leap-seconds.list has wrong hash: computed: ..., expected: ...
     """
     if now is None:
         now = time.time()
     result = []
+    data_sha1 = hashlib.new("sha1")
     for line in file:
         if not line.startswith(b"#"):  # skip comments
+            data = line.partition(b"#")[0]
+            data_sha1.update(data.replace(b" ", b""))
             # ntp time, dtai, # day month year
-            ntp_time, dtai = line.partition(comment)[0].split()
+            ntp_time, dtai = data.split()
             utc = NTP_EPOCH + timedelta(seconds=int(ntp_time))
             result.append(LeapSecond(utc, timedelta(seconds=int(dtai))))
-        elif line.startswith(b"#@"):
+        elif line[:2] in [b"#$", b"#@"]:
             ntp_time = line[2:].strip()
+            data_sha1.update(ntp_time)
             utc = NTP_EPOCH + timedelta(seconds=int(ntp_time))
-            if utc.timestamp() < now:
+            if line[:2] == b"#$" and utc.timestamp() > now:
+                raise ValueError(
+                    f"leap-seconds.list is in the futrue, starts on {utc.isoformat()}"
+                )
+            if line[:2] == b"#@" and utc.timestamp() < now:
                 raise ValueError(
                     f"leap-seconds.list is out of date, expired on {utc.isoformat()}"
                 )
-    return result
+        elif line[:2] == b"#h":
+            h_file = line[2:].strip().replace(b" ", b"").decode()
+            h_data = data_sha1.hexdigest()
+            if h_file == h_data:
+                return result
+            raise ValueError(
+                f"leap-seconds.list has wrong hash: computed: {h_data}, expected: {h_file}"
+            )
+
+    raise ValueError("leap-seconds.list has no hash")
 
 
 def _fallback():
