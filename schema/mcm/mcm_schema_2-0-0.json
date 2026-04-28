@@ -715,7 +715,7 @@
       "minimum": -1800000000,
       "maximum": 1800000001
     },
-    "manouevre_response": {
+    "manoeuvre_response": {
       "type": "string",
       "enum": [
         "offer_acceptation",
@@ -749,7 +749,7 @@
         }
       }
     },
-    "request_decline_reaseon": {
+    "request_decline_reason": {
       "type": "integer",
       "description": "agreementSeekingUnknown(0), allUnableToConform(1), agreementSeekingUnwanted(2), allUnableToUnderstand(3), allErroneousBehaviourDetected(4), allMissbehaviourDetected(5)",
       "minimum": 0,
