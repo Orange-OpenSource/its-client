@@ -118,6 +118,7 @@ msg = iot3.mobility.message_from_json(msg_json=json_msg)
 assert msg.msg_type == "cpm"
 assert msg["message"]["management_container"]["station_type"] == Message.StationType.passengerCar
 assert len(msg["message"]["perceived_object_container"]) == 3
+po = list(msg.perceived_objects)[-1]
 assert po.object_class["vehicle"] == Message.StationType.motorcycle
 
 #-----------------------------------------------------------------------------------------
