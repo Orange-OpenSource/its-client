@@ -171,7 +171,7 @@ except ValueError:
 else:
     raise RuntimeError("Invalid subcause should not be allowed")
 
-print("New DENM sith invalid subcause...")
+print("DENM with invalid subcause...")
 try:
     DENM(
         uuid="test_1234",
