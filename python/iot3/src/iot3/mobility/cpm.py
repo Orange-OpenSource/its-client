@@ -3,10 +3,11 @@
 # SPDX-License-Identifier: MIT
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
+import collections
 import dataclasses
 import time
 
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Tuple
 
 from . import etsi
 from .gnss import GNSSReport
@@ -82,6 +83,11 @@ class CollectivePerceptionMessage(etsi.Message):
             multiple_objects = {"other": 2}
             bulk_material = {"other": 3}
 
+        BoundingBox = collections.namedtuple(
+            "BoundingBox",
+            ["width", "length", "height", "heading"],
+        )
+
         object_id: int
         measurement_delta_time: float
         x_distance: float
@@ -92,6 +98,19 @@ class CollectivePerceptionMessage(etsi.Message):
         quality: Optional[int] = 0
         object_class: Optional[Vehicle | Vru | Other] = None
         object_class_confidence: int = 0
+        bounding_box: Optional[BoundingBox] = None
+
+    SegmentationInfo = collections.namedtuple(
+        "SegmentationInfo",
+        [
+            "total_msg_no",
+            "this_msg_no",
+        ],
+        # Allow initialising with total_msg_no only, setting this_msg_no to 0:
+        defaults=[
+            0,
+        ],
+    )
 
     def __init__(
         self,
@@ -101,6 +120,7 @@ class CollectivePerceptionMessage(etsi.Message):
             etsi.Message.StationType
         ] = etsi.Message.StationType.unknown,
         gnss_report: GNSSReport,
+        segmentation_info: Optional[SegmentationInfo] = None,
         perceived_objects: Optional[Iterable[PerceivedObject]] = [],
     ):
         """Create a basic Cooperative Awareness Message
@@ -108,6 +128,10 @@ class CollectivePerceptionMessage(etsi.Message):
         :param uuid: the UUID of this station
         :param station_type: The type of this station
         :param gnss_report: a GNSS report, coming from a GNSS device
+        :param segmentation_info: The segementation information about the
+                                  sequence of CPM this one belongs to,
+                                  when the scene needs more than one CPM
+                                  to be described
         :param perceived_objects: A list of perceived objects
         """
         self._gnss_report = gnss_report
@@ -208,6 +232,20 @@ class CollectivePerceptionMessage(etsi.Message):
                 },
             }
 
+        if segmentation_info:
+            if segmentation_info.this_msg_no >= segmentation_info.total_msg_no:
+                raise ValueError(
+                    f"More CPMs ({segmentation_info.this_msg_no}) in segmentation than expected ({segmentation_info.total_msg_no})"
+                )
+            self._message["message"]["management_container"]["segmentation_info"] = (
+                dict(
+                    [
+                        ("total_msg_no", segmentation_info.total_msg_no),
+                        ("this_msg_no", segmentation_info.this_msg_no),
+                    ]
+                )
+            )
+
         for po in perceived_objects:
             self.add_perceived_object(perceived_object=po)
 
@@ -283,6 +321,52 @@ class CollectivePerceptionMessage(etsi.Message):
             )
             po["classification"] = list([c])
 
+        if perceived_object.bounding_box is not None:
+            po.update(
+                {
+                    "object_dimension_x": {
+                        "value": etsi.ETSI.si2etsi(
+                            value=perceived_object.bounding_box.length,
+                            scale=etsi.ETSI.DECI_METER,
+                            undef=256,
+                            validity_range={"min": 1, "max": 254},
+                            out_of_range=255,
+                        ),
+                        "confidence": 32,
+                    },
+                    "object_dimension_y": {
+                        "value": etsi.ETSI.si2etsi(
+                            value=perceived_object.bounding_box.width,
+                            scale=etsi.ETSI.DECI_METER,
+                            undef=256,
+                            validity_range={"min": 1, "max": 254},
+                            out_of_range=255,
+                        ),
+                        "confidence": 32,
+                    },
+                    "object_dimension_z": {
+                        "value": etsi.ETSI.si2etsi(
+                            value=perceived_object.bounding_box.height,
+                            scale=etsi.ETSI.DECI_METER,
+                            undef=256,
+                            validity_range={"min": 1, "max": 254},
+                            out_of_range=255,
+                        ),
+                        "confidence": 32,
+                    },
+                    "angles": {
+                        "z_angle": {
+                            "value": etsi.ETSI.si2etsi(
+                                value=perceived_object.bounding_box.heading,
+                                scale=etsi.ETSI.DECI_METER,
+                                undef=3601,
+                            ),
+                            "confidence": 127,
+                        }
+                    },
+                }
+            )
+
         self._message["message"]["perceived_object_container"].append(po)
 
     @property
@@ -345,6 +429,46 @@ class CollectivePerceptionMessage(etsi.Message):
             800001,
         )
 
+    # Explicitly no setter for this property: we do not wot want to
+    # change the segmentation of an existing CPM, unless with switching
+    # to the "next-segment message" (see below).
+    @property
+    def segmentation(self) -> Optional[SegmentationInfo]:
+        try:
+            seg = self._message["message"]["management_container"]["segmentation_info"]
+        except KeyError:
+            return None
+
+        return self.SegmentationInfo(
+            total_msg_no=seg["total_msg_no"],
+            this_msg_no=seg["this_msg_no"],
+        )
+
+    def segmentation_next(self):
+        """Update the already segmnented CPM to be the next message
+
+        This is equivalent to separately removing all perceived objects, then
+        increasing message.management_container.segmentation_info.this_msg_no by 1.
+        """
+        if "segmentation_info" not in self._message["message"]["management_container"]:
+            raise RuntimeError(
+                "CPM is not segmented: can't start next CPM in segmentation"
+            )
+        seg_info = self._message["message"]["management_container"]["segmentation_info"]
+        total_msg_no = seg_info["total_msg_no"]
+        next_this_msg_no = seg_info["this_msg_no"] + 1
+        if next_this_msg_no == total_msg_no:
+            raise ValueError(
+                f"More CPMs in segmentation than expected ({total_msg_no})",
+            )
+        self.reset_perceived_objects()
+        self._message["message"]["management_container"]["segmentation_info"][
+            "this_msg_no"
+        ] = next_this_msg_no
+
+    def reset_perceived_objects(self):
+        self._message["message"]["perceived_object_container"] = list()
+
     @property
     def perceived_objects(self):
         for po in self._message["message"]["perceived_object_container"]:
@@ -401,6 +525,42 @@ class CollectivePerceptionMessage(etsi.Message):
                         "object_class": best["object_class"],
                         "object_class_confidence": best["confidence"],
                     },
+                )
+
+            length = etsi.ETSI.etsi2si(
+                value=po.get("object_dimension_x", {}).get("value"),
+                scale=etsi.ETSI.DECI_METER,
+                undef=256,
+                out_of_range=255,
+            )
+            width = etsi.ETSI.etsi2si(
+                value=po.get("object_dimension_y", {}).get("value"),
+                scale=etsi.ETSI.DECI_METER,
+                undef=256,
+                out_of_range=255,
+            )
+            height = etsi.ETSI.etsi2si(
+                value=po.get("object_dimension_z", {}).get("value"),
+                scale=etsi.ETSI.DECI_METER,
+                undef=256,
+                out_of_range=255,
+            )
+            heading = etsi.ETSI.etsi2si(
+                value=po.get("angles", {}).get("z_angle", {}).get("value"),
+                scale=etsi.ETSI.DECI_METER,
+                undef=3601,
+            )
+
+            # It is acceptable to create a bounding box with an unknown height.
+            # Having jut the footprint of the shape is enough for a lot of
+            # cases, like collision prediction and so on... But any other
+            # value missing would make for a useless bounding box...
+            if all([width is not None, length is not None, heading is not None]):
+                kwargs["bounding_box"] = self.PerceivedObject.BoundingBox(
+                    width=width,
+                    length=length,
+                    height=height,
+                    heading=heading,
                 )
 
             yield self.PerceivedObject(**kwargs)
