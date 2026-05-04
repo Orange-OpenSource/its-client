@@ -97,7 +97,7 @@ class CollectivePerceptionMessage(etsi.Message):
         y_speed: Optional[float] = None
         quality: Optional[int] = 0
         object_class: Optional[Vehicle | Vru | Other] = None
-        object_class_confidence: int = 0
+        object_class_confidence: int = 101  # 101 is "unavailable", range is 1-100.
         bounding_box: Optional[BoundingBox] = None
 
     SegmentationInfo = collections.namedtuple(
