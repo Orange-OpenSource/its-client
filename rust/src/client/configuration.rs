@@ -311,7 +311,7 @@ use_responsibility = false
 thread_count = 4
 "#;
 
-    #[cfg(feature = "mobility")]
+    #[cfg(feature = "geo_routing")]
     const MINIMAL_GEO_ROUTING_CONFIGURATION: &str = r#"
 [mqtt]
 host = localhost
