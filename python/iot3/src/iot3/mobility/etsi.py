@@ -273,6 +273,13 @@ class Message(abc.ABC):
             16,
         )
 
+    @property
+    def timestamp(self):
+        return ETSI.etsi2si(
+            self._message["timestamp"],
+            etsi.ETSI.MILLI_SECOND,
+        )
+
     def __getitem__(self, key):
         return self._message[key]
 

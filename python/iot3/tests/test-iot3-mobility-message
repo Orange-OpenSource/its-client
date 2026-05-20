@@ -96,6 +96,12 @@ msg.add_perceived_object(
         quality=15,
         object_class=CPM.PerceivedObject.Vehicle.motorcycle,
         object_class_confidence=50,
+        bounding_box=CPM.PerceivedObject.BoundingBox(
+            length=12.0,
+            width=2.48,
+            height=4.53,
+            heading=57.12,
+        )
     ),
 )
 assert len(msg["message"]["perceived_object_container"]) == 3
@@ -109,6 +115,9 @@ assert count == 3
 assert po.quality == 15
 assert po.object_class["vehicle"] == Message.StationType.motorcycle
 assert po.object_class_confidence == 50
+# CPM perceived objects dimensions only have decimeter-level precision
+assert po.bounding_box.width == 2.5
+assert po.bounding_box.heading == 57.1
 
 print("CPM serialisation...")
 json_msg = msg.to_json()
@@ -118,6 +127,82 @@ msg = iot3.mobility.message_from_json(msg_json=json_msg)
 assert msg.msg_type == "cpm"
 assert msg["message"]["management_container"]["station_type"] == Message.StationType.passengerCar
 assert len(msg["message"]["perceived_object_container"]) == 3
+po = list(msg.perceived_objects)[-1]
+assert po.object_class["vehicle"] == Message.StationType.motorcycle
+assert po.bounding_box.width == 2.5
+assert po.bounding_box.heading == 57.1
+
+print("CPM with segmentation...")
+msg = CPM(
+    uuid="test_1234",
+    station_type=Message.StationType.passengerCar,
+    gnss_report=GNSSReport(
+        latitude=43.635212,
+        longitude=1.374562,
+    ),
+    segmentation_info=CPM.SegmentationInfo(
+        total_msg_no=3,
+        this_msg_no=1,
+    ),
+    perceived_objects=[
+        CPM.PerceivedObject(
+            object_id= 27,
+            measurement_delta_time=0.128,
+            x_distance= 12,
+            y_distance= -16,
+            object_age= 127,
+        ),
+        CPM.PerceivedObject(
+            object_id= 42,
+            measurement_delta_time=-1.640,
+            x_distance= 63,
+            y_distance= -32,
+            object_age= 255,
+            quality=7,
+        ),
+    ],
+)
+assert msg.segmentation.total_msg_no == 3
+assert msg.segmentation.this_msg_no == 1
+assert len(msg["message"]["perceived_object_container"]) == 2
+
+print("CPM next in segmentation...")
+msg.segmentation_next()
+assert msg.segmentation.total_msg_no == 3
+assert msg.segmentation.this_msg_no == 2
+assert len(msg["message"]["perceived_object_container"]) == 0
+
+print("CPM segment with some P.O...")
+for po in [
+    CPM.PerceivedObject(
+        object_id= 12,
+        measurement_delta_time=1.280,
+        x_distance= 1,
+        y_distance= -2,
+        object_age= 3,
+        quality=15,
+        object_class=CPM.PerceivedObject.Vehicle.motorcycle,
+        object_class_confidence=50,
+    ),
+    CPM.PerceivedObject(
+        object_id= 27,
+        measurement_delta_time=0.128,
+        x_distance= 12,
+        y_distance= -16,
+        object_age= 127,
+    ),
+    CPM.PerceivedObject(
+        object_id= 42,
+        measurement_delta_time=-1.640,
+        x_distance= 63,
+        y_distance= -32,
+        object_age= 255,
+        quality=7,
+    ),
+]:
+    msg.add_perceived_object(perceived_object=po)
+assert len(msg["message"]["perceived_object_container"]) == 3
+po = list(msg.perceived_objects)[0]
 assert po.object_class["vehicle"] == Message.StationType.motorcycle
 
 #-----------------------------------------------------------------------------------------
@@ -170,7 +255,7 @@ except ValueError:
 else:
     raise RuntimeError("Invalid subcause should not be allowed")
 
-print("New DENM sith invalid subcause...")
+print("DENM with invalid subcause...")
 try:
     DENM(
         uuid="test_1234",
