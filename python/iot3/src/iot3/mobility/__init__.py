@@ -18,7 +18,6 @@ from .cpm import CPM
 from .denm import DENM
 from .gnss import GNSSReport
 
-
 """
 This module provides a high-level IoT3 Mobility client with a very simple API.
 

@@ -13,7 +13,6 @@ import time
 from typing import Any, Callable, Optional, TypeAlias, Unpack
 from . import otel
 
-
 MsgCallbackType: TypeAlias = Callable[[Any, str, bytes], None]
 SpanCallableType: TypeAlias = Callable[Unpack[otel.Otel.span], otel.Span]
 
