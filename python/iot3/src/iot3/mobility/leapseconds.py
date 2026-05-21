@@ -33,6 +33,7 @@ Python 2.6+, Python 3, Jython, Pypy support.
 [3]: https://github.com/eggert/tz/blob/master/zic.c
 [4]: https://datacenter.iers.org/data/16/bulletinc-070.txt
 """
+
 from __future__ import with_statement
 
 import hashlib
@@ -157,7 +158,7 @@ def leapseconds(
 
     with file:
         header = Struct(">4s c 15x 6i")  # see struct tzhead above
-        (magic, version, _, _, leapcnt, timecnt, typecnt, charcnt) = header.unpack_from(
+        magic, version, _, _, leapcnt, timecnt, typecnt, charcnt = header.unpack_from(
             file.read(header.size)
         )
         if magic != "TZif".encode():

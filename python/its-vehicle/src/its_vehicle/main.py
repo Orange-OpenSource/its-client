@@ -14,7 +14,6 @@ import sys
 from . import client
 from . import gpsd
 
-
 CFG = "/etc/its/vehicle.cfg"
 DEFAULTS = {
     "general": {
