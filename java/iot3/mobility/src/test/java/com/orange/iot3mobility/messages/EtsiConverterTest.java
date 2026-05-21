@@ -515,5 +515,49 @@ class EtsiConverterTest {
         assertEquals(100, EtsiConverter.cpmCorrelationEtsiFromCoefficient(2.0));
         assertEquals(-100, EtsiConverter.cpmCorrelationEtsiFromCoefficient(-2.0));
     }
+
+    // -------------------------------------------------------------------------
+    // SPATEM time mark
+    // -------------------------------------------------------------------------
+
+    @Test
+    void spatemTimeMarkToWallClockNominalCaseWithinSameHour() {
+        // Reference at 30 minutes into the hour → 18000 tenths
+        long referenceMs = 3_600_000L * 5 + 30 * 60 * 1000L; // 5h30m in Unix ms
+        // timeMark = 18300 (30 seconds after reference, still within same hour)
+        int timeMark = 18300;
+        long result = EtsiConverter.spatemTimeMarkToWallClock(timeMark, referenceMs);
+        assertEquals(referenceMs + 300 * 100L, result); // 300 tenths = 30 s ahead
+    }
+
+    @Test
+    void spatemTimeMarkToWallClockWrapsToNextHourWhenMarkAlreadyPassed() {
+        // Reference at 59 minutes 50 seconds into the hour → 35900 tenths
+        long minuteInMs = 60_000L;
+        long referenceMs = 3_600_000L * 2 + 59 * minuteInMs + 50_000L;
+        // timeMark = 100 (100 tenths into an hour) — already past, must wrap
+        int timeMark = 100;
+        long currentTenthsInHour = (referenceMs % 3_600_000L) / 100L; // ~35900
+        long expectedRemainingTenths = timeMark - currentTenthsInHour + 36000L;
+        long expected = referenceMs + expectedRemainingTenths * 100L;
+        assertEquals(expected, EtsiConverter.spatemTimeMarkToWallClock(timeMark, referenceMs));
+    }
+
+    @Test
+    void spatemTimeMarkToWallClockReturnsMaxValueFor36000() {
+        assertEquals(Long.MAX_VALUE, EtsiConverter.spatemTimeMarkToWallClock(36000, System.currentTimeMillis()));
+    }
+
+    @Test
+    void spatemTimeMarkToWallClockReturnsMaxValueFor36001() {
+        assertEquals(Long.MAX_VALUE, EtsiConverter.spatemTimeMarkToWallClock(36001, System.currentTimeMillis()));
+    }
+
+    @Test
+    void spatemTimeMarkToWallClockZeroIsStartOfCurrentHour() {
+        // At exactly the start of an hour, timeMark=0 should be 0 ms ahead
+        long referenceMs = 3_600_000L * 3; // exact start of hour 3
+        assertEquals(referenceMs, EtsiConverter.spatemTimeMarkToWallClock(0, referenceMs));
+    }
 }
 

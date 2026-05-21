@@ -70,7 +70,9 @@ public class RoadSensorManager {
                     updateRoadSensor(uuid, position, cpmFrame);
                 }
             } catch (IOException e) {
-                LOGGER.log(Level.WARNING, TAG, "CPM parsing error: " + e);
+                LOGGER.log(Level.WARNING, TAG + " CPM parsing error: " + e);
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, TAG + " CPM processing error: " + e);
             }
         }
     }

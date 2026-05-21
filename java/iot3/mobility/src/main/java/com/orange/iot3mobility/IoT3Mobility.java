@@ -1,5 +1,5 @@
 /*
- Copyright 2016-2025 Orange
+ Copyright 2016-2026 Orange
 
  This software is distributed under the MIT license, see LICENSE.txt file for more details.
 
@@ -31,11 +31,21 @@ import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
 import com.orange.iot3mobility.messages.denm.DenmHelper;
 import com.orange.iot3mobility.messages.denm.v113.model.DenmEnvelope113;
 import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
+import com.orange.iot3mobility.messages.mapem.MapemHelper;
+import com.orange.iot3mobility.messages.mapem.v200.model.MapemEnvelope200;
+import com.orange.iot3mobility.messages.mapem.v200.model.shared.Position3D;
+import com.orange.iot3mobility.messages.spatem.SpatemHelper;
+import com.orange.iot3mobility.messages.spatem.v200.model.SpatemEnvelope200;
+import com.orange.iot3mobility.messages.spatem.v200.model.intersection.IntersectionState;
 import com.orange.iot3mobility.managers.*;
+import com.orange.iot3mobility.roadobjects.SignalController;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.quadkey.QuadTileHelper;
 import com.orange.iot3mobility.roadobjects.RoadHazard;
+import com.orange.iot3mobility.roadobjects.RoadGeometry;
+import com.orange.iot3mobility.roadobjects.RoadIntersection;
 import com.orange.iot3mobility.roadobjects.RoadSensor;
+import com.orange.iot3mobility.roadobjects.RoadSegment;
 import com.orange.iot3mobility.roadobjects.RoadUser;
 
 import java.io.IOException;
@@ -63,6 +73,8 @@ public class IoT3Mobility {
     private final CamHelper camHelper = new CamHelper();
     private final CpmHelper cpmHelper = new CpmHelper();
     private final DenmHelper denmHelper = new DenmHelper();
+    private final MapemHelper mapemHelper = new MapemHelper();
+    private final SpatemHelper spatemHelper = new SpatemHelper();
 
     private final String uuid;
     private final String context;
@@ -310,6 +322,80 @@ public class IoT3Mobility {
     }
 
     /**
+     * Sets the Region of Interest (RoI) for road geometry (MAPEM) based on a specific
+     * geographical position and zoom level.
+     *
+     * @param position the LatLng representing the target geographical position for the RoI.
+     * @param level the zoom level for the RoI, which should be between 1 and 22.
+     * @param withNeighborTiles include neighboring tiles around the computed target tile.
+     */
+    public void setRoadGeometryRoI(LatLng position, int level, boolean withNeighborTiles) {
+        if(roIManager != null) roIManager.setRoadGeometryRoI(position, level, withNeighborTiles);
+    }
+
+    /**
+     * Set up the road geometry callback to be informed of MAPEM-derived intersection and segment updates
+     * in the RoI defined with {@link #setRoadGeometryRoI(LatLng, int, boolean)}.
+     *
+     * @param ioT3RoadGeometryCallback the callback for new/updated intersections and road segments
+     */
+    public void setRoadGeometryCallback(IoT3RoadGeometryCallback ioT3RoadGeometryCallback) {
+        RoadGeometryManager.init(ioT3RoadGeometryCallback);
+    }
+
+    /**
+     * Sets the Region of Interest (RoI) for signal phase and timing (SPATEM) based on a specific
+     * geographical position and zoom level.
+     *
+     * @param position          the LatLng representing the target geographical position for the RoI.
+     * @param level             the zoom level for the RoI, which should be between 1 and 22.
+     * @param withNeighborTiles include neighboring tiles around the computed target tile.
+     */
+    public void setSignalControllerRoI(LatLng position, int level, boolean withNeighborTiles) {
+        if (roIManager != null) roIManager.setTrafficLightRoI(position, level, withNeighborTiles);
+    }
+
+    /**
+     * Set up the signal controller callback to be informed of SPATEM-derived signal controller updates
+     * in the RoI defined with {@link #setSignalControllerRoI(LatLng, int, boolean)}.
+     *
+     * @param ioT3SignalControllerCallback the callback for new/updated signal controllers
+     */
+    public void setSignalControllerCallback(IoT3SignalControllerCallback ioT3SignalControllerCallback) {
+        SignalControllerManager.init(ioT3SignalControllerCallback);
+    }
+
+    /**
+     * Sets the Region of Interest (RoI) for both road geometry (MAPEM) and signal phase and timing
+     * (SPATEM) simultaneously, using the same position and zoom level.
+     * <p>
+     * Equivalent to calling {@link #setMapRoI} and {@link #setSpatemRoI} with the same parameters.
+     * Position resolution between SPATEM signal groups and MAPEM intersection geometry is automatic.
+     *
+     * @param position          the LatLng representing the target geographical position for the RoI.
+     * @param level             the zoom level for the RoI, which should be between 1 and 22.
+     * @param withNeighborTiles include neighboring tiles around the computed target tile.
+     */
+    public void setIntersectionRoI(LatLng position, int level, boolean withNeighborTiles) {
+        if (roIManager != null) roIManager.setIntersectionRoI(position, level, withNeighborTiles);
+    }
+
+    /**
+     * Set up the unified intersection callback to be informed of both MAPEM-derived geometry events
+     * and SPATEM-derived traffic light events in the RoI defined with
+     * {@link #setIntersectionRoI(LatLng, int, boolean)}.
+     * <p>
+     * Equivalent to calling {@link #setRoadGeometryCallback} and {@link #setTrafficLightCallback}
+     * with the same object.
+     *
+     * @param ioT3IntersectionCallback the unified callback for road geometry and traffic lights
+     */
+    public void setIntersectionCallback(IoT3IntersectionCallback ioT3IntersectionCallback) {
+        RoadGeometryManager.init(ioT3IntersectionCallback);
+        SignalControllerManager.init(ioT3IntersectionCallback);
+    }
+
+    /**
      * Set up the raw message callback to be informed of any message being received.
      *
      * @param ioT3RawMessageCallback the callback to be informed upon message reception, before treatment.
@@ -323,6 +409,8 @@ public class IoT3Mobility {
         if(topic.contains("/cam/")) RoadUserManager.processCam(message, camHelper);
         else if(topic.contains("/cpm/")) RoadSensorManager.processCpm(message, cpmHelper);
         else if(topic.contains("/denm/")) RoadHazardManager.processDenm(message, denmHelper);
+        else if(topic.contains("/mapem/")) RoadGeometryManager.processMapem(message, mapemHelper);
+        else if(topic.contains("/spatem/")) SignalControllerManager.processSpatem(message, spatemHelper);
     }
 
     /**
@@ -510,6 +598,92 @@ public class IoT3Mobility {
     }
 
     /**
+     * Send a MAPEM - Map Extended Message - v2.0.0.
+     * The publish topic is derived from the reference point of the first intersection (or road segment
+     * if no intersections are present).
+     *
+     * @param mapemV200 the MAPEM message describing map geometry
+     */
+    public void sendMapem(MapemEnvelope200 mapemV200) throws IOException {
+        // derive publish position from the first intersection ref_point, fallback to road segment
+        double lat;
+        double lon;
+        if (mapemV200.message().intersections() != null && !mapemV200.message().intersections().isEmpty()) {
+            Position3D refPoint = mapemV200.message().intersections().get(0).refPoint();
+            lat = EtsiConverter.latitudeDegrees(refPoint.latitude());
+            lon = EtsiConverter.longitudeDegrees(refPoint.longitude());
+        } else if (mapemV200.message().roadSegments() != null && !mapemV200.message().roadSegments().isEmpty()) {
+            Position3D refPoint = mapemV200.message().roadSegments().get(0).refPoint();
+            lat = EtsiConverter.latitudeDegrees(refPoint.latitude());
+            lon = EtsiConverter.longitudeDegrees(refPoint.longitude());
+        } else {
+            return; // nothing to send
+        }
+
+        String quadkey = QuadTileHelper.latLngToQuadKey(lat, lon, 22);
+        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
+        String topic = context + "/inQueue/v2x/mapem/" + uuid + geoExtension;
+
+        if (isConnected()) ioT3Core.mqttPublish(topic, mapemHelper.toJson(mapemV200), false, 0, 1);
+    }
+
+    /**
+     * Send a SPATEM - Signal Phase and Timing Extended Message - v2.0.0.
+     * <p>
+     * The publish topic is geo-routed using a quadkey derived from the position of the matching
+     * intersection in the local MAPEM cache. If no matching intersection is found, the provided
+     * {@code fallbackPosition} is used instead. If both are absent, the message is not sent and
+     * an {@link IOException} is thrown.
+     *
+     * @param spatemV200       the SPATEM message describing signal phase and timing
+     * @param fallbackPosition optional fallback position used when no MAPEM-derived position is
+     *                         available for the first intersection in the message; may be {@code null}
+     * @throws IOException if no position can be resolved and {@code fallbackPosition} is {@code null}
+     */
+    public void sendSpatem(SpatemEnvelope200 spatemV200, LatLng fallbackPosition) throws IOException {
+        double lat;
+        double lon;
+
+        // attempt to resolve the publish position from the MAPEM-derived intersection cache
+        if (spatemV200.message().intersections() != null && !spatemV200.message().intersections().isEmpty()) {
+            IntersectionState firstIntersectionState = spatemV200.message().intersections().get(0);
+            int regionId = firstIntersectionState.id().region() != null ? firstIntersectionState.id().region() : 0;
+            int intersectionId = firstIntersectionState.id().id();
+
+            LatLng resolvedPosition = null;
+            for (RoadIntersection roadIntersection : RoadGeometryManager.getRoadIntersections()) {
+                if (roadIntersection.getRegionId() == regionId
+                        && roadIntersection.getIntersectionId() == intersectionId) {
+                    resolvedPosition = roadIntersection.getRefPoint();
+                    break;
+                }
+            }
+
+            if (resolvedPosition != null) {
+                lat = resolvedPosition.getLatitude();
+                lon = resolvedPosition.getLongitude();
+            } else if (fallbackPosition != null) {
+                lat = fallbackPosition.getLatitude();
+                lon = fallbackPosition.getLongitude();
+            } else {
+                throw new IOException("Cannot send SPATEM: no MAPEM-derived position available for intersection "
+                        + regionId + "/" + intersectionId + " and no fallback position provided.");
+            }
+        } else if (fallbackPosition != null) {
+            lat = fallbackPosition.getLatitude();
+            lon = fallbackPosition.getLongitude();
+        } else {
+            throw new IOException("Cannot send SPATEM: message has no intersections and no fallback position was provided.");
+        }
+
+        String quadkey = QuadTileHelper.latLngToQuadKey(lat, lon, 22);
+        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
+        String topic = context + "/inQueue/v2x/spatem/" + uuid + geoExtension;
+
+        if (isConnected()) ioT3Core.mqttPublish(topic, spatemHelper.toJson(spatemV200), false, 0, 1);
+    }
+
+    /**
      * Retrieve a read-only list of the Road Users in the vicinity.
      *
      * @return the read-only list of {@link com.orange.iot3mobility.roadobjects.RoadUser} objects
@@ -534,6 +708,58 @@ public class IoT3Mobility {
      */
     public static List<RoadSensor> getRoadSensors() {
         return RoadSensorManager.getRoadSensors();
+    }
+
+    /**
+     * Retrieve a read-only list of all known road geometry containers (one per MAPEM source).
+     *
+     * @return the read-only list of {@link com.orange.iot3mobility.roadobjects.RoadGeometry} objects
+     */
+    public static List<RoadGeometry> getRoadGeometries() {
+        return RoadGeometryManager.getRoadGeometries();
+    }
+
+    /**
+     * Retrieve a flat read-only list of all known road intersections across all MAPEM sources.
+     *
+     * @return the read-only list of {@link RoadIntersection} objects
+     */
+    public static List<RoadIntersection> getRoadIntersections() {
+        return RoadGeometryManager.getRoadIntersections();
+    }
+
+    /**
+     * Retrieve a read-only list of all known road segments.
+     *
+     * @return the read-only list of {@link RoadSegment} objects
+     */
+    public static List<RoadSegment> getRoadSegments() {
+        return RoadGeometryManager.getRoadSegments();
+    }
+
+    /**
+     * Remove all stored road geometry (intersections and road segments).
+     * Call this when leaving a geographic area to avoid unbounded memory growth.
+     */
+    public static void clearRoadGeometry() {
+        RoadGeometryManager.clear();
+    }
+
+    /**
+     * Retrieve a read-only list of all known signal controllers (one per intersection per SPATEM source).
+     *
+     * @return the read-only list of {@link SignalController} objects
+     */
+    public static List<SignalController> getSignalControllers() {
+        return SignalControllerManager.getSignalControllers();
+    }
+
+    /**
+     * Remove all stored signal controller data.
+     * Call this when leaving a geographic area to avoid unbounded memory growth.
+     */
+    public static void clearSignalControllers() {
+        SignalControllerManager.clear();
     }
 
     /**

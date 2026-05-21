@@ -50,6 +50,27 @@ public final class EtsiConverter {
         return unixTimestampMs - DELTA_1970_2004_MILLISEC;
     }
 
+    /**
+     * Converts a SPATEM {@code TimeChangeDetail} time mark to an absolute Unix wall-clock timestamp.
+     * <p>
+     * A time mark is expressed in tenths of a second within the current or next UTC hour (0–35999).
+     * Values ≥ 36000 indicate an indefinite or unknown future time and return {@link Long#MAX_VALUE}.
+     * <p>
+     * The conversion finds the next occurrence of {@code timeMark} on or after {@code referenceMs},
+     * wrapping into the following hour when the mark has already passed within the current hour.
+     *
+     * @param timeMark    ETSI time mark in tenths of a second (0–36001)
+     * @param referenceMs reference wall-clock time in Unix milliseconds (e.g. {@code System.currentTimeMillis()})
+     * @return absolute Unix ms corresponding to the time mark, or {@link Long#MAX_VALUE} if unknown
+     */
+    public static long spatemTimeMarkToWallClock(int timeMark, long referenceMs) {
+        if (timeMark >= 36000) return Long.MAX_VALUE;
+        long currentTenthsInHour = (referenceMs % 3_600_000L) / 100L;
+        long remainingTenths = timeMark - currentTenthsInHour;
+        if (remainingTenths < 0) remainingTenths += 36000L; // wrap to next hour
+        return referenceMs + remainingTenths * 100L;
+    }
+
     // -------------------------------------------------------------------------
     // Position (latitude / longitude / altitude)
     // -------------------------------------------------------------------------

@@ -8,10 +8,10 @@ When working on files under `java/iot3/` read and follow:
 
 Two main Gradle sub-modules under `java/iot3/`, each independently publishable:
 
-| Module | Package | Role |
-|--------|---------|------|
-| `core` | `com.orange.iot3core` | Platform connectivity: MQTTv5, OpenTelemetry, LwM2M |
-| `mobility` | `com.orange.iot3mobility` | V2X/ITS layer on top of core: CAM/DENM/CPM messaging, geo-routing |
+| Module | Package | Role                                                                           |
+|--------|---------|--------------------------------------------------------------------------------|
+| `core` | `com.orange.iot3core` | Platform connectivity: MQTTv5, OpenTelemetry, LwM2M                            |
+| `mobility` | `com.orange.iot3mobility` | V2X/ITS layer on top of core: CAM/DENM/CPM/MAPEM/SPATEM messaging, geo-routing |
 
 `mobility` depends on `core` via `implementation project(':core')`. The third `examples` sub-module depends on both.
 
@@ -69,11 +69,13 @@ messages/{type}/
 
 Supported versions:
 
-| Type | Versions |
-|------|----------|
-| CAM  | `V1_1_3`, `V2_3_0` |
-| DENM | `V1_1_3`, `V2_2_0` |
-| CPM  | `V1_2_1`, `V2_1_1` |
+| Type   | Versions           |
+|--------|--------------------|
+| CAM    | `V1_1_3`, `V2_3_0` |
+| DENM   | `V1_1_3`, `V2_2_0` |
+| CPM    | `V1_2_1`, `V2_1_1` |
+| MAPEM  | `V2_0_0`           |
+| SPATEM | `V2_0_0`           |
 
 For instance, `CamCodec.read(String json)` returns a `CamFrame<?>` — always check `camFrame.version()` before casting `camFrame.envelope()`.
 
@@ -142,8 +144,49 @@ The manager key for each road object is a **composite string**, not just the `so
 | `RoadUser` | `{sourceUuid}_{stationId}`                            |
 | `RoadHazard` | `{sourceUuid}_{sequence_number}`                            |
 | `RoadSensor` / `SensorObject` | `{sourceUuid}_{stationId}`                            |
+| `RoadGeometry` | `{sourceUuid}_{stationId}`                            |
+| `SignalController` | `{sourceUuid}_{regionId}_{intersectionId}` |
 
 Two CAM messages from the same vehicle but with different `stationId` values will create two separate `RoadUser` entries.
+
+### MAPEM / SPATEM — Intersection & Traffic Light Model
+
+MAPEM and SPATEM are tightly coupled: MAPEM provides static intersection geometry and SPATEM provides dynamic signal phase and timing for the same intersections.
+
+**Object model:**
+
+| Road object | Manager | Lifetime |
+|-------------|---------|----------|
+| `RoadGeometry` | `RoadGeometryManager` | Indefinite — call `clearRoadGeometry()` when leaving an area |
+| `RoadIntersection` | owned by `RoadGeometry` | Indefinite, revision-guarded updates |
+| `RoadSegment` | owned by `RoadGeometry` | Indefinite, revision-guarded updates |
+| `SignalController` | `SignalControllerManager` | 5 000 ms — expires if no SPATEM update received; `signalControllerExpired()` fires on removal |
+| `SignalGroup` | owned by `SignalController` | Replaced on every SPATEM update |
+
+**Key concepts:**
+
+- One `RoadGeometry` per MAPEM source station, keyed `{sourceUuid}_{stationId}`.
+- One `SignalController` per intersection per SPATEM source, keyed `{sourceUuid}_{regionId}_{intersectionId}`.
+- `RoadIntersection` and `RoadSegment` updates are revision-guarded: a new MAPEM frame is only applied when its revision is strictly higher than the stored one.
+- `SignalGroup` (inside `SignalController`) exposes `SignalPhase`, `SignalColor` (including blinking state), `minEndTime`, `getPosition()` (a single representative `LatLng` stop-line position for simple map rendering), and `getLaneLevelPositions()` (a `Map<Integer, LatLng>` of all ingress lane stop-line positions keyed by lane ID, for per-lane display or V2X on-board use).
+- `SignalController.getSignalGroupForLane(int laneId)` returns the `SignalGroup` controlling a specific lane (resolved from MAPEM `connects_to` data); returns `null` before MAPEM resolution or for unknown lanes.
+- **Position resolution** between SPATEM and MAPEM is automatic and bidirectional: when a MAPEM arrives that matches the `regionId` + `intersectionId` of a known `SignalController`, signal group positions are resolved; and when a SPATEM arrives first, it is resolved as soon as the matching MAPEM is received.
+
+**Recommended setup** (use the unified API rather than the separate methods):
+
+```java
+ioT3Mobility.setIntersectionRoI(position, level, withNeighborTiles); // subscribes to both MAPEM and SPATEM
+ioT3Mobility.setIntersectionCallback(new IoT3IntersectionCallback() {
+    // MAPEM callbacks: mapemArrived, newRoadGeometry, roadGeometryUpdated
+    // SPATEM callbacks: spatemArrived, newSignalController, signalControllerUpdated
+});
+```
+
+**Sending SPATEM** requires a geographic position for quadkey-based topic routing (SPATEM has no position field). The SDK resolves it automatically from the MAPEM cache; a fallback `LatLng` must be provided when MAPEM data may not yet be available:
+
+```java
+ioT3Mobility.sendSpatem(spatemEnvelope, fallbackPosition); // fallbackPosition may be null if MAPEM is guaranteed
+```
 
 ### Bootstrap Flow (Optional)
 
@@ -156,17 +199,19 @@ new IoT3MobilityBuilder(uuid, context).bootstrapConfig(bootstrapConfig, enableTe
 
 ### Key Files
 
-| File | Purpose |
-|------|---------|
-| `core/src/.../IoT3Core.java` | Core SDK entry point + builder |
-| `mobility/src/.../IoT3Mobility.java` | Mobility SDK entry point + builder |
-| `mobility/src/.../managers/RoIManager.java` | Geo-filtered MQTT subscription management |
-| `mobility/src/.../messages/EtsiConverter.java` | All SI↔ETSI unit conversions |
-| `mobility/src/.../quadkey/QuadTileHelper.java` | Quadkey↔LatLng and topic path helpers |
-| `mobility/src/.../messages/cam/core/CamCodec.java` | Streaming multi-version CAM decode/encode |
-| `mobility/src/.../messages/denm/core/DenmCodec.java` | Streaming multi-version DENM decode/encode |
-| `mobility/src/.../messages/cpm/core/CpmCodec.java` | Streaming multi-version CPM decode/encode |
-| `examples/src/.../Iot3MobilityExample.java` | Full working usage reference |
+| File                                                     | Purpose                                      |
+|----------------------------------------------------------|----------------------------------------------|
+| `core/src/.../IoT3Core.java`                             | Core SDK entry point + builder               |
+| `mobility/src/.../IoT3Mobility.java`                     | Mobility SDK entry point + builder           |
+| `mobility/src/.../managers/RoIManager.java`              | Geo-filtered MQTT subscription management    |
+| `mobility/src/.../messages/EtsiConverter.java`           | All SI↔ETSI unit conversions                 |
+| `mobility/src/.../quadkey/QuadTileHelper.java`           | Quadkey↔LatLng and topic path helpers        |
+| `mobility/src/.../messages/cam/core/CamCodec.java`       | Streaming multi-version CAM decode/encode    |
+| `mobility/src/.../messages/denm/core/DenmCodec.java`     | Streaming multi-version DENM decode/encode   |
+| `mobility/src/.../messages/cpm/core/CpmCodec.java`       | Streaming multi-version CPM decode/encode    |
+| `mobility/src/.../messages/mapem/core/MapemCodec.java`   | Streaming multi-version MAPEM decode/encode  |
+| `mobility/src/.../messages/spatem/core/SpatemCodec.java` | Streaming multi-version SPATEM decode/encode |
+| `examples/src/.../Iot3MobilityExample.java`              | Full working usage reference                 |
 
 ### Coding Conventions
 

@@ -77,8 +77,10 @@ public class RoadHazardManager {
                     terminate = denm220.managementContainer().termination() != null;
                     createOrUpdateRoadHazard(uuid, expired, terminate, denmFrame);
                 }
-            } catch (JSONException | IOException e) {
-                LOGGER.log(Level.WARNING, TAG, "DENM parsing error: " + e);
+            } catch (IOException e) {
+                LOGGER.log(Level.WARNING, TAG + " DENM parsing error: " + e);
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, TAG + " DENM processing error: " + e);
             }
         }
     }

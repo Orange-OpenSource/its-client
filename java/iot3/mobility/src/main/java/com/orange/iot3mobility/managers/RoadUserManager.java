@@ -86,8 +86,10 @@ public class RoadUserManager {
                         createOrUpdateRoadUser(uuid, stationType, position, speed, heading, camFrame);
                     }
                 }
-            } catch (JSONException | IOException e) {
-                LOGGER.log(Level.WARNING, TAG, "CAM parsing error: " + e);
+            } catch (IOException e) {
+                LOGGER.log(Level.WARNING, TAG + " CAM parsing error: " + e);
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, TAG + " CAM processing error: " + e);
             }
         }
     }
