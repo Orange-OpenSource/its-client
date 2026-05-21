@@ -28,7 +28,7 @@ pip==26.0
 pkginfo==1.12.1.2
 platformdirs==4.3.6
 pycparser==2.22
-Pygments==2.18.0
+Pygments==2.20.0
 pyproject_hooks==1.2.0
 readme_renderer==44.0
 requests==2.32.4
