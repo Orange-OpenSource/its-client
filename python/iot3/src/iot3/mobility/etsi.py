@@ -277,7 +277,7 @@ class Message(abc.ABC):
     def timestamp(self):
         return ETSI.etsi2si(
             self._message["timestamp"],
-            etsi.ETSI.MILLI_SECOND,
+            ETSI.MILLI_SECOND,
         )
 
     def __getitem__(self, key):
