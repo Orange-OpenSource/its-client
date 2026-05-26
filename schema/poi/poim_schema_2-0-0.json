@@ -14,6 +14,11 @@
       "name": "CDD TS 102 894-2",
       "version": "4.2",
       "url": "https://forge.etsi.org/rep/ITS/asn1/cdd_ts102894_2/-/tree/v4.2"
+    },
+    {
+      "name": "EfcDataDictionary ISO 17573-3",
+      "version": "1.3",
+      "url": "https://standards.iso.org/iso/17573/-3/"
     }
   ],
   "type": "object",
@@ -440,14 +445,14 @@
         "latitude": {
           "type": "integer",
           "description": "This DE represents the absolute geographical latitude in a WGS84 coordinate system, providing a range of 90 degrees in north or in south hemisphere. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE",
-          "minimum": -900000000,
-          "maximum": 900000001
+          "minimum": -2147483648,
+          "maximum": 2147483647
         },
         "longitude": {
           "type": "integer",
           "description": "This DE represents the absolute geographical longitude in a WGS84 coordinate system, providing a range of 180 degrees to the east or to the west of the prime meridian. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE",
-          "minimum": -1800000000,
-          "maximum": 1800000001
+          "minimum": -2147483648,
+          "maximum": 2147483647
         },
         "altitude": {
           "type": "integer",
@@ -614,9 +619,7 @@
         "not_allowed_engine_characteristics": {
           "type": "array",
           "items": {
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 255
+            "$ref": "#/$defs/engine_characteristics"
           }
         },
         "allowed_load_types": {
@@ -930,64 +933,15 @@
       "description": "This DF indicates a period occuring on defined days of the week.",
       "type": "object",
       "required": [
-        "days",
-        "opening",
-        "closing"
+        "begin_of_period",
+        "end_of_period"
       ],
       "properties": {
-        "days": {
-          "description": "This DE indicates the applicable day(s) of the week",
-          "type": "object",
-          "required": [
-            "unused",
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "saturday",
-            "sunday"
-          ],
-          "properties": {
-            "unused": {
-              "type": "boolean",
-              "description": "unused bit."
-            },
-            "monday": {
-              "type": "boolean",
-              "description": "monday bit."
-            },
-            "tuesday": {
-              "type": "boolean",
-              "description": "tuesday bit."
-            },
-            "wednesday": {
-              "type": "boolean",
-              "description": "wednesday bit."
-            },
-            "thursday": {
-              "type": "boolean",
-              "description": "thursday bit."
-            },
-            "friday": {
-              "type": "boolean",
-              "description": "friday bit."
-            },
-            "saturday": {
-              "type": "boolean",
-              "description": "saturday bit."
-            },
-            "sunday": {
-              "type": "boolean",
-              "description": "sunday bit."
-            }
-          }
+        "begin_of_period": {
+          "type": "string"
         },
-        "opening": {
-          "$ref": "#/$defs/time_of_day"
-        },
-        "closing": {
-          "$ref": "#/$defs/time_of_day"
+        "end_of_period": {
+          "type": "string"
         }
       }
     },
@@ -1030,6 +984,59 @@
       ],
       "description": "This DF represents a vehicle category according to the UNECE/TRANS/WP.29/78/Rev.4 [16]. The following options are available:",
       "$comment": "This CHOICE has data-carrying variant(s) 'eu_vehicle_category_l', 'eu_vehicle_category_m', 'eu_vehicle_category_n', 'eu_vehicle_category_o' that would appear as optional sibling fields in a parent SEQUENCE if this type were used."
+    },
+    "engine_characteristics": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255
+    },
+    "day_of_week": {
+      "description": "This DE indicates the applicable day(s) of the week",
+      "type": "object",
+      "required": [
+        "unused",
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday"
+      ],
+      "properties": {
+        "unused": {
+          "type": "boolean",
+          "description": "unused bit."
+        },
+        "monday": {
+          "type": "boolean",
+          "description": "monday bit."
+        },
+        "tuesday": {
+          "type": "boolean",
+          "description": "tuesday bit."
+        },
+        "wednesday": {
+          "type": "boolean",
+          "description": "wednesday bit."
+        },
+        "thursday": {
+          "type": "boolean",
+          "description": "thursday bit."
+        },
+        "friday": {
+          "type": "boolean",
+          "description": "friday bit."
+        },
+        "saturday": {
+          "type": "boolean",
+          "description": "saturday bit."
+        },
+        "sunday": {
+          "type": "boolean",
+          "description": "sunday bit."
+        }
+      }
     },
     "goods_type": {
       "type": "integer",
