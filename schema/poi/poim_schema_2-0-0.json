@@ -1,0 +1,1053 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/poim",
+  "description": "This type represents the POI Information Block concerning a parking availability at a given facility.",
+  "$references": [
+    {
+      "$comment": "This technical specification file (TS) is hereby considered right over the European standard one (EN); meaning that for any difference that may be present between those files this schema will prefer what is defined in the technical specification",
+      "name": "POIM TS 103 916",
+      "version": "1.1",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/poim_ts103916"
+    },
+    {
+      "$comment": "This technical specification file (TS) is hereby considered right over the European standard one (EN); meaning that for any difference that may be present between those files this schema will prefer what is defined in the technical specification",
+      "name": "CDD TS 102 894-2",
+      "version": "4.2",
+      "url": "https://forge.etsi.org/rep/ITS/asn1/cdd_ts102894_2/-/tree/v4.2"
+    }
+  ],
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "message_type",
+    "message_format",
+    "source_uuid",
+    "timestamp",
+    "version",
+    "message"
+  ],
+  "properties": {
+    "message_type": {
+      "type": "string",
+      "description": "Type of the message carried in message property.",
+      "const": "poi"
+    },
+    "message_format": {
+      "enum": [
+        "json/raw",
+        "asn1/uper"
+      ]
+    },
+    "source_uuid": {
+      "type": "string",
+      "description": "Unique id all over the world for the message sender.",
+      "examples": [
+        "com_car_4294967295",
+        "com_application_42"
+      ]
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Timestamp when the message was generated since Unix Epoch (millisecond).",
+      "examples": [
+        1574778515424
+      ],
+      "minimum": 1514764800000,
+      "maximum": 1830297600000
+    },
+    "version": {
+      "type": "string",
+      "description": "JSON message format version.",
+      "const": "2.0.0"
+    },
+    "message": {
+      "type": "object",
+      "description": "POI payload — either a structured JSON object (json/raw) or a binary ASN.1 UPER frame (asn1/uper).",
+      "oneOf": [
+        {
+          "title": "json/raw",
+          "description": "Structured JSON representation of the POI fields.",
+          "type": "object",
+          "required": [
+            "protocol_version",
+            "station_id",
+            "message_id",
+            "parking_availability_block"
+          ],
+          "properties": {
+            "protocol_version": {
+              "type": "integer",
+              "description": "The DE represents an ordinal number that indicates the position of an element in a set",
+              "minimum": 0,
+              "maximum": 255
+            },
+            "station_id": {
+              "type": "integer",
+              "description": "This DE represents the identifier of an ITS-S. The ITS-S ID may be a pseudonym. It may change over space and/or over time",
+              "minimum": 0,
+              "maximum": 4294967295
+            },
+            "message_id": {
+              "type": "integer",
+              "description": "Message identifier. For POI, the value shall be set to poi(3).",
+              "const": 3
+            },
+            "parking_availability_block": {
+              "description": "This type represents the POI Information Block concerning a parking availability at a given facility.",
+              "type": "object",
+              "required": [
+                "management_container",
+                "place_info",
+                "aggregatedstatus"
+              ],
+              "properties": {
+                "management_container": {
+                  "$ref": "#/$defs/poi_block_management_container"
+                },
+                "place_info": {
+                  "$ref": "#/$defs/general_parking_place_container"
+                },
+                "aggregatedstatus": {
+                  "$ref": "#/$defs/parking_status_container"
+                },
+                "detailedstatus": {
+                  "$ref": "#/$defs/parking_supply_capabilities_container"
+                },
+                "related_poi": {
+                  "$ref": "#/$defs/related_poi_info_block_container"
+                }
+              }
+            }
+          }
+        },
+        {
+          "title": "asn1/uper",
+          "description": "ASN.1 UPER binary encoding, base64-encoded.",
+          "type": "object",
+          "required": [
+            "version",
+            "payload"
+          ],
+          "properties": {
+            "version": {
+              "type": "string",
+              "description": "ASN.1 PDU version.",
+              "examples": [
+                "ETSI TS 103 916 v1.1.1"
+              ]
+            },
+            "payload": {
+              "type": "string",
+              "contentEncoding": "base64",
+              "description": "Base64-encoded ASN.1 UPER binary payload."
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "wgs84_angle": {
+      "description": "This DF represents an angular component along with a confidence value in the WGS84 coordinate system. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE.",
+      "type": "object",
+      "required": [
+        "value",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "description": "This DE represents an angle value in degrees described in the WGS84 reference system with respect to the WGS84 north. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE. When the information is not available, the DE shall be set to 3 601. The value 3600 shall not be used",
+          "minimum": 0,
+          "maximum": 3601
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "This DE indicates the angle confidence value which represents the estimated accuracy of an angle value with a default confidence level of 95 %. If required, the confidence level can be defined by the corresponding standards applying this DE",
+          "minimum": 1,
+          "maximum": 127
+        }
+      }
+    },
+    "poi_block_management_container": {
+      "description": "This type represents the common management container of the POI Information Blocks.",
+      "type": "object",
+      "required": [
+        "service_provider_id",
+        "block_identification_number",
+        "timestamp"
+      ],
+      "properties": {
+        "service_provider_id": {
+          "description": "This DF identifies an organization.",
+          "type": "object",
+          "required": [
+            "country_code",
+            "provider_identifier"
+          ],
+          "properties": {
+            "country_code": {
+              "type": "string",
+              "description": "This DE represents an ISO 3166-1 [25] country code encoded using ITA-2 encoding. BIT STRING"
+            },
+            "provider_identifier": {
+              "type": "integer",
+              "description": "This DE represent the identifier of an organization according to the applicable registry",
+              "minimum": 0,
+              "maximum": 16383
+            }
+          }
+        },
+        "block_identification_number": {
+          "type": "integer",
+          "description": "This DE is a general identifier",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "timestamp": {
+          "type": "integer",
+          "description": "This DE represents the number of elapsed (TAI) milliseconds since the ITS Epoch. The ITS epoch is `00:00:00.000 UTC, 1 January 2004`. \"Elapsed\" means that the true number of milliseconds is continuously counted without interruption, i.e. it is not altered by leap seconds, which occur in UTC",
+          "minimum": 0,
+          "maximum": 4398046511103
+        },
+        "linked_ivims": {
+          "description": "This DF shall contain a list of @ref IvimReference.",
+          "type": "array",
+          "items": {
+            "description": "This DF provides the reference to the information contained in a IVIM according to ETSI TS 103 301 [15].",
+            "type": "object",
+            "required": [
+              "service_provider_id",
+              "ivi_identification_number"
+            ],
+            "properties": {
+              "service_provider_id": {
+                "description": "This DF identifies an organization.",
+                "type": "object",
+                "required": [
+                  "country_code",
+                  "provider_identifier"
+                ],
+                "properties": {
+                  "country_code": {
+                    "type": "string",
+                    "description": "This DE represents an ISO 3166-1 [25] country code encoded using ITA-2 encoding. BIT STRING"
+                  },
+                  "provider_identifier": {
+                    "type": "integer",
+                    "description": "This DE represent the identifier of an organization according to the applicable registry",
+                    "minimum": 0,
+                    "maximum": 16383
+                  }
+                }
+              },
+              "ivi_identification_number": {
+                "type": "integer",
+                "description": "This DE represents the identifier of the IVIM",
+                "minimum": 1,
+                "maximum": 32767
+              }
+            }
+          }
+        },
+        "linked_mapems": {
+          "description": "This DF shall contain a list of @ref MapReference.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "oneOf": [
+              {
+                "required": [
+                  "roadsegment"
+                ]
+              },
+              {
+                "required": [
+                  "intersection"
+                ]
+              }
+            ],
+            "properties": {
+              "roadsegment": {
+                "description": "This DF represents a unique id for a road segment",
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "region": {
+                    "type": "integer",
+                    "description": "This DE is a general identifier",
+                    "minimum": 0,
+                    "maximum": 65535
+                  },
+                  "id": {
+                    "type": "integer",
+                    "description": "This DE is a general identifier",
+                    "minimum": 0,
+                    "maximum": 65535
+                  }
+                }
+              },
+              "intersection": {
+                "description": "This DF represents a unique id for an intersection, in accordance with ETSI TS 103 301 [15].",
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "region": {
+                    "type": "integer",
+                    "description": "This DE is a general identifier",
+                    "minimum": 0,
+                    "maximum": 65535
+                  },
+                  "id": {
+                    "type": "integer",
+                    "description": "This DE is a general identifier",
+                    "minimum": 0,
+                    "maximum": 65535
+                  }
+                }
+              }
+            },
+            "description": "This DF provides the reference to the information contained in a MAPEM according to ETSI TS 103 301 [15]"
+          }
+        }
+      }
+    },
+    "related_poi_info_block_container": {
+      "description": "This DF shall contain a list of @ref RelatedPoiInfoBlock and represents a commmon container to refer to other POI Information Blocks.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/related_poi_info_block"
+      }
+    },
+    "related_poi_info_block": {
+      "description": "This type can be used to reference to other related POI Information Blocks.",
+      "type": "object",
+      "required": [
+        "poi_info_block_type",
+        "service_provider_id",
+        "block_identification_number"
+      ],
+      "properties": {
+        "poi_info_block_type": {
+          "type": "integer",
+          "description": "This DE represents the identifier of the container type",
+          "minimum": 1,
+          "maximum": 128
+        },
+        "service_provider_id": {
+          "description": "This DF identifies an organization.",
+          "type": "object",
+          "required": [
+            "country_code",
+            "provider_identifier"
+          ],
+          "properties": {
+            "country_code": {
+              "type": "string",
+              "description": "This DE represents an ISO 3166-1 [25] country code encoded using ITA-2 encoding. BIT STRING"
+            },
+            "provider_identifier": {
+              "type": "integer",
+              "description": "This DE represent the identifier of an organization according to the applicable registry",
+              "minimum": 0,
+              "maximum": 16383
+            }
+          }
+        },
+        "block_identification_number": {
+          "type": "integer",
+          "description": "This DE is a general identifier",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "timestamp": {
+          "type": "integer",
+          "description": "This DE represents the number of elapsed (TAI) milliseconds since the ITS Epoch. The ITS epoch is `00:00:00.000 UTC, 1 January 2004`. \"Elapsed\" means that the true number of milliseconds is continuously counted without interruption, i.e. it is not altered by leap seconds, which occur in UTC",
+          "minimum": 0,
+          "maximum": 4398046511103
+        }
+      }
+    },
+    "general_parking_place_container": {
+      "description": "This type represents the General Parking Facility Container.",
+      "type": "object",
+      "required": [
+        "position",
+        "name"
+      ],
+      "properties": {
+        "position": {
+          "$ref": "#/$defs/geo_position"
+        },
+        "name": {
+          "type": "string"
+        },
+        "opening_periods": {
+          "$ref": "#/$defs/periods"
+        },
+        "address": {
+          "type": "string"
+        },
+        "phone_number": {
+          "type": "string"
+        },
+        "website": {
+          "type": "string"
+        }
+      }
+    },
+    "parking_status_container": {
+      "description": "This type represents the Parking Status Container.",
+      "type": "object",
+      "required": [
+        "current_facility_status"
+      ],
+      "properties": {
+        "current_facility_status": {
+          "type": "integer",
+          "description": "This DE indicates the opening status",
+          "minimum": 0,
+          "maximum": 15
+        },
+        "current_occupancy": {
+          "$ref": "#/$defs/occupancy_information"
+        },
+        "detailed_status": {
+          "$ref": "#/$defs/parking_status_list"
+        }
+      }
+    },
+    "parking_supply_capabilities_container": {
+      "description": "This type represents the ParkingSupplyCapabilitiesContainer and is a list of @ref ParkingAreas.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/parking_areas"
+      }
+    },
+    "geo_position": {
+      "description": "This DF indicates a geographical position.",
+      "type": "object",
+      "required": [
+        "latitude",
+        "longitude",
+        "altitude"
+      ],
+      "properties": {
+        "latitude": {
+          "type": "integer",
+          "description": "This DE represents the absolute geographical latitude in a WGS84 coordinate system, providing a range of 90 degrees in north or in south hemisphere. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE",
+          "minimum": -900000000,
+          "maximum": 900000001
+        },
+        "longitude": {
+          "type": "integer",
+          "description": "This DE represents the absolute geographical longitude in a WGS84 coordinate system, providing a range of 180 degrees to the east or to the west of the prime meridian. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE",
+          "minimum": -1800000000,
+          "maximum": 1800000001
+        },
+        "altitude": {
+          "type": "integer",
+          "description": "This DE represents the altitude value in a WGS84 coordinate system. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE",
+          "minimum": -100000,
+          "maximum": 800001
+        }
+      }
+    },
+    "delta_position": {
+      "description": "This DF indicates a geographical position with reference to a reference position.",
+      "type": "object",
+      "required": [
+        "delta_latitude",
+        "delta_longitude"
+      ],
+      "properties": {
+        "delta_latitude": {
+          "type": "integer",
+          "description": "This DE represents an offset latitude with regards to a defined latitude value. It may be used to describe a geographical point with regards to a specific reference geographical position",
+          "minimum": -131071,
+          "maximum": 131072
+        },
+        "delta_longitude": {
+          "type": "integer",
+          "description": "This DE represents an offset longitude with regards to a defined longitude value. It may be used to describe a geographical point with regards to a specific reference geographical position",
+          "minimum": -131071,
+          "maximum": 131072
+        }
+      }
+    },
+    "delta_positions": {
+      "description": "This DF shall contain an an ordered sequence of @ref DeltaPosition with respect to the previous position with the first instance referring to a reference position and with the order implicitly defining a direction.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/delta_position"
+      }
+    },
+    "delta_reference_position": {
+      "description": "This DF defines a geographical point position as a 3 dimensional offset position to a geographical reference point.",
+      "type": "object",
+      "required": [
+        "delta_latitude",
+        "delta_longitude",
+        "delta_altitude"
+      ],
+      "properties": {
+        "delta_latitude": {
+          "type": "integer",
+          "description": "This DE represents an offset latitude with regards to a defined latitude value. It may be used to describe a geographical point with regards to a specific reference geographical position",
+          "minimum": -131071,
+          "maximum": 131072
+        },
+        "delta_longitude": {
+          "type": "integer",
+          "description": "This DE represents an offset longitude with regards to a defined longitude value. It may be used to describe a geographical point with regards to a specific reference geographical position",
+          "minimum": -131071,
+          "maximum": 131072
+        },
+        "delta_altitude": {
+          "type": "integer",
+          "description": "This DE represents an offset altitude with regards to a defined altitude value. It may be used to describe a geographical point with regards to a specific reference geographical position",
+          "minimum": -12700,
+          "maximum": 12800
+        }
+      }
+    },
+    "occupancy_information": {
+      "description": "This DF represents occupancy information.",
+      "type": "object",
+      "required": [
+        "rate",
+        "trend",
+        "free_spaces",
+        "total_spaces",
+        "confidence"
+      ],
+      "properties": {
+        "rate": {
+          "type": "integer",
+          "description": "This DE represents an occupancy rate in percentage",
+          "minimum": 1,
+          "maximum": 101
+        },
+        "trend": {
+          "type": "integer",
+          "description": "This DE indicates the trend of occupancy",
+          "minimum": 0,
+          "maximum": 15
+        },
+        "free_spaces": {
+          "type": "integer",
+          "description": "This DE represents a number of parking spaces",
+          "minimum": 1,
+          "maximum": 16383
+        },
+        "total_spaces": {
+          "type": "integer",
+          "description": "This DE represents a number of parking spaces",
+          "minimum": 1,
+          "maximum": 16383
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "This DE represents a confidence level in percentage",
+          "minimum": 1,
+          "maximum": 101
+        }
+      }
+    },
+    "parking_area": {
+      "description": "This DF provides information about the parking capabilities and availabilities of a parking identified area.",
+      "type": "object",
+      "required": [
+        "id",
+        "current_occupancy",
+        "location",
+        "level",
+        "arrangement_type",
+        "allowed_vehicle_categories"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "This DE is a general identifier",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "current_occupancy": {
+          "$ref": "#/$defs/occupancy_information"
+        },
+        "location": {
+          "$ref": "#/$defs/geo_position"
+        },
+        "level": {
+          "type": "integer",
+          "minimum": -8,
+          "maximum": 16
+        },
+        "arrangement_type": {
+          "type": "integer",
+          "description": "This DE indicates the arrangement of parking space in a parking area",
+          "minimum": 0,
+          "maximum": 7
+        },
+        "boundary": {
+          "$ref": "#/$defs/delta_positions"
+        },
+        "orientation": {
+          "$ref": "#/$defs/wgs84_angle"
+        },
+        "access_via_lane": {
+          "type": "integer",
+          "description": "This DE is a general identifier",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "allowed_vehicle_categories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/eu_vehicle_category_code"
+          }
+        },
+        "not_allowed_engine_characteristics": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          }
+        },
+        "allowed_load_types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/load_type"
+          }
+        },
+        "not_allowed_load_types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/load_type"
+          }
+        },
+        "height_restriction": {
+          "type": "integer",
+          "description": "This DE represents the height of the vehicle, measured from the ground to the highest point, excluding any antennas. In case vehicles are equipped with adjustable ride heights, camper shells, and any other equipment which may result in varying height, the largest possible height shall be used",
+          "minimum": 1,
+          "maximum": 128
+        },
+        "reservation_type": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "description": "This DE indicates the type of a reservation of a parking space/area",
+            "minimum": 0,
+            "maximum": 31
+          }
+        },
+        "pricing_information": {
+          "type": "string"
+        },
+        "payment_information": {
+          "type": "string"
+        },
+        "booking_contact_info": {
+          "type": "string"
+        },
+        "access_charachteristics": {
+          "type": "string"
+        },
+        "free_spaces_position": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/delta_position"
+          }
+        },
+        "freespaces_id": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "description": "This DE is a general identifier",
+            "minimum": 0,
+            "maximum": 65535
+          }
+        },
+        "spaces_basic": {
+          "$ref": "#/$defs/parking_spaces_basic"
+        },
+        "spaces_detailed": {
+          "$ref": "#/$defs/parking_spaces_detailed"
+        }
+      }
+    },
+    "parking_areas": {
+      "description": "This DF shall contain a list of @ref ParkingArea.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/parking_area"
+      }
+    },
+    "parking_space_basic": {
+      "description": "This DF provides basic information about the parking capabilities and availabilities of a single parking space.",
+      "type": "object",
+      "required": [
+        "id",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "This DE is a general identifier",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "location": {
+          "$ref": "#/$defs/delta_reference_position"
+        },
+        "status": {
+          "$ref": "#/$defs/parking_space_status"
+        }
+      }
+    },
+    "parking_space_detailed": {
+      "description": "This DF provides detailed information about the parking capabilities and availabilities of a single parking space.",
+      "type": "object",
+      "required": [
+        "id",
+        "status",
+        "occupancy_rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "This DE is a general identifier",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "location": {
+          "$ref": "#/$defs/delta_reference_position"
+        },
+        "status": {
+          "$ref": "#/$defs/parking_space_status"
+        },
+        "arrangement_type": {
+          "type": "integer",
+          "description": "This DE indicates the arrangement of parking space in a parking area",
+          "minimum": 0,
+          "maximum": 7
+        },
+        "boundary": {
+          "$ref": "#/$defs/delta_positions"
+        },
+        "orientation": {
+          "$ref": "#/$defs/wgs84_angle"
+        },
+        "occupancy_rule": {
+          "$ref": "#/$defs/parking_occupancy_info"
+        },
+        "charging_station_id": {
+          "type": "integer",
+          "description": "This DE is a general identifier",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "access_via_lane": {
+          "type": "integer",
+          "description": "This DE is a general identifier",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "access_via_parking_spaces": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "description": "This DE is a general identifier",
+            "minimum": 0,
+            "maximum": 65535
+          }
+        },
+        "reservation_type": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "description": "This DE indicates the type of a reservation of a parking space/area",
+            "minimum": 0,
+            "maximum": 31
+          }
+        }
+      }
+    },
+    "parking_spaces_basic": {
+      "description": "This DF shall contain a list of ref @ParkingArea.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/parking_space_detailed"
+      }
+    },
+    "parking_spaces_detailed": {
+      "description": "This DF shall contain a list of ref @ParkingArea.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/parking_space_detailed"
+      }
+    },
+    "parking_space_status": {
+      "type": "string",
+      "enum": [
+        "unknown",
+        "free",
+        "fully_occupied",
+        "access_blocked",
+        "retricted_usage",
+        "free_until",
+        "partially_occupied",
+        "occupied_until",
+        "reserved_until"
+      ],
+      "description": "This DF indicates the status of parking space",
+      "$comment": "This CHOICE has data-carrying variant(s) 'free_until', 'partially_occupied', 'occupied_until', 'reserved_until' that would appear as optional sibling fields in a parent SEQUENCE if this type were used."
+    },
+    "parking_occupancy_info": {
+      "type": "string",
+      "enum": [
+        "unknown",
+        "unlimited_occupancy",
+        "only_while_charging",
+        "limited_duration",
+        "only_while_charging_limited_duration",
+        "parking_allowed_until",
+        "forced_parking_until"
+      ],
+      "description": "This DF indicates the allowed type of occupancy of a parking space/area in terms of time and/or usage",
+      "$comment": "This CHOICE has data-carrying variant(s) 'limited_duration', 'only_while_charging_limited_duration', 'parking_allowed_until', 'forced_parking_until' that would appear as optional sibling fields in a parent SEQUENCE if this type were used."
+    },
+    "parking_status": {
+      "description": "This DF provides information about the status of a defined type of parking.",
+      "type": "object",
+      "required": [
+        "current_occupancy"
+      ],
+      "properties": {
+        "vehicle_types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/eu_vehicle_category_code"
+          }
+        },
+        "reservation_types": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "description": "This DE indicates the type of a reservation of a parking space/area",
+            "minimum": 0,
+            "maximum": 31
+          }
+        },
+        "load_types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/load_type"
+          }
+        },
+        "parking_fee_types": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "description": "This DE indicates the applicable type of parking fee",
+            "minimum": 0,
+            "maximum": 7
+          }
+        },
+        "occupancy_types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/parking_occupancy_info"
+          }
+        },
+        "current_occupancy": {
+          "$ref": "#/$defs/occupancy_information"
+        }
+      }
+    },
+    "parking_status_list": {
+      "description": "This DF shall contain a list of @ref ParkingStatus.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/parking_status"
+      }
+    },
+    "load_type": {
+      "description": "This DF indicates a the load type of the vehicle.",
+      "type": "object",
+      "required": [
+        "special_transport_type"
+      ],
+      "properties": {
+        "goods_type": {
+          "type": "integer",
+          "description": "This DE indicates the type of goods of a vehicle",
+          "minimum": 0,
+          "maximum": 15
+        },
+        "dangerous_goods_type": {
+          "type": "integer",
+          "description": "This DE indicates the type of the dangerous goods being carried by a heavy vehicle. The value is assigned according to `class` and `division` definitions of dangerous goods as specified in part II, chapter 2.1.1.1 of European Agreement concerning the International Carriage of Dangerous Goods by Road [3]. explosives1(0), explosives2(1), explosives3(2), explosives4(3), explosives5(4), explosives6(5), flammableGases(6), nonFlammableGases(7), toxicGases(8), flammableLiquids(9), flammableSolids(10), substancesLiableToSpontaneousCombustion(11), substancesEmittingFlammableGasesUponContactWithWater(12), oxidizingSubstances(13), organicPeroxides(14), toxicSubstances(15), infectiousSubstances(16), radioactiveMaterial(17), corrosiveSubstances(18), miscellaneousDangerousSubstances(19)",
+          "minimum": 0,
+          "maximum": 19
+        },
+        "special_transport_type": {
+          "description": "The DE indicates if a vehicle is carrying goods in the special transport conditions",
+          "type": "object",
+          "required": [
+            "heavy_load",
+            "excess_width",
+            "excess_length",
+            "excess_height"
+          ],
+          "properties": {
+            "heavy_load": {
+              "type": "boolean",
+              "description": "heavyLoad bit."
+            },
+            "excess_width": {
+              "type": "boolean",
+              "description": "excessWidth bit."
+            },
+            "excess_length": {
+              "type": "boolean",
+              "description": "excessLength bit."
+            },
+            "excess_height": {
+              "type": "boolean",
+              "description": "excessHeight bit."
+            }
+          }
+        }
+      }
+    },
+    "period": {
+      "description": "This DF indicates a period occuring on defined days of the week.",
+      "type": "object",
+      "required": [
+        "days",
+        "opening",
+        "closing"
+      ],
+      "properties": {
+        "days": {
+          "description": "This DE indicates the applicable day(s) of the week",
+          "type": "object",
+          "required": [
+            "unused",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday"
+          ],
+          "properties": {
+            "unused": {
+              "type": "boolean",
+              "description": "unused bit."
+            },
+            "monday": {
+              "type": "boolean",
+              "description": "monday bit."
+            },
+            "tuesday": {
+              "type": "boolean",
+              "description": "tuesday bit."
+            },
+            "wednesday": {
+              "type": "boolean",
+              "description": "wednesday bit."
+            },
+            "thursday": {
+              "type": "boolean",
+              "description": "thursday bit."
+            },
+            "friday": {
+              "type": "boolean",
+              "description": "friday bit."
+            },
+            "saturday": {
+              "type": "boolean",
+              "description": "saturday bit."
+            },
+            "sunday": {
+              "type": "boolean",
+              "description": "sunday bit."
+            }
+          }
+        },
+        "opening": {
+          "$ref": "#/$defs/time_of_day"
+        },
+        "closing": {
+          "$ref": "#/$defs/time_of_day"
+        }
+      }
+    },
+    "periods": {
+      "description": "This DF shall contain a list of up to 8 @ref Period.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/period"
+      }
+    },
+    "time_of_day": {
+      "description": "This DF indicates the time of the day.",
+      "type": "object",
+      "required": [
+        "hours",
+        "mins"
+      ],
+      "properties": {
+        "hours": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 23
+        },
+        "mins": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 59
+        }
+      }
+    },
+    "eu_vehicle_category_code": {
+      "type": "string",
+      "enum": [
+        "eu_vehicle_category_t",
+        "eu_vehicle_category_g",
+        "eu_vehicle_category_l",
+        "eu_vehicle_category_m",
+        "eu_vehicle_category_n",
+        "eu_vehicle_category_o"
+      ],
+      "description": "This DF represents a vehicle category according to the UNECE/TRANS/WP.29/78/Rev.4 [16]. The following options are available:",
+      "$comment": "This CHOICE has data-carrying variant(s) 'eu_vehicle_category_l', 'eu_vehicle_category_m', 'eu_vehicle_category_n', 'eu_vehicle_category_o' that would appear as optional sibling fields in a parent SEQUENCE if this type were used."
+    },
+    "goods_type": {
+      "type": "integer",
+      "description": "This DE indicates the type of goods of a vehicle",
+      "minimum": 0,
+      "maximum": 15
+    },
+    "parking_fee_type": {
+      "type": "integer",
+      "description": "This DE indicates the applicable type of parking fee",
+      "minimum": 0,
+      "maximum": 7
+    },
+    "parking_reservation_type": {
+      "type": "integer",
+      "description": "This DE indicates the type of a reservation of a parking space/area",
+      "minimum": 0,
+      "maximum": 31
+    }
+  }
+}
