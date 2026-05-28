@@ -385,11 +385,188 @@
               "minimum": -1,
               "maximum": 14
             },
+            "road_works": {
+              "type": "object",
+              "description": "Container for road works information. Corresponds to RoadWorksContainerExtended in ETSI EN 302 637-3.",
+              "properties": {
+                "light_bar_siren_in_use": {
+                  "type": "integer",
+                  "description": "Bit mask indicating whether light bar or siren is in use. lightBarActivated(0), sirenActivated(1).",
+                  "minimum": 0,
+                  "maximum": 3
+                },
+                "closed_lanes": {
+                  "type": "object",
+                  "description": "Lanes closed due to road works.",
+                  "properties": {
+                    "hard_shoulder_status": {
+                      "type": "integer",
+                      "description": "Status of the hard shoulder. availableForStopping(0), closed(1), availableForDriving(2).",
+                      "minimum": 0,
+                      "maximum": 2
+                    },
+                    "driving_lane_status": {
+                      "type": "integer",
+                      "description": "Bit mask indicating which driving lanes are closed (bit N = lane N+1 from inside). 0 means all lanes open.",
+                      "minimum": 0,
+                      "maximum": 16383
+                    }
+                  }
+                },
+                "restriction": {
+                  "type": "array",
+                  "description": "List of vehicle types restricted in the road works area. Corresponds to RestrictedTypes (SEQUENCE OF StationType, size 1..3).",
+                  "minItems": 1,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "integer",
+                    "description": "Station type. unknown(0), pedestrian(1), cyclist(2), moped(3), motorcycle(4), passengerCar(5), bus(6), lightTruck(7), heavyTruck(8), trailer(9), specialVehicles(10), tram(11), roadSideUnit(15).",
+                    "minimum": 0,
+                    "maximum": 255
+                  }
+                },
+                "speed_limit": {
+                  "type": "integer",
+                  "description": "Speed limit in the road works area. Unit: km/h.",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "incident_indication": {
+                  "$ref": "#/$defs/cause_code"
+                },
+                "recommended_path": {
+                  "type": "array",
+                  "description": "Recommended itinerary to avoid the road works area.",
+                  "items": {
+                    "$ref": "#/$defs/delta_reference_position"
+                  }
+                },
+                "starting_point_speed_limit": {
+                  "$ref": "#/$defs/delta_reference_position",
+                  "description": "Position from which the speed limit applies, expressed as a delta relative to the DENM reference position."
+                },
+                "traffic_flow_rule": {
+                  "type": "integer",
+                  "description": "Traffic rule applied in the road works area. noPassing(0), noPassingForTrucks(1), passToRight(2), passToLeft(3).",
+                  "minimum": 0,
+                  "maximum": 3
+                },
+                "reference_denms": {
+                  "type": "array",
+                  "description": "List of action IDs of DENMs related to this road works event.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "originating_station_id": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 4294967295
+                      },
+                      "sequence_number": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 65535
+                      }
+                    }
+                  }
+                }
+              }
+            },
             "positioning_solution": {
               "type": "integer",
               "description": "Positioning technology being used to estimate a geographical position. noPositioningSolution(0), sGNSS(1), dGNSS(2), sGNSSplusDR(3), dGNSSplusDR(4), dR(5), manuallyByOperator(6).",
               "minimum": 0,
               "maximum": 6
+            },
+            "stationary_vehicle": {
+              "type": "object",
+              "properties": {
+                "stationary_since": {
+                  "type": "integer",
+                  "description": "Duration since the vehicle has been stationary. lessThan1Minute(0), lessThan2Minutes(1), lessThan15Minutes(2), equalOrGreater15Minutes(3).",
+                  "minimum": 0,
+                  "maximum": 3
+                },
+                "stationary_cause": {
+                  "$ref": "#/$defs/cause_code"
+                },
+                "carrying_dangerous_goods": {
+                  "type": "object",
+                  "description": "Information about dangerous goods being carried by the stationary vehicle.",
+                  "properties": {
+                    "dangerous_goods_type": {
+                      "type": "integer",
+                      "description": "Type of dangerous goods. explosives1(0), explosives2(1), explosives3(2), explosives4(3), explosives5(4), explosives6(5), flammableGases(6), nonFlammableGases(7), toxicGases(8), flammableLiquids(9), flammableSolids(10), substancesLiableToSpontaneousCombustion(11), substancesEmittingFlammableGasesUponContactWithWater(12), oxidizingSubstances(13), organicPeroxides(14), toxicSubstances(15), infectiousSubstances(16), radioactiveMaterial(17), corrosiveSubstances(18), miscellaneousDangerousSubstances(19).",
+                      "minimum": 0,
+                      "maximum": 19
+                    },
+                    "un_number": {
+                      "type": "integer",
+                      "description": "UN number of the dangerous goods.",
+                      "minimum": 0,
+                      "maximum": 9999
+                    },
+                    "elevated_temperature": {
+                      "type": "boolean",
+                      "description": "Indicates whether the dangerous goods are transported at elevated temperature."
+                    },
+                    "tunnels_restricted": {
+                      "type": "boolean",
+                      "description": "Indicates whether the transport of the dangerous goods is restricted in tunnels."
+                    },
+                    "limited_quantity": {
+                      "type": "boolean",
+                      "description": "Indicates whether the dangerous goods are transported as a limited quantity."
+                    },
+                    "emergency_action_code": {
+                      "type": "string",
+                      "description": "Emergency action code for the dangerous goods (1..4 characters).",
+                      "minLength": 1,
+                      "maxLength": 4
+                    },
+                    "phone_number": {
+                      "type": "string",
+                      "description": "Emergency telephone number for the dangerous goods transport."
+                    },
+                    "company_name": {
+                      "type": "string",
+                      "description": "Company name responsible for the dangerous goods transport (1..24 characters).",
+                      "minLength": 1,
+                      "maxLength": 24
+                    }
+                  }
+                },
+                "number_of_occupants": {
+                  "type": "integer",
+                  "description": "Number of occupants in the stationary vehicle. 0..127, unavailable(127).",
+                  "minimum": 0,
+                  "maximum": 127
+                },
+                "vehicle_identification": {
+                  "type": "object",
+                  "description": "Identification of the stationary vehicle.",
+                  "properties": {
+                    "w_m_inumber": {
+                      "type": "string",
+                      "description": "World Manufacturer Identifier (WMI) of the vehicle (1..3 characters).",
+                      "minLength": 1,
+                      "maxLength": 3
+                    },
+                    "v_d_s": {
+                      "type": "string",
+                      "description": "Vehicle Descriptor Section (VDS) of the VIN (6 characters).",
+                      "minLength": 6,
+                      "maxLength": 6
+                    }
+                  }
+                },
+                "energy_storage_type": {
+                  "type": "integer",
+                  "description": "Bit mask of energy storage types present in the vehicle. hydrogenStorage(0), electricEnergyStorage(1), liquidPropaneGas(2), compressedNaturalGas(3), diesel(4), gasoline(5), ammonia(6).",
+                  "minimum": 0,
+                  "maximum": 127
+                }
+              }
             }
           }
         }
