@@ -103,7 +103,7 @@
               "required": [
                 "management_container",
                 "place_info",
-                "aggregatedstatus"
+                "aggregated_status"
               ],
               "properties": {
                 "management_container": {
@@ -112,10 +112,10 @@
                 "place_info": {
                   "$ref": "#/$defs/general_parking_place_container"
                 },
-                "aggregatedstatus": {
+                "aggregated_status": {
                   "$ref": "#/$defs/parking_status_container"
                 },
-                "detailedstatus": {
+                "detailed_status": {
                   "$ref": "#/$defs/parking_supply_capabilities_container"
                 },
                 "related_poi": {
@@ -162,13 +162,13 @@
       "properties": {
         "value": {
           "type": "integer",
-          "description": "This DE represents an angle value in degrees described in the WGS84 reference system with respect to the WGS84 north. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE. When the information is not available, the DE shall be set to 3 601. The value 3600 shall not be used",
+          "description": "Unit: 0,1 degree. This DE represents an angle value in degrees described in the WGS84 reference system with respect to the WGS84 north. wgs84North(0), wgs84East(900), wgs84South(1800), wgs84West(2700), doNotUse(3600), unavailable(3601)",
           "minimum": 0,
           "maximum": 3601
         },
         "confidence": {
           "type": "integer",
-          "description": "This DE indicates the angle confidence value which represents the estimated accuracy of an angle value with a default confidence level of 95 %. If required, the confidence level can be defined by the corresponding standards applying this DE",
+          "description": "Unit: 0,1 degree. This DE indicates the angle confidence value which represents the estimated accuracy of an angle value with a default confidence level of 95 %. The value n (1 ≤ n < 126) indicates the accuracy is equal to or less than n × 0,1 degrees. outOfRange(126), unavailable(127)",
           "minimum": 1,
           "maximum": 127
         }
@@ -263,7 +263,7 @@
             "oneOf": [
               {
                 "required": [
-                  "roadsegment"
+                  "road_segment"
                 ]
               },
               {
@@ -273,7 +273,7 @@
               }
             ],
             "properties": {
-              "roadsegment": {
+              "road_segment": {
                 "description": "This DF represents a unique id for a road segment",
                 "type": "object",
                 "required": [
@@ -389,19 +389,23 @@
           "$ref": "#/$defs/geo_position"
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "The name of the parking facility."
         },
         "opening_periods": {
           "$ref": "#/$defs/periods"
         },
         "address": {
-          "type": "string"
+          "type": "string",
+          "description": "The address of the parking facility."
         },
         "phone_number": {
-          "type": "string"
+          "type": "string",
+          "description": "The phone number of the operator of the parking facility."
         },
         "website": {
-          "type": "string"
+          "type": "string",
+          "description": "The URL of the website of the operator of the parking facility."
         }
       }
     },
@@ -414,7 +418,7 @@
       "properties": {
         "current_facility_status": {
           "type": "integer",
-          "description": "This DE indicates the opening status",
+          "description": "This DE indicates the opening status. The value shall be set to: closed(0), open(1), subscribersOnly(2), full(3), unknown(15). Values 4-14 are reserved for future use.",
           "minimum": 0,
           "maximum": 15
         },
@@ -444,19 +448,19 @@
       "properties": {
         "latitude": {
           "type": "integer",
-          "description": "This DE represents the absolute geographical latitude in a WGS84 coordinate system, providing a range of 90 degrees in north or in south hemisphere. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE",
+          "description": "Unit: 10^-7 degree. This DE represents the absolute geographical latitude in a WGS84 coordinate system, providing a range of 90 degrees in north or in south hemisphere. unavailable(900000001)",
           "minimum": -2147483648,
           "maximum": 2147483647
         },
         "longitude": {
           "type": "integer",
-          "description": "This DE represents the absolute geographical longitude in a WGS84 coordinate system, providing a range of 180 degrees to the east or to the west of the prime meridian. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE",
+          "description": "Unit: 10^-7 degree. This DE represents the absolute geographical longitude in a WGS84 coordinate system, providing a range of 180 degrees to the east or to the west of the prime meridian. valueNotUsed(-1800000000), unavailable(1800000001)",
           "minimum": -2147483648,
           "maximum": 2147483647
         },
         "altitude": {
           "type": "integer",
-          "description": "This DE represents the altitude value in a WGS84 coordinate system. The specific WGS84 coordinate system is specified by the corresponding standards applying this DE",
+          "description": "Unit: 0,01 metre. This DE represents the altitude value in a WGS84 coordinate system. The value n (−100 000 < n < 800 001) indicates the altitude in units of 0,01 metre. negativeOutOfRange(-100000), unavailable(800001)",
           "minimum": -100000,
           "maximum": 800001
         }
@@ -472,13 +476,13 @@
       "properties": {
         "delta_latitude": {
           "type": "integer",
-          "description": "This DE represents an offset latitude with regards to a defined latitude value. It may be used to describe a geographical point with regards to a specific reference geographical position",
+          "description": "Unit: 10^-7 degree. This DE represents an offset latitude with regards to a defined latitude value. unavailable(131072)",
           "minimum": -131071,
           "maximum": 131072
         },
         "delta_longitude": {
           "type": "integer",
-          "description": "This DE represents an offset longitude with regards to a defined longitude value. It may be used to describe a geographical point with regards to a specific reference geographical position",
+          "description": "Unit: 10^-7 degree. This DE represents an offset longitude with regards to a defined longitude value. unavailable(131072)",
           "minimum": -131071,
           "maximum": 131072
         }
@@ -502,19 +506,19 @@
       "properties": {
         "delta_latitude": {
           "type": "integer",
-          "description": "This DE represents an offset latitude with regards to a defined latitude value. It may be used to describe a geographical point with regards to a specific reference geographical position",
+          "description": "Unit: 10^-7 degree. This DE represents an offset latitude with regards to a defined latitude value. unavailable(131072)",
           "minimum": -131071,
           "maximum": 131072
         },
         "delta_longitude": {
           "type": "integer",
-          "description": "This DE represents an offset longitude with regards to a defined longitude value. It may be used to describe a geographical point with regards to a specific reference geographical position",
+          "description": "Unit: 10^-7 degree. This DE represents an offset longitude with regards to a defined longitude value. unavailable(131072)",
           "minimum": -131071,
           "maximum": 131072
         },
         "delta_altitude": {
           "type": "integer",
-          "description": "This DE represents an offset altitude with regards to a defined altitude value. It may be used to describe a geographical point with regards to a specific reference geographical position",
+          "description": "Unit: 0,01 metre. This DE represents an offset altitude with regards to a defined altitude value. negativeOutOfRange(-12700)",
           "minimum": -12700,
           "maximum": 12800
         }
@@ -533,13 +537,13 @@
       "properties": {
         "rate": {
           "type": "integer",
-          "description": "This DE represents an occupancy rate in percentage",
+          "description": "Unit: percentage. This DE represents an occupancy rate. The value n (1 ≤ n < 101) indicates the rate in percent. unavailable(101)",
           "minimum": 1,
           "maximum": 101
         },
         "trend": {
           "type": "integer",
-          "description": "This DE indicates the trend of occupancy",
+          "description": "This DE indicates the trend of occupancy. The value shall be set to: decreasing(0), decreasingQuickly(1), decreasingSlowly(2), increasing(3), increasingQuickly(4), increasingSlowly(5), stable(6), variable(7), unknown(15). Other values reserved for future use.",
           "minimum": 0,
           "maximum": 15
         },
@@ -557,7 +561,7 @@
         },
         "confidence": {
           "type": "integer",
-          "description": "This DE represents a confidence level in percentage",
+          "description": "Unit: percentage. This DE represents a confidence level with a default confidence level of 95 %. The value n (1 ≤ n < 101) indicates the confidence in percent. unavailable(101)",
           "minimum": 1,
           "maximum": 101
         }
@@ -589,12 +593,13 @@
         },
         "level": {
           "type": "integer",
+          "description": "This DE represents the floor level of the parking area. Negative values indicate underground floors, 0 is the ground level, positive values indicate above-ground floors.",
           "minimum": -8,
           "maximum": 16
         },
         "arrangement_type": {
           "type": "integer",
-          "description": "This DE indicates the arrangement of parking space in a parking area",
+          "description": "This DE indicates the arrangement of parking space in a parking area. The value shall be set to: parallelParkingSpace(0), diagonalParkingSpace(1), perpendicularParkingSpace(2), queueParking(3), mixed(4), unknown(7). Other values reserved for future use.",
           "minimum": 0,
           "maximum": 7
         },
@@ -612,36 +617,41 @@
         },
         "allowed_vehicle_categories": {
           "type": "array",
+          "description": "The list of vehicle categories allowed in the parking area.",
           "items": {
             "$ref": "#/$defs/eu_vehicle_category_code"
           }
         },
         "not_allowed_engine_characteristics": {
           "type": "array",
+          "description": "The optional list of engine characteristics not allowed in the parking area.",
           "items": {
             "$ref": "#/$defs/engine_characteristics"
           }
         },
         "allowed_load_types": {
           "type": "array",
+          "description": "The optional list of load types allowed in the parking area.",
           "items": {
             "$ref": "#/$defs/load_type"
           }
         },
         "not_allowed_load_types": {
           "type": "array",
+          "description": "The optional list of load types not allowed in the parking area.",
           "items": {
             "$ref": "#/$defs/load_type"
           }
         },
         "height_restriction": {
           "type": "integer",
-          "description": "This DE represents the height of the vehicle, measured from the ground to the highest point, excluding any antennas. In case vehicles are equipped with adjustable ride heights, camper shells, and any other equipment which may result in varying height, the largest possible height shall be used",
+          "description": "Unit: 0,1 metre. This DE represents the height of the vehicle, measured from the ground to the highest point, excluding any antennas. In case vehicles are equipped with adjustable ride heights, camper shells, and any other equipment which may result in varying height, the largest possible height shall be used. The value n (1 ≤ n < 126) indicates that the restriction is equal to or less than n × 0,1 metre. outOfRange(126), unavailable(127).",
           "minimum": 1,
           "maximum": 128
         },
         "reservation_type": {
           "type": "array",
+          "description": "The optional parking reservation type(s) associated to the parking area.",
           "items": {
             "type": "integer",
             "description": "This DE indicates the type of a reservation of a parking space/area",
@@ -650,25 +660,31 @@
           }
         },
         "pricing_information": {
-          "type": "string"
+          "type": "string",
+          "description": "The optional pricing information applicable to the parking area."
         },
         "payment_information": {
-          "type": "string"
+          "type": "string",
+          "description": "The optional payment information applicable to the parking area."
         },
         "booking_contact_info": {
-          "type": "string"
+          "type": "string",
+          "description": "The optional booking contact information applicable to the parking area."
         },
         "access_charachteristics": {
-          "type": "string"
+          "type": "string",
+          "description": "The optional access information to the parking area."
         },
         "free_spaces_position": {
           "type": "array",
+          "description": "The optional list of positions of free parking spaces, expressed as delta positions relative to the parking area location.",
           "items": {
             "$ref": "#/$defs/delta_position"
           }
         },
         "freespaces_id": {
           "type": "array",
+          "description": "The optional list of identifiers of free parking spaces.",
           "items": {
             "type": "integer",
             "description": "This DE is a general identifier",
@@ -736,7 +752,7 @@
         },
         "arrangement_type": {
           "type": "integer",
-          "description": "This DE indicates the arrangement of parking space in a parking area",
+          "description": "This DE indicates the arrangement of parking space in a parking area. The value shall be set to: parallelParkingSpace(0), diagonalParkingSpace(1), perpendicularParkingSpace(2), queueParking(3), mixed(4), unknown(7). Other values reserved for future use.",
           "minimum": 0,
           "maximum": 7
         },
@@ -763,6 +779,7 @@
         },
         "access_via_parking_spaces": {
           "type": "array",
+          "description": "The optional list of identifiers of adjacent parking spaces through which this space is accessible.",
           "items": {
             "type": "integer",
             "description": "This DE is a general identifier",
@@ -772,6 +789,7 @@
         },
         "reservation_type": {
           "type": "array",
+          "description": "The optional parking reservation type(s) associated to this parking space.",
           "items": {
             "type": "integer",
             "description": "This DE indicates the type of a reservation of a parking space/area",
@@ -834,12 +852,14 @@
       "properties": {
         "vehicle_types": {
           "type": "array",
+          "description": "The optional list of vehicle categories this status applies to.",
           "items": {
             "$ref": "#/$defs/eu_vehicle_category_code"
           }
         },
         "reservation_types": {
           "type": "array",
+          "description": "The optional list of reservation types this status applies to.",
           "items": {
             "type": "integer",
             "description": "This DE indicates the type of a reservation of a parking space/area",
@@ -849,12 +869,14 @@
         },
         "load_types": {
           "type": "array",
+          "description": "The optional list of load types this status applies to.",
           "items": {
             "$ref": "#/$defs/load_type"
           }
         },
         "parking_fee_types": {
           "type": "array",
+          "description": "The optional list of applicable parking fee types.",
           "items": {
             "type": "integer",
             "description": "This DE indicates the applicable type of parking fee",
@@ -864,6 +886,7 @@
         },
         "occupancy_types": {
           "type": "array",
+          "description": "The optional list of occupancy types this status applies to.",
           "items": {
             "$ref": "#/$defs/parking_occupancy_info"
           }
@@ -889,7 +912,7 @@
       "properties": {
         "goods_type": {
           "type": "integer",
-          "description": "This DE indicates the type of goods of a vehicle",
+          "description": "This DE indicates the type of goods of a vehicle. The value shall be set to: ammunition(0), chemicals(1), empty(2), fuel(3), glass(4), dangerous(5), liquid(6), liveStock(7), dangerousForPeople(8), dangerousForTheEnvironment(9), dangerousForWater(10), perishableProducts(11), pharmaceutical(12), vehicles(13), refrigerated(14). Other values reserved for future use.",
           "minimum": 0,
           "maximum": 15
         },
@@ -938,10 +961,12 @@
       ],
       "properties": {
         "begin_of_period": {
-          "type": "string"
+          "type": "string",
+          "description": "The opening time of the period in local time (e.g. HH:MM)."
         },
         "end_of_period": {
-          "type": "string"
+          "type": "string",
+          "description": "The closing time of the period in local time (e.g. HH:MM)."
         }
       }
     },
@@ -962,11 +987,13 @@
       "properties": {
         "hours": {
           "type": "integer",
+          "description": "The hour component of the time of day in local time.",
           "minimum": 0,
           "maximum": 23
         },
         "mins": {
           "type": "integer",
+          "description": "The minutes component of the time of day in local time.",
           "minimum": 0,
           "maximum": 59
         }
@@ -987,6 +1014,7 @@
     },
     "engine_characteristics": {
       "type": "integer",
+      "description": "This DE indicates the engine characteristics (fuel type) of a vehicle. The value shall be set to: noEntry(0), noEngine(1), petrolUnleaded(2), petrolLeaded(3), diesel(4), lpg(5), battery(6), solar(7), hybrid(8), hydrogen(9). Other values reserved for future use.",
       "minimum": 0,
       "maximum": 255
     },
@@ -1040,19 +1068,19 @@
     },
     "goods_type": {
       "type": "integer",
-      "description": "This DE indicates the type of goods of a vehicle",
+      "description": "This DE indicates the type of goods of a vehicle. The value shall be set to: ammunition(0), chemicals(1), empty(2), fuel(3), glass(4), dangerous(5), liquid(6), liveStock(7), dangerousForPeople(8), dangerousForTheEnvironment(9), dangerousForWater(10), perishableProducts(11), pharmaceutical(12), vehicles(13), refrigerated(14). Other values reserved for future use.",
       "minimum": 0,
       "maximum": 15
     },
     "parking_fee_type": {
       "type": "integer",
-      "description": "This DE indicates the applicable type of parking fee",
+      "description": "This DE indicates the applicable type of parking fee. The value shall be set to: timeDependentFee(0) to indicate a time-dependent fee (e.g. hourly), flatFee(1) to indicate a flat fee for a certain period (e.g. daily), subscription(2) to indicate a fee included in a subscription (e.g. monthly). Values 3-7 are reserved for future use.",
       "minimum": 0,
       "maximum": 7
     },
     "parking_reservation_type": {
       "type": "integer",
-      "description": "This DE indicates the type of a reservation of a parking space/area",
+      "description": "This DE indicates the type of a reservation of a parking space/area. The value shall be set to: disabled(0), pregnant(1), womenOnly(2), parentAndChild(3), loadAndOffloadGoods(4), manualElectricVehicleCharging(5), automatedElectricVehicleCharging(6), refrigeratedTransport(7), vip(8), preBooking(9), freeToBeReserved(10), reservationNotPossible(11), automatedValetParking(12), permit(13). Other values reserved for future use.",
       "minimum": 0,
       "maximum": 31
     }
