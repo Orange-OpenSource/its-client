@@ -31,6 +31,7 @@ import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
 import com.orange.iot3mobility.messages.denm.DenmHelper;
 import com.orange.iot3mobility.messages.denm.v113.model.DenmEnvelope113;
 import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
+import com.orange.iot3mobility.messages.denm.v230.model.DenmEnvelope230;
 import com.orange.iot3mobility.messages.mapem.MapemHelper;
 import com.orange.iot3mobility.messages.mapem.v200.model.MapemEnvelope200;
 import com.orange.iot3mobility.messages.mapem.v200.model.shared.Position3D;
@@ -559,6 +560,24 @@ public class IoT3Mobility {
 
         // send the message even if the client is disconnected, so it will be queued
         if(ioT3Core != null) ioT3Core.mqttPublish(topic, denmHelper.toJson(denmV220));
+    }
+
+    /**
+     * Send a DENM - Decentralized Environment Notification Message - v2.3.0
+     *
+     * @param denmV230 the DENM representing a road event
+     */
+    public void sendDenm(DenmEnvelope230 denmV230) throws IOException {
+        // build the topic
+        String quadkey = QuadTileHelper.latLngToQuadKey(
+                EtsiConverter.latitudeDegrees(denmV230.message().managementContainer().eventPosition().latitude()),
+                EtsiConverter.longitudeDegrees(denmV230.message().managementContainer().eventPosition().longitude()),
+                22);
+        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
+        String topic = context + "/inQueue/v2x/denm/" + uuid + geoExtension;
+
+        // send the message even if the client is disconnected, so it will be queued
+        if(ioT3Core != null) ioT3Core.mqttPublish(topic, denmHelper.toJson(denmV230));
     }
 
     /**

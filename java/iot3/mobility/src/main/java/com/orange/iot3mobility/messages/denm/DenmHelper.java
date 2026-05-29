@@ -13,6 +13,7 @@ import com.orange.iot3mobility.messages.denm.core.DenmException;
 import com.orange.iot3mobility.messages.denm.core.DenmVersion;
 import com.orange.iot3mobility.messages.denm.v113.model.DenmEnvelope113;
 import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
+import com.orange.iot3mobility.messages.denm.v230.model.DenmEnvelope230;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -91,6 +92,18 @@ public final class DenmHelper {
         return (DenmEnvelope220) frame.envelope();
     }
 
+    /**
+     * Parse a DENM JSON payload and cast it to a v2.3.0 envelope.
+     * Throws if the version is not 2.3.0.
+     */
+    public DenmEnvelope230 parse230(String jsonPayload) throws IOException {
+        DenmCodec.DenmFrame<?> frame = parse(jsonPayload);
+        if (frame.version() != DenmVersion.V2_3_0) {
+            throw new DenmException("Expected DENM version 2.3.0 but got " + frame.version());
+        }
+        return (DenmEnvelope230) frame.envelope();
+    }
+
     // ---------------------------------------------------------------------
     // Writing / serializing to String
     // ---------------------------------------------------------------------
@@ -109,6 +122,14 @@ public final class DenmHelper {
     public String toJson(DenmEnvelope220 envelope220) throws IOException {
         Objects.requireNonNull(envelope220, "envelope220");
         return writeToString(DenmVersion.V2_2_0, envelope220);
+    }
+
+    /**
+     * Serialize a v2.3.0 DENM envelope to a JSON string.
+     */
+    public String toJson(DenmEnvelope230 envelope230) throws IOException {
+        Objects.requireNonNull(envelope230, "envelope230");
+        return writeToString(DenmVersion.V2_3_0, envelope230);
     }
 
     /**
