@@ -68,12 +68,13 @@ class Otel(threading.Thread):
         *,
         service_name: str,
         endpoint: str,
-        auth: Auth = Auth.NONE,
+        service_id: Optional[str] = None,
+        auth: Optional[Auth] = Auth.NONE,
         username: Optional[str] = None,
         password: Optional[str] = None,
         batch_period: Optional[float] = None,
-        max_backlog: int = 1023,
-        compression: Compression = Compression.NONE,
+        max_backlog: Optional[int] = 1023,
+        compression: Optional[Compression] = Compression.NONE,
     ):
         """
         Simple span exporter
@@ -94,6 +95,7 @@ class Otel(threading.Thread):
         pending spans not yet exported.
 
         :param service_name: The name of the service.
+        :param service_id: The ID of this instance.
         :param endpoint: The URL to the OTLP collector (without the trailing
                          /v1/traces).
         :param auth: Type of HTTP authentication to employ.
@@ -110,6 +112,7 @@ class Otel(threading.Thread):
 
         self.service_name = service_name
         self.endpoint = endpoint
+        self.service_id = service_id
         if self.endpoint.endswith("/"):
             self.endpoint = self.endpoint[:-1]
 
@@ -186,6 +189,11 @@ class Otel(threading.Thread):
                 kwargs["parent_span"] = current_span
 
         s = Span(*args, **kwargs)
+        if self.service_id:
+            s.set_attribute(
+                key="iot3.core.service_id",
+                value=self.service_id,
+            )
         try:
             self.tls.spans.append(s)
             yield s

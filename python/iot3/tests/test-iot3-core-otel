@@ -6,6 +6,7 @@ import time
 
 o = iot3.core.otel.Otel(
     service_name="test-service",
+    service_id="test_42",
     endpoint="http://localhost:4318",
     batch_period=15,
     max_backlog=15,
@@ -32,5 +33,16 @@ with o.span(name="Root span") as s0:
 
 with o.span(name="Root span with link", span_links=[s0]) as s10:
     time.sleep(0.1)
+
+attrs = [
+    attr["value"]["stringValue"]
+    for attr in s0.to_dict()["attributes"]
+    if (
+        attr["key"] == "iot3.core.service_id"
+        and "stringValue" in attr["value"]
+    )
+]
+assert len(attrs) == 1
+assert attrs[0] == "test_42"
 
 o.stop()

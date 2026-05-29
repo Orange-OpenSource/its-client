@@ -62,6 +62,7 @@ class IQM:
             self.otel = iot3.core.otel.Otel(
                 service_name="its-interqueuemanager",
                 endpoint=cfg["telemetry"]["endpoint"],
+                service_id=self.instance_id,
                 auth=iot3.core.otel.Auth(cfg["telemetry"]["authentication"]),
                 username=cfg["telemetry"]["username"],
                 password=cfg["telemetry"]["password"],
