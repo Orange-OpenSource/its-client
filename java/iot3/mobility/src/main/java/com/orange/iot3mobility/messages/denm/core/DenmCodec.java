@@ -16,6 +16,9 @@ import com.orange.iot3mobility.messages.denm.v113.model.DenmEnvelope113;
 import com.orange.iot3mobility.messages.denm.v220.codec.DenmReader220;
 import com.orange.iot3mobility.messages.denm.v220.codec.DenmWriter220;
 import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
+import com.orange.iot3mobility.messages.denm.v230.codec.DenmReader230;
+import com.orange.iot3mobility.messages.denm.v230.codec.DenmWriter230;
+import com.orange.iot3mobility.messages.denm.v230.model.DenmEnvelope230;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -39,6 +42,8 @@ public final class DenmCodec {
     private final DenmWriter113 writer113;
     private final DenmReader220 reader220;
     private final DenmWriter220 writer220;
+    private final DenmReader230 reader230;
+    private final DenmWriter230 writer230;
 
     public DenmCodec(JsonFactory jsonFactory) {
         this.jsonFactory = Objects.requireNonNull(jsonFactory, "jsonFactory");
@@ -46,6 +51,8 @@ public final class DenmCodec {
         this.writer113 = new DenmWriter113(jsonFactory);
         this.reader220 = new DenmReader220(jsonFactory);
         this.writer220 = new DenmWriter220(jsonFactory);
+        this.reader230 = new DenmReader230(jsonFactory);
+        this.writer230 = new DenmWriter230(jsonFactory);
     }
 
     /**
@@ -62,6 +69,8 @@ public final class DenmCodec {
                     reader113.read(new ByteArrayInputStream(payload)));
             case V2_2_0 -> new DenmFrame<>(version,
                     reader220.read(new ByteArrayInputStream(payload)));
+            case V2_3_0 -> new DenmFrame<>(version,
+                    reader230.read(new ByteArrayInputStream(payload)));
         };
     }
 
@@ -80,6 +89,8 @@ public final class DenmCodec {
                     reader113.read(new ByteArrayInputStream(payload)));
             case V2_2_0 -> new DenmFrame<>(version,
                     reader220.read(new ByteArrayInputStream(payload)));
+            case V2_3_0 -> new DenmFrame<>(version,
+                    reader230.read(new ByteArrayInputStream(payload)));
         };
     }
 
@@ -90,6 +101,7 @@ public final class DenmCodec {
         switch (version) {
             case V1_1_3 -> writer113.write(cast(envelope, DenmEnvelope113.class), out);
             case V2_2_0 -> writer220.write(cast(envelope, DenmEnvelope220.class), out);
+            case V2_3_0 -> writer230.write(cast(envelope, DenmEnvelope230.class), out);
             default -> throw new DenmException("Unsupported version: " + version);
         }
     }
@@ -128,4 +140,3 @@ public final class DenmCodec {
         return (T) value;
     }
 }
-
