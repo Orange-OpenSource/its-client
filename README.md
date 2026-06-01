@@ -77,6 +77,7 @@ As mentioned, you can find in the `schemas` directory a proposal of implementati
 - CollectivePerceptionMessage (CPM)
 - DecentralizedEmergencyNotificationMessage (DENM)
 - MAPExtendedMessage (MAPEM)
+- PointOfInterestMessage (POIM)
 - SignalPhaseAndTimingExtendedMessage (SPATEM)
 - SignalRequestExtendedMessage (SREM)
 - SignalStatusExtendedMessage (SSEM)
@@ -101,6 +102,7 @@ they are using the following versions:
 |  **Information**  |              [2.1.0](schema/information/information_schema_2-1-0.json)              | [1.2.0](schema/information/information_schema_1-2-0.json) |                                                                                         |                                             |
 |     **MAPEM**     |                                                                                     |                                                           |                      [2.0.0](schema/mapem/mapem_schema_2-0-0.json)                      |                                             |
 | **Neighbourhood** |                                                                                     |                                                           |                                                                                         |                                             |
+|     **POIM**      |                                                                                     |                                                           |                                                                                         |                                             |
 |    **Region**     |                                                                                     |                                                           |                                                                                         |                                             |
 |    **SPATEM**     |                                                                                     |                                                           |                     [2.0.0](schema/spatem/spatem_schema_2-0-0.json)                     |                                             |
 |     **SREM**      |                                                                                     |                                                           |                                                                                         |                                             |
