@@ -76,13 +76,12 @@
           "required": [
             "protocol_version",
             "station_id",
-            "message_id",
             "parking_availability_block"
           ],
           "properties": {
             "protocol_version": {
               "type": "integer",
-              "description": "The DE represents an ordinal number that indicates the position of an element in a set",
+              "description": "Represents an ordinal number that indicates the position of an element in a set",
               "minimum": 0,
               "maximum": 255
             },
@@ -91,11 +90,6 @@
               "description": "Represents the identifier of an ITS-S. The ITS-S ID may be a pseudonym. It may change over space and/or over time",
               "minimum": 0,
               "maximum": 4294967295
-            },
-            "message_id": {
-              "type": "integer",
-              "description": "Message identifier. For POI, the value shall be set to poi(3).",
-              "const": 3
             },
             "parking_availability_block": {
               "description": "Represents the POI Information Block concerning a parking availability at a given facility.",
