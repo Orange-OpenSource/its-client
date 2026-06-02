@@ -77,6 +77,7 @@ As mentioned, you can find in the `schemas` directory a proposal of implementati
 - CollectivePerceptionMessage (CPM)
 - DecentralizedEmergencyNotificationMessage (DENM)
 - MAPExtendedMessage (MAPEM)
+- ManoeuvreCoordinationMessage (MCM)
 - PointOfInterestMessage (POIM)
 - SignalPhaseAndTimingExtendedMessage (SPATEM)
 - SignalRequestExtendedMessage (SREM)
@@ -90,7 +91,7 @@ But also schemas of custom messages for V2X:
 - Neighbourhood (instances "around")
 - Region (geographic area)
 
-_Note: none of the provided implementation is able to use different versions of a schema,
+_Note: some of the provided implementation are compatible with different schema versions for a given message,
 they are using the following versions:
 
 |      Schema       |                                        Rust                                         |                          Python                           |                                          Java                                           |                    Swift                    |
@@ -101,6 +102,7 @@ they are using the following versions:
 |     **DENM**      |                     [2.2.0](schema/denm/denm_schema_2-2-0.json)                     |        [1.1.3](schema/denm/denm_schema_1-1-3.json)        | [2.2.0](schema/denm/denm_schema_2-2-0.json) [1.1.3](schema/denm/denm_schema_1-1-3.json) | [1.1.3](schema/denm/denm_schema_1-1-3.json) |
 |  **Information**  |              [2.1.0](schema/information/information_schema_2-1-0.json)              | [1.2.0](schema/information/information_schema_1-2-0.json) |                                                                                         |                                             |
 |     **MAPEM**     |                                                                                     |                                                           |                      [2.0.0](schema/mapem/mapem_schema_2-0-0.json)                      |                                             |
+|      **MCM**      |                                                                                     |                                                           |                                                                                         |                                             |
 | **Neighbourhood** |                                                                                     |                                                           |                                                                                         |                                             |
 |     **POIM**      |                                                                                     |                                                           |                                                                                         |                                             |
 |    **Region**     |                                                                                     |                                                           |                                                                                         |                                             |
