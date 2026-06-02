@@ -91,7 +91,7 @@ But also schemas of custom messages for V2X:
 - Neighbourhood (instances "around")
 - Region (geographic area)
 
-_Note: none of the provided implementation is able to use different versions of a schema,
+_Note: some of the provided implementation are compatible with different schema versions for a given message,
 they are using the following versions:
 
 |      Schema       |                                        Rust                                         |                          Python                           |                                          Java                                           |                    Swift                    |
