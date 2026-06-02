@@ -21,6 +21,8 @@ import com.orange.iot3mobility.messages.denm.v220.model.DenmMessage220;
 import com.orange.iot3mobility.messages.denm.v220.model.defs.Altitude;
 import com.orange.iot3mobility.messages.denm.v220.model.defs.PositionConfidenceEllipse;
 import com.orange.iot3mobility.messages.denm.v220.model.situationcontainer.CauseCode;
+import com.orange.iot3mobility.messages.denm.v230.model.DenmEnvelope230;
+import com.orange.iot3mobility.messages.denm.v230.model.DenmMessage230;
 import com.orange.iot3mobility.roadobjects.RoadHazard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -193,6 +195,46 @@ class RoadHazardManagerTest {
         assertEquals(2, RoadHazardManager.getRoadHazards().size());
     }
 
+    /** Build a v2.3.0 DENM JSON with given sequenceNumber and validityDuration. */
+    private String denm230Json(int originatingStationId, int sequenceNumber,
+                                int validityDurationSec, Integer termination) throws Exception {
+        com.orange.iot3mobility.messages.denm.v230.model.managementcontainer.ReferencePosition pos =
+                com.orange.iot3mobility.messages.denm.v230.model.managementcontainer.ReferencePosition.builder()
+                        .latitude(488566000)
+                        .longitude(23522000)
+                        .positionConfidenceEllipse(new com.orange.iot3mobility.messages.denm.v230.model.defs.PositionConfidenceEllipse(0, 0, 0))
+                        .altitude(new com.orange.iot3mobility.messages.denm.v230.model.defs.Altitude(0, 0))
+                        .build();
+        com.orange.iot3mobility.messages.denm.v230.model.managementcontainer.ManagementContainer mgmt =
+                com.orange.iot3mobility.messages.denm.v230.model.managementcontainer.ManagementContainer.builder()
+                        .actionId(new com.orange.iot3mobility.messages.denm.v230.model.managementcontainer.ActionId(
+                                originatingStationId, sequenceNumber))
+                        .detectionTime(0)
+                        .referenceTime(0)
+                        .eventPosition(pos)
+                        .validityDuration(validityDurationSec)
+                        .termination(termination)
+                        .stationType(5)
+                        .build();
+        com.orange.iot3mobility.messages.denm.v230.model.situationcontainer.SituationContainer situation =
+                com.orange.iot3mobility.messages.denm.v230.model.situationcontainer.SituationContainer.builder()
+                        .informationQuality(7)
+                        .eventType(new com.orange.iot3mobility.messages.denm.v230.model.situationcontainer.CauseCode(1, 5))
+                        .build();
+        DenmMessage230 message = DenmMessage230.builder()
+                .protocolVersion(1)
+                .stationId(originatingStationId)
+                .managementContainer(mgmt)
+                .situationContainer(situation)
+                .build();
+        DenmEnvelope230 envelope = DenmEnvelope230.builder()
+                .sourceUuid("com_application_42")
+                .timestamp(VALID_TIMESTAMP)
+                .message(message)
+                .build();
+        return denmHelper.toJson(envelope);
+    }
+
     // -------------------------------------------------------------------------
     // v2.2.0 tests
     // -------------------------------------------------------------------------
@@ -222,6 +264,65 @@ class RoadHazardManagerTest {
 
         verify(mockCallback, times(1)).roadHazardExpired(any());
         assertEquals(0, RoadHazardManager.getRoadHazards().size());
+    }
+
+    // -------------------------------------------------------------------------
+    // v2.3.0 tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void processDenm230FirstMessageTriggersNewRoadHazard() throws Exception {
+        String json = denm230Json(3, 1, 600, null);
+        RoadHazardManager.processDenm(json, denmHelper);
+
+        verify(mockCallback, times(1)).newRoadHazard(any(RoadHazard.class));
+    }
+
+    @Test
+    void processDenm230DenmArrivedCallbackIsAlwaysFired() throws Exception {
+        String json = denm230Json(3, 10, 600, null);
+        RoadHazardManager.processDenm(json, denmHelper);
+        RoadHazardManager.processDenm(json, denmHelper);
+
+        verify(mockCallback, times(2)).denmArrived(any());
+    }
+
+    @Test
+    void processDenm230SecondMessageTriggersUpdate() throws Exception {
+        String json = denm230Json(3, 2, 600, null);
+        RoadHazardManager.processDenm(json, denmHelper);
+        RoadHazardManager.processDenm(json, denmHelper);
+
+        verify(mockCallback, times(1)).newRoadHazard(any());
+        verify(mockCallback, times(1)).roadHazardUpdate(any());
+    }
+
+    @Test
+    void processDenm230TerminationRemovesHazard() throws Exception {
+        RoadHazardManager.processDenm(denm230Json(3, 3, 600, null), denmHelper);
+        RoadHazardManager.processDenm(denm230Json(3, 3, 600, 0), denmHelper);
+
+        verify(mockCallback, times(1)).roadHazardExpired(any());
+        assertEquals(0, RoadHazardManager.getRoadHazards().size());
+    }
+
+    @Test
+    void processDenm230NewHazardHasCorrectPosition() throws Exception {
+        RoadHazardManager.processDenm(denm230Json(3, 50, 600, null), denmHelper);
+
+        ArgumentCaptor<RoadHazard> captor = ArgumentCaptor.forClass(RoadHazard.class);
+        verify(mockCallback).newRoadHazard(captor.capture());
+        assertEquals(48.8566, captor.getValue().getPosition().getLatitude(), 1e-4);
+        assertEquals(2.3522, captor.getValue().getPosition().getLongitude(), 1e-4);
+    }
+
+    @Test
+    void processDenm230TwoDifferentHazardsAreCreated() throws Exception {
+        RoadHazardManager.processDenm(denm230Json(3, 60, 600, null), denmHelper);
+        RoadHazardManager.processDenm(denm230Json(3, 61, 600, null), denmHelper);
+
+        verify(mockCallback, times(2)).newRoadHazard(any());
+        assertEquals(2, RoadHazardManager.getRoadHazards().size());
     }
 
     // -------------------------------------------------------------------------
