@@ -12,7 +12,8 @@ package com.orange.iot3mobility.messages.denm.core;
  */
 public enum DenmVersion {
     V1_1_3("1.1.3"),
-    V2_2_0("2.2.0");
+    V2_2_0("2.2.0"),
+    V2_3_0("2.3.0");
 
     private final String jsonValue;
 

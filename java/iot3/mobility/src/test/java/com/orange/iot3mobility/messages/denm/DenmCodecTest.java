@@ -21,6 +21,8 @@ import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
 import com.orange.iot3mobility.messages.denm.v220.model.DenmMessage220;
 import com.orange.iot3mobility.messages.denm.v220.model.defs.Altitude;
 import com.orange.iot3mobility.messages.denm.v220.model.defs.PositionConfidenceEllipse;
+import com.orange.iot3mobility.messages.denm.v230.model.DenmEnvelope230;
+import com.orange.iot3mobility.messages.denm.v230.model.DenmMessage230;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -60,6 +62,22 @@ class DenmCodecTest {
         assertEquals(DenmVersion.V2_2_0, frame.version());
         assertTrue(frame.envelope() instanceof DenmEnvelope220);
         DenmEnvelope220 parsed = (DenmEnvelope220) frame.envelope();
+        assertEquals(envelope.sourceUuid(), parsed.sourceUuid());
+        assertEquals(envelope.timestamp(), parsed.timestamp());
+    }
+
+    @Test
+    void writeRead230RoundTrip() throws Exception {
+        DenmEnvelope230 envelope = validEnvelope230();
+        DenmCodec codec = new DenmCodec(new JsonFactory());
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        codec.write(DenmVersion.V2_3_0, envelope, out);
+
+        DenmCodec.DenmFrame<?> frame = codec.read(new ByteArrayInputStream(out.toByteArray()));
+        assertEquals(DenmVersion.V2_3_0, frame.version());
+        assertTrue(frame.envelope() instanceof DenmEnvelope230);
+        DenmEnvelope230 parsed = (DenmEnvelope230) frame.envelope();
         assertEquals(envelope.sourceUuid(), parsed.sourceUuid());
         assertEquals(envelope.timestamp(), parsed.timestamp());
     }
@@ -119,6 +137,37 @@ class DenmCodecTest {
                 .build();
 
         return DenmEnvelope220.builder()
+                .sourceUuid("com_application_42")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+    }
+
+    private static DenmEnvelope230 validEnvelope230() {
+        com.orange.iot3mobility.messages.denm.v230.model.managementcontainer.ReferencePosition position =
+                com.orange.iot3mobility.messages.denm.v230.model.managementcontainer.ReferencePosition.builder()
+                        .latitude(0)
+                        .longitude(0)
+                        .positionConfidenceEllipse(new com.orange.iot3mobility.messages.denm.v230.model.defs.PositionConfidenceEllipse(0, 0, 0))
+                        .altitude(new com.orange.iot3mobility.messages.denm.v230.model.defs.Altitude(0, 0))
+                        .build();
+
+        com.orange.iot3mobility.messages.denm.v230.model.managementcontainer.ManagementContainer management =
+                com.orange.iot3mobility.messages.denm.v230.model.managementcontainer.ManagementContainer.builder()
+                        .actionId(new com.orange.iot3mobility.messages.denm.v230.model.managementcontainer.ActionId(1, 1))
+                        .detectionTime(0)
+                        .referenceTime(0)
+                        .eventPosition(position)
+                        .stationType(5)
+                        .build();
+
+        DenmMessage230 message = DenmMessage230.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .managementContainer(management)
+                .build();
+
+        return DenmEnvelope230.builder()
                 .sourceUuid("com_application_42")
                 .timestamp(1514764800000L)
                 .message(message)

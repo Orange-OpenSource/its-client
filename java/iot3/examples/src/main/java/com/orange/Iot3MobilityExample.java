@@ -19,6 +19,7 @@ import com.orange.iot3mobility.messages.denm.core.DenmCodec;
 import com.orange.iot3mobility.messages.denm.core.DenmVersion;
 import com.orange.iot3mobility.messages.denm.v113.model.DenmEnvelope113;
 import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
+import com.orange.iot3mobility.messages.denm.v230.model.DenmEnvelope230;
 import com.orange.iot3mobility.messages.mapem.core.MapemCodec;
 import com.orange.iot3mobility.messages.mapem.core.MapemVersion;
 import com.orange.iot3mobility.messages.mapem.v200.model.MapemEnvelope200;
@@ -145,6 +146,9 @@ public class Iot3MobilityExample {
                 } else if(denmFrame.version().equals(DenmVersion.V2_2_0)) {
                     DenmEnvelope220 denmEnvelope220 = (DenmEnvelope220) denmFrame.envelope();
                     System.out.println("Raw DENM v2.2.0: " + denmEnvelope220);
+                } else if(denmFrame.version().equals(DenmVersion.V2_3_0)) {
+                    DenmEnvelope230 denmEnvelope230 = (DenmEnvelope230) denmFrame.envelope();
+                    System.out.println("Raw DENM v2.3.0: " + denmEnvelope230);
                 }
             }
         });
@@ -367,6 +371,13 @@ public class Iot3MobilityExample {
                         position,
                         stationType);
                 ioT3Mobility.sendDenm(denmEnvelope220);
+            } else if(denmVersion == DenmVersion.V2_3_0) {
+                DenmEnvelope230 denmEnvelope230 = DenmV230Factory.createTestDenmEnvelope(
+                        EXAMPLE_UUID,
+                        hazardType,
+                        position,
+                        stationType);
+                ioT3Mobility.sendDenm(denmEnvelope230);
             }
         } catch (Exception e) {
             System.out.println("DENM ERROR: " + e);

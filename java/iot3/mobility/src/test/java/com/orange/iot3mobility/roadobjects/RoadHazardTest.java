@@ -20,9 +20,8 @@ import com.orange.iot3mobility.messages.denm.v113.model.situationcontainer.Event
 import com.orange.iot3mobility.messages.denm.v113.model.situationcontainer.SituationContainer;
 import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
 import com.orange.iot3mobility.messages.denm.v220.model.DenmMessage220;
-import com.orange.iot3mobility.messages.denm.v220.model.defs.Altitude;
-import com.orange.iot3mobility.messages.denm.v220.model.defs.PositionConfidenceEllipse;
-import com.orange.iot3mobility.messages.denm.v220.model.situationcontainer.CauseCode;
+import com.orange.iot3mobility.messages.denm.v230.model.DenmEnvelope230;
+import com.orange.iot3mobility.messages.denm.v230.model.DenmMessage230;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -119,8 +118,8 @@ class RoadHazardTest {
                 com.orange.iot3mobility.messages.denm.v220.model.managementcontainer.ReferencePosition.builder()
                         .latitude(PARIS_LAT_ETSI)
                         .longitude(PARIS_LON_ETSI)
-                        .positionConfidenceEllipse(new PositionConfidenceEllipse(0, 0, 0))
-                        .altitude(new Altitude(0, 0))
+                        .positionConfidenceEllipse(new com.orange.iot3mobility.messages.denm.v220.model.defs.PositionConfidenceEllipse(0, 0, 0))
+                        .altitude(new com.orange.iot3mobility.messages.denm.v220.model.defs.Altitude(0, 0))
                         .build();
 
         com.orange.iot3mobility.messages.denm.v220.model.managementcontainer.ManagementContainer management =
@@ -136,7 +135,7 @@ class RoadHazardTest {
         com.orange.iot3mobility.messages.denm.v220.model.situationcontainer.SituationContainer situation =
                 com.orange.iot3mobility.messages.denm.v220.model.situationcontainer.SituationContainer.builder()
                         .informationQuality(7)
-                        .eventType(new CauseCode(causeCode, subcause))
+                        .eventType(new com.orange.iot3mobility.messages.denm.v220.model.situationcontainer.CauseCode(causeCode, subcause))
                         .build();
 
         DenmMessage220 message = DenmMessage220.builder()
@@ -256,6 +255,81 @@ class RoadHazardTest {
 
         hazard.setDenmFrame(new DenmCodec.DenmFrame<>(DenmVersion.V1_1_3, newEnvelope));
         assertEquals(HazardType.ROADWORKS_NO_SUBCAUSE, hazard.getType());
+    }
+
+    // -------------------------------------------------------------------------
+    // v2.3.0 DENM frame
+    // -------------------------------------------------------------------------
+
+    private static DenmCodec.DenmFrame<?> buildFrame230(int validityDurationSec,
+                                                         int causeCode, int subcause) {
+        com.orange.iot3mobility.messages.denm.v230.model.managementcontainer.ReferencePosition position =
+                com.orange.iot3mobility.messages.denm.v230.model.managementcontainer.ReferencePosition.builder()
+                        .latitude(PARIS_LAT_ETSI)
+                        .longitude(PARIS_LON_ETSI)
+                        .positionConfidenceEllipse(new com.orange.iot3mobility.messages.denm.v230.model.defs.PositionConfidenceEllipse(0, 0, 0))
+                        .altitude(new com.orange.iot3mobility.messages.denm.v230.model.defs.Altitude(0, 0))
+                        .build();
+
+        com.orange.iot3mobility.messages.denm.v230.model.managementcontainer.ManagementContainer management =
+                com.orange.iot3mobility.messages.denm.v230.model.managementcontainer.ManagementContainer.builder()
+                        .actionId(new com.orange.iot3mobility.messages.denm.v230.model.managementcontainer.ActionId(1, 1))
+                        .detectionTime(0)
+                        .referenceTime(0)
+                        .eventPosition(position)
+                        .validityDuration(validityDurationSec)
+                        .stationType(5)
+                        .build();
+
+        com.orange.iot3mobility.messages.denm.v230.model.situationcontainer.SituationContainer situation =
+                com.orange.iot3mobility.messages.denm.v230.model.situationcontainer.SituationContainer.builder()
+                        .informationQuality(7)
+                        .eventType(new com.orange.iot3mobility.messages.denm.v230.model.situationcontainer.CauseCode(causeCode, subcause))
+                        .build();
+
+        DenmMessage230 message = DenmMessage230.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .managementContainer(management)
+                .situationContainer(situation)
+                .build();
+
+        DenmEnvelope230 envelope = DenmEnvelope230.builder()
+                .sourceUuid("com_application_42")
+                .timestamp(System.currentTimeMillis())
+                .message(message)
+                .build();
+
+        return new DenmCodec.DenmFrame<>(DenmVersion.V2_3_0, envelope);
+    }
+
+    @Test
+    void roadHazard230ExtractsPositionCorrectly() {
+        RoadHazard hazard = new RoadHazard("h10", buildFrame230(600, 2, 1));
+        assertNotNull(hazard.getPosition());
+        assertEquals(48.8566, hazard.getPosition().getLatitude(), 1e-4);
+        assertEquals(2.3522, hazard.getPosition().getLongitude(), 1e-4);
+    }
+
+    @Test
+    void roadHazard230ExtractsHazardTypeCorrectly() {
+        // cause=2 (ACCIDENT), subcause=1 → MULTI_VEHICLE_ACCIDENT
+        RoadHazard hazard = new RoadHazard("h11", buildFrame230(600, 2, 1));
+        assertEquals(HazardType.MULTI_VEHICLE_ACCIDENT, hazard.getType());
+    }
+
+    @Test
+    void roadHazard230StillLivingWithPositiveLifetime() {
+        RoadHazard hazard = new RoadHazard("h12", buildFrame230(600, 1, 0));
+        assertTrue(hazard.stillLiving());
+    }
+
+    @Test
+    void roadHazard230LifetimeExpiredWhenDurationIsZero() {
+        // validityDuration=0 → lifetime=0 ms → stillLiving() must return false immediately
+        RoadHazard hazard = new RoadHazard("h13", buildFrame230(0, 1, 0));
+        assertFalse(hazard.stillLiving(),
+                "Hazard with 0s validity duration should not be living");
     }
 }
 

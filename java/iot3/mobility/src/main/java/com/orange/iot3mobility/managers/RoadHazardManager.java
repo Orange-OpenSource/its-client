@@ -10,14 +10,14 @@ package com.orange.iot3mobility.managers;
 import com.orange.iot3mobility.TrueTime;
 import com.orange.iot3mobility.messages.denm.DenmHelper;
 import com.orange.iot3mobility.messages.denm.core.DenmCodec;
-import com.orange.iot3mobility.messages.denm.core.DenmVersion;
 import com.orange.iot3mobility.messages.denm.v113.model.DenmEnvelope113;
 import com.orange.iot3mobility.messages.denm.v113.model.DenmMessage113;
 import com.orange.iot3mobility.messages.denm.v220.model.DenmEnvelope220;
 import com.orange.iot3mobility.messages.denm.v220.model.DenmMessage220;
+import com.orange.iot3mobility.messages.denm.v230.model.DenmEnvelope230;
+import com.orange.iot3mobility.messages.denm.v230.model.DenmMessage230;
 import com.orange.iot3mobility.roadobjects.RoadHazard;
 
-import org.json.JSONException;
 
 import java.io.IOException;
 import java.util.*;
@@ -56,26 +56,40 @@ public class RoadHazardManager {
                 boolean expired;
                 boolean terminate;
 
-                if(denmFrame.version().equals(DenmVersion.V1_1_3)) {
-                    DenmEnvelope113 denmEnvelope113 = (DenmEnvelope113) denmFrame.envelope();
-                    DenmMessage113 denm113 = denmEnvelope113.message();
-                    timestamp = denmEnvelope113.timestamp();
-                    uuid = denm113.managementContainer().actionId().originatingStationId() + "_"
-                            + denm113.managementContainer().actionId().sequenceNumber();
-                    lifetime = denm113.managementContainer().validityDuration() * 1000;
-                    expired = TrueTime.getAccurateTime() - timestamp > lifetime;
-                    terminate = denm113.managementContainer().termination() != null;
-                    createOrUpdateRoadHazard(uuid, expired, terminate, denmFrame);
-                } else if(denmFrame.version().equals(DenmVersion.V2_2_0)) {
-                    DenmEnvelope220 denmEnvelope220 = (DenmEnvelope220) denmFrame.envelope();
-                    DenmMessage220 denm220 = denmEnvelope220.message();
-                    timestamp = denmEnvelope220.timestamp();
-                    uuid = denm220.managementContainer().actionId().originatingStationId() + "_"
-                            + denm220.managementContainer().actionId().sequenceNumber();
-                    lifetime = denm220.managementContainer().validityDuration() * 1000;
-                    expired = TrueTime.getAccurateTime() - timestamp > lifetime;
-                    terminate = denm220.managementContainer().termination() != null;
-                    createOrUpdateRoadHazard(uuid, expired, terminate, denmFrame);
+                switch (denmFrame.version()) {
+                    case V1_1_3 -> {
+                        DenmEnvelope113 denmEnvelope113 = (DenmEnvelope113) denmFrame.envelope();
+                        DenmMessage113 denm113 = denmEnvelope113.message();
+                        timestamp = denmEnvelope113.timestamp();
+                        uuid = denm113.managementContainer().actionId().originatingStationId() + "_"
+                                + denm113.managementContainer().actionId().sequenceNumber();
+                        lifetime = denm113.managementContainer().validityDuration() * 1000;
+                        expired = TrueTime.getAccurateTime() - timestamp > lifetime;
+                        terminate = denm113.managementContainer().termination() != null;
+                        createOrUpdateRoadHazard(uuid, expired, terminate, denmFrame);
+                    }
+                    case V2_2_0 -> {
+                        DenmEnvelope220 denmEnvelope220 = (DenmEnvelope220) denmFrame.envelope();
+                        DenmMessage220 denm220 = denmEnvelope220.message();
+                        timestamp = denmEnvelope220.timestamp();
+                        uuid = denm220.managementContainer().actionId().originatingStationId() + "_"
+                                + denm220.managementContainer().actionId().sequenceNumber();
+                        lifetime = denm220.managementContainer().validityDuration() * 1000;
+                        expired = TrueTime.getAccurateTime() - timestamp > lifetime;
+                        terminate = denm220.managementContainer().termination() != null;
+                        createOrUpdateRoadHazard(uuid, expired, terminate, denmFrame);
+                    }
+                    case V2_3_0 -> {
+                        DenmEnvelope230 denmEnvelope230 = (DenmEnvelope230) denmFrame.envelope();
+                        DenmMessage230 denm230 = denmEnvelope230.message();
+                        timestamp = denmEnvelope230.timestamp();
+                        uuid = denm230.managementContainer().actionId().originatingStationId() + "_"
+                                + denm230.managementContainer().actionId().sequenceNumber();
+                        lifetime = denm230.managementContainer().validityDuration() * 1000;
+                        expired = TrueTime.getAccurateTime() - timestamp > lifetime;
+                        terminate = denm230.managementContainer().termination() != null;
+                        createOrUpdateRoadHazard(uuid, expired, terminate, denmFrame);
+                    }
                 }
             } catch (IOException e) {
                 LOGGER.log(Level.WARNING, TAG + " DENM parsing error: " + e);
