@@ -27,9 +27,14 @@ import com.orange.iot3mobility.messages.spatem.core.SpatemCodec;
 import com.orange.iot3mobility.messages.spatem.core.SpatemVersion;
 import com.orange.iot3mobility.messages.spatem.v200.model.SpatemEnvelope200;
 import com.orange.iot3mobility.managers.IoT3IntersectionCallback;
+import com.orange.iot3mobility.managers.IoT3ManoeuvreCallback;
 import com.orange.iot3mobility.managers.IoT3RoadHazardCallback;
 import com.orange.iot3mobility.managers.IoT3RoadSensorCallback;
 import com.orange.iot3mobility.managers.IoT3RoadUserCallback;
+import com.orange.iot3mobility.messages.mcm.core.McmCodec;
+import com.orange.iot3mobility.messages.mcm.core.McmVersion;
+import com.orange.iot3mobility.messages.mcm.v200.model.McmEnvelope200;
+import com.orange.iot3mobility.roadobjects.ManoeuvreSession;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.roadobjects.HazardType;
 import com.orange.iot3mobility.roadobjects.LaneGeometry;
@@ -311,6 +316,47 @@ public class Iot3MobilityExample {
             }
         });
 
+        // set the ManoeuvreCallback to be informed of MCM-derived manoeuvre sessions
+        // (creation, update and expiry) in the corresponding Region of Interest (RoI)
+        ioT3Mobility.setManoeuvreCallback(new IoT3ManoeuvreCallback() {
+            @Override
+            public void mcmArrived(McmCodec.McmFrame<?> mcmFrame) {
+                if (mcmFrame.version() == McmVersion.V2_0_0) {
+                    McmEnvelope200 mcmEnvelope200 = (McmEnvelope200) mcmFrame.envelope();
+                    System.out.println("Raw MCM v2.0.0: " + mcmEnvelope200);
+                }
+            }
+
+            @Override
+            public void newManoeuvreSession(ManoeuvreSession manoeuvreSession) {
+                System.out.println("New Manoeuvre Session: " + manoeuvreSession.getUuid()
+                        + " | Phase: " + manoeuvreSession.getPhase()
+                        + " | Concept: " + manoeuvreSession.getConcept()
+                        + " | Position: " + manoeuvreSession.getPosition());
+                if (manoeuvreSession.getPlannedTrajectory() != null) {
+                    System.out.println("  Trajectory waypoints: "
+                            + manoeuvreSession.getPlannedTrajectory().size());
+                }
+                if (manoeuvreSession.getAdvisedChanges() != null) {
+                    manoeuvreSession.getAdvisedChanges().forEach((executantId, advisedChange) ->
+                            System.out.println("  Advised change for station " + executantId
+                                    + ": " + advisedChange));
+                }
+            }
+
+            @Override
+            public void manoeuvreSessionUpdated(ManoeuvreSession manoeuvreSession) {
+                System.out.println("Manoeuvre Session updated: " + manoeuvreSession.getUuid()
+                        + " | Phase: " + manoeuvreSession.getPhase()
+                        + " | Position: " + manoeuvreSession.getPosition());
+            }
+
+            @Override
+            public void manoeuvreSessionExpired(ManoeuvreSession manoeuvreSession) {
+                System.out.println("Manoeuvre Session has expired: " + manoeuvreSession.getUuid());
+            }
+        });
+
         // set the RawMessageCallback to be informed of any message being received by the SDK, before treatment
         // this callback is intended for users who prefer to process messages themselves
         ioT3Mobility.setRawMessageCallback(message -> System.out.println("Raw message received: " + message));
@@ -331,6 +377,7 @@ public class Iot3MobilityExample {
         ioT3Mobility.setRoadHazardRoI(roiPosition, 16, true);
         ioT3Mobility.setRoadSensorRoI(roiPosition, 16, true);
         ioT3Mobility.setIntersectionRoI(roiPosition, 16, true);
+        ioT3Mobility.setManoeuvreRoI(roiPosition, 16, true);
     }
 
     private static synchronized void startSendingMessages() {
@@ -340,6 +387,8 @@ public class Iot3MobilityExample {
         messageScheduler.scheduleWithFixedDelay(() -> sendTestCpm(CpmVersion.V1_2_1), 1, 1, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(() -> sendTestMapem(), 1, 20, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(() -> sendTestSpatem(), 1, 1, TimeUnit.SECONDS);
+        messageScheduler.scheduleWithFixedDelay(() -> sendTestMcmIntent(), 1, 1, TimeUnit.SECONDS);
+        messageScheduler.scheduleWithFixedDelay(() -> sendTestMcmOffer(), 1, 1, TimeUnit.SECONDS);
         messageScheduler.scheduleWithFixedDelay(Iot3MobilityExample::sendTestConnStat, 1, 1, TimeUnit.SECONDS);
     }
 
@@ -444,6 +493,33 @@ public class Iot3MobilityExample {
             ioT3Mobility.sendSpatem(spatemEnvelope200, intersectionPosition);
         } catch (Exception e) {
             System.out.println("SPATEM ERROR: " + e);
+        }
+    }
+
+    private static void sendTestMcmIntent() {
+        // Vehicle 1 (stationId 111111) is broadcasting its intent to change to the right lane at 50 km/h
+        LatLng position = new LatLng(48.625218, 2.243448); // center point of UTAC TEQMO
+        try {
+            McmEnvelope200 mcmEnvelope200 = McmV200Factory.createVehicleIntentMcm(EXAMPLE_UUID, position);
+            System.out.println("Sending MCM v2.0.0 (intent): " + mcmEnvelope200);
+            ioT3Mobility.sendMcm(mcmEnvelope200);
+        } catch (Exception exception) {
+            System.out.println("MCM INTENT ERROR: " + exception);
+        }
+    }
+
+    private static void sendTestMcmOffer() {
+        // Vehicle 2 (stationId 222222) is broadcasting a prescriptive offer to keep vehicle 3 in its lane
+        LatLng position = new LatLng(48.625218, 2.243448); // center point of UTAC TEQMO
+        try {
+            McmEnvelope200 mcmEnvelope200 = McmV200Factory.createCoordinatingMcm(
+                    EXAMPLE_UUID,
+                    position,
+                    McmV200Factory.TARGET_VEHICLE_STATION_ID);
+            System.out.println("Sending MCM v2.0.0 (offer): " + mcmEnvelope200);
+            ioT3Mobility.sendMcm(mcmEnvelope200);
+        } catch (Exception exception) {
+            System.out.println("MCM OFFER ERROR: " + exception);
         }
     }
 
