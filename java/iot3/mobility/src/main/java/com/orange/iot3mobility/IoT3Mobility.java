@@ -35,6 +35,8 @@ import com.orange.iot3mobility.messages.denm.v230.model.DenmEnvelope230;
 import com.orange.iot3mobility.messages.mapem.MapemHelper;
 import com.orange.iot3mobility.messages.mapem.v200.model.MapemEnvelope200;
 import com.orange.iot3mobility.messages.mapem.v200.model.shared.Position3D;
+import com.orange.iot3mobility.messages.mcm.McmHelper;
+import com.orange.iot3mobility.messages.mcm.v200.model.McmEnvelope200;
 import com.orange.iot3mobility.messages.spatem.SpatemHelper;
 import com.orange.iot3mobility.messages.spatem.v200.model.SpatemEnvelope200;
 import com.orange.iot3mobility.messages.spatem.v200.model.intersection.IntersectionState;
@@ -42,6 +44,7 @@ import com.orange.iot3mobility.managers.*;
 import com.orange.iot3mobility.roadobjects.SignalController;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.quadkey.QuadTileHelper;
+import com.orange.iot3mobility.roadobjects.ManoeuvreSession;
 import com.orange.iot3mobility.roadobjects.RoadHazard;
 import com.orange.iot3mobility.roadobjects.RoadGeometry;
 import com.orange.iot3mobility.roadobjects.RoadIntersection;
@@ -76,6 +79,7 @@ public class IoT3Mobility {
     private final DenmHelper denmHelper = new DenmHelper();
     private final MapemHelper mapemHelper = new MapemHelper();
     private final SpatemHelper spatemHelper = new SpatemHelper();
+    private final McmHelper mcmHelper = new McmHelper();
 
     private final String uuid;
     private final String context;
@@ -412,6 +416,7 @@ public class IoT3Mobility {
         else if(topic.contains("/denm/")) RoadHazardManager.processDenm(message, denmHelper);
         else if(topic.contains("/mapem/")) RoadGeometryManager.processMapem(message, mapemHelper);
         else if(topic.contains("/spatem/")) SignalControllerManager.processSpatem(message, spatemHelper);
+        else if(topic.contains("/mcm/")) ManoeuvreSessionManager.processMcm(message, mcmHelper);
     }
 
     /**
@@ -779,6 +784,67 @@ public class IoT3Mobility {
      */
     public static void clearSignalControllers() {
         SignalControllerManager.clear();
+    }
+
+    /**
+     * Sets the Region of Interest (RoI) for manoeuvre coordination messages (MCM) based on a
+     * specific geographical position and zoom level.
+     *
+     * @param position          the LatLng representing the target geographical position for the RoI.
+     * @param level             the zoom level for the RoI, which should be between 1 and 22.
+     * @param withNeighborTiles include neighboring tiles around the computed target tile.
+     */
+    public void setManoeuvreRoI(LatLng position, int level, boolean withNeighborTiles) {
+        if (roIManager != null) roIManager.setMcmRoI(position, level, withNeighborTiles);
+    }
+
+    /**
+     * Set up the manoeuvre callback to be informed of {@link ManoeuvreSession} lifecycle events
+     * (creation, update, expiry) in the RoI defined with {@link #setManoeuvreRoI(LatLng, int, boolean)}.
+     * The callback also receives every raw MCM frame via {@link IoT3ManoeuvreCallback#mcmArrived}.
+     *
+     * @param ioT3ManoeuvreCallback the callback for manoeuvre session events
+     */
+    public void setManoeuvreCallback(IoT3ManoeuvreCallback ioT3ManoeuvreCallback) {
+        ManoeuvreSessionManager.init(ioT3ManoeuvreCallback);
+    }
+
+    /**
+     * Retrieve a read-only snapshot of all currently active manoeuvre sessions.
+     *
+     * @return the read-only list of {@link ManoeuvreSession} objects
+     */
+    public static List<ManoeuvreSession> getManoeuvreSessions() {
+        return ManoeuvreSessionManager.getManoeuvreSessions();
+    }
+
+    /**
+     * Remove all stored manoeuvre sessions immediately without firing expiry callbacks.
+     * Call this when leaving a geographic area to avoid unbounded memory growth.
+     */
+    public static void clearManoeuvreSessions() {
+        ManoeuvreSessionManager.clear();
+    }
+
+    /**
+     * Send an MCM - Manoeuvre Coordination Message - v2.0.0.
+     * <p>
+     * The publish topic is geo-routed using a quadkey derived from the {@code position} field
+     * inside the MCM {@code message}.
+     *
+     * @param mcmV200 the MCM envelope to send.
+     * @throws IOException if JSON serialisation fails.
+     */
+    public void sendMcm(McmEnvelope200 mcmV200) throws IOException {
+        double latitude = com.orange.iot3mobility.messages.EtsiConverter.latitudeDegrees(
+                mcmV200.message().position().latitude());
+        double longitude = com.orange.iot3mobility.messages.EtsiConverter.longitudeDegrees(
+                mcmV200.message().position().longitude());
+        String quadkey = QuadTileHelper.latLngToQuadKey(latitude, longitude, 22);
+        String geoExtension = QuadTileHelper.quadKeyToQuadTopic(quadkey);
+        String topic = context + "/inQueue/v2x/mcm/" + uuid + geoExtension;
+
+        if (isConnected()) ioT3Core.mqttPublish(topic, mcmHelper.toJson(mcmV200), false, 0, 1);
     }
 
     /**
