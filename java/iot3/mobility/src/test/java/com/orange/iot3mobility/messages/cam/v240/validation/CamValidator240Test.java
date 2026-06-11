@@ -6,17 +6,17 @@
  @author Mathieu LEFEBVRE <mathieu1.lefebvre@orange.com>
  @generated GitHub Copilot (Claude Sonnet 4.6)
  */
-package com.orange.iot3mobility.messages.cam.v230.validation;
+package com.orange.iot3mobility.messages.cam.v240.validation;
 
-import com.orange.iot3mobility.messages.cam.v230.model.CamAsn1Payload;
-import com.orange.iot3mobility.messages.cam.v230.model.CamEnvelope230;
-import com.orange.iot3mobility.messages.cam.v230.model.CamStructuredData;
-import com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.Altitude;
-import com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.BasicContainer;
-import com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.PositionConfidenceEllipse;
-import com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.ReferencePosition;
-import com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.*;
-import com.orange.iot3mobility.messages.cam.v230.model.lowfrequencycontainer.*;
+import com.orange.iot3mobility.messages.cam.v240.model.CamAsn1Payload;
+import com.orange.iot3mobility.messages.cam.v240.model.CamEnvelope240;
+import com.orange.iot3mobility.messages.cam.v240.model.CamStructuredData;
+import com.orange.iot3mobility.messages.cam.v240.model.basiccontainer.Altitude;
+import com.orange.iot3mobility.messages.cam.v240.model.basiccontainer.BasicContainer;
+import com.orange.iot3mobility.messages.cam.v240.model.basiccontainer.PositionConfidenceEllipse;
+import com.orange.iot3mobility.messages.cam.v240.model.basiccontainer.ReferencePosition;
+import com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.*;
+import com.orange.iot3mobility.messages.cam.v240.model.lowfrequencycontainer.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -24,12 +24,12 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class CamValidator230Test {
+class CamValidator240Test {
 
     @Test
     void validateEnvelopeAcceptsStructuredPayload() {
-        CamEnvelope230 envelope = validEnvelope();
-        CamValidator230.validateEnvelope(envelope);
+        CamEnvelope240 envelope = validEnvelope();
+        CamValidator240.validateEnvelope(envelope);
     }
 
     @Test
@@ -49,38 +49,38 @@ class CamValidator230Test {
                 .lowFrequencyContainer(low)
                 .build();
 
-        CamEnvelope230 envelope = CamEnvelope230.builder()
+        CamEnvelope240 envelope = CamEnvelope240.builder()
                 .messageFormat("json/raw")
                 .sourceUuid("com_car_42")
                 .timestamp(1514764800000L)
                 .message(message)
                 .build();
 
-        CamValidator230.validateEnvelope(envelope);
+        CamValidator240.validateEnvelope(envelope);
     }
 
     @Test
     void validateEnvelopeRejectsMessageFormatMismatch() {
-        CamEnvelope230 envelope = CamEnvelope230.builder()
+        CamEnvelope240 envelope = CamEnvelope240.builder()
                 .messageFormat("asn1/uper")
                 .sourceUuid("com_car_42")
                 .timestamp(1514764800000L)
                 .message(validStructuredMessage())
                 .build();
 
-        assertThrows(CamValidationException.class, () -> CamValidator230.validateEnvelope(envelope));
+        assertThrows(CamValidationException.class, () -> CamValidator240.validateEnvelope(envelope));
     }
 
     @Test
     void validateEnvelopeRejectsAsn1InvalidBase64() {
-        CamEnvelope230 envelope = CamEnvelope230.builder()
+        CamEnvelope240 envelope = CamEnvelope240.builder()
                 .messageFormat("asn1/uper")
                 .sourceUuid("com_car_42")
                 .timestamp(1514764800000L)
                 .message(new CamAsn1Payload("1", "not_base64"))
                 .build();
 
-        assertThrows(CamValidationException.class, () -> CamValidator230.validateEnvelope(envelope));
+        assertThrows(CamValidationException.class, () -> CamValidator240.validateEnvelope(envelope));
     }
 
     @Test
@@ -106,14 +106,14 @@ class CamValidator230Test {
                 .highFrequencyContainer(rsu)
                 .build();
 
-        CamEnvelope230 envelope = CamEnvelope230.builder()
+        CamEnvelope240 envelope = CamEnvelope240.builder()
                 .messageFormat("json/raw")
                 .sourceUuid("com_car_42")
                 .timestamp(1514764800000L)
                 .message(message)
                 .build();
 
-        assertThrows(CamValidationException.class, () -> CamValidator230.validateEnvelope(envelope));
+        assertThrows(CamValidationException.class, () -> CamValidator240.validateEnvelope(envelope));
     }
 
     @Test
@@ -149,14 +149,14 @@ class CamValidator230Test {
                 .highFrequencyContainer(high)
                 .build();
 
-        CamEnvelope230 envelope = CamEnvelope230.builder()
+        CamEnvelope240 envelope = CamEnvelope240.builder()
                 .messageFormat("json/raw")
                 .sourceUuid("com_car_42")
                 .timestamp(1514764800000L)
                 .message(message)
                 .build();
 
-        assertThrows(CamValidationException.class, () -> CamValidator230.validateEnvelope(envelope));
+        assertThrows(CamValidationException.class, () -> CamValidator240.validateEnvelope(envelope));
     }
 
     @Test
@@ -192,14 +192,14 @@ class CamValidator230Test {
                 .highFrequencyContainer(high)
                 .build();
 
-        CamEnvelope230 envelope = CamEnvelope230.builder()
+        CamEnvelope240 envelope = CamEnvelope240.builder()
                 .messageFormat("json/raw")
                 .sourceUuid("com_car_42")
                 .timestamp(1514764800000L)
                 .message(message)
                 .build();
 
-        assertThrows(CamValidationException.class, () -> CamValidator230.validateEnvelope(envelope));
+        assertThrows(CamValidationException.class, () -> CamValidator240.validateEnvelope(envelope));
     }
 
     @Test
@@ -235,14 +235,14 @@ class CamValidator230Test {
                 .highFrequencyContainer(high)
                 .build();
 
-        CamEnvelope230 envelope = CamEnvelope230.builder()
+        CamEnvelope240 envelope = CamEnvelope240.builder()
                 .messageFormat("json/raw")
                 .sourceUuid("com_car_42")
                 .timestamp(1514764800000L)
                 .message(message)
                 .build();
 
-        assertThrows(CamValidationException.class, () -> CamValidator230.validateEnvelope(envelope));
+        assertThrows(CamValidationException.class, () -> CamValidator240.validateEnvelope(envelope));
     }
 
     @Test
@@ -278,14 +278,14 @@ class CamValidator230Test {
                 .highFrequencyContainer(high)
                 .build();
 
-        CamEnvelope230 envelope = CamEnvelope230.builder()
+        CamEnvelope240 envelope = CamEnvelope240.builder()
                 .messageFormat("json/raw")
                 .sourceUuid("com_car_42")
                 .timestamp(1514764800000L)
                 .message(message)
                 .build();
 
-        assertThrows(CamValidationException.class, () -> CamValidator230.validateEnvelope(envelope));
+        assertThrows(CamValidationException.class, () -> CamValidator240.validateEnvelope(envelope));
     }
 
     @Test
@@ -310,14 +310,14 @@ class CamValidator230Test {
                 .lowFrequencyContainer(low)
                 .build();
 
-        CamEnvelope230 envelope = CamEnvelope230.builder()
+        CamEnvelope240 envelope = CamEnvelope240.builder()
                 .messageFormat("json/raw")
                 .sourceUuid("com_car_42")
                 .timestamp(1514764800000L)
                 .message(message)
                 .build();
 
-        assertThrows(CamValidationException.class, () -> CamValidator230.validateEnvelope(envelope));
+        assertThrows(CamValidationException.class, () -> CamValidator240.validateEnvelope(envelope));
     }
 
     @Test
@@ -337,18 +337,18 @@ class CamValidator230Test {
                 .lowFrequencyContainer(low)
                 .build();
 
-        CamEnvelope230 envelope = CamEnvelope230.builder()
+        CamEnvelope240 envelope = CamEnvelope240.builder()
                 .messageFormat("json/raw")
                 .sourceUuid("com_car_42")
                 .timestamp(1514764800000L)
                 .message(message)
                 .build();
 
-        assertThrows(CamValidationException.class, () -> CamValidator230.validateEnvelope(envelope));
+        assertThrows(CamValidationException.class, () -> CamValidator240.validateEnvelope(envelope));
     }
 
-    private static CamEnvelope230 validEnvelope() {
-        return CamEnvelope230.builder()
+    private static CamEnvelope240 validEnvelope() {
+        return CamEnvelope240.builder()
                 .messageFormat("json/raw")
                 .sourceUuid("com_car_42")
                 .timestamp(1514764800000L)
