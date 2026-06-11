@@ -10,7 +10,7 @@ import com.orange.iot3mobility.messages.StationType;
 import com.orange.iot3mobility.messages.cam.core.CamCodec;
 import com.orange.iot3mobility.messages.cam.core.CamVersion;
 import com.orange.iot3mobility.messages.cam.v113.model.CamEnvelope113;
-import com.orange.iot3mobility.messages.cam.v230.model.CamEnvelope230;
+import com.orange.iot3mobility.messages.cam.v240.model.CamEnvelope240;
 import com.orange.iot3mobility.messages.cpm.core.CpmCodec;
 import com.orange.iot3mobility.messages.cpm.core.CpmVersion;
 import com.orange.iot3mobility.messages.cpm.v121.model.CpmEnvelope121;
@@ -186,9 +186,9 @@ public class Iot3MobilityExample {
                 if(camFrame.version().equals(CamVersion.V1_1_3)) {
                     CamEnvelope113 camEnvelope113 = (CamEnvelope113) camFrame.envelope();
                     System.out.println("Raw CAM v1.1.3: " + camEnvelope113);
-                } else if(camFrame.version().equals(CamVersion.V2_3_0)) {
-                    CamEnvelope230 camEnvelope230 = (CamEnvelope230) camFrame.envelope();
-                    System.out.println("Raw CAM v2.3.0: " + camEnvelope230);
+                } else if(camFrame.version().equals(CamVersion.V2_4_0)) {
+                    CamEnvelope240 camEnvelope240 = (CamEnvelope240) camFrame.envelope();
+                    System.out.println("Raw CAM v2.4.0: " + camEnvelope240);
                 }
             }
         });

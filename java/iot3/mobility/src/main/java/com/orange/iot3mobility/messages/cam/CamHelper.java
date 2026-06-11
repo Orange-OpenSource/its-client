@@ -12,7 +12,7 @@ import com.orange.iot3mobility.messages.cam.core.CamCodec;
 import com.orange.iot3mobility.messages.cam.core.CamException;
 import com.orange.iot3mobility.messages.cam.core.CamVersion;
 import com.orange.iot3mobility.messages.cam.v113.model.CamEnvelope113;
-import com.orange.iot3mobility.messages.cam.v230.model.CamEnvelope230;
+import com.orange.iot3mobility.messages.cam.v240.model.CamEnvelope240;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -79,15 +79,15 @@ public final class CamHelper {
     }
 
     /**
-     * Parse a CAM JSON payload and cast it to a v2.3.0 envelope.
-     * Throws if the version is not 2.3.0.
+     * Parse a CAM JSON payload and cast it to a v2.4.0 envelope.
+     * Throws if the version is not 2.4.0.
      */
-    public CamEnvelope230 parse230(String jsonPayload) throws IOException {
+    public CamEnvelope240 parse240(String jsonPayload) throws IOException {
         CamCodec.CamFrame<?> frame = parse(jsonPayload);
-        if (frame.version() != CamVersion.V2_3_0) {
-            throw new CamException("Expected CAM version 2.3.0 but got " + frame.version());
+        if (frame.version() != CamVersion.V2_4_0) {
+            throw new CamException("Expected CAM version 2.4.0 but got " + frame.version());
         }
-        return (CamEnvelope230) frame.envelope();
+        return (CamEnvelope240) frame.envelope();
     }
 
     // ---------------------------------------------------------------------
@@ -103,11 +103,11 @@ public final class CamHelper {
     }
 
     /**
-     * Serialize a v2.3.0 CAM envelope to a JSON string.
+     * Serialize a v2.4.0 CAM envelope to a JSON string.
      */
-    public String toJson(CamEnvelope230 envelope230) throws IOException {
-        Objects.requireNonNull(envelope230, "envelope230");
-        return writeToString(CamVersion.V2_3_0, envelope230);
+    public String toJson(CamEnvelope240 envelope240) throws IOException {
+        Objects.requireNonNull(envelope240, "envelope240");
+        return writeToString(CamVersion.V2_4_0, envelope240);
     }
 
     /**
@@ -129,4 +129,3 @@ public final class CamHelper {
         return out.toString(StandardCharsets.UTF_8);
     }
 }
-

@@ -13,9 +13,9 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.orange.iot3mobility.messages.cam.v113.codec.CamReader113;
 import com.orange.iot3mobility.messages.cam.v113.codec.CamWriter113;
 import com.orange.iot3mobility.messages.cam.v113.model.CamEnvelope113;
-import com.orange.iot3mobility.messages.cam.v230.codec.CamReader230;
-import com.orange.iot3mobility.messages.cam.v230.codec.CamWriter230;
-import com.orange.iot3mobility.messages.cam.v230.model.CamEnvelope230;
+import com.orange.iot3mobility.messages.cam.v240.codec.CamReader240;
+import com.orange.iot3mobility.messages.cam.v240.codec.CamWriter240;
+import com.orange.iot3mobility.messages.cam.v240.model.CamEnvelope240;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -37,15 +37,15 @@ public final class CamCodec {
     private final JsonFactory jsonFactory;
     private final CamReader113 reader113;
     private final CamWriter113 writer113;
-    private final CamReader230 reader230;
-    private final CamWriter230 writer230;
+    private final CamReader240 reader240;
+    private final CamWriter240 writer240;
 
     public CamCodec(JsonFactory jsonFactory) {
         this.jsonFactory = Objects.requireNonNull(jsonFactory, "jsonFactory");
         this.reader113 = new CamReader113(jsonFactory);
         this.writer113 = new CamWriter113(jsonFactory);
-        this.reader230 = new CamReader230(jsonFactory);
-        this.writer230 = new CamWriter230(jsonFactory);
+        this.reader240 = new CamReader240(jsonFactory);
+        this.writer240 = new CamWriter240(jsonFactory);
     }
 
     /**
@@ -60,8 +60,8 @@ public final class CamCodec {
         return switch (version) {
             case V1_1_3 -> new CamFrame<>(version,
                     reader113.read(new ByteArrayInputStream(payload)));
-            case V2_3_0 -> new CamFrame<>(version,
-                    reader230.read(new ByteArrayInputStream(payload)));
+            case V2_4_0 -> new CamFrame<>(version,
+                    reader240.read(new ByteArrayInputStream(payload)));
         };
     }
 
@@ -78,8 +78,8 @@ public final class CamCodec {
         return switch (version) {
             case V1_1_3 -> new CamFrame<>(version,
                     reader113.read(new ByteArrayInputStream(payload)));
-            case V2_3_0 -> new CamFrame<>(version,
-                    reader230.read(new ByteArrayInputStream(payload)));
+            case V2_4_0 -> new CamFrame<>(version,
+                    reader240.read(new ByteArrayInputStream(payload)));
         };
     }
 
@@ -89,7 +89,7 @@ public final class CamCodec {
     public void write(CamVersion version, Object envelope, OutputStream out) throws IOException {
         switch (version) {
             case V1_1_3 -> writer113.write(cast(envelope, CamEnvelope113.class), out);
-            case V2_3_0 -> writer230.write(cast(envelope, CamEnvelope230.class), out);
+            case V2_4_0 -> writer240.write(cast(envelope, CamEnvelope240.class), out);
             default -> throw new CamException("Unsupported version: " + version);
         }
     }

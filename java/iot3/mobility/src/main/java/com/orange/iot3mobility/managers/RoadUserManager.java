@@ -13,13 +13,11 @@ import com.orange.iot3mobility.messages.cam.CamHelper;
 import com.orange.iot3mobility.messages.cam.core.CamCodec;
 import com.orange.iot3mobility.messages.cam.core.CamVersion;
 import com.orange.iot3mobility.messages.cam.v113.model.CamEnvelope113;
-import com.orange.iot3mobility.messages.cam.v230.model.CamEnvelope230;
-import com.orange.iot3mobility.messages.cam.v230.model.CamStructuredData;
-import com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.BasicVehicleContainerHighFrequency;
+import com.orange.iot3mobility.messages.cam.v240.model.CamEnvelope240;
+import com.orange.iot3mobility.messages.cam.v240.model.CamStructuredData;
+import com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.BasicVehicleContainerHighFrequency;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.roadobjects.RoadUser;
-
-import org.json.JSONException;
 
 import java.io.IOException;
 import java.util.*;
@@ -67,11 +65,11 @@ public class RoadUserManager {
                             EtsiConverter.longitudeDegrees(camEnvelope113.message().basicContainer().referencePosition().longitude()));
                     speed = EtsiConverter.speedMetersPerSecond(camEnvelope113.message().highFrequencyContainer().speed());
                     heading = EtsiConverter.headingDegrees(camEnvelope113.message().highFrequencyContainer().heading());
-                    createOrUpdateRoadUser(uuid, stationType, position, speed, heading, camFrame);
-                } else if(camFrame.version().equals(CamVersion.V2_3_0)) {
-                    CamEnvelope230 camEnvelope230 = (CamEnvelope230) camFrame.envelope();
-                    if(camEnvelope230.message() instanceof CamStructuredData cam) {
-                        uuid = camEnvelope230.sourceUuid() + "_" + cam.stationId();
+                    createOrUpdateRoadUser(uuid, stationType, position, speed, heading, null, camFrame);
+                } else if(camFrame.version().equals(CamVersion.V2_4_0)) {
+                    CamEnvelope240 camEnvelope240 = (CamEnvelope240) camFrame.envelope();
+                    if(camEnvelope240.message() instanceof CamStructuredData cam) {
+                        uuid = camEnvelope240.sourceUuid() + "_" + cam.stationId();
                         stationType = StationType.fromValue(cam.basicContainer().stationType());
                         position = new LatLng(
                                 EtsiConverter.latitudeDegrees(cam.basicContainer().referencePosition().latitude()),
@@ -83,7 +81,8 @@ public class RoadUserManager {
                             speed = 0;
                             heading = 0;
                         }
-                        createOrUpdateRoadUser(uuid, stationType, position, speed, heading, camFrame);
+                        createOrUpdateRoadUser(uuid, stationType, position, speed, heading,
+                                camEnvelope240.linkedStationId(), camFrame);
                     }
                 }
             } catch (IOException e) {
@@ -95,7 +94,7 @@ public class RoadUserManager {
     }
 
     private static void createOrUpdateRoadUser(String uuid, StationType stationType, LatLng position, double speed,
-                                               double heading, CamCodec.CamFrame<?> camFrame) {
+                                               double heading, Long linkedStationId, CamCodec.CamFrame<?> camFrame) {
         if(ROAD_USER_MAP.containsKey(uuid)) {
             synchronized (ROAD_USER_MAP) {
                 RoadUser roadUser = ROAD_USER_MAP.get(uuid);
@@ -105,12 +104,13 @@ public class RoadUserManager {
                     roadUser.setPosition(position);
                     roadUser.setSpeed(speed);
                     roadUser.setHeading(heading);
+                    roadUser.setLinkedStationId(linkedStationId);
                     roadUser.setCamFrame(camFrame);
                     ioT3RoadUserCallback.roadUserUpdate(roadUser);
                 }
             }
         } else {
-            RoadUser roadUser = new RoadUser(uuid, stationType, position, speed, heading, camFrame);
+            RoadUser roadUser = new RoadUser(uuid, stationType, position, speed, heading, linkedStationId, camFrame);
             addRoadUser(uuid, roadUser);
             ioT3RoadUserCallback.newRoadUser(roadUser);
         }
@@ -157,6 +157,30 @@ public class RoadUserManager {
      */
     public static List<RoadUser> getRoadUsers() {
         return Collections.unmodifiableList(ROAD_USERS);
+    }
+
+    /**
+     * Returns the {@link RoadUser} whose station identifier matches the
+     * {@link RoadUser#getLinkedStationId()} of the given road user, or
+     * {@code null} if the road user is not linked or the linked object
+     * is not currently known.
+     *
+     * @param roadUser the road user to resolve the linked object for
+     * @return the linked {@link RoadUser}, or {@code null}
+     */
+    public static RoadUser getLinkedObject(RoadUser roadUser) {
+        if (roadUser == null || roadUser.getLinkedStationId() == null) {
+            return null;
+        }
+        String suffix = "_" + roadUser.getLinkedStationId();
+        synchronized (ROAD_USERS) {
+            for (RoadUser candidate : ROAD_USERS) {
+                if (candidate.getUuid().endsWith(suffix)) {
+                    return candidate;
+                }
+            }
+        }
+        return null;
     }
 
 }
