@@ -20,11 +20,11 @@ import com.orange.iot3mobility.messages.cam.CamHelper;
 import com.orange.iot3mobility.messages.cam.core.CamVersion;
 import com.orange.iot3mobility.messages.cam.v113.model.*;
 import com.orange.iot3mobility.messages.cam.v113.model.HighFrequencyContainer;
-import com.orange.iot3mobility.messages.cam.v230.model.CamEnvelope230;
-import com.orange.iot3mobility.messages.cam.v230.model.CamStructuredData;
-import com.orange.iot3mobility.messages.cam.v230.model.MessageFormat;
-import com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.Altitude;
-import com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.*;
+import com.orange.iot3mobility.messages.cam.v240.model.CamEnvelope240;
+import com.orange.iot3mobility.messages.cam.v240.model.CamStructuredData;
+import com.orange.iot3mobility.messages.cam.v240.model.MessageFormat;
+import com.orange.iot3mobility.messages.cam.v240.model.basiccontainer.Altitude;
+import com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.*;
 import com.orange.iot3mobility.messages.cpm.CpmHelper;
 import com.orange.iot3mobility.messages.cpm.v121.model.CpmEnvelope121;
 import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
@@ -458,8 +458,8 @@ public class IoT3Mobility {
                             .build())
                     .build();
             sendCam(camEnvelope113);
-        } else if(camVersion == CamVersion.V2_3_0) {
-            CamEnvelope230 camEnvelope230 = CamEnvelope230.builder()
+        } else if(camVersion == CamVersion.V2_4_0) {
+            CamEnvelope240 camEnvelope240 = CamEnvelope240.builder()
                     .messageFormat(MessageFormat.JSON_RAW.value)
                     .sourceUuid(uuid)
                     .timestamp(TrueTime.getAccurateTime())
@@ -467,12 +467,12 @@ public class IoT3Mobility {
                             .protocolVersion(2)
                             .stationId(stationId)
                             .generationDeltaTime(EtsiConverter.generationDeltaTimeEtsi(TrueTime.getAccurateETSITime()))
-                            .basicContainer(com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.BasicContainer.builder()
+                            .basicContainer(com.orange.iot3mobility.messages.cam.v240.model.basiccontainer.BasicContainer.builder()
                                     .stationType(stationType.value)
-                                    .referencePosition(com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.ReferencePosition.builder()
+                                    .referencePosition(com.orange.iot3mobility.messages.cam.v240.model.basiccontainer.ReferencePosition.builder()
                                             .latitudeLongitude(EtsiConverter.latitudeEtsi(position.latitude),
                                                     EtsiConverter.longitudeEtsi(position.longitude))
-                                            .positionConfidenceEllipse(new com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.PositionConfidenceEllipse(10, 10,
+                                            .positionConfidenceEllipse(new com.orange.iot3mobility.messages.cam.v240.model.basiccontainer.PositionConfidenceEllipse(10, 10,
                                                     EtsiConverter.headingEtsiFromDegrees(heading)))
                                             .altitude(new Altitude(EtsiConverter.altitudeEtsi(altitude), 15))
                                             .build())
@@ -491,7 +491,7 @@ public class IoT3Mobility {
                                     .build())
                             .build())
                     .build();
-            sendCam(camEnvelope230);
+            sendCam(camEnvelope240);
         }
     }
 
@@ -513,12 +513,12 @@ public class IoT3Mobility {
     }
 
     /**
-     * Send a CAM - Cooperative Awareness Message - v2.3.0
+     * Send a CAM - Cooperative Awareness Message - v2.4.0
      *
-     * @param camV230 the CAM representing your current state - JSON version only
+     * @param camV240 the CAM representing your current state - JSON version only
      */
-    public void sendCam(CamEnvelope230 camV230) throws IOException {
-        if(camV230.message() instanceof CamStructuredData cam) {
+    public void sendCam(CamEnvelope240 camV240) throws IOException {
+        if(camV240.message() instanceof CamStructuredData cam) {
             // build the topic
             double latitude = EtsiConverter.latitudeDegrees(cam.basicContainer().referencePosition().latitude());
             double longitude = EtsiConverter.latitudeDegrees(cam.basicContainer().referencePosition().longitude());
@@ -527,7 +527,7 @@ public class IoT3Mobility {
             String topic = context + "/inQueue/v2x/cam/" + uuid + geoExtension;
 
             // send the message only if the client is connected
-            if(isConnected()) ioT3Core.mqttPublish(topic, camHelper.toJson(camV230), false, 0, 1);
+            if(isConnected()) ioT3Core.mqttPublish(topic, camHelper.toJson(camV240), false, 0, 1);
         }
     }
 

@@ -21,14 +21,22 @@ public class RoadUser {
     private double speed; // m/s
     private double heading; // degree
     private long timestamp;
+    private Long linkedStationId;
     private CamCodec.CamFrame<?> camFrame;
 
-    public RoadUser(String uuid, StationType stationType, LatLng position, double speed, double heading, CamCodec.CamFrame<?> camFrame) {
+    public RoadUser(String uuid, StationType stationType, LatLng position, double speed, double heading,
+                    CamCodec.CamFrame<?> camFrame) {
+        this(uuid, stationType, position, speed, heading, null, camFrame);
+    }
+
+    public RoadUser(String uuid, StationType stationType, LatLng position, double speed, double heading,
+                    Long linkedStationId, CamCodec.CamFrame<?> camFrame) {
         this.uuid = uuid;
         this.setStationType(stationType);
         this.position = position;
         this.speed = speed;
         this.heading = heading;
+        this.linkedStationId = linkedStationId;
         this.camFrame = camFrame;
         updateTimestamp();
     }
@@ -79,6 +87,27 @@ public class RoadUser {
 
     public CamCodec.CamFrame<?> getCamFrame() {
         return camFrame;
+    }
+
+    /**
+     * Returns the linked station identifier, or {@code null} if not linked.
+     */
+    public Long getLinkedStationId() {
+        return linkedStationId;
+    }
+
+    public void setLinkedStationId(Long linkedStationId) {
+        this.linkedStationId = linkedStationId;
+    }
+
+    /**
+     * Returns {@code true} if this road user has a linked station identifier
+     * (e.g. a trailer or a platooning pair).
+     *
+     * @see com.orange.iot3mobility.managers.RoadUserManager#getLinkedObject(RoadUser)
+     */
+    public boolean isLinked() {
+        return linkedStationId != null;
     }
 
     public long getTimestamp() {
