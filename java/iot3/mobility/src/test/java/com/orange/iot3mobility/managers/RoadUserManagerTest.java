@@ -11,12 +11,12 @@ package com.orange.iot3mobility.managers;
 import com.orange.iot3mobility.messages.cam.CamHelper;
 import com.orange.iot3mobility.messages.cam.v113.model.CamEnvelope113;
 import com.orange.iot3mobility.messages.cam.v113.model.CamMessage113;
-import com.orange.iot3mobility.messages.cam.v230.model.CamEnvelope230;
-import com.orange.iot3mobility.messages.cam.v230.model.CamStructuredData;
-import com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.Altitude;
-import com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.BasicContainer;
-import com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.PositionConfidenceEllipse;
-import com.orange.iot3mobility.messages.cam.v230.model.basiccontainer.ReferencePosition;
+import com.orange.iot3mobility.messages.cam.v240.model.CamEnvelope240;
+import com.orange.iot3mobility.messages.cam.v240.model.CamStructuredData;
+import com.orange.iot3mobility.messages.cam.v240.model.basiccontainer.Altitude;
+import com.orange.iot3mobility.messages.cam.v240.model.basiccontainer.BasicContainer;
+import com.orange.iot3mobility.messages.cam.v240.model.basiccontainer.PositionConfidenceEllipse;
+import com.orange.iot3mobility.messages.cam.v240.model.basiccontainer.ReferencePosition;
 import com.orange.iot3mobility.roadobjects.RoadUser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -84,8 +84,13 @@ class RoadUserManagerTest {
         return camHelper.toJson(envelope);
     }
 
-    /** Build a minimal valid v2.3.0 CAM JSON string (all v230 HF types fully qualified). */
-    private String cam230Json(String sourceUuid, long stationId) throws Exception {
+    /** Build a minimal valid v2.4.0 CAM JSON string. */
+    private String cam240Json(String sourceUuid, long stationId) throws Exception {
+        return cam240Json(sourceUuid, stationId, null);
+    }
+
+    /** Build a minimal valid v2.4.0 CAM JSON string with optional linked_station_id. */
+    private String cam240Json(String sourceUuid, long stationId, Long linkedStationId) throws Exception {
         ReferencePosition ref = ReferencePosition.builder()
                 .latitudeLongitude(488566000, 23522000)
                 .positionConfidenceEllipse(new PositionConfidenceEllipse(0, 0, 0))
@@ -95,17 +100,17 @@ class RoadUserManagerTest {
                 .stationType(5)
                 .referencePosition(ref)
                 .build();
-        com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.BasicVehicleContainerHighFrequency hf =
-                com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.BasicVehicleContainerHighFrequency.builder()
-                        .heading(new com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.Heading(900, 1))
-                        .speed(new com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.Speed(1389, 1))
+        com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.BasicVehicleContainerHighFrequency hf =
+                com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.BasicVehicleContainerHighFrequency.builder()
+                        .heading(new com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.Heading(900, 1))
+                        .speed(new com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.Speed(1389, 1))
                         .driveDirection(0)
-                        .vehicleLength(new com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.VehicleLength(45, 0))
+                        .vehicleLength(new com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.VehicleLength(45, 0))
                         .vehicleWidth(20)
-                        .longitudinalAcceleration(new com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.AccelerationComponent(0, 1))
-                        .curvature(new com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.Curvature(0, 0))
+                        .longitudinalAcceleration(new com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.AccelerationComponent(0, 1))
+                        .curvature(new com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.Curvature(0, 0))
                         .curvatureCalculationMode(0)
-                        .yawRate(new com.orange.iot3mobility.messages.cam.v230.model.highfrequencycontainer.YawRate(0, 0))
+                        .yawRate(new com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.YawRate(0, 0))
                         .build();
         CamStructuredData message = CamStructuredData.builder()
                 .protocolVersion(1)
@@ -114,13 +119,15 @@ class RoadUserManagerTest {
                 .basicContainer(basic)
                 .highFrequencyContainer(hf)
                 .build();
-        CamEnvelope230 envelope = CamEnvelope230.builder()
+        CamEnvelope240.Builder builder = CamEnvelope240.builder()
                 .messageFormat("json/raw")
                 .sourceUuid(sourceUuid)
                 .timestamp(1514764800000L)
-                .message(message)
-                .build();
-        return camHelper.toJson(envelope);
+                .message(message);
+        if (linkedStationId != null) {
+            builder.linkedStationId(linkedStationId);
+        }
+        return camHelper.toJson(builder.build());
     }
 
     // -------------------------------------------------------------------------
@@ -183,25 +190,50 @@ class RoadUserManagerTest {
     }
 
     // -------------------------------------------------------------------------
-    // v2.3.0 tests
+    // v2.4.0 tests
     // -------------------------------------------------------------------------
 
     @Test
-    void processCam230FirstMessageTriggersNewRoadUser() throws Exception {
-        String json = cam230Json("com_car_42", 42);
+    void processCam240FirstMessageTriggersNewRoadUser() throws Exception {
+        String json = cam240Json("com_car_42", 42);
         RoadUserManager.processCam(json, camHelper);
 
         verify(mockCallback, times(1)).newRoadUser(any(RoadUser.class));
     }
 
     @Test
-    void processCam230SecondMessageTriggersRoadUserUpdate() throws Exception {
-        String json = cam230Json("com_car_43", 43);
+    void processCam240SecondMessageTriggersRoadUserUpdate() throws Exception {
+        String json = cam240Json("com_car_43", 43);
         RoadUserManager.processCam(json, camHelper);
         RoadUserManager.processCam(json, camHelper);
 
         verify(mockCallback, times(1)).newRoadUser(any());
         verify(mockCallback, times(1)).roadUserUpdate(any());
+    }
+
+    @Test
+    void processCam240WithLinkedStationIdSetsLinkedOnRoadUser() throws Exception {
+        String json = cam240Json("com_car_44", 44, 99L);
+        RoadUserManager.processCam(json, camHelper);
+
+        ArgumentCaptor<RoadUser> captor = ArgumentCaptor.forClass(RoadUser.class);
+        verify(mockCallback).newRoadUser(captor.capture());
+        RoadUser user = captor.getValue();
+        assertTrue(user.isLinked());
+        assertEquals(99L, user.getLinkedStationId());
+    }
+
+    @Test
+    void processCam240WithoutLinkedStationIdIsNotLinked() throws Exception {
+        String json = cam240Json("com_car_45", 45);
+        RoadUserManager.processCam(json, camHelper);
+
+        ArgumentCaptor<RoadUser> captor = ArgumentCaptor.forClass(RoadUser.class);
+        verify(mockCallback).newRoadUser(captor.capture());
+        RoadUser user = captor.getValue();
+        assertFalse(user.isLinked());
+        assertNull(user.getLinkedStationId());
+        assertNull(RoadUserManager.getLinkedObject(user));
     }
 
     @Test
