@@ -12,7 +12,7 @@ package com.orange.iot3mobility.messages.cam.core;
  */
 public enum CamVersion {
     V1_1_3("1.1.3"),
-    V2_3_0("2.3.0");
+    V2_4_0("2.4.0");
 
     private final String jsonValue;
 
