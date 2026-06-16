@@ -270,6 +270,24 @@ public class RoadSensor {
         }
     }
 
+    /**
+     * Use when a RoadSensor expires or is removed.
+     */
+    public void flushAllSensorObjects() {
+        synchronized (sensorObjects) {
+            Iterator<SensorObject> iterator = sensorObjects.iterator();
+            while (iterator.hasNext()) {
+                SensorObject sensorObject = iterator.next();
+                iterator.remove();
+                synchronized (sensorObjectMap) {
+                    // Remove by value
+                    sensorObjectMap.values().remove(sensorObject);
+                }
+                ioT3RoadSensorCallback.sensorObjectExpired(sensorObject);
+            }
+        }
+    }
+
     public ArrayList<SensorObject> getSensorObjects() {
         return sensorObjects;
     }
