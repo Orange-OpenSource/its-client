@@ -303,6 +303,8 @@ public class MqttClient {
                 span.setAttribute(AttributeKey.stringKey("iot3.core.mqtt.topic"), topic);
                 span.setAttribute(AttributeKey.stringKey("iot3.core.mqtt.payload_size"),
                         String.valueOf(message.length()));
+                if(retained)
+                    span.setAttribute(AttributeKey.booleanKey("iot3.core.mqtt.retain"), true);
                 span.setAttribute(AttributeKey.stringKey("iot3.core.sdk_language"), "java");
 
                 // Inject the trace context into a map
@@ -385,6 +387,8 @@ public class MqttClient {
                     publish.getTopic().toString());
             receivedSpan.setAttribute(AttributeKey.stringKey("iot3.core.mqtt.payload_size"),
                     String.valueOf(message.length()));
+            if(publish.isRetain())
+                receivedSpan.setAttribute(AttributeKey.booleanKey("iot3.core.mqtt.retain"), true);
             receivedSpan.setAttribute(AttributeKey.stringKey("iot3.core.sdk_language"), "java");
             receivedSpan.end();
         }
