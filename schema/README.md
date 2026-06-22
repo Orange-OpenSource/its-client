@@ -28,6 +28,21 @@ Contains detailed mapping information, typically updated less frequently, such a
 changes occur on the road. It provides vehicles with accurate data on topography, traffic lanes, speed limits, and other
 essential features for navigation and safety.
 
+### [MCM : Manoeuvre Coordination Message](mcm)
+
+Exchanged between vehicles and ITS stations to negotiate and coordinate planned manoeuvres, such as lane changes or 
+merging. It conveys the originating station's role (coordinating or target vehicle), its current position, speed, and 
+heading, along with a sequence of sub-manoeuvres describing the intended trajectory. MCMs support several coordination 
+concepts (agreement-seeking, prescriptive) and message types (intent, request, response, reservation, execution status, 
+etc.) to manage the full lifecycle of a cooperative manoeuvre.
+
+### [POIM-PA : Point Of Interest Message - Parking Availability](poim)
+
+Emitted by roadside or central stations to broadcast parking availability information for a specific facility. It 
+includes the place's identity and location, an aggregated occupancy status (available, full, etc.), and optionally 
+detailed supply and capability data per parking type. POIM-PAs allow connected vehicles and services to be informed about 
+real-time parking conditions, helping drivers identify available spots before arrival.
+
 ### [SPATEM : Signal Phase And Timing Extended Message](spatem)
 
 Periodically emitted by traffic lights or their controllers. It indicates the current phases of the traffic lights
