@@ -270,6 +270,24 @@ public class RoadSensor {
         }
     }
 
+    /**
+     * Use when a RoadSensor expires or is removed.
+     */
+    public void flushAllSensorObjects() {
+        synchronized (sensorObjects) {
+            Iterator<SensorObject> iterator = sensorObjects.iterator();
+            while (iterator.hasNext()) {
+                SensorObject sensorObject = iterator.next();
+                iterator.remove();
+                synchronized (sensorObjectMap) {
+                    // Remove by value
+                    sensorObjectMap.values().remove(sensorObject);
+                }
+                ioT3RoadSensorCallback.sensorObjectExpired(sensorObject);
+            }
+        }
+    }
+
     public ArrayList<SensorObject> getSensorObjects() {
         return sensorObjects;
     }
@@ -331,13 +349,23 @@ public class RoadSensor {
             com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.ObjectClass objectClass) {
         if(objectClass.vehicle() != null) {
             return switch (objectClass.vehicle()) {
-                case 1 -> SensorObjectType.PASSENGER_CAR;
-                case 2 -> SensorObjectType.BUS;
-                case 3 -> SensorObjectType.LIGHT_TRUCK;
-                case 4 -> SensorObjectType.HEAVY_TRUCK;
-                case 5 -> SensorObjectType.TRAILER;
-                case 6, 8 -> SensorObjectType.SPECIAL_VEHICLES;
-                case 7 -> SensorObjectType.TRAM;
+                //*** doesn't make much sense to have VRUs here - v2.1.1 spec issue? ***
+                case 1 -> SensorObjectType.PEDESTRIAN;
+                case 2 -> SensorObjectType.CYCLIST;
+                case 3 -> SensorObjectType.MOPED;
+                case 4 -> SensorObjectType.MOTORCYCLE;
+                //***********************************************************************
+                case 5 -> SensorObjectType.PASSENGER_CAR;
+                case 6 -> SensorObjectType.BUS;
+                case 7 -> SensorObjectType.LIGHT_TRUCK;
+                case 8 -> SensorObjectType.HEAVY_TRUCK;
+                case 9 -> SensorObjectType.TRAILER;
+                case 10 -> SensorObjectType.SPECIAL_VEHICLES;
+                case 11 -> SensorObjectType.TRAM;
+                case 12 -> SensorObjectType.LIGHT_VRU_VEHICLE;
+                case 13 -> SensorObjectType.ANIMAL;
+                case 14 -> SensorObjectType.AGRICULTURAL;
+                case 15 -> SensorObjectType.ROAD_SIDE_UNIT;
                 default -> SensorObjectType.UNKNOWN;
             };
         } else if(objectClass.vru() != null) {

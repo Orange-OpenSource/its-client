@@ -115,6 +115,7 @@ public class RoadSensorManager {
                         ROAD_SENSOR_MAP.values().remove(roadSensor);
                     }
                     ioT3RoadSensorCallback.roadSensorExpired(roadSensor);
+                    roadSensor.flushAllSensorObjects();
                 }
             }
         }
