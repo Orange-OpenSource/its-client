@@ -12,6 +12,7 @@ import com.orange.iot3mobility.messages.EtsiConverter;
 import com.orange.iot3mobility.messages.cpm.core.CpmCodec;
 import com.orange.iot3mobility.messages.cpm.core.CpmVersion;
 import com.orange.iot3mobility.messages.cpm.v121.model.CpmEnvelope121;
+import com.orange.iot3mobility.messages.cpm.v121.model.perceivedobjectcontainer.ObjectClass;
 import com.orange.iot3mobility.messages.cpm.v121.model.perceivedobjectcontainer.ObjectClassification;
 import com.orange.iot3mobility.messages.cpm.v121.model.perceivedobjectcontainer.PerceivedObject;
 import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
@@ -100,8 +101,15 @@ public class RoadSensor {
                     double objectHeading = EtsiConverter.cpmDerivedHeadingDegrees(
                             perceivedObject.xSpeed(),
                             perceivedObject.ySpeed());
-                    int infoQuality = 3;
 
+                    Double objectLength = null, objectWidth = null;
+                    if(perceivedObject.planarObjectDimension1() != null
+                            && perceivedObject.planarObjectDimension2() != null) {
+                        objectLength = EtsiConverter.cpmObjectDimensionMeters(perceivedObject.planarObjectDimension1());
+                        objectWidth = EtsiConverter.cpmObjectDimensionMeters(perceivedObject.planarObjectDimension2());
+                    }
+
+                    int infoQuality = 3;
                     if(perceivedObject.classification() != null
                             && !perceivedObject.classification().isEmpty()) {
                         infoQuality = perceivedObject.classification().get(0).confidence();
@@ -119,12 +127,14 @@ public class RoadSensor {
                                 sensorObject.setSpeed(objectSpeed);
                                 sensorObject.setHeading(objectHeading);
                                 sensorObject.setInfoQuality(infoQuality);
+                                sensorObject.setDimensions(objectLength, objectWidth);
                                 ioT3RoadSensorCallback.sensorObjectUpdate(sensorObject);
                             }
                         }
                     } else {
                         // create new SensorObject
-                        sensorObject = new SensorObject(objectId, objectType, objectPosition, objectSpeed, objectHeading, infoQuality);
+                        sensorObject = new SensorObject(objectId, objectType, objectPosition, objectSpeed,
+                                objectHeading, infoQuality, objectLength, objectWidth);
                         synchronized (sensorObjects) {
                             sensorObjects.add(sensorObject);
                         }
@@ -206,6 +216,13 @@ public class RoadSensor {
                         }
                     }
 
+                    Double objectLength = null, objectWidth = null;
+                    if(perceivedObject.objectDimensionX() != null
+                            && perceivedObject.objectDimensionY() != null) {
+                        objectLength = EtsiConverter.cpmObjectDimensionMeters(perceivedObject.objectDimensionX().value());
+                        objectWidth = EtsiConverter.cpmObjectDimensionMeters(perceivedObject.objectDimensionY().value());
+                    }
+
                     int infoQuality = 3;
                     if(perceivedObject.classification() != null
                             && !perceivedObject.classification().isEmpty()) {
@@ -224,12 +241,14 @@ public class RoadSensor {
                                 sensorObject.setSpeed(objectSpeed);
                                 sensorObject.setHeading(objectHeading);
                                 sensorObject.setInfoQuality(infoQuality);
+                                sensorObject.setDimensions(objectLength, objectWidth);
                                 ioT3RoadSensorCallback.sensorObjectUpdate(sensorObject);
                             }
                         }
                     } else {
                         // create new SensorObject
-                        sensorObject = new SensorObject(objectId, objectType, objectPosition, objectSpeed, objectHeading, infoQuality);
+                        sensorObject = new SensorObject(objectId, objectType, objectPosition, objectSpeed,
+                                objectHeading, infoQuality, objectLength, objectWidth);
                         synchronized (sensorObjects) {
                             sensorObjects.add(sensorObject);
                         }
@@ -309,7 +328,7 @@ public class RoadSensor {
     /* --------------------------------------------------------------------- */
 
     private SensorObjectType cpm121ObjectTypeFromObjectClass(
-            com.orange.iot3mobility.messages.cpm.v121.model.perceivedobjectcontainer.ObjectClass objectClass) {
+            ObjectClass objectClass) {
         if(objectClass.vehicle() != null) {
             return switch (objectClass.vehicle()) {
                 case 1 -> SensorObjectType.PASSENGER_CAR;
