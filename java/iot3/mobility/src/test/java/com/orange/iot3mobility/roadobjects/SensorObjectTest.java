@@ -53,7 +53,7 @@ class SensorObjectTest {
 
     @Test
     void getHeadingReturnsConstructedValue() {
-        assertEquals(90.0, makeSensorObject().getHeading(), 1e-9);
+        assertEquals(90.0, makeSensorObject().getBearing(), 1e-9);
     }
 
     @Test
@@ -100,8 +100,8 @@ class SensorObjectTest {
     @Test
     void setHeadingUpdatesValue() {
         SensorObject obj = makeSensorObject();
-        obj.setHeading(270.0);
-        assertEquals(270.0, obj.getHeading(), 1e-9);
+        obj.setBearing(270.0);
+        assertEquals(270.0, obj.getBearing(), 1e-9);
     }
 
     @Test

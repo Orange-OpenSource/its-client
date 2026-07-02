@@ -102,11 +102,14 @@ public class RoadSensor {
                             perceivedObject.xSpeed(),
                             perceivedObject.ySpeed());
 
-                    Double objectLength = null, objectWidth = null;
+                    Double objectLength = null, objectWidth = null, objectOrientation = null;
                     if(perceivedObject.planarObjectDimension1() != null
                             && perceivedObject.planarObjectDimension2() != null) {
                         objectLength = EtsiConverter.cpmObjectDimensionMeters(perceivedObject.planarObjectDimension1());
                         objectWidth = EtsiConverter.cpmObjectDimensionMeters(perceivedObject.planarObjectDimension2());
+                    }
+                    if(perceivedObject.yawAngle() != null) {
+                        objectOrientation = EtsiConverter.cpmAngleDegrees(perceivedObject.yawAngle());
                     }
 
                     int infoQuality = 3;
@@ -125,16 +128,17 @@ public class RoadSensor {
                                 sensorObject.setPosition(objectPosition);
                                 sensorObject.setType(objectType);
                                 sensorObject.setSpeed(objectSpeed);
-                                sensorObject.setHeading(objectHeading);
+                                sensorObject.setBearing(objectHeading);
                                 sensorObject.setInfoQuality(infoQuality);
                                 sensorObject.setDimensions(objectLength, objectWidth);
+                                sensorObject.setOrientation(objectOrientation);
                                 ioT3RoadSensorCallback.sensorObjectUpdate(sensorObject);
                             }
                         }
                     } else {
                         // create new SensorObject
                         sensorObject = new SensorObject(objectId, objectType, objectPosition, objectSpeed,
-                                objectHeading, infoQuality, objectLength, objectWidth);
+                                objectHeading, infoQuality, objectLength, objectWidth, objectOrientation);
                         synchronized (sensorObjects) {
                             sensorObjects.add(sensorObject);
                         }
@@ -216,11 +220,13 @@ public class RoadSensor {
                         }
                     }
 
-                    Double objectLength = null, objectWidth = null;
-                    if(perceivedObject.objectDimensionX() != null
-                            && perceivedObject.objectDimensionY() != null) {
+                    Double objectLength = null, objectWidth = null, objectOrientation = null;
+                    if(perceivedObject.objectDimensionX() != null && perceivedObject.objectDimensionY() != null) {
                         objectLength = EtsiConverter.cpmObjectDimensionMeters(perceivedObject.objectDimensionX().value());
                         objectWidth = EtsiConverter.cpmObjectDimensionMeters(perceivedObject.objectDimensionY().value());
+                    }
+                    if(perceivedObject.angles() != null && perceivedObject.angles().zAngle() != null) {
+                        objectOrientation = EtsiConverter.cpmAngleDegrees(perceivedObject.angles().zAngle().value());
                     }
 
                     int infoQuality = 3;
@@ -239,16 +245,17 @@ public class RoadSensor {
                                 sensorObject.setPosition(objectPosition);
                                 sensorObject.setType(objectType);
                                 sensorObject.setSpeed(objectSpeed);
-                                sensorObject.setHeading(objectHeading);
+                                sensorObject.setBearing(objectHeading);
                                 sensorObject.setInfoQuality(infoQuality);
                                 sensorObject.setDimensions(objectLength, objectWidth);
+                                sensorObject.setOrientation(objectOrientation);
                                 ioT3RoadSensorCallback.sensorObjectUpdate(sensorObject);
                             }
                         }
                     } else {
                         // create new SensorObject
                         sensorObject = new SensorObject(objectId, objectType, objectPosition, objectSpeed,
-                                objectHeading, infoQuality, objectLength, objectWidth);
+                                objectHeading, infoQuality, objectLength, objectWidth, objectOrientation);
                         synchronized (sensorObjects) {
                             sensorObjects.add(sensorObject);
                         }
