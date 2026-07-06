@@ -356,8 +356,7 @@ public final class CamReader240 {
                 parser.skipChildren();
             }
         }
-        return new RsuContainerHighFrequency(
-                requireField(zones, "rsu_container_high_frequency.protected_communication_zones_rsu"));
+        return new RsuContainerHighFrequency(zones);
     }
 
     private List<ProtectedCommunicationZone> readProtectedZones(JsonParser parser) throws IOException {

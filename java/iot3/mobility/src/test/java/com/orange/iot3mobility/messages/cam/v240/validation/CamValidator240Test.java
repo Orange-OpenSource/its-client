@@ -84,6 +84,28 @@ class CamValidator240Test {
     }
 
     @Test
+    void validateEnvelopeAcceptsRsuWithoutProtectedZones() {
+        RsuContainerHighFrequency rsu = new RsuContainerHighFrequency(null);
+
+        CamStructuredData message = CamStructuredData.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .generationDeltaTime(1)
+                .basicContainer(validBasicContainer())
+                .highFrequencyContainer(rsu)
+                .build();
+
+        CamEnvelope240 envelope = CamEnvelope240.builder()
+                .messageFormat("json/raw")
+                .sourceUuid("com_rsu_42")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+
+        CamValidator240.validateEnvelope(envelope);
+    }
+
+    @Test
     void validateEnvelopeRejectsEmptyRsuZones() {
         ReferencePosition reference = ReferencePosition.builder()
                 .latitudeLongitude(0, 0)
