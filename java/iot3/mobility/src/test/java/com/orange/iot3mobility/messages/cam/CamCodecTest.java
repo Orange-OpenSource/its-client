@@ -25,6 +25,7 @@ import com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.Ac
 import com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.BasicVehicleContainerHighFrequency;
 import com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.Curvature;
 import com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.Heading;
+import com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.RsuContainerHighFrequency;
 import com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.Speed;
 import com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.VehicleLength;
 import com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.YawRate;
@@ -81,6 +82,24 @@ class CamCodecTest {
         assertEquals(CamVersion.V2_4_0, frame.version());
         CamEnvelope240 parsed = (CamEnvelope240) frame.envelope();
         assertEquals(4294967295L, parsed.linkedStationId());
+    }
+
+    @Test
+    void writeRead240RsuWithoutZonesRoundTrip() throws Exception {
+        CamEnvelope240 envelope = validEnvelope240Rsu();
+        CamCodec codec = new CamCodec(new JsonFactory());
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        codec.write(CamVersion.V2_4_0, envelope, out);
+
+        CamCodec.CamFrame<?> frame = codec.read(new ByteArrayInputStream(out.toByteArray()));
+        assertEquals(CamVersion.V2_4_0, frame.version());
+        assertTrue(frame.envelope() instanceof CamEnvelope240);
+        CamEnvelope240 parsed = (CamEnvelope240) frame.envelope();
+        assertEquals(envelope.sourceUuid(), parsed.sourceUuid());
+        CamStructuredData parsedMsg = (CamStructuredData) parsed.message();
+        assertTrue(parsedMsg.highFrequencyContainer() instanceof RsuContainerHighFrequency);
+        assertNull(((RsuContainerHighFrequency) parsedMsg.highFrequencyContainer()).protectedCommunicationZonesRsu());
     }
 
     @Test
@@ -149,6 +168,37 @@ class CamCodecTest {
         return CamEnvelope240.builder()
                 .messageFormat("json/raw")
                 .sourceUuid("com_car_42")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
+    }
+
+    private static CamEnvelope240 validEnvelope240Rsu() {
+        com.orange.iot3mobility.messages.cam.v240.model.basiccontainer.ReferencePosition reference =
+                com.orange.iot3mobility.messages.cam.v240.model.basiccontainer.ReferencePosition.builder()
+                          .latitudeLongitude(0, 0)
+                          .positionConfidenceEllipse(new PositionConfidenceEllipse(0, 0, 0))
+                          .altitude(new Altitude(0, 0))
+                          .build();
+
+        BasicContainer basic = BasicContainer.builder()
+                         .stationType(15)
+                         .referencePosition(reference)
+                         .build();
+
+        RsuContainerHighFrequency rsu = new RsuContainerHighFrequency(null);
+
+        CamStructuredData message = CamStructuredData.builder()
+                .protocolVersion(1)
+                .stationId(99)
+                .generationDeltaTime(1)
+                .basicContainer(basic)
+                .highFrequencyContainer(rsu)
+                .build();
+
+        return CamEnvelope240.builder()
+                .messageFormat("json/raw")
+                .sourceUuid("com_rsu_99")
                 .timestamp(1514764800000L)
                 .message(message)
                 .build();

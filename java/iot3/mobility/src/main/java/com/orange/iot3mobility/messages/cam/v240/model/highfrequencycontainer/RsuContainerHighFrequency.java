@@ -8,16 +8,19 @@
 package com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * RsuContainerHighFrequency v2.4.0
  *
- * @param protectedCommunicationZonesRsu List of RSU {@link ProtectedCommunicationZone}
+ * @param protectedCommunicationZonesRsu Optional list of RSU {@link ProtectedCommunicationZone}.
+ *                                       May be {@code null} — the field is optional per the schema.
+ *                                       When present, must contain between 1 and 16 entries.
  */
 public record RsuContainerHighFrequency(
         List<ProtectedCommunicationZone> protectedCommunicationZonesRsu) implements HighFrequencyContainer {
     public RsuContainerHighFrequency {
-        protectedCommunicationZonesRsu = List.copyOf(Objects.requireNonNull(protectedCommunicationZonesRsu));
+        protectedCommunicationZonesRsu = protectedCommunicationZonesRsu != null
+                ? List.copyOf(protectedCommunicationZonesRsu)
+                : null;
     }
 }

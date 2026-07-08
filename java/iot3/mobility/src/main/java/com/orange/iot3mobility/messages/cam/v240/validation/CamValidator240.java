@@ -151,9 +151,10 @@ public final class CamValidator240 {
     }
 
     private static void validateRsuHF(RsuContainerHighFrequency container) {
-        List<ProtectedCommunicationZone> zones =
-                requireNonNull("rsu_container_high_frequency.protected_communication_zones_rsu",
-                        container.protectedCommunicationZonesRsu());
+        List<ProtectedCommunicationZone> zones = container.protectedCommunicationZonesRsu();
+        if (zones == null) {
+            return;
+        }
         int size = zones.size();
         if (size < 1 || size > 16) {
             throw new CamValidationException("protected_communication_zones_rsu size out of range [1,16]: " + size);

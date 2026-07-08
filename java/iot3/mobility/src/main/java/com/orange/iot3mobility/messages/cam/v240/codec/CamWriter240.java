@@ -189,24 +189,26 @@ public final class CamWriter240 {
 
     private void writeRsuHF(JsonGenerator gen, RsuContainerHighFrequency container) throws IOException {
         gen.writeStartObject();
-        gen.writeArrayFieldStart("protected_communication_zones_rsu");
-        for (ProtectedCommunicationZone zone : container.protectedCommunicationZonesRsu()) {
-            gen.writeStartObject();
-            gen.writeNumberField("protected_zone_type", zone.protectedZoneType());
-            if (zone.expiryTime() != null) {
-                gen.writeNumberField("expiry_time", zone.expiryTime());
+        if (container.protectedCommunicationZonesRsu() != null) {
+            gen.writeArrayFieldStart("protected_communication_zones_rsu");
+            for (ProtectedCommunicationZone zone : container.protectedCommunicationZonesRsu()) {
+                gen.writeStartObject();
+                gen.writeNumberField("protected_zone_type", zone.protectedZoneType());
+                if (zone.expiryTime() != null) {
+                    gen.writeNumberField("expiry_time", zone.expiryTime());
+                }
+                gen.writeNumberField("protected_zone_latitude", zone.protectedZoneLatitude());
+                gen.writeNumberField("protected_zone_longitude", zone.protectedZoneLongitude());
+                if (zone.protectedZoneRadius() != null) {
+                    gen.writeNumberField("protected_zone_radius", zone.protectedZoneRadius());
+                }
+                if (zone.protectedZoneId() != null) {
+                    gen.writeNumberField("protected_zone_id", zone.protectedZoneId());
+                }
+                gen.writeEndObject();
             }
-            gen.writeNumberField("protected_zone_latitude", zone.protectedZoneLatitude());
-            gen.writeNumberField("protected_zone_longitude", zone.protectedZoneLongitude());
-            if (zone.protectedZoneRadius() != null) {
-                gen.writeNumberField("protected_zone_radius", zone.protectedZoneRadius());
-            }
-            if (zone.protectedZoneId() != null) {
-                gen.writeNumberField("protected_zone_id", zone.protectedZoneId());
-            }
-            gen.writeEndObject();
+            gen.writeEndArray();
         }
-        gen.writeEndArray();
         gen.writeEndObject();
     }
 
