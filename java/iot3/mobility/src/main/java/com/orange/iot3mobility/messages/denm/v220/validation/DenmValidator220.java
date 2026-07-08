@@ -63,7 +63,7 @@ public final class DenmValidator220 {
     }
 
     private static void validateManagement(ManagementContainer container) {
-        requireNonNull("management_container", container);
+        requireNonNull("management", container);
         validateActionId(container.actionId());
         checkRange("detection_time", container.detectionTime(), 0L, 4398046511103L);
         checkRange("reference_time", container.referenceTime(), 0L, 4398046511103L);

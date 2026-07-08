@@ -76,7 +76,7 @@ public record DenmMessage220(
             return new DenmMessage220(
                     requireNonNull(protocolVersion, "protocol_version"),
                     requireNonNull(stationId, "station_id"),
-                    requireNonNull(managementContainer, "management_container"),
+                    requireNonNull(managementContainer, "management"),
                     situationContainer,
                     locationContainer,
                     alacarteContainer);

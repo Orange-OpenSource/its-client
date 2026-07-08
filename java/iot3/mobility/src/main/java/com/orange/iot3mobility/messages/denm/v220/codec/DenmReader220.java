@@ -151,7 +151,7 @@ public final class DenmReader220 {
             switch (field) {
                 case "protocol_version" -> protocolVersion = parser.getIntValue();
                 case "station_id" -> stationId = parser.getLongValue();
-                case "management_container" -> management = readManagement(parser);
+                case "management" -> management = readManagement(parser);
                 case "situation_container" -> situation = readSituation(parser);
                 case "location_container" -> location = readLocation(parser);
                 case "alacarte_container" -> alacarte = readAlacarte(parser);
@@ -162,7 +162,7 @@ public final class DenmReader220 {
         return new DenmMessage220(
                 requireField(protocolVersion, "protocol_version"),
                 requireField(stationId, "station_id"),
-                requireField(management, "management_container"),
+                requireField(management, "management"),
                 situation,
                 location,
                 alacarte);

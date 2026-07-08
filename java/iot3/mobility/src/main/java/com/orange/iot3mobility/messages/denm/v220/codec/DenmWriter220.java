@@ -64,7 +64,7 @@ public final class DenmWriter220 {
         gen.writeStartObject();
         gen.writeNumberField("protocol_version", message.protocolVersion());
         gen.writeNumberField("station_id", message.stationId());
-        gen.writeFieldName("management_container");
+        gen.writeFieldName("management");
         writeManagement(gen, message.managementContainer());
         if (message.situationContainer() != null) {
             gen.writeFieldName("situation_container");
