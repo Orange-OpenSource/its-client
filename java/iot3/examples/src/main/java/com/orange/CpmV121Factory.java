@@ -73,8 +73,9 @@ final class CpmV121Factory {
                 .objectAge(1500)
                 .distance(bicycleX, bicycleY)
                 .speed(0, 0)
-                .planarObjectDimension(20, 20)
+                .planarObjectDimension(20, 10)
                 .verticalObjectDimension(15)
+                .yawAngle(120)
                 .classification(List.of(new ObjectClassification(
                         new ObjectClass(null,
                                 new ObjectClassVru(null, 1, null, null),

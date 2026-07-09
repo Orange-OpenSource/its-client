@@ -4,23 +4,10 @@ import com.orange.iot3mobility.TrueTime;
 import com.orange.iot3mobility.messages.EtsiConverter;
 import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
 import com.orange.iot3mobility.messages.cpm.v211.model.CpmMessage211;
-import com.orange.iot3mobility.messages.cpm.v211.model.defs.Altitude;
-import com.orange.iot3mobility.messages.cpm.v211.model.defs.CartesianCoordinateWithConfidence;
-import com.orange.iot3mobility.messages.cpm.v211.model.defs.CartesianPosition3d;
-import com.orange.iot3mobility.messages.cpm.v211.model.defs.CartesianPosition3dWithConfidence;
-import com.orange.iot3mobility.messages.cpm.v211.model.defs.Circular;
-import com.orange.iot3mobility.messages.cpm.v211.model.defs.MapReference;
-import com.orange.iot3mobility.messages.cpm.v211.model.defs.PositionConfidenceEllipse;
-import com.orange.iot3mobility.messages.cpm.v211.model.defs.ReferencePosition;
-import com.orange.iot3mobility.messages.cpm.v211.model.defs.RoadSegment;
-import com.orange.iot3mobility.messages.cpm.v211.model.defs.Shape;
+import com.orange.iot3mobility.messages.cpm.v211.model.defs.*;
 import com.orange.iot3mobility.messages.cpm.v211.model.managementcontainer.ManagementContainer;
 import com.orange.iot3mobility.messages.cpm.v211.model.originatingrsucontainer.OriginatingRsuContainer;
-import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.ObjectClass;
-import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.ObjectClassVru;
-import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.ObjectClassification;
-import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.PerceivedObject;
-import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.PerceivedObjectContainer;
+import com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.*;
 import com.orange.iot3mobility.messages.cpm.v211.model.sensorinformationcontainer.SensorInformation;
 import com.orange.iot3mobility.messages.cpm.v211.model.sensorinformationcontainer.SensorInformationContainer;
 import com.orange.iot3mobility.quadkey.LatLng;
@@ -56,6 +43,9 @@ final class CpmV211Factory {
                 .classification(List.of(new ObjectClassification(
                         ObjectClass.vru(ObjectClassVru.pedestrian(1)),
                         100)))
+                .objectDimensionX(new ObjectDimension(10, 1))
+                .objectDimensionY(new ObjectDimension(10, 1))
+                .objectDimensionZ(new ObjectDimension(20, 1))
                 .sensorIdList(List.of(SENSOR_ID))
                 .build();
 
@@ -70,6 +60,13 @@ final class CpmV211Factory {
                 .classification(List.of(new ObjectClassification(
                         ObjectClass.vru(ObjectClassVru.bicyclistAndLightVruVehicle(1)),
                         100)))
+                .objectDimensionX(new ObjectDimension(20, 1))
+                .objectDimensionY(new ObjectDimension(10, 1))
+                .objectDimensionZ(new ObjectDimension(15, 1))
+                .angles(new EulerAngles(
+                        new Angle(120, 1),
+                        new Angle(0, 1),
+                        new Angle(0, 1)))
                 .sensorIdList(List.of(SENSOR_ID))
                 .build();
 
