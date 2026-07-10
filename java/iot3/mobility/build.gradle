@@ -30,6 +30,8 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
     // Mockito for mock-based unit tests.
     testImplementation 'org.mockito:mockito-core:5.11.0'
+    // JSON Schema validation for schema conformance tests.
+    testImplementation 'com.networknt:json-schema-validator:1.5.6'
 }
 
 tasks.named('test') {
