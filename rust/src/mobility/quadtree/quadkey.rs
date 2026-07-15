@@ -62,9 +62,9 @@ impl From<&Position> for Quadkey {
 }
 
 impl From<&Self> for Quadkey {
-    fn from(quad_key: &Quadkey) -> Self {
+    fn from(quadkey: &Quadkey) -> Self {
         Self {
-            tiles: quad_key.tiles.clone(),
+            tiles: quadkey.tiles.clone(),
         }
     }
 }
@@ -77,21 +77,24 @@ impl FromStr for Quadkey {
             Err(ParseError::EmptyString)
         } else {
             let number_of_slash = s.chars().filter(|&character| character == '/').count();
-            if number_of_slash > 0 && ((number_of_slash * 2) + 1 == s.len()) {
+            if number_of_slash > 0 {
+                if (number_of_slash * 2) + 1 != s.len() {
+                    return Err(ParseError::InvalidTileChar('/'));
+                }
+
                 // string with slash separator and one slash for each character except first
-                Ok(s.split('/')
-                    .fold(Quadkey::default(), |mut quadkey_struct, element| {
-                        let result = Tile::from_str(element).unwrap();
-                        quadkey_struct.tiles.push(result);
-                        quadkey_struct
-                    }))
+                s.split('/')
+                    .try_fold(Quadkey::default(), |mut quadkey, element| {
+                        quadkey.tiles.push(Tile::from_str(element)?);
+                        Ok(quadkey)
+                    })
             } else {
                 // string without slash separator
-                Ok(s.chars()
-                    .fold(Quadkey::default(), |mut quadkey_struct, element| {
-                        quadkey_struct.tiles.push(Tile::from(element));
-                        quadkey_struct
-                    }))
+                s.chars()
+                    .try_fold(Quadkey::default(), |mut quadkey, element| {
+                        quadkey.tiles.push(Tile::try_from_char(element)?);
+                        Ok(quadkey)
+                    })
             }
         }
     }
