@@ -267,4 +267,5 @@ Coding conventions are maintained as individual skills in [`.github/skills/`](.g
 | [`java-jackson-streaming`](.github/skills/java-jackson-streaming.md)   | Codecs, readers, writers                                 |
 | [`java-naming-conventions`](.github/skills/java-naming-conventions.md) | All Java code                                            |
 | [`java-testing`](.github/skills/java-testing.md)                       | Test files                                               |
+| [`java-schema-validation-testing`](.github/skills/java-schema-validation-testing.md) | JSON Schema conformance tests              |
 | [`java-coding-conventions`](.github/skills/java-coding-conventions.md) | Summary checklist of all conventions                     |

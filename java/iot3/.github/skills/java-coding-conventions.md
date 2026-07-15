@@ -10,6 +10,7 @@ This is the umbrella skill for all Java IoT3 coding conventions. When working on
 | [`java-jackson-streaming`](java-jackson-streaming.md) | Codecs, readers, writers |
 | [`java-naming-conventions`](java-naming-conventions.md) | All Java code |
 | [`java-testing`](java-testing.md) | Test files |
+| [`java-schema-validation-testing`](java-schema-validation-testing.md) | JSON Schema conformance tests |
 
 ## Quick Checklist
 
@@ -21,4 +22,5 @@ This is the umbrella skill for all Java IoT3 coding conventions. When working on
 - [ ] Jackson streaming only — no `ObjectMapper`, `@JsonProperty`, `JsonNode`
 - [ ] Full descriptive variable names — no single-letter abbreviations
 - [ ] Tests use JUnit 5 + Mockito only
+- [ ] Schema conformance tests follow the `java-schema-validation-testing` skill (codec → bytes → `SchemaTestUtils.assertConformsToSchema`)
 
