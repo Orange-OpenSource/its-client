@@ -72,7 +72,21 @@ impl TryFrom<&Properties> for MqttConfiguration {
             .unwrap_or_default()
             .unwrap_or_default();
 
-        configure_transport(use_tls, use_websocket, &mut mqtt_options);
+        let ca_file =
+            get_optional_from_properties::<String>("ca_file", properties).unwrap_or_default();
+        let cert_file =
+            get_optional_from_properties::<String>("cert_file", properties).unwrap_or_default();
+        let key_file =
+            get_optional_from_properties::<String>("key_file", properties).unwrap_or_default();
+
+        configure_transport(
+            use_tls,
+            use_websocket,
+            &mut mqtt_options,
+            ca_file,
+            cert_file,
+            key_file,
+        );
 
         Ok(Self { mqtt_options })
     }
