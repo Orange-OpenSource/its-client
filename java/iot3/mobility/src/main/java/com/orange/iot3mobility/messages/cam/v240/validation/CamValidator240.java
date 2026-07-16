@@ -376,7 +376,7 @@ public final class CamValidator240 {
     }
 
     private static String requireNotBlank(String field, String value) {
-        if (value == null || value.isBlank()) {
+        if (value == null || value.trim().isEmpty()) {
             throw new CamValidationException("Missing mandatory field: " + field);
         }
         return value;

@@ -211,7 +211,7 @@ public final class McmValidator200 {
     }
 
     private static void requireNotBlank(String field, String value) {
-        if (value == null || value.isBlank()) {
+        if (value == null || value.trim().isEmpty()) {
             throw new McmValidationException("Missing mandatory field: " + field);
         }
     }

@@ -32,7 +32,7 @@ public final class SpatemValidator200 {
         if (!"2.0.0".equals(envelope.version())) {
             throw new SpatemValidationException("version must be '2.0.0', got: " + envelope.version());
         }
-        if (envelope.sourceUuid() == null || envelope.sourceUuid().isBlank()) {
+        if (envelope.sourceUuid() == null || envelope.sourceUuid().trim().isEmpty()) {
             throw new SpatemValidationException("source_uuid must not be null or blank");
         }
         validateMessage(envelope.message());

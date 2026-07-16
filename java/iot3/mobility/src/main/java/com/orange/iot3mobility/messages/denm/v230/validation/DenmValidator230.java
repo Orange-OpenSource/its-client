@@ -318,7 +318,7 @@ public final class DenmValidator230 {
     }
 
     private static void requireNotBlank(String field, String value) {
-        if (value == null || value.isBlank()) {
+        if (value == null || value.trim().isEmpty()) {
             throw new DenmValidationException("Missing mandatory field: " + field);
         }
     }
