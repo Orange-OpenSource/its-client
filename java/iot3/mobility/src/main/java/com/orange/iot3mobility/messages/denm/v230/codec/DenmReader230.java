@@ -157,9 +157,9 @@ public final class DenmReader230 {
                 case "protocol_version" -> protocolVersion = parser.getIntValue();
                 case "station_id" -> stationId = parser.getLongValue();
                 case "management" -> management = readManagement(parser);
-                case "situation_container" -> situation = readSituation(parser);
-                case "location_container" -> location = readLocation(parser);
-                case "alacarte_container" -> alacarte = readAlacarte(parser);
+                case "situation" -> situation = readSituation(parser);
+                case "location" -> location = readLocation(parser);
+                case "alacarte" -> alacarte = readAlacarte(parser);
                 default -> parser.skipChildren();
             }
         }
