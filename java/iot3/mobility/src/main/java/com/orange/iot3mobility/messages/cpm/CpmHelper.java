@@ -126,7 +126,8 @@ public final class CpmHelper {
     private String writeToString(CpmVersion version, Object envelope) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
         cpmCodec.write(version, envelope, out);
-        return out.toString(StandardCharsets.UTF_8);
+        // voluntarily preferred to out.toString(StandardCharsets.UTF_8); to ensure compatibility with Java 8
+        return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }
 
