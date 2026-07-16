@@ -13,6 +13,7 @@ import com.orange.iot3mobility.messages.mapem.v200.model.lane.enums.AllowedManeu
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Connecting lane descriptor: links this lane to an outbound lane beyond the stop line.
@@ -49,7 +50,7 @@ public record ConnectingLane(int lane, List<String> maneuver) {
         public Builder maneuver(AllowedManeuver... maneuvers) {
             this.maneuver = maneuvers.length == 0
                     ? Collections.emptyList()
-                    : Arrays.stream(maneuvers).map(AllowedManeuver::value).toList();
+                    : Arrays.stream(maneuvers).map(AllowedManeuver::value).collect(Collectors.toList());
             return this;
         }
 

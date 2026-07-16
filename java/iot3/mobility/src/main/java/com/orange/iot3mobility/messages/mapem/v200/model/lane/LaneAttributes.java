@@ -14,6 +14,7 @@ import com.orange.iot3mobility.messages.mapem.v200.model.lane.enums.LaneSharing;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Constant attribute information for a lane object.
@@ -49,7 +50,7 @@ public record LaneAttributes(List<String> directionalUse, List<String> sharedWit
          * @return this builder
          */
         public Builder directionalUse(LaneDirection... directions) {
-            this.directionalUse = Arrays.stream(directions).map(LaneDirection::value).toList();
+            this.directionalUse = Arrays.stream(directions).map(LaneDirection::value).collect(Collectors.toList());
             return this;
         }
 
@@ -70,7 +71,7 @@ public record LaneAttributes(List<String> directionalUse, List<String> sharedWit
         public Builder sharedWith(LaneSharing... sharing) {
             this.sharedWith = sharing.length == 0
                     ? Collections.emptyList()
-                    : Arrays.stream(sharing).map(LaneSharing::value).toList();
+                    : Arrays.stream(sharing).map(LaneSharing::value).collect(Collectors.toList());
             return this;
         }
 

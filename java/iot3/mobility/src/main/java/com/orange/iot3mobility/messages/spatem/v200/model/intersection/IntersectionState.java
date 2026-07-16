@@ -11,7 +11,9 @@ package com.orange.iot3mobility.messages.spatem.v200.model.intersection;
 import com.orange.iot3mobility.messages.spatem.v200.model.intersection.enums.IntersectionStatusFlag;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Represents the signal phase and timing state for one intersection.
@@ -67,8 +69,8 @@ public record IntersectionState(
          */
         public Builder status(IntersectionStatusFlag... flags) {
             this.status = flags.length == 0
-                    ? java.util.Collections.emptyList()
-                    : Arrays.stream(flags).map(IntersectionStatusFlag::value).toList();
+                    ? Collections.emptyList()
+                    : Arrays.stream(flags).map(IntersectionStatusFlag::value).collect(Collectors.toList());
             return this;
         }
         public Builder states(List<MovementState> states) { this.states = states; return this; }

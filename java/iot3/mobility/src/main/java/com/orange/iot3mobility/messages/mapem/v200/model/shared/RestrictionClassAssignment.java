@@ -12,6 +12,7 @@ import com.orange.iot3mobility.messages.mapem.v200.model.shared.enums.Restrictio
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Binds a restriction class ID to the list of user types it applies to.
@@ -48,7 +49,7 @@ public record RestrictionClassAssignment(int id, List<String> users) {
          * @return this builder
          */
         public Builder users(RestrictionUserType... userTypes) {
-            this.users = Arrays.stream(userTypes).map(RestrictionUserType::value).toList();
+            this.users = Arrays.stream(userTypes).map(RestrictionUserType::value).collect(Collectors.toList());
             return this;
         }
 
