@@ -358,7 +358,7 @@ class CollectivePerceptionMessage(etsi.Message):
                         "z_angle": {
                             "value": etsi.ETSI.si2etsi(
                                 value=perceived_object.bounding_box.heading,
-                                scale=etsi.ETSI.DECI_METER,
+                                scale=etsi.ETSI.DECI_DEGREE,
                                 undef=3601,
                             ),
                             "confidence": 127,
@@ -547,7 +547,7 @@ class CollectivePerceptionMessage(etsi.Message):
             )
             heading = etsi.ETSI.etsi2si(
                 value=po.get("angles", {}).get("z_angle", {}).get("value"),
-                scale=etsi.ETSI.DECI_METER,
+                scale=etsi.ETSI.DECI_DEGREE,
                 undef=3601,
             )
 
