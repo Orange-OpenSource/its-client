@@ -404,6 +404,32 @@ it requires an OTLP collector as mentioned in the telemetry example section.
 cargo run --example collector --features telemetry
 ```
 
+### display
+
+This example provides a minimal viewer pipeline to parse logs or read live MQTT
+into a SQLite DB and display tiles on a map.
+
+Parse historical logs (handles .log, .log.gz, .tar.gz); it takes three positional
+arguments: the input directory, the quadkey zoom level and the output database path:
+
+```shell
+cargo run --example display_log_reader --features mobility -- /tmp/logs 26 /tmp/display.db
+```
+
+Ingest from MQTT messages:
+
+```shell
+cargo run --example display_mqtt_reader --features mobility -- --config examples/config.ini
+```
+
+Serve the map UI:
+
+```shell
+cargo run --example display_server --features mobility -- --config examples/config.ini
+```
+
+Open the map at http://localhost:3000/ and zoom to display the message metrics.
+
 [1]: https://github.com/Orange-OpenSource/its-client/actions/workflows/rust.yml
 
 [2]: https://crates.io/crates/libits-client
