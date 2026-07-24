@@ -118,7 +118,7 @@ impl MqttConfiguration {
 
         match old_mqtt_options.credentials() {
             Some(credentials) => {
-                mqtt_options.set_credentials(credentials.0, credentials.1);
+                mqtt_options.set_credentials(credentials.username, credentials.password);
             }
             None => {}
         }
@@ -203,7 +203,10 @@ mod tests {
         properties.insert("password", "pass".to_string());
         let config = MqttConfiguration::try_from(&properties).unwrap();
         assert_eq!(
-            config.mqtt_options.credentials(),
+            config
+                .mqtt_options
+                .credentials()
+                .map(|c| (c.username, c.password)),
             Some(("user".to_string(), "pass".to_string()))
         );
     }

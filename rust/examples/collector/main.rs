@@ -744,7 +744,10 @@ mod tests {
         );
         assert_eq!(
             mqtt_exporter.configuration.mqtt_options.credentials(),
-            Some(("user".to_string(), "pwd".to_string()))
+            Some(rumqttc::v5::mqttbytes::v5::Login::new(
+                "user".to_string(),
+                "pwd".to_string(),
+            ))
         );
         assert!(matches!(
             mqtt_exporter.configuration.mqtt_options.transport(),

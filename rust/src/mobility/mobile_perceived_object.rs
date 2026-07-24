@@ -17,7 +17,7 @@ use crate::exchange::etsi::perceived_object::{CartesianVelocity, PerceivedObject
 use crate::exchange::etsi::speed_from_etsi;
 use crate::mobility::mobile::Mobile;
 use crate::mobility::position::{Position, enu_destination, haversine_destination};
-use rand::Rng;
+use rand::RngExt;
 use std::f64::consts::PI;
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};

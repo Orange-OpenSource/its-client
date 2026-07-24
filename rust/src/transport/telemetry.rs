@@ -17,13 +17,11 @@ use opentelemetry::global::BoxedSpan;
 use opentelemetry::propagation::{Extractor, TextMapPropagator};
 use opentelemetry::trace::{Link, Span, SpanKind, TraceContextExt, Tracer};
 use opentelemetry::{Context, KeyValue, global};
-use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_otlp::ExporterBuildError;
+use opentelemetry_otlp::{WithExportConfig, WithHttpConfig};
 use opentelemetry_sdk::Resource;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
-use opentelemetry_sdk::runtime;
-use opentelemetry_sdk::trace::{
-    BatchConfigBuilder, BatchSpanProcessor, RandomIdGenerator, Sampler, TracerProvider,
-};
+use opentelemetry_sdk::trace::{RandomIdGenerator, Sampler, SdkTracerProvider};
 use reqwest::header;
 use rumqttc::v5::mqttbytes::v5::Publish;
 
@@ -33,7 +31,7 @@ use crate::client::configuration::telemetry_configuration::TelemetryConfiguratio
 pub fn init_tracer(
     configuration: &TelemetryConfiguration,
     service_name: &'static str,
-) -> Result<(), opentelemetry::trace::TraceError> {
+) -> Result<(), ExporterBuildError> {
     let path = if configuration.path.starts_with('/') {
         configuration.path.clone().as_str()[1..].to_string()
     } else {
@@ -64,40 +62,39 @@ pub fn init_tracer(
         None => reqwest::Client::new(),
     };
 
-    let http_exporter = opentelemetry_otlp::new_exporter()
-        .http()
+    let http_exporter = opentelemetry_otlp::SpanExporter::builder()
+        .with_http()
         .with_http_client(http_client)
         .with_endpoint(endpoint)
         .with_timeout(Duration::from_secs(3))
-        .build_span_exporter()?;
+        .build()?;
 
-    let batch_processor = BatchSpanProcessor::builder(http_exporter, runtime::Tokio)
-        .with_batch_config(
-            BatchConfigBuilder::default()
-                .with_max_export_batch_size(configuration.batch_size)
-                .build(),
-        )
+    // Override service.name.
+    let resource = Resource::builder().with_service_name(service_name).build();
+
+    let tracer_provider = SdkTracerProvider::builder()
+        .with_batch_exporter(http_exporter)
+        .with_sampler(Sampler::AlwaysOn)
+        .with_id_generator(RandomIdGenerator::default())
+        .with_max_events_per_span(16)
+        .with_max_attributes_per_span(16)
+        .with_resource(resource)
         .build();
 
-    let tracer_provider = TracerProvider::builder()
-        .with_span_processor(batch_processor)
-        .with_config(
-            opentelemetry_sdk::trace::Config::default()
-                .with_sampler(Sampler::AlwaysOn)
-                .with_id_generator(RandomIdGenerator::default())
-                .with_max_events_per_span(64)
-                .with_max_attributes_per_span(16)
-                .with_max_events_per_span(16)
-                .with_resource(Resource::new(vec![KeyValue::new(
-                    "service.name",
-                    service_name,
-                )])),
-        )
-        .build();
-
+    // Store the provider so examples/binaries can later call `shutdown()`.
+    let _ = TRACER_PROVIDER.set(tracer_provider.clone());
     let _ = global::set_tracer_provider(tracer_provider);
 
     Ok(())
+}
+
+static TRACER_PROVIDER: std::sync::OnceLock<SdkTracerProvider> = std::sync::OnceLock::new();
+
+/// Shuts down the tracer provider created by `init_tracer` (if any), forcing a final export.
+pub fn shutdown_tracer() {
+    if let Some(provider) = TRACER_PROVIDER.get() {
+        let _ = provider.shutdown();
+    }
 }
 
 pub fn get_span(
