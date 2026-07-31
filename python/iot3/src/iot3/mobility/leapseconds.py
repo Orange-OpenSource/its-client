@@ -309,11 +309,15 @@ def _fallback():
 
 def dTAI_UTC_from_utc(utc_time):
     """TAI time = utc_time + dTAI_UTC_from_utc(utc_time)."""
+    if utc_time.tzinfo is not None:
+        utc_time = utc_time.replace(tzinfo=None)
     return _dTAI_UTC(utc_time, lambda ls: ls.utc)
 
 
 def dTAI_UTC_from_tai(tai_time):
     """UTC time = tai_time - dTAI_UTC_from_tai(tai_time)."""
+    if tai_time.tzinfo is not None:
+        tai_time = tai_time.replace(tzinfo=None)
     return _dTAI_UTC(tai_time, lambda ls: ls.utc + ls.dTAI_UTC)
 
 

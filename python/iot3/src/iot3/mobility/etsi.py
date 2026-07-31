@@ -191,7 +191,7 @@ class ETSI(abc.ABC):
         94694401000
         """
         tai_time = leapseconds.utc_to_tai(
-            datetime.datetime.utcfromtimestamp(unix_time)
+            datetime.datetime.fromtimestamp(unix_time, datetime.timezone.utc)
         ).timestamp()
         return ETSI.si2etsi(tai_time - ETSI.EPOCH, ETSI.MILLI_SECOND, 0)
 
@@ -218,7 +218,7 @@ class ETSI(abc.ABC):
         """
         tai_time = ETSI.etsi2si(etsi_time, ETSI.MILLI_SECOND, 0) + ETSI.EPOCH
         return leapseconds.tai_to_utc(
-            datetime.datetime.utcfromtimestamp(tai_time)
+            datetime.datetime.fromtimestamp(tai_time, datetime.timezone.utc)
         ).timestamp()
 
     @staticmethod
