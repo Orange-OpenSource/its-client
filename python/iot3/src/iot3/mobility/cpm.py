@@ -172,12 +172,8 @@ class CollectivePerceptionMessage(etsi.Message):
                                     etsi.ETSI.CENTI_METER,
                                     800001,
                                 ),
-                                # Encoding the altitude error is a non-linear search in
-                                # an array... Let's consider it unavailable for now.
-                                "confidence": etsi.ETSI.si2etsi(
-                                    None,
-                                    etsi.ETSI.CENTI_METER,
-                                    15,
+                                "confidence": (
+                                    self.altitude_confidence(gnss_report)
                                 ),
                             },
                             "position_confidence_ellipse": (
