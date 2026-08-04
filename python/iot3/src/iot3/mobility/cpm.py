@@ -180,31 +180,9 @@ class CollectivePerceptionMessage(etsi.Message):
                                     15,
                                 ),
                             },
-                            "position_confidence_ellipse": {
-                                # We treat the 2D error as a circle, so semi-major
-                                # and semi-minor are eqal, and thus the orientation
-                                # of the elipse does not matter.
-                                "semi_major": etsi.ETSI.si2etsi(
-                                    gnss_report.horizontal_error,
-                                    etsi.ETSI.CENTI_METER,
-                                    4095,
-                                    {"min": 0, "max": 4093},
-                                    4094,
-                                ),
-                                "semi_minor": etsi.ETSI.si2etsi(
-                                    gnss_report.horizontal_error,
-                                    etsi.ETSI.CENTI_METER,
-                                    4095,
-                                    {"min": 0, "max": 4093},
-                                    4094,
-                                ),
-                                # Any orientation is valid for a circle, just use 0.
-                                "semi_major_orientation": etsi.ETSI.si2etsi(
-                                    0,
-                                    etsi.ETSI.DECI_DEGREE,
-                                    3601,
-                                ),
-                            },
+                            "position_confidence_ellipse": (
+                                self.position_confidence_ellipse(gnss_report)
+                            ),
                         },
                     },
                     "perceived_object_container": [],
