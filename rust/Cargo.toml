@@ -32,6 +32,7 @@ crate-type = ["lib"]
 mobility = ["geo"]
 geo_routing = ["mobility"]
 telemetry = ["base64", "opentelemetry", "opentelemetry-http", "opentelemetry-otlp", "opentelemetry_sdk"]
+identity = []
 
 [[example]]
 name = "json_counter"
