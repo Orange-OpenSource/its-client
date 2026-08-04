@@ -204,18 +204,23 @@ class GNSS:
         *,
         host: Optional[str] = None,
         port: Optional[int] = None,
+        persistence: Optional[float] = 1.0,
     ):
         """Simple abstraction to a gpsd daemon.
 
         :param host: The hostname or IP address the gpsd daemon runs on;
                      by default, 127.0.0.1
         :param port: The TCP port the gpsd daemon listen on; by default 2947
+        :parama persistence: The duration after which the last measurement is
+                             considered valid; afterward, no measurement will
+                             be returned when calling get().
 
         Both host and port are optional, as the usual setup is to have gpsd
         run on the local machine, and listen on its well-known port.
         """
         self._host = host or "127.0.0.1"
         self._port = port or 2947
+        self._persistence = persistence
 
         self._thread = threading.Thread(
             target=self._loop,
@@ -237,7 +242,17 @@ class GNSS:
     def join(self, timeout: Optional[float] = None):
         self._thread.join(timeout)
 
-    def __call__(self):
+    def __call__(
+        self,
+        *,
+        max_age: Optional[float] = None,
+    ) -> GNSSReport | None:
+        """Returns a GNSSReport() object with the last valid measurement, None otherwise.
+
+        :param max_age: The maximum age, in seconds, to consider a measurement valid;
+                        overrides the persistence from the constructor.
+        """
+
         epoch = copy.deepcopy(self._full_epoch)
 
         try:
@@ -247,7 +262,9 @@ class GNSS:
             return None
 
         now = time.time()
-        if now - tpv_data["timestamp"] > 1.0:
+        if now - tpv_data["timestamp"] > (
+            max_age if max_age is not None else self._persistence
+        ):
             # Last measurement too old
             return None
 
