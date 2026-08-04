@@ -103,7 +103,7 @@ class GNSSReport:
                 object.__setattr__(self, "ellipse_semi_minor", s_major)
                 object.__setattr__(self, "ellipse_orient", 0.0)
             # If minor but no major, it does not make sense; no ellipse
-            case None, float(s_minor), _:
+            case None, float(_), _:
                 object.__setattr__(self, "ellipse_semi_minor", None)
                 object.__setattr__(self, "ellipse_orient", None)
             # If both major and minor, check major >= minor
@@ -276,6 +276,16 @@ class GNSS:
             params["acceleration"] = att.get("acc_len")
             params["true_heading"] = att.get("heading")
             params["magnetic_heading"] = att.get("mheading")
+
+        try:
+            gst = epoch["gst"]["msg"]
+        except KeyError:
+            # Not all GNSS devices provide pseudorange noise report data
+            pass
+        else:
+            params["ellipse_semi_major"] = gst.get("major")
+            params["ellipse_semi_minor"] = gst.get("minor")
+            params["ellipse_orient"] = gst.get("orient")
 
         return GNSSReport(**params)
 
