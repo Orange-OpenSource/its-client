@@ -344,6 +344,34 @@ class Message(abc.ABC):
         return json.dumps(self._message, separators=(",", ":"))
 
     @staticmethod
+    def reference_position(
+        gnss_report: GNSSReport,
+    ) -> dict:
+        return {
+            "latitude": ETSI.si2etsi(
+                gnss_report.latitude,
+                ETSI.DECI_MICRO_DEGREE,
+                900000001,
+            ),
+            "longitude": ETSI.si2etsi(
+                gnss_report.longitude,
+                ETSI.DECI_MICRO_DEGREE,
+                1800000001,
+            ),
+            "altitude": {
+                "value": ETSI.si2etsi(
+                    gnss_report.altitude,
+                    ETSI.CENTI_METER,
+                    800001,
+                ),
+                "confidence": Message.altitude_confidence(gnss_report),
+            },
+            "position_confidence_ellipse": (
+                Message.position_confidence_ellipse(gnss_report)
+            ),
+        }
+
+    @staticmethod
     def position_confidence_ellipse(
         gnss_report: GNSSReport,
     ) -> dict:
