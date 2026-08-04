@@ -21,7 +21,7 @@ pub trait Mortal {
     fn terminated(&self) -> bool;
 
     fn expired(&self) -> bool {
-        now() > self.timeout()
+        self.remaining_time() == 0
     }
 
     fn remaining_time(&self) -> u64 {
