@@ -155,31 +155,7 @@ class CollectivePerceptionMessage(etsi.Message):
                     "management_container": {
                         "station_type": station_type,
                         "reference_time": etsi.ETSI.unix2etsi_time(self._timestamp),
-                        "reference_position": {
-                            "latitude": etsi.ETSI.si2etsi(
-                                gnss_report.latitude,
-                                etsi.ETSI.DECI_MICRO_DEGREE,
-                                900000001,
-                            ),
-                            "longitude": etsi.ETSI.si2etsi(
-                                gnss_report.longitude,
-                                etsi.ETSI.DECI_MICRO_DEGREE,
-                                1800000001,
-                            ),
-                            "altitude": {
-                                "value": etsi.ETSI.si2etsi(
-                                    gnss_report.altitude,
-                                    etsi.ETSI.CENTI_METER,
-                                    800001,
-                                ),
-                                "confidence": (
-                                    self.altitude_confidence(gnss_report)
-                                ),
-                            },
-                            "position_confidence_ellipse": (
-                                self.position_confidence_ellipse(gnss_report)
-                            ),
-                        },
+                        "reference_position": self.reference_position(gnss_report),
                     },
                     "perceived_object_container": [],
                 },
