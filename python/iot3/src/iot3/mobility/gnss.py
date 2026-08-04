@@ -369,7 +369,7 @@ class GNSS:
             # we bundle everything we have about this epoch, queue it
             # for further computations, and drop all the stored messages
             # to start a new epoch afresh.
-            if msg_class in ["tpv", "att"]:
+            if msg_class in ["tpv", "att", "gst"]:
                 # Only store those messages we need
                 self._current_epoch[msg_class] = {
                     "timestamp": time.time(),
