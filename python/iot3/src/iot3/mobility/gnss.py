@@ -182,7 +182,7 @@ class GNSS:
             name=f"{__name__}.gpsd_client",
             daemon=True,
         )
-        self._last = dict()
+        self._current_epoch = {}
         self._sock = None
         self._should_stop = False
 
@@ -197,10 +197,10 @@ class GNSS:
         self._thread.join(timeout)
 
     def __call__(self):
-        last = copy.deepcopy(self._last)
+        epoch = copy.deepcopy(self._current_epoch)
 
         try:
-            tpv_data = last["tpv"]
+            tpv_data = epoch["tpv"]
         except (TypeError, KeyError):
             # No measurement yet
             return None
@@ -227,7 +227,7 @@ class GNSS:
         params["altitude_error"] = tpv.get("epv")
 
         try:
-            att = last["att"]["msg"]
+            att = epoch["att"]["msg"]
         except KeyError:
             # Not all GNSS devices provide attitude data
             pass
@@ -311,7 +311,7 @@ class GNSS:
                 continue
             if msg_class in ["tpv", "att"]:
                 # Only store those messages we need
-                self._last[msg_class] = {
+                self._current_epoch[msg_class] = {
                     "timestamp": time.time(),
                     "msg": msg,
                 }
