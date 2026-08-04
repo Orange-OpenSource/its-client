@@ -373,3 +373,17 @@ class Message(abc.ABC):
                 {"min": 0, "max": 3599},
             ),
         }
+
+    @staticmethod
+    def altitude_confidence(
+        gnss_report: GNSSReport,
+    ) -> int:
+        """Return the altitude confidence value."""
+        if gnss_report.altitude_error is None:
+            return 15
+        steps = [1, 2, 5]
+        for confidence in range(14):
+            threshold = steps[confidence % 3] * (10 ** (int(confidence / 3) - 2))
+            if gnss_report.altitude_error <= threshold:
+                return confidence
+        return 14
