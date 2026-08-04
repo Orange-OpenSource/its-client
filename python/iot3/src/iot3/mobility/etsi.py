@@ -11,6 +11,7 @@ import its_quadkeys
 import json
 from typing import Optional
 from . import leapseconds
+from .gnss import GNSSReport
 
 
 class ETSI(abc.ABC):
@@ -337,3 +338,34 @@ class Message(abc.ABC):
     def to_json(self) -> str:
         # Return the densest-possible JSON sentence
         return json.dumps(self._message, separators=(",", ":"))
+
+    @staticmethod
+    def position_confidence_ellipse(
+        gnss_report: GNSSReport,
+    ) -> dict:
+        return {
+            "semi_major": ETSI.si2etsi(
+                gnss_report.ellipse_semi_major,
+                ETSI.CENTI_METER,
+                4095,
+                {"min": 1, "max": 4093},
+                4094,
+            ),
+            "semi_minor": ETSI.si2etsi(
+                gnss_report.ellipse_semi_minor,
+                ETSI.CENTI_METER,
+                4095,
+                {"min": 1, "max": 4093},
+                4094,
+            ),
+            "semi_major_orientation": ETSI.si2etsi(
+                (
+                    None
+                    if gnss_report.ellipse_orient is None
+                    else gnss_report.ellipse_orient % 360.0
+                ),
+                ETSI.DECI_DEGREE,
+                3601,
+                {"min": 0, "max": 3599},
+            ),
+        }
