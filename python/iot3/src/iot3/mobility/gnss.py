@@ -24,6 +24,9 @@ class GNSSReport:
     When a field exist in both radians and degrees, only one may be set when
     instantiating the class, not both. The other will automatically be set.
 
+    If the error ellipse is not known, it will be emulated with the horizontal
+    error, if that is known.
+
     :param timestamp: UNIX timestamp this object was created at, with
                       arbitrary sub-second precision; this must _not_ be
                       specified when creating a GNSSReport
@@ -46,6 +49,10 @@ class GNSSReport:
                            above), in radians
     :param magnetic_heading: Magnetic heading, in degrees
     :param magnetic_heading_r: Magnetic heading, in radians
+    :param ellipse_semi_major: Length of the error ellipse semi-major axis
+    :param ellipse_semi_minor: Length of the error ellipse semi-minor axis
+    :param ellipse_orient: Orientation of semi-major axis of error ellipse,
+                           in degrees from true North.
     """
 
     timestamp: float = None
@@ -64,6 +71,9 @@ class GNSSReport:
     magnetic_heading: float | None = None
     true_heading_r: float | None = None
     magnetic_heading_r: float | None = None
+    ellipse_semi_major: float | None = None
+    ellipse_semi_minor: float | None = None
+    ellipse_orient: float | None = None
 
     # Frozen dataclasses do not allow directly setting their attributes,
     # neither directly with dot notation nor with setattr(), so we must
@@ -77,6 +87,36 @@ class GNSSReport:
                 obj=self,
             )
         object.__setattr__(self, "timestamp", time.time())
+
+        # Sanitise and/or emulate the error ellipse
+        match self.ellipse_semi_major, self.ellipse_semi_minor, self.horizontal_error:
+            # No error value, no orientation
+            case None, None, None:
+                object.__setattr__(self, "ellipse_orient", None)
+            # If no major and no minor, use horizontal error if provided
+            case None, None, float(h_error):
+                object.__setattr__(self, "ellipse_semi_major", h_error)
+                object.__setattr__(self, "ellipse_semi_minor", h_error)
+                object.__setattr__(self, "ellipse_orient", 0.0)
+            # If major but no minor, use major as minor
+            case float(s_major), None, _:
+                object.__setattr__(self, "ellipse_semi_minor", s_major)
+                object.__setattr__(self, "ellipse_orient", 0.0)
+            # If minor but no major, it does not make sense; no ellipse
+            case None, float(s_minor), _:
+                object.__setattr__(self, "ellipse_semi_minor", None)
+                object.__setattr__(self, "ellipse_orient", None)
+            # If both major and minor, check major >= minor
+            case float(s_major), float(s_minor), _:
+                if s_major < s_minor:
+                    object.__setattr__(self, "ellipse_semi_major", s_minor)
+                    object.__setattr__(self, "ellipse_semi_minor", s_major)
+                    if self.ellipse_orient is not None:
+                        object.__setattr__(
+                            self,
+                            "ellipse_orient",
+                            (self.ellipse_orient + 90) % 360.0,
+                        )
 
         fields = {
             # min_inc, max_inc: inclusive boundaries
