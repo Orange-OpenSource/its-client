@@ -70,7 +70,7 @@ class GNSSReport:
     # use the root class 'object' to set the attributes:
     # https://docs.python.org/3/library/dataclasses.html#frozen-instances
     def __post_init__(self):
-        if getattr(self, "timestamp") is not None:
+        if self.timestamp is not None:
             raise AttributeError(
                 "Assigning timestamp is not allowed",
                 name="timestamp",
