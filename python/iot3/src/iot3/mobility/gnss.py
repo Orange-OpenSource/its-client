@@ -182,6 +182,7 @@ class GNSS:
             name=f"{__name__}.gpsd_client",
             daemon=True,
         )
+        self._full_epoch = {}
         self._current_epoch = {}
         self._sock = None
         self._should_stop = False
@@ -197,7 +198,7 @@ class GNSS:
         self._thread.join(timeout)
 
     def __call__(self):
-        epoch = copy.deepcopy(self._current_epoch)
+        epoch = copy.deepcopy(self._full_epoch)
 
         try:
             tpv_data = epoch["tpv"]
@@ -309,11 +310,33 @@ class GNSS:
                 msg_class = msg["class"].lower()
             except KeyError:
                 continue
+            # TPV, GST, ATT messages (and others) are emitted as separate
+            # json sentences, but they are usually correlated (ATT is
+            # explicitly documented to be "synchronous to the GNSS epoch".
+            # However, we don't know beforehand 1. in which order they will
+            # be emitted, and 2. if they will be emitted at all. There is a
+            # 'time' field documented for all those messages, but it may be
+            # missing, or its value may be way off (the documentation says:
+            # "May be absent if the mode is not 2D or 3D. May be present,
+            # but invalid, if there is no fix. Verify 3 consecutive 3D fixes
+            # before believing it is UTC. Even then it may be off by several
+            # seconds until the current leap seconds is known"). So, we
+            # can't rely on that field to aggregate correlated messages.
+            #
+            # So, we use a crude heuristic: we assume that the TPV
+            # message is the last to be emitted in a GNSS epoch, so we
+            # store all messages we receive, and when we get a TPV one,
+            # we bundle everything we have about this epoch, queue it
+            # for further computations, and drop all the stored messages
+            # to start a new epoch afresh.
             if msg_class in ["tpv", "att"]:
                 # Only store those messages we need
                 self._current_epoch[msg_class] = {
                     "timestamp": time.time(),
                     "msg": msg,
                 }
+            if msg_class == "tpv":
+                self._full_epoch = self._current_epoch
+                self._current_epoch = {}
 
         self._disconnect()
