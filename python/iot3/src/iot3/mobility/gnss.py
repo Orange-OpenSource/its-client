@@ -200,17 +200,17 @@ class GNSS:
         last = copy.deepcopy(self._last)
 
         try:
-            tpv = last["tpv"]
+            tpv_data = last["tpv"]
         except (TypeError, KeyError):
             # No measurement yet
             return None
 
         now = time.time()
-        if now - last["tpv"]["timestamp"] > 1.0:
+        if now - tpv_data["timestamp"] > 1.0:
             # Last measurement too old
             return None
 
-        tpv = json.loads(tpv["msg"])
+        tpv = tpv_data["msg"]
         if "lat" not in tpv or "lon" not in tpv:
             # No latitude or no longitude
             return None
@@ -227,7 +227,7 @@ class GNSS:
         params["altitude_error"] = tpv.get("epv")
 
         try:
-            att = last["att"]
+            att = last["att"]["msg"]
         except KeyError:
             # Not all GNSS devices provide attitude data
             pass
@@ -313,7 +313,7 @@ class GNSS:
                 # Only store those messages we need
                 self._last[msg_class] = {
                     "timestamp": time.time(),
-                    "msg": msg_json,
+                    "msg": msg,
                 }
 
         self._disconnect()
