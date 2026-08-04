@@ -1187,6 +1187,80 @@ mod tests {
     }
 
     #[test]
+    fn fresh_denm_is_not_expired() {
+        let denm = DecentralizedEnvironmentalNotificationMessage {
+            management: ManagementContainer {
+                reference_time: etsi_now(),
+                detection_time: etsi_now(),
+                validity_duration: Some(600),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        assert!(!denm.expired());
+        assert!(denm.remaining_time() > 0);
+    }
+
+    #[test]
+    fn stale_denm_is_expired() {
+        let denm = DecentralizedEnvironmentalNotificationMessage {
+            management: ManagementContainer {
+                reference_time: etsi_now().saturating_sub(700 * 1000),
+                detection_time: etsi_now().saturating_sub(700 * 1000),
+                validity_duration: Some(600),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        assert!(denm.expired());
+        assert_eq!(denm.remaining_time(), 0);
+    }
+
+    #[test]
+    fn expired_and_remaining_time_agree_on_freshly_built_denm() {
+        let denm = DecentralizedEnvironmentalNotificationMessage {
+            management: ManagementContainer {
+                reference_time: etsi_now(),
+                detection_time: etsi_now(),
+                validity_duration: Some(10),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        assert!(
+            !denm.expired(),
+            "A DENM whose reference_time == etsi_now() must not be considered expired",
+        );
+        assert!(
+            denm.remaining_time() > 0,
+            "remaining_time() must be strictly positive for a fresh DENM",
+        );
+        assert_eq!(
+            denm.expired(),
+            denm.remaining_time() == 0,
+            "expired() and remaining_time() == 0 must always agree",
+        );
+    }
+
+    #[test]
+    fn unix_reference_time_would_not_be_seen_as_expired() {
+        let denm = DecentralizedEnvironmentalNotificationMessage {
+            management: ManagementContainer {
+                reference_time: now(),
+                detection_time: now(),
+                validity_duration: Some(10),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        assert!(!denm.expired());
+    }
+
+    #[test]
     fn serialize_minimal_denm() {
         let denm = DecentralizedEnvironmentalNotificationMessage {
             protocol_version: 2,
