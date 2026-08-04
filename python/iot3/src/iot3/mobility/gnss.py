@@ -258,6 +258,7 @@ class GNSS:
         except:
             # already closed, we don't care
             pass
+        self._sock_fd = None
         self._sock = None
 
     def _loop(self):
