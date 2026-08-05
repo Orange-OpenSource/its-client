@@ -12,7 +12,7 @@ import os
 import signal
 import sys
 from . import client
-from . import gpsd
+from iot3.mobility.gnss import GNSS
 
 CFG = "/etc/its/vehicle.cfg"
 DEFAULTS = {
@@ -123,7 +123,11 @@ def main():
         )
         otel_opts["span_ctxmgr_cb"] = otel.span
 
-    gnss = gpsd.GNSSProvider(cfg=cfg["gpsd"])
+    gnss = GNSS(
+        host=cfg["gpsd"]["host"],
+        port=int(cfg["gpsd"]["port"]),
+        persistence=float(cfg["gpsd"]["persistence"]),
+    )
 
     def _msg_cb(*args, **kwargs):
         its_client.msg_cb(*args, **kwargs)
@@ -200,6 +204,7 @@ def main():
     if mqtt_mirror is not None:
         mqtt_mirror.stop()
     gnss.stop()
+    gnss.join()
     if otel:
         otel.stop()
 

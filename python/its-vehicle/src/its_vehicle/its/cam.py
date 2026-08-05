@@ -7,7 +7,7 @@ import datetime
 import hashlib
 import json
 from . import ETSI, SI2ETSI
-from ..gpsd import GNSSReport
+from iot3.mobility.gnss import GNSSReport
 
 
 class CooperativeAwarenessMessage:

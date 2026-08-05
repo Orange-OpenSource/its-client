@@ -8,8 +8,8 @@ import json
 import linuxfd
 import logging
 import threading
-from .gpsd import GNSSProvider
 from iot3.core.mqtt import MqttClient
+from iot3.mobility.gnss import GNSS
 from .roi import RegionOfInterest
 from .its.cam import CooperativeAwarenessMessage as CAM
 
@@ -23,7 +23,7 @@ class ITSClient:
         self,
         *,
         cfg: dict,
-        gpsd: GNSSProvider,
+        gpsd: GNSS,
         mqtt_main: MqttClient,
         mqtt_mirror: MqttClient = None,
     ):
@@ -111,7 +111,7 @@ class ITSClient:
             if self.should_stop:
                 break
 
-            gnss_report = self.gpsd.get()
+            gnss_report = self.gpsd()
             if (
                 gnss_report is None
                 or gnss_report.latitude is None
