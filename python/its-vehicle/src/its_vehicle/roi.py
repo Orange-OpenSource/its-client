@@ -19,9 +19,11 @@ class RegionOfInterest:
     def get(
         self,
         *,
-        quadkey: its_quadkeys.QuadKey,
         speed: float,
         msg_type: str,
+        quadkey: its_quadkeys.QuadKey | None = None,
+        latitude: float | None = None,
+        longitude: float | None = None,
     ):
         depth = self.depths[msg_type]
         if speed is not None:
@@ -41,7 +43,14 @@ class RegionOfInterest:
         # better approach would be compute the quadkeys enclosed in a
         # circle, but that's non-obvious...
 
-        shallow = quadkey.make_shallower(depth)
+        if quadkey is not None:
+            shallow = quadkey.make_shallower(depth)
+        elif latitude is not None and longitude is not None:
+            shallow = its_quadkeys.QuadKey((latitude, longitude, depth))
+        else:
+            raise RuntimeError(
+                "No latitude and/or longitude, and no quadkey given, can't compute RoI"
+            )
         roi = shallow.neighbours(as_zone=True)
         roi.add(shallow)
 
