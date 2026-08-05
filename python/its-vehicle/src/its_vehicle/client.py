@@ -115,13 +115,6 @@ class ITSClient:
             ):
                 continue
 
-            quadkey = its_quadkeys.QuadKey(
-                (
-                    gnss_report.latitude,
-                    gnss_report.longitude,
-                    self.cfg["depth"],
-                )
-            )
             # Update RoI before we send a message, so that
             # we do not miss it...
             roi_topics = set()
@@ -136,7 +129,8 @@ class ITSClient:
                             + "/#"
                         ),
                         self.roi.get(
-                            quadkey=quadkey,
+                            latitude=gnss_report.latitude,
+                            longitude=gnss_report.longitude,
                             speed=gnss_report.speed,
                             msg_type=msg_type,
                         ),
