@@ -9,9 +9,9 @@ import linuxfd
 import logging
 import threading
 from iot3.core.mqtt import MqttClient
+from iot3.mobility.cam import CAM
 from iot3.mobility.gnss import GNSS
 from .roi import RegionOfInterest
-from .its.cam import CooperativeAwarenessMessage as CAM
 
 
 class ITSClient:
@@ -55,12 +55,8 @@ class ITSClient:
                 f"configuration key general.topic-sub-prefix must end in a / ({self.cfg['topic-sub-prefix']})"
             )
 
-        self.pub_topic_root = (
-            self.cfg["topic-pub-prefix"]
-            + ITSClient.TYPES[self.cfg["type"]]["topic"]
-            + "/"
-            + self.cfg["instance-id"]
-            + "/"
+        self.pub_topic_template = (
+            f"{self.cfg['topic-pub-prefix']}{{msg_type}}/{{source_uuid}}/{{quadkey}}"
         )
 
         self.roi = RegionOfInterest(
@@ -152,7 +148,10 @@ class ITSClient:
                 uuid=self.cfg["instance-id"],
                 gnss_report=gnss_report,
             )
-            topic = self.pub_topic_root + quadkey.to_str("/")
+            topic = msg.topic(
+                template=self.pub_topic_template,
+                depth=self.cfg["depth"],
+            )
             msg_json = msg.to_json()
             self.mqtt_main.publish(topic=topic, payload=msg_json)
             if self.mqtt_mirror and not self.cfg["mirror-self"]:
