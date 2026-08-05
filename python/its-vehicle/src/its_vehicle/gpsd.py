@@ -59,14 +59,6 @@ class GNSSProvider:
 
         self.cfg = dict(cfg)
 
-        # Even if we do have code for the "timestamp" heuristic, it is
-        # not officially supported, for being untested and having other
-        # drawbacks. Only explicitly accept the "order" heuristic.
-        if self.cfg["heuristic"] != "order":
-            raise NotImplementedError(
-                f"gpsd '{self.cfg['heuristic']}' heuristic not supported",
-            )
-
         # Type coercion
         self.cfg["port"] = int(self.cfg["port"])
         self.cfg["persistence"] = float(self.cfg["persistence"])
@@ -254,78 +246,22 @@ class GNSSProvider:
         # we've never seen ATT or GST messages being duplicated so far
         # (for the single good reason that we have no GNSS device at
         # hand that provide the corresponding data...).
-        if self.cfg["heuristic"] == "order":
-            # So, we use a crude heuristic: we assume that the TPV
-            # message is the last to be emitted in a GNSS epoch, so we
-            # store all messages we receive, and when we get a TPV one,
-            # we bundle everything we have about this epoch, queue it
-            # for further computations, and drop all the stored messages
-            # to start a new epoch afresh.
-
-            # .update() so that  messages accumulate rather than replace
-            # any previous one (critical for SKY messages for example,
-            # and even though we don't use those, we have no guarantee
-            # those we do listen for don't behave similarly).
-            self._data[msg["class"]].update(msg)
-            if msg["class"] == "TPV":
-                self._set_data()
-                self._data = self._new_epoch_data()
-
-        elif self.cfg["heuristic"] == "timestamp":
-            # Altenate heuristic, based on the 'time' field:
-            # if:
-            #  - the current message has a 'time' field, and
-            #  - all the stored messages have a 'time' field, and
-            #  - the 'time' field of the current message is greater
-            #    than the 'time' field of stored messages
-            # then:
-            #  - send all stored messages
-            #  - drop stored messages
-            #  - store the current message
-            # else:
-            #    - store the current message
-            #   if:
-            #    - the current message is a 'TPV', and
-            #    - any of the stored message has no 'time' field
-            #   then:
-            #    - send all stored messages
-            #    - drop all stored messages
-            #
-            # The advantage of this time-based heuristic, is that we are
-            # (to a great extent) pretty sure that all the messages we did
-            # aggregate so far and that we are sending as a single unit,
-            # are strongly correlated one to the others, so this makes for
-            # a good unit to work KPIs and other computations on.
-            #
-            # The disadvantage, though, and this is a big one, is that we
-            # send data of a specific epoch at the begining of the next
-            # epoch. So, we get to do our KPIs and computations on data that
-            # is now aged of one period (e.g. 0.2s for a 5Hz rate). This is
-            # a pretty big drawback, so much so that pursuing this heuristic
-            # is not very interesting...
-            #
-            # This is all a bit convoluted, though, but we keep it below
-            # for reference (it never got tested at all).
-
-            any_msg = self._data[list(self._data)[0]]
-            if (
-                "time" in msg
-                and all([("time" in self._data[c]) for c in self._data])
-                and (
-                    datetime.datetime.fromisoformat(msg["time"])
-                    > datetime.datetime.fromisoformat(any_msg["time"])
-                )
-            ):
-                self._set_data()
-                self._data = dict(GNSSProvider.DefaultData)
-                self._data[msg["class"]] = msg
-            else:
-                self._data[msg["class"]] = msg
-                if msg["class"] == "TPV" and any(
-                    [("time" not in self._data[c]) for c in self._data]
-                ):
-                    self._set_data()
-                    self._data = dict(GNSSProvider.DefaultData)
+        #
+        # So, we use a crude heuristic: we assume that the TPV
+        # message is the last to be emitted in a GNSS epoch, so we
+        # store all messages we receive, and when we get a TPV one,
+        # we bundle everything we have about this epoch, queue it
+        # for further computations, and drop all the stored messages
+        # to start a new epoch afresh.
+        #
+        # .update() so that  messages accumulate rather than replace
+        # any previous one (critical for SKY messages for example,
+        # and even though we don't use those, we have no guarantee
+        # those we do listen for don't behave similarly).
+        self._data[msg["class"]].update(msg)
+        if msg["class"] == "TPV":
+            self._set_data()
+            self._data = self._new_epoch_data()
 
     def _set_data(self):
         # We are guaranteed to have a TPV message
