@@ -191,6 +191,7 @@ class GNSS:
 
     def stop(self):
         self._should_stop = True
+        self._disconnect()
 
     def join(self, timeout: Optional[float] = None):
         self._thread.join(timeout)
