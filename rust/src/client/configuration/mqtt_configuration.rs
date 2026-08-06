@@ -105,6 +105,54 @@ impl Deref for MqttConfiguration {
     }
 }
 
+impl MqttConfiguration {
+    #[cfg(feature = "identity")]
+    pub(crate) fn suffix_client_id(&mut self, suffix: &str) {
+        let old_mqtt_options = &self.mqtt_options.clone();
+        let suffixed_id = format!("{}-{}", old_mqtt_options.client_id(), suffix);
+        let mut mqtt_options = MqttOptions::new(
+            suffixed_id,
+            old_mqtt_options.broker_address().0,
+            old_mqtt_options.broker_address().1,
+        );
+
+        match old_mqtt_options.credentials() {
+            Some(credentials) => {
+                mqtt_options.set_credentials(credentials.0, credentials.1);
+            }
+            None => {}
+        }
+        mqtt_options.set_connection_timeout(old_mqtt_options.connection_timeout());
+        mqtt_options.set_keep_alive(old_mqtt_options.keep_alive());
+        mqtt_options.set_clean_start(old_mqtt_options.clean_start());
+        mqtt_options.set_transport(old_mqtt_options.transport());
+        mqtt_options.set_request_channel_capacity(old_mqtt_options.request_channel_capacity());
+        mqtt_options.set_pending_throttle(old_mqtt_options.pending_throttle());
+        mqtt_options.set_manual_acks(old_mqtt_options.manual_acks());
+        mqtt_options.set_network_options(old_mqtt_options.network_options());
+        mqtt_options.set_receive_maximum(old_mqtt_options.receive_maximum());
+        mqtt_options.set_max_packet_size(old_mqtt_options.max_packet_size());
+        mqtt_options.set_topic_alias_max(old_mqtt_options.topic_alias_max());
+        mqtt_options.set_request_response_info(old_mqtt_options.request_response_info());
+        mqtt_options.set_request_problem_info(old_mqtt_options.request_problem_info());
+        mqtt_options.set_user_properties(old_mqtt_options.user_properties());
+        mqtt_options.set_authentication_method(old_mqtt_options.authentication_method());
+        mqtt_options.set_authentication_data(old_mqtt_options.authentication_data());
+        if let Some(connect_properties) = old_mqtt_options.connect_properties() {
+            mqtt_options.set_connect_properties(connect_properties);
+        }
+        if let Some(upper_limit) = old_mqtt_options.get_outgoing_inflight_upper_limit() {
+            mqtt_options.set_outgoing_inflight_upper_limit(upper_limit);
+        }
+
+        if let Some(last_will) = old_mqtt_options.last_will() {
+            mqtt_options.set_last_will(last_will);
+        }
+
+        self.mqtt_options = mqtt_options;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -214,5 +262,88 @@ mod tests {
             config.mqtt_options.transport(),
             rumqttc::Transport::Tcp
         ));
+    }
+
+    #[cfg(feature = "identity")]
+    #[test]
+    fn suffix_client_id_changes_only_client_id() {
+        let mut properties = create_properties();
+        properties.insert("username", "user".to_string());
+        properties.insert("password", "pass".to_string());
+        let mut config = MqttConfiguration::try_from(&properties).unwrap();
+        config
+            .mqtt_options
+            .set_keep_alive(std::time::Duration::from_secs(60));
+        config.mqtt_options.set_clean_start(false);
+        config.mqtt_options.set_connection_timeout(17);
+        config.mqtt_options.set_request_channel_capacity(11);
+        config
+            .mqtt_options
+            .set_pending_throttle(std::time::Duration::from_millis(123));
+        config.mqtt_options.set_manual_acks(true);
+        config.mqtt_options.set_receive_maximum(Some(7));
+        config.mqtt_options.set_max_packet_size(Some(4096));
+        config.mqtt_options.set_topic_alias_max(Some(9));
+        config.mqtt_options.set_request_response_info(Some(128));
+        config.mqtt_options.set_request_problem_info(None);
+        let initial_client_id = config.mqtt_options.client_id();
+        let initial_broker_address = config.mqtt_options.broker_address();
+        let initial_credentials = config.mqtt_options.credentials();
+        let initial_keep_alive = config.mqtt_options.keep_alive();
+        let initial_clean_start = config.mqtt_options.clean_start();
+        let initial_connection_timeout = config.mqtt_options.connection_timeout();
+        let initial_request_channel_capacity = config.mqtt_options.request_channel_capacity();
+        let initial_pending_throttle = config.mqtt_options.pending_throttle();
+        let initial_manual_acks = config.mqtt_options.manual_acks();
+        let initial_receive_maximum = config.mqtt_options.receive_maximum();
+        let initial_max_packet_size = config.mqtt_options.max_packet_size();
+        let initial_topic_alias_max = config.mqtt_options.topic_alias_max();
+        let initial_request_response_info = config.mqtt_options.request_response_info();
+        let initial_request_problem_info = config.mqtt_options.request_problem_info();
+
+        config.suffix_client_id("suffix");
+
+        assert_ne!(config.mqtt_options.client_id(), initial_client_id);
+        assert_eq!(
+            config.mqtt_options.client_id(),
+            format!("{}-{}", initial_client_id, "suffix")
+        );
+        assert_eq!(config.mqtt_options.broker_address(), initial_broker_address);
+        assert_eq!(config.mqtt_options.credentials(), initial_credentials);
+        assert_eq!(config.mqtt_options.keep_alive(), initial_keep_alive);
+        assert_eq!(config.mqtt_options.clean_start(), initial_clean_start);
+        assert_eq!(
+            config.mqtt_options.connection_timeout(),
+            initial_connection_timeout
+        );
+        assert_eq!(
+            config.mqtt_options.request_channel_capacity(),
+            initial_request_channel_capacity
+        );
+        assert_eq!(
+            config.mqtt_options.pending_throttle(),
+            initial_pending_throttle
+        );
+        assert_eq!(config.mqtt_options.manual_acks(), initial_manual_acks);
+        assert_eq!(
+            config.mqtt_options.receive_maximum(),
+            initial_receive_maximum
+        );
+        assert_eq!(
+            config.mqtt_options.max_packet_size(),
+            initial_max_packet_size
+        );
+        assert_eq!(
+            config.mqtt_options.topic_alias_max(),
+            initial_topic_alias_max
+        );
+        assert_eq!(
+            config.mqtt_options.request_response_info(),
+            initial_request_response_info
+        );
+        assert_eq!(
+            config.mqtt_options.request_problem_info(),
+            initial_request_problem_info
+        );
     }
 }

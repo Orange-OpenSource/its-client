@@ -41,8 +41,8 @@ pub struct TelemetryConfiguration {
     pub use_tls: bool,
     pub path: String,
     pub batch_size: usize,
-    username: Option<String>,
-    password: Option<String>,
+    pub(crate) username: Option<String>,
+    pub(crate) password: Option<String>,
 }
 
 impl TelemetryConfiguration {

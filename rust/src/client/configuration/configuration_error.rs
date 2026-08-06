@@ -17,6 +17,8 @@ pub enum ConfigurationError {
     BootstrapFailure(String),
     #[error("Could not found field '{0}'")]
     FieldNotFound(&'static str),
+    #[error("Could not find file '{0}'")]
+    FileNotFound(String),
     #[error("Cannot parse '{0}' due to invalid file type")]
     InvalidFileType(String),
     #[error("Configuration missing mandatory field {0}")]

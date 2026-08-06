@@ -31,12 +31,18 @@ use crate::client::configuration::mobility_configuration::{
 
 #[cfg(feature = "geo_routing")]
 use crate::client::configuration::geo_configuration::{GEO_SECTION, GeoConfiguration};
+
+#[cfg(feature = "identity")]
+use crate::client::configuration::identity::override_with_identity;
+
 use crate::client::configuration::mqtt_configuration::MqttConfiguration;
 
 pub(crate) mod bootstrap_configuration;
 pub mod configuration_error;
 #[cfg(feature = "geo_routing")]
 pub(crate) mod geo_configuration;
+#[cfg(feature = "identity")]
+mod identity;
 #[cfg(feature = "mobility")]
 pub(crate) mod mobility_configuration;
 pub mod mqtt_configuration;
@@ -218,7 +224,8 @@ impl TryFrom<Ini> for Configuration {
     fn try_from(ini_config: Ini) -> Result<Self, Self::Error> {
         let mut ini_config = ini_config;
 
-        Ok(Configuration {
+        #[allow(unused_mut)]
+        let mut configuration = Configuration {
             mqtt: MqttConfiguration::try_from(&pick_mandatory_section(
                 MQTT_SECTION,
                 &mut ini_config,
@@ -238,8 +245,15 @@ impl TryFrom<Ini> for Configuration {
                 MOBILITY_SECTION,
                 &mut ini_config,
             )?)?,
-            custom_settings: Some(ini_config),
-        })
+            custom_settings: None,
+        };
+
+        #[cfg(feature = "identity")]
+        override_with_identity(&mut ini_config, &mut configuration)?;
+
+        configuration.custom_settings = Some(ini_config);
+
+        Ok(configuration)
     }
 }
 
