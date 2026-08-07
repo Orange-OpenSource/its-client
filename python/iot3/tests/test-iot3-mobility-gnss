@@ -25,7 +25,7 @@ try:
 except AttributeError:
     pass
 else:
-    raise RuntimeError("Out-of-range latitude should not be alowed")
+    raise RuntimeError("Out-of-range latitude should not be allowed")
 
 print("Conflicting attributes...")
 try:

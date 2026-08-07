@@ -80,7 +80,7 @@ class GNSSReport:
 
         fields = {
             # min_inc, max_inc: inclusive boundaries
-            # min_exc, max_exc: exclusibe boundaries
+            # min_exc, max_exc: exclusive boundaries
             "latitude": {
                 "min_inc": -90.0,
                 "max_inc": 90.0,

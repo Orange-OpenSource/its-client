@@ -176,7 +176,7 @@ class ITSClient:
         **_kwargs,
     ):
         logging.debug(
-            "received mesage on %s: %s",
+            "received message on %s: %s",
             topic[:16] + "..." if len(topic) > 16 else "",
             payload[:16].decode(errors="backslashreplace")
             + ("..." if len(payload) > 16 else ""),
