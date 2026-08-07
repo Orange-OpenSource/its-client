@@ -44,6 +44,7 @@ assert msg.msg_type == "cam"
 assert math.fabs(msg.latitude - 43.6352120) < 5 * 10 ** -8
 assert math.fabs(msg.longitude - 1.3745620) < 5 * 10 ** -8
 
+#-----------------------------------------------------------------------------------------
 print("CPM with no P.O...")
 msg = CPM(
     uuid="test_1234",
@@ -55,7 +56,6 @@ msg = CPM(
 assert "station_data_container" not in msg["message"]
 assert len(msg["message"]["perceived_object_container"]) == 0
 
-#-----------------------------------------------------------------------------------------
 print("CPM of a car with some P.O...")
 msg = CPM(
     uuid="test_1234",
@@ -223,7 +223,7 @@ msg = DENM(
     cause=DENM.Cause.trafficCondition,
 )
 # UNIX time is a float that encodes seconds, while ETSI time is an int that
-# encodes miliseconds, so we should not have a delta of 1ms or more
+# encodes milliseconds, so we should not have a delta of 1ms or more
 assert math.fabs(detect_time - msg.detection_time) < 10 ** -3
 
 seq_num = msg.sequence_number

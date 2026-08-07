@@ -56,6 +56,7 @@ gnss_report = GNSSReport(
 if math.fabs(gnss_report.latitude - math.degrees(0.761578119)) >= 5 * 10 ** -8:
     raise RuntimeError("Degree -> radian latitude conversion failed")
 
+#-----------------------------------------------------------------------------------------
 print("gpsd connection to 127.0.0.1:2948...")
 gnss = GNSS(
     host="127.0.0.1",
