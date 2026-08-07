@@ -63,8 +63,8 @@ gnss = GNSS(
     port=2948,
 )
 gnss.start()
-for i in range(5):
-    time.sleep(1)
+for i in range(50):
+    time.sleep(0.1)
     if gnss() is not None:
         break
 else:
