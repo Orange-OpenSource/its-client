@@ -52,7 +52,7 @@ in the python venv._
     4. in another terminal, start a fake _gpsd_ process
        (no need for an actual GNSS device):
         ```sh
-        $ TMPDIR=/tmp gpsfake -q -P 2947 -u -n -c 0.1 tests/data/NMEA.log
+        $ TMPDIR=/tmp gpsfake -q -P 2948 -u -n -c 0.1 tests/data/NMEA.log
         ```
     5. in another terminal, start a container with Python 3.11
        and the necessary packages:
