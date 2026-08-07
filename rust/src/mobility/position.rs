@@ -212,7 +212,7 @@ pub fn distance_to_line(position: &Position, line: &[Position]) -> f64 {
         position.longitude.to_degrees(),
     );
 
-    Euclidean::distance(&reference_point, &lane_line)
+    geo::Euclidean.distance(&reference_point, &lane_line)
 }
 
 #[cfg(test)]

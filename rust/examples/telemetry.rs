@@ -20,9 +20,9 @@ use libits::client::configuration::Configuration;
 use libits::client::logger::create_stdout_logger;
 use libits::transport::telemetry::{execute_in_span, get_span, init_tracer};
 use log::{info, warn};
+use opentelemetry::Context;
 use opentelemetry::propagation::{Extractor, Injector, TextMapPropagator};
 use opentelemetry::trace::{SpanKind, TraceContextExt, mark_span_as_active};
-use opentelemetry::{Context, global};
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 
 const TRACER_NAME: &str = "telemetry/example";
@@ -213,6 +213,6 @@ async fn main() {
         warn!("Listener thread failed to join: {e:?}")
     }
 
-    // Trace export is batched, shutting down the tracer provider will force the export
-    global::shutdown_tracer_provider();
+    // Trace export is batched. Force flush by shutting down the tracer provider.
+    libits::transport::telemetry::shutdown_tracer();
 }

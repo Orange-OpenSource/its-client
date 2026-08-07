@@ -124,6 +124,9 @@ impl MqttRouter {
                 Incoming::PingResp(packet) => {
                     trace!("Ping response received: {packet:?}")
                 }
+                Incoming::Auth(packet) => {
+                    trace!("Auth received: {packet:?}")
+                }
                 // FIXME log about last will and login
                 Incoming::Connect(packet, _last_will, _login) => {
                     info!("Connect received for the packet {packet:?}")

@@ -739,7 +739,10 @@ use_tls = false
         configuration.set_mqtt_credentials("testuser", "testpass");
         assert_eq!(
             configuration.mqtt.mqtt_options.credentials(),
-            Some(("testuser".to_string(), "testpass".to_string()))
+            Some(rumqttc::v5::mqttbytes::v5::Login::new(
+                "testuser".to_string(),
+                "testpass".to_string(),
+            ))
         );
     }
 }
