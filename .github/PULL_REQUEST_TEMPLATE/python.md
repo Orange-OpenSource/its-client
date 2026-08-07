@@ -69,7 +69,7 @@ in the python venv._
             --user $(id -u):$(id -u) \
             --mount type=bind,source=$(pwd),destination=$(pwd) \
             --workdir $(pwd) \
-            python:3.11.17-slim-trixie \
+            python:3.11.15-slim-trixie \
             /bin/bash -il
 
         $ docker container exec -u 0:0 iot3 apt update
