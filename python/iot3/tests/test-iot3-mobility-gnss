@@ -2,10 +2,22 @@
 
 import math
 import time
+from iot3.mobility.etsi import Message
 from iot3.mobility.gnss import GNSSReport, GNSS
 
+#-----------------------------------------------------------------------------------------
 print("Basic, empty GNSS report...")
 gnss_report = GNSSReport()
+
+print("GNSSReport with GST fields...")
+report = GNSSReport(
+    ellipse_semi_major=0.5,
+    ellipse_semi_minor=0.3,
+    ellipse_orient=90.0,
+)
+assert report.ellipse_semi_major == 0.5
+assert report.ellipse_semi_minor == 0.3
+assert report.ellipse_orient == 90.0
 
 print("Disallow explicit timestamp...")
 try:
@@ -55,6 +67,154 @@ gnss_report = GNSSReport(
 # 5*10^-8 is about the same as 10^-9 radians, above
 if math.fabs(gnss_report.latitude - math.degrees(0.761578119)) >= 5 * 10 ** -8:
     raise RuntimeError("Degree -> radian latitude conversion failed")
+
+#-----------------------------------------------------------------------------------------
+position_confidence_ellipse = Message.position_confidence_ellipse
+
+print("position_confidence_ellipse with no data...")
+ellipse = position_confidence_ellipse(GNSSReport())
+assert ellipse["semi_major"] == 4095
+assert ellipse["semi_minor"] == 4095
+assert ellipse["semi_major_orientation"] == 3601
+
+print("position_confidence_ellipse with GST data...")
+ellipse = position_confidence_ellipse(
+    GNSSReport(
+        ellipse_semi_major=1.5,
+        ellipse_semi_minor=0.8,
+        ellipse_orient=45.0,
+    ),
+)
+assert ellipse["semi_major"] == 150
+assert ellipse["semi_minor"] == 80
+assert ellipse["semi_major_orientation"] == 450
+
+print("position_confidence_ellipse with GST major only...")
+ellipse = position_confidence_ellipse(
+    GNSSReport(
+        ellipse_semi_major=1.0,
+    ),
+)
+assert ellipse["semi_major"] == 100
+assert ellipse["semi_minor"] == 100
+assert ellipse["semi_major_orientation"] == 0
+
+print("position_confidence_ellipse with GST minor only...")
+ellipse = position_confidence_ellipse(
+    GNSSReport(
+        ellipse_semi_minor=0.5,
+    ),
+)
+assert ellipse["semi_major"] == 4095
+assert ellipse["semi_minor"] == 4095
+assert ellipse["semi_major_orientation"] == 3601
+
+print("position_confidence_ellipse with GST orient only...")
+ellipse = position_confidence_ellipse(
+    GNSSReport(
+        ellipse_orient=90.0,
+    ),
+)
+assert ellipse["semi_major"] == 4095
+assert ellipse["semi_minor"] == 4095
+assert ellipse["semi_major_orientation"] == 3601
+
+print("position_confidence_ellipse with GST major+minor, no orient...")
+ellipse = position_confidence_ellipse(
+    GNSSReport(
+        ellipse_semi_major=1.2,
+        ellipse_semi_minor=0.6,
+    ),
+)
+assert ellipse["semi_major"] == 120
+assert ellipse["semi_minor"] == 60
+assert ellipse["semi_major_orientation"] == 3601
+
+print("position_confidence_ellipse with GST major+orient, no minor...")
+ellipse = position_confidence_ellipse(
+    GNSSReport(
+        ellipse_semi_major=2.0,
+        ellipse_orient=30.0,
+    ),
+)
+assert ellipse["semi_major"] == 200
+assert ellipse["semi_minor"] == 200
+assert ellipse["semi_major_orientation"] == 0
+
+print("position_confidence_ellipse with GST minor+orient, no major...")
+ellipse = position_confidence_ellipse(
+    GNSSReport(
+        ellipse_semi_minor=0.3,
+        ellipse_orient=45.0,
+    ),
+)
+assert ellipse["semi_major"] == 4095
+assert ellipse["semi_minor"] == 4095
+assert ellipse["semi_major_orientation"] == 3601
+
+print("position_confidence_ellipse: GST major takes priority over horizontal_error...")
+ellipse = position_confidence_ellipse(
+    GNSSReport(
+        ellipse_semi_major=1.0,
+        ellipse_semi_minor=0.5,
+        horizontal_error=9.99,
+    ),
+)
+assert ellipse["semi_major"] == 100
+assert ellipse["semi_minor"] == 50
+assert ellipse["semi_major_orientation"] == 3601
+
+print("position_confidence_ellipse: horizontal_error fallback when no major...")
+ellipse = position_confidence_ellipse(
+    GNSSReport(
+        horizontal_error=5.0,
+    ),
+)
+assert ellipse["semi_major"] == 500
+assert ellipse["semi_minor"] == 500
+assert ellipse["semi_major_orientation"] == 0
+
+print("position_confidence_ellipse: horizontal_error ignored when major present...")
+ellipse = position_confidence_ellipse(
+    GNSSReport(
+        ellipse_semi_major=0.5,
+        horizontal_error=9.99,
+    ),
+)
+assert ellipse["semi_major"] == 50
+assert ellipse["semi_minor"] == 50
+assert ellipse["semi_major_orientation"] == 0
+
+print("position_confidence_ellipse: orientation wrapping (360° → 0°)...")
+ellipse = position_confidence_ellipse(
+    GNSSReport(
+        ellipse_semi_major=2.0,
+        ellipse_semi_minor=1.0,
+        ellipse_orient=360.0,
+    ),
+)
+print(f"orient={ellipse['semi_major_orientation']}")
+assert ellipse["semi_major_orientation"] == 0
+
+print("position_confidence_ellipse: orientation wrapping (>360°)...")
+ellipse = position_confidence_ellipse(
+    GNSSReport(
+        ellipse_semi_major=2.0,
+        ellipse_semi_minor=1.0,
+        ellipse_orient=450.0,
+    ),
+)
+assert ellipse["semi_major_orientation"] == 900
+
+print("position_confidence_ellipse: orientation correction (major < minor)...")
+ellipse = position_confidence_ellipse(
+    GNSSReport(
+        ellipse_semi_major=1.0,
+        ellipse_semi_minor=2.0,
+        ellipse_orient=0.0,
+    ),
+)
+assert ellipse["semi_major_orientation"] == 900
 
 #-----------------------------------------------------------------------------------------
 print("gpsd connection to 127.0.0.1:2948...")
