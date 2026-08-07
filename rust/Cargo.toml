@@ -62,17 +62,7 @@ threadpool = "1.8.1"
 flexi_logger = "0.31.9"
 rand = "0.10.2"
 tempfile = "3.27.0"
-axum = "0.8.9"
-anyhow = "1.0.104"
 flate2 = "1.1.9"
-
-[dependencies.tower-http]
-version = "0.7.0"
-features = ["fs", "cors"]
-
-[dependencies.rusqlite]
-version = "0.39.0"
-features = ["bundled"]
 
 [dependencies.base64]
 version = "0.23.0"
@@ -93,7 +83,7 @@ optional = true
 
 [dependencies.opentelemetry-otlp]
 version = "0.32.0"
-features = ["trace", "http-proto"]
+features = ["trace", "http-proto", "reqwest-blocking-client"]
 optional = true
 
 [dependencies.opentelemetry_sdk]
@@ -107,7 +97,7 @@ features = ["websocket"]
 
 [dependencies.reqwest]
 version = "0.13.4"
-features = ["json"]
+features = ["json", "blocking"]
 
 [dependencies.serde]
 version = "1.0"
