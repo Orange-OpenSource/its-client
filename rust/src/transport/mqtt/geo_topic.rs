@@ -24,7 +24,7 @@ use crate::transport::mqtt::geo_topic::message_type::MessageType;
 use crate::transport::mqtt::geo_topic::queue::Queue;
 use thiserror::Error;
 
-mod message_type;
+pub mod message_type;
 mod queue;
 
 /// An error which can be returned when parsing a Topic string.
