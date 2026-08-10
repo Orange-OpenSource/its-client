@@ -155,57 +155,7 @@ class CollectivePerceptionMessage(etsi.Message):
                     "management_container": {
                         "station_type": station_type,
                         "reference_time": etsi.ETSI.unix2etsi_time(self._timestamp),
-                        "reference_position": {
-                            "latitude": etsi.ETSI.si2etsi(
-                                gnss_report.latitude,
-                                etsi.ETSI.DECI_MICRO_DEGREE,
-                                900000001,
-                            ),
-                            "longitude": etsi.ETSI.si2etsi(
-                                gnss_report.longitude,
-                                etsi.ETSI.DECI_MICRO_DEGREE,
-                                1800000001,
-                            ),
-                            "altitude": {
-                                "value": etsi.ETSI.si2etsi(
-                                    gnss_report.altitude,
-                                    etsi.ETSI.CENTI_METER,
-                                    800001,
-                                ),
-                                # Encoding the altitude error is a non-linear search in
-                                # an array... Let's consider it unavailable for now.
-                                "confidence": etsi.ETSI.si2etsi(
-                                    None,
-                                    etsi.ETSI.CENTI_METER,
-                                    15,
-                                ),
-                            },
-                            "position_confidence_ellipse": {
-                                # We treat the 2D error as a circle, so semi-major
-                                # and semi-minor are eqal, and thus the orientation
-                                # of the elipse does not matter.
-                                "semi_major": etsi.ETSI.si2etsi(
-                                    gnss_report.horizontal_error,
-                                    etsi.ETSI.CENTI_METER,
-                                    4095,
-                                    {"min": 0, "max": 4093},
-                                    4094,
-                                ),
-                                "semi_minor": etsi.ETSI.si2etsi(
-                                    gnss_report.horizontal_error,
-                                    etsi.ETSI.CENTI_METER,
-                                    4095,
-                                    {"min": 0, "max": 4093},
-                                    4094,
-                                ),
-                                # Any orientation is valid for a circle, just use 0.
-                                "semi_major_orientation": etsi.ETSI.si2etsi(
-                                    0,
-                                    etsi.ETSI.DECI_DEGREE,
-                                    3601,
-                                ),
-                            },
-                        },
+                        "reference_position": self.reference_position(gnss_report),
                     },
                     "perceived_object_container": [],
                 },

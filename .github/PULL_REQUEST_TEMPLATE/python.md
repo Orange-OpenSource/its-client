@@ -52,7 +52,7 @@ in the python venv._
     4. in another terminal, start a fake _gpsd_ process
        (no need for an actual GNSS device):
         ```sh
-        $ TMPDIR=/tmp gpsfake -q -P 2947 -u -n -c 0.1 tests/data/NMEA.log
+        $ TMPDIR=/tmp gpsfake -q -P 2948 -u -n -c 0.1 tests/data/NMEA.log
         ```
     5. in another terminal, start a container with Python 3.11
        and the necessary packages:
@@ -69,7 +69,7 @@ in the python venv._
             --user $(id -u):$(id -u) \
             --mount type=bind,source=$(pwd),destination=$(pwd) \
             --workdir $(pwd) \
-            python:3.11.17-slim-trixie \
+            python:3.11.15-slim-trixie \
             /bin/bash -il
 
         $ docker container exec -u 0:0 iot3 apt update

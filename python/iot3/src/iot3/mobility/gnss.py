@@ -24,6 +24,9 @@ class GNSSReport:
     When a field exist in both radians and degrees, only one may be set when
     instantiating the class, not both. The other will automatically be set.
 
+    If the error ellipse is not known, it will be emulated with the horizontal
+    error, if that is known.
+
     :param timestamp: UNIX timestamp this object was created at, with
                       arbitrary sub-second precision; this must _not_ be
                       specified when creating a GNSSReport
@@ -46,6 +49,10 @@ class GNSSReport:
                            above), in radians
     :param magnetic_heading: Magnetic heading, in degrees
     :param magnetic_heading_r: Magnetic heading, in radians
+    :param ellipse_semi_major: Length of the error ellipse semi-major axis
+    :param ellipse_semi_minor: Length of the error ellipse semi-minor axis
+    :param ellipse_orient: Orientation of semi-major axis of error ellipse,
+                           in degrees from true North.
     """
 
     timestamp: float = None
@@ -64,13 +71,16 @@ class GNSSReport:
     magnetic_heading: float | None = None
     true_heading_r: float | None = None
     magnetic_heading_r: float | None = None
+    ellipse_semi_major: float | None = None
+    ellipse_semi_minor: float | None = None
+    ellipse_orient: float | None = None
 
     # Frozen dataclasses do not allow directly setting their attributes,
     # neither directly with dot notation nor with setattr(), so we must
     # use the root class 'object' to set the attributes:
     # https://docs.python.org/3/library/dataclasses.html#frozen-instances
     def __post_init__(self):
-        if getattr(self, "timestamp") is not None:
+        if self.timestamp is not None:
             raise AttributeError(
                 "Assigning timestamp is not allowed",
                 name="timestamp",
@@ -78,9 +88,39 @@ class GNSSReport:
             )
         object.__setattr__(self, "timestamp", time.time())
 
+        # Sanitise and/or emulate the error ellipse
+        match self.ellipse_semi_major, self.ellipse_semi_minor, self.horizontal_error:
+            # No error value, no orientation
+            case None, None, None:
+                object.__setattr__(self, "ellipse_orient", None)
+            # If no major and no minor, use horizontal error if provided
+            case None, None, float(h_error):
+                object.__setattr__(self, "ellipse_semi_major", h_error)
+                object.__setattr__(self, "ellipse_semi_minor", h_error)
+                object.__setattr__(self, "ellipse_orient", 0.0)
+            # If major but no minor, use major as minor
+            case float(s_major), None, _:
+                object.__setattr__(self, "ellipse_semi_minor", s_major)
+                object.__setattr__(self, "ellipse_orient", 0.0)
+            # If minor but no major, it does not make sense; no ellipse
+            case None, float(_), _:
+                object.__setattr__(self, "ellipse_semi_minor", None)
+                object.__setattr__(self, "ellipse_orient", None)
+            # If both major and minor, check major >= minor
+            case float(s_major), float(s_minor), _:
+                if s_major < s_minor:
+                    object.__setattr__(self, "ellipse_semi_major", s_minor)
+                    object.__setattr__(self, "ellipse_semi_minor", s_major)
+                    if self.ellipse_orient is not None:
+                        object.__setattr__(
+                            self,
+                            "ellipse_orient",
+                            (self.ellipse_orient + 90) % 360.0,
+                        )
+
         fields = {
             # min_inc, max_inc: inclusive boundaries
-            # min_exc, max_exc: exclusibe boundaries
+            # min_exc, max_exc: exclusive boundaries
             "latitude": {
                 "min_inc": -90.0,
                 "max_inc": 90.0,
@@ -164,25 +204,31 @@ class GNSS:
         *,
         host: Optional[str] = None,
         port: Optional[int] = None,
+        persistence: Optional[float] = 1.0,
     ):
         """Simple abstraction to a gpsd daemon.
 
         :param host: The hostname or IP address the gpsd daemon runs on;
                      by default, 127.0.0.1
         :param port: The TCP port the gpsd daemon listen on; by default 2947
+        :parama persistence: The duration after which the last measurement is
+                             considered valid; afterward, no measurement will
+                             be returned when calling get().
 
         Both host and port are optional, as the usual setup is to have gpsd
         run on the local machine, and listen on its well-known port.
         """
         self._host = host or "127.0.0.1"
         self._port = port or 2947
+        self._persistence = persistence
 
         self._thread = threading.Thread(
             target=self._loop,
             name=f"{__name__}.gpsd_client",
             daemon=True,
         )
-        self._last = dict()
+        self._full_epoch = {}
+        self._current_epoch = {}
         self._sock = None
         self._should_stop = False
 
@@ -191,25 +237,38 @@ class GNSS:
 
     def stop(self):
         self._should_stop = True
+        self._disconnect()
 
     def join(self, timeout: Optional[float] = None):
         self._thread.join(timeout)
 
-    def __call__(self):
-        last = copy.deepcopy(self._last)
+    def __call__(
+        self,
+        *,
+        max_age: Optional[float] = None,
+    ) -> GNSSReport | None:
+        """Returns a GNSSReport() object with the last valid measurement, None otherwise.
+
+        :param max_age: The maximum age, in seconds, to consider a measurement valid;
+                        overrides the persistence from the constructor.
+        """
+
+        epoch = copy.deepcopy(self._full_epoch)
 
         try:
-            tpv = last["tpv"]
+            tpv_data = epoch["tpv"]
         except (TypeError, KeyError):
             # No measurement yet
             return None
 
         now = time.time()
-        if now - last["tpv"]["timestamp"] > 1.0:
+        if now - tpv_data["timestamp"] > (
+            max_age if max_age is not None else self._persistence
+        ):
             # Last measurement too old
             return None
 
-        tpv = json.loads(tpv["msg"])
+        tpv = tpv_data["msg"]
         if "lat" not in tpv or "lon" not in tpv:
             # No latitude or no longitude
             return None
@@ -226,7 +285,7 @@ class GNSS:
         params["altitude_error"] = tpv.get("epv")
 
         try:
-            att = last["att"]
+            att = epoch["att"]["msg"]
         except KeyError:
             # Not all GNSS devices provide attitude data
             pass
@@ -234,6 +293,16 @@ class GNSS:
             params["acceleration"] = att.get("acc_len")
             params["true_heading"] = att.get("heading")
             params["magnetic_heading"] = att.get("mheading")
+
+        try:
+            gst = epoch["gst"]["msg"]
+        except KeyError:
+            # Not all GNSS devices provide pseudorange noise report data
+            pass
+        else:
+            params["ellipse_semi_major"] = gst.get("major")
+            params["ellipse_semi_minor"] = gst.get("minor")
+            params["ellipse_orient"] = gst.get("orient")
 
         return GNSSReport(**params)
 
@@ -258,6 +327,7 @@ class GNSS:
         except:
             # already closed, we don't care
             pass
+        self._sock_fd = None
         self._sock = None
 
     def _loop(self):
@@ -307,11 +377,33 @@ class GNSS:
                 msg_class = msg["class"].lower()
             except KeyError:
                 continue
-            if msg_class in ["tpv", "att"]:
+            # TPV, GST, ATT messages (and others) are emitted as separate
+            # json sentences, but they are usually correlated (ATT is
+            # explicitly documented to be "synchronous to the GNSS epoch".
+            # However, we don't know beforehand 1. in which order they will
+            # be emitted, and 2. if they will be emitted at all. There is a
+            # 'time' field documented for all those messages, but it may be
+            # missing, or its value may be way off (the documentation says:
+            # "May be absent if the mode is not 2D or 3D. May be present,
+            # but invalid, if there is no fix. Verify 3 consecutive 3D fixes
+            # before believing it is UTC. Even then it may be off by several
+            # seconds until the current leap seconds is known"). So, we
+            # can't rely on that field to aggregate correlated messages.
+            #
+            # So, we use a crude heuristic: we assume that the TPV
+            # message is the last to be emitted in a GNSS epoch, so we
+            # store all messages we receive, and when we get a TPV one,
+            # we bundle everything we have about this epoch, queue it
+            # for further computations, and drop all the stored messages
+            # to start a new epoch afresh.
+            if msg_class in ["tpv", "att", "gst"]:
                 # Only store those messages we need
-                self._last[msg_class] = {
+                self._current_epoch[msg_class] = {
                     "timestamp": time.time(),
-                    "msg": msg_json,
+                    "msg": msg,
                 }
+            if msg_class == "tpv":
+                self._full_epoch = self._current_epoch
+                self._current_epoch = {}
 
         self._disconnect()

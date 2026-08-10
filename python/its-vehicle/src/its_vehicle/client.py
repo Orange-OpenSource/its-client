@@ -8,10 +8,10 @@ import json
 import linuxfd
 import logging
 import threading
-from .gpsd import GNSSProvider
 from iot3.core.mqtt import MqttClient
+from iot3.mobility.cam import CAM
+from iot3.mobility.gnss import GNSS
 from .roi import RegionOfInterest
-from .its.cam import CooperativeAwarenessMessage as CAM
 
 
 class ITSClient:
@@ -23,7 +23,7 @@ class ITSClient:
         self,
         *,
         cfg: dict,
-        gpsd: GNSSProvider,
+        gpsd: GNSS,
         mqtt_main: MqttClient,
         mqtt_mirror: MqttClient = None,
     ):
@@ -55,12 +55,8 @@ class ITSClient:
                 f"configuration key general.topic-sub-prefix must end in a / ({self.cfg['topic-sub-prefix']})"
             )
 
-        self.pub_topic_root = (
-            self.cfg["topic-pub-prefix"]
-            + ITSClient.TYPES[self.cfg["type"]]["topic"]
-            + "/"
-            + self.cfg["instance-id"]
-            + "/"
+        self.pub_topic_template = (
+            f"{self.cfg['topic-pub-prefix']}{{msg_type}}/{{source_uuid}}/{{quadkey}}"
         )
 
         self.roi = RegionOfInterest(
@@ -111,7 +107,7 @@ class ITSClient:
             if self.should_stop:
                 break
 
-            gnss_report = self.gpsd.get()
+            gnss_report = self.gpsd()
             if (
                 gnss_report is None
                 or gnss_report.latitude is None
@@ -119,13 +115,6 @@ class ITSClient:
             ):
                 continue
 
-            quadkey = its_quadkeys.QuadKey(
-                (
-                    gnss_report.latitude,
-                    gnss_report.longitude,
-                    self.cfg["depth"],
-                )
-            )
             # Update RoI before we send a message, so that
             # we do not miss it...
             roi_topics = set()
@@ -140,7 +129,8 @@ class ITSClient:
                             + "/#"
                         ),
                         self.roi.get(
-                            quadkey=quadkey,
+                            latitude=gnss_report.latitude,
+                            longitude=gnss_report.longitude,
                             speed=gnss_report.speed,
                             msg_type=msg_type,
                         ),
@@ -152,7 +142,10 @@ class ITSClient:
                 uuid=self.cfg["instance-id"],
                 gnss_report=gnss_report,
             )
-            topic = self.pub_topic_root + quadkey.to_str("/")
+            topic = msg.topic(
+                template=self.pub_topic_template,
+                depth=self.cfg["depth"],
+            )
             msg_json = msg.to_json()
             self.mqtt_main.publish(topic=topic, payload=msg_json)
             if self.mqtt_mirror and not self.cfg["mirror-self"]:
@@ -176,7 +169,7 @@ class ITSClient:
         **_kwargs,
     ):
         logging.debug(
-            "received mesage on %s: %s",
+            "received message on %s: %s",
             topic[:16] + "..." if len(topic) > 16 else "",
             payload[:16].decode(errors="backslashreplace")
             + ("..." if len(payload) > 16 else ""),

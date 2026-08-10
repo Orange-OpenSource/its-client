@@ -11,6 +11,7 @@ import its_quadkeys
 import json
 from typing import Optional
 from . import leapseconds
+from .gnss import GNSSReport
 
 
 class ETSI(abc.ABC):
@@ -191,7 +192,9 @@ class ETSI(abc.ABC):
         94694401000
         """
         tai_time = leapseconds.utc_to_tai(
-            datetime.datetime.utcfromtimestamp(unix_time)
+            datetime.datetime.fromtimestamp(unix_time, datetime.timezone.utc).replace(
+                tzinfo=None
+            )
         ).timestamp()
         return ETSI.si2etsi(tai_time - ETSI.EPOCH, ETSI.MILLI_SECOND, 0)
 
@@ -218,7 +221,9 @@ class ETSI(abc.ABC):
         """
         tai_time = ETSI.etsi2si(etsi_time, ETSI.MILLI_SECOND, 0) + ETSI.EPOCH
         return leapseconds.tai_to_utc(
-            datetime.datetime.utcfromtimestamp(tai_time)
+            datetime.datetime.fromtimestamp(tai_time, datetime.timezone.utc).replace(
+                tzinfo=None
+            )
         ).timestamp()
 
     @staticmethod
@@ -337,3 +342,76 @@ class Message(abc.ABC):
     def to_json(self) -> str:
         # Return the densest-possible JSON sentence
         return json.dumps(self._message, separators=(",", ":"))
+
+    @staticmethod
+    def reference_position(
+        gnss_report: GNSSReport,
+    ) -> dict:
+        return {
+            "latitude": ETSI.si2etsi(
+                gnss_report.latitude,
+                ETSI.DECI_MICRO_DEGREE,
+                900000001,
+            ),
+            "longitude": ETSI.si2etsi(
+                gnss_report.longitude,
+                ETSI.DECI_MICRO_DEGREE,
+                1800000001,
+            ),
+            "altitude": {
+                "value": ETSI.si2etsi(
+                    gnss_report.altitude,
+                    ETSI.CENTI_METER,
+                    800001,
+                ),
+                "confidence": Message.altitude_confidence(gnss_report),
+            },
+            "position_confidence_ellipse": (
+                Message.position_confidence_ellipse(gnss_report)
+            ),
+        }
+
+    @staticmethod
+    def position_confidence_ellipse(
+        gnss_report: GNSSReport,
+    ) -> dict:
+        return {
+            "semi_major": ETSI.si2etsi(
+                gnss_report.ellipse_semi_major,
+                ETSI.CENTI_METER,
+                4095,
+                {"min": 1, "max": 4093},
+                4094,
+            ),
+            "semi_minor": ETSI.si2etsi(
+                gnss_report.ellipse_semi_minor,
+                ETSI.CENTI_METER,
+                4095,
+                {"min": 1, "max": 4093},
+                4094,
+            ),
+            "semi_major_orientation": ETSI.si2etsi(
+                (
+                    None
+                    if gnss_report.ellipse_orient is None
+                    else gnss_report.ellipse_orient % 360.0
+                ),
+                ETSI.DECI_DEGREE,
+                3601,
+                {"min": 0, "max": 3599},
+            ),
+        }
+
+    @staticmethod
+    def altitude_confidence(
+        gnss_report: GNSSReport,
+    ) -> int:
+        """Return the altitude confidence value."""
+        if gnss_report.altitude_error is None:
+            return 15
+        steps = [1, 2, 5]
+        for confidence in range(14):
+            threshold = steps[confidence % 3] * (10 ** (int(confidence / 3) - 2))
+            if gnss_report.altitude_error <= threshold:
+                return confidence
+        return 14

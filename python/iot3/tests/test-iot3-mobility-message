@@ -15,10 +15,18 @@ msg = CAM(
     uuid="test_1234",
     gnss_report=GNSSReport(),
 )
+assert msg["message_type"] == "cam"
+assert msg["version"] == "2.4.0"
 assert msg["message"]["basic_container"]["reference_position"]["latitude"] == 900000001
 assert (
     msg["message"]["basic_container"]["reference_position"]["longitude"] == 1800000001
 )
+assert msg["message"]["basic_container"]["reference_position"]["altitude"]["value"] == 800001
+assert msg["message"]["basic_container"]["reference_position"]["altitude"]["confidence"] == 15
+assert msg["message"]["basic_container"]["reference_position"]["position_confidence_ellipse"]["semi_major"] == 4095
+assert msg["message"]["basic_container"]["reference_position"]["position_confidence_ellipse"]["semi_minor"] == 4095
+assert msg["message"]["basic_container"]["reference_position"]["position_confidence_ellipse"]["semi_major_orientation"] == 3601
+assert "basic_vehicle_container_high_frequency" in msg._message["message"]["high_frequency_container"]
 
 print("CAM with latitude and longitude...")
 msg = CAM(
@@ -34,6 +42,108 @@ assert msg["message"]["basic_container"]["reference_position"]["longitude"] == 1
 # Check with properties (SI values, degrees); ~6mm at Equator on surface of Earth
 assert math.fabs(msg.latitude - 43.6352120) < 5 * 10 ** -8
 assert math.fabs(msg.longitude - 1.3745620) < 5 * 10 ** -8
+assert msg["message"]["basic_container"]["reference_position"]["altitude"]["value"] == 800001
+assert msg["message"]["basic_container"]["reference_position"]["altitude"]["confidence"] == 15
+
+print("CAM with all GNSS fields...")
+msg = CAM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(
+        latitude=43.635212,
+        longitude=1.374562,
+        altitude=123.45,
+        speed=15.0,
+        track=45.0,
+        acceleration=1.2,
+        horizontal_error=0.5,
+        altitude_error=0.3,
+    ),
+)
+assert math.fabs(msg.altitude - 123.45) < 0.005
+hf = msg["message"]["high_frequency_container"]["basic_vehicle_container_high_frequency"]
+assert hf["heading"]["value"] == 450
+assert hf["speed"]["value"] == 1500
+assert hf["longitudinal_acceleration"]["value"] == 12
+ellipse = msg["message"]["basic_container"]["reference_position"]["position_confidence_ellipse"]
+assert ellipse["semi_major"] == 50
+assert ellipse["semi_minor"] == 50
+assert ellipse["semi_major_orientation"] == 0
+
+print("CAM with RTK data...")
+rtk_gnss_report = GNSSReport(
+    latitude=43.635212,
+    longitude=1.374562,
+    altitude=123.45,
+    speed=15.0,
+    track=45.0,
+    acceleration=1.2,
+    ellipse_semi_major=0.01,
+    ellipse_semi_minor=0.008,
+    ellipse_orient=30.0,
+    altitude_error=0.02,
+)
+msg = CAM(
+    uuid="test_1234",
+    gnss_report=rtk_gnss_report,
+)
+ellipse = msg["message"]["basic_container"]["reference_position"]["position_confidence_ellipse"]
+assert ellipse["semi_major"] == 1
+assert ellipse["semi_minor"] == 1
+assert ellipse["semi_major_orientation"] == 300
+assert msg["message"]["basic_container"]["reference_position"]["altitude"]["confidence"] == 1
+
+print("CAM position_confidence_ellipse from GST data...")
+msg = CAM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(
+        latitude=43.635212,
+        longitude=1.374562,
+        ellipse_semi_major=0.8,
+        ellipse_semi_minor=0.5,
+        ellipse_orient=30.0,
+    ),
+)
+ellipse = msg["message"]["basic_container"]["reference_position"]["position_confidence_ellipse"]
+assert ellipse["semi_major"] == 80
+assert ellipse["semi_minor"] == 50
+assert ellipse["semi_major_orientation"] == 300
+
+print("CAM position_confidence_ellipse from GST data out of range...")
+msg = CAM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(
+        latitude=43.635212,
+        longitude=1.374562,
+        ellipse_semi_major=42,
+        ellipse_semi_minor=42,
+        ellipse_orient=30.0,
+    ),
+)
+ellipse = msg["message"]["basic_container"]["reference_position"]["position_confidence_ellipse"]
+assert ellipse["semi_major"] == 4094
+assert ellipse["semi_minor"] == 4094
+assert ellipse["semi_major_orientation"] == 300
+
+print("CAM altitude confidence from altitude_error...")
+msg = CAM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(
+        latitude=43.635212,
+        longitude=1.374562,
+        altitude_error=0.3,
+    ),
+)
+assert msg["message"]["basic_container"]["reference_position"]["altitude"]["confidence"] == 5
+
+print("CAM altitude confidence unavailable...")
+msg = CAM(
+    uuid="test_1234",
+    gnss_report=GNSSReport(
+        latitude=43.635212,
+        longitude=1.374562,
+    ),
+)
+assert msg["message"]["basic_container"]["reference_position"]["altitude"]["confidence"] == 15
 
 print("CAM serialisation...")
 json_msg = msg.to_json()
@@ -44,6 +154,7 @@ assert msg.msg_type == "cam"
 assert math.fabs(msg.latitude - 43.6352120) < 5 * 10 ** -8
 assert math.fabs(msg.longitude - 1.3745620) < 5 * 10 ** -8
 
+#-----------------------------------------------------------------------------------------
 print("CPM with no P.O...")
 msg = CPM(
     uuid="test_1234",
@@ -55,7 +166,6 @@ msg = CPM(
 assert "station_data_container" not in msg["message"]
 assert len(msg["message"]["perceived_object_container"]) == 0
 
-#-----------------------------------------------------------------------------------------
 print("CPM of a car with some P.O...")
 msg = CPM(
     uuid="test_1234",
@@ -223,7 +333,7 @@ msg = DENM(
     cause=DENM.Cause.trafficCondition,
 )
 # UNIX time is a float that encodes seconds, while ETSI time is an int that
-# encodes miliseconds, so we should not have a delta of 1ms or more
+# encodes milliseconds, so we should not have a delta of 1ms or more
 assert math.fabs(detect_time - msg.detection_time) < 10 ** -3
 
 seq_num = msg.sequence_number
