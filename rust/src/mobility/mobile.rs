@@ -28,4 +28,9 @@ pub trait Mobile {
 
     /// Returns ths mobile's acceleration in m/s²
     fn acceleration(&self) -> Option<f64>;
+
+    /// Returns the mean position confidence in centimeters.
+    ///
+    /// Computed from the confidence ellipse of the reference position.
+    fn position_confidence(&self) -> f64;
 }

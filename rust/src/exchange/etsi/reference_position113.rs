@@ -15,6 +15,7 @@ use crate::exchange::etsi::reference_position::{
     altitude_from_etsi, altitude_to_etsi, coordinate_from_etsi, coordinate_to_etsi,
 };
 use crate::mobility::position::Position;
+use crate::mobility::quadtree::{CONFIDENCE_UNAVAILABLE, confidence_mean};
 use serde::{Deserialize, Serialize};
 
 /// Represents a Reference Position according to an ETSI standard.
@@ -89,6 +90,33 @@ pub struct PositionConfidenceEllipse {
     pub semi_major_confidence: Option<u16>,
     pub semi_minor_confidence: Option<u16>,
     pub semi_major_orientation: Option<u16>,
+}
+
+impl PositionConfidenceEllipse {
+    /// Returns the mean of the semi-major and semi-minor confidence values.
+    ///
+    /// Returns `0.0` when either value is absent or equals the ETSI unavailable
+    /// sentinel ([`CONFIDENCE_UNAVAILABLE`], i.e. 4095).
+    pub fn confidence_mean(&self) -> f64 {
+        match (self.semi_major_confidence, self.semi_minor_confidence) {
+            (Some(major), Some(minor)) => {
+                confidence_mean(u32::from(major), u32::from(minor), CONFIDENCE_UNAVAILABLE)
+            }
+            _ => 0.0,
+        }
+    }
+}
+
+impl PositionConfidence {
+    /// Returns the mean position confidence from the embedded ellipse.
+    ///
+    /// Returns `0.0` when the ellipse is absent or confidence is unavailable.
+    pub fn confidence_mean(&self) -> f64 {
+        self.position_confidence_ellipse
+            .as_ref()
+            .map(|e| e.confidence_mean())
+            .unwrap_or(0.0)
+    }
 }
 
 #[cfg(test)]

@@ -23,6 +23,21 @@ pub enum Tile {
     All,
 }
 
+impl TryFrom<char> for Tile {
+    type Error = ParseError;
+
+    fn try_from(tile: char) -> Result<Self, Self::Error> {
+        match tile {
+            '#' => Ok(Tile::All),
+            '0'..='3' => {
+                let digit = tile.to_digit(4).unwrap();
+                Ok(Tile::from(digit as u8))
+            }
+            _ => Err(ParseError::InvalidTileChar(tile)),
+        }
+    }
+}
+
 impl From<u8> for Tile {
     fn from(tile: u8) -> Self {
         match tile {
@@ -35,30 +50,13 @@ impl From<u8> for Tile {
     }
 }
 
-impl From<char> for Tile {
-    fn from(tile: char) -> Self {
-        match tile {
-            '#' => Tile::All,
-            '0'..='3' => {
-                let digit = tile.to_digit(4).unwrap();
-                Tile::from(digit as u8)
-            }
-            _ => panic!("Unable to convert the char {tile} as a Tile"),
-        }
-    }
-}
-
 impl FromStr for Tile {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if let Some(c) = s.as_bytes().first() {
             let element = char::from(*c);
-            match element {
-                '#' => Ok(Tile::All),
-                '0'..='3' => Ok(Tile::from(element)),
-                _ => Err(ParseError::InvalidTileChar(element)),
-            }
+            Tile::try_from(element)
         } else {
             Err(ParseError::EmptyTileStr)
         }

@@ -17,6 +17,7 @@ use crate::exchange::etsi::perceived_object::{CartesianVelocity, PerceivedObject
 use crate::exchange::etsi::speed_from_etsi;
 use crate::mobility::mobile::Mobile;
 use crate::mobility::position::{Position, enu_destination, haversine_destination};
+use crate::mobility::quadtree::{CARTESIAN_CONFIDENCE_UNAVAILABLE, confidence_mean};
 use rand::RngExt;
 use std::f64::consts::PI;
 use std::fmt::{Debug, Display, Formatter};
@@ -137,6 +138,25 @@ impl Mobile for MobilePerceivedObject {
 
     fn acceleration(&self) -> Option<f64> {
         Some(self.acceleration)
+    }
+
+    /// Returns the arithmetic mean of the x and y coordinate confidences,
+    /// in centimeters.
+    ///
+    /// Cartesian coordinate confidences are independent 1D uncertainties along
+    /// orthogonal axes, analogous to the semi-major and semi-minor axes of a
+    /// confidence ellipse.  The arithmetic mean `(x + y) / 2` provides a
+    /// consistent scalar summary, matching the approach used for
+    /// [`PositionConfidenceEllipse::confidence_mean()`](crate::exchange::etsi::reference_position::PositionConfidenceEllipse::confidence_mean).
+    ///
+    /// Returns `0.0` when either coordinate confidence equals the ETSI
+    /// unavailable sentinel ([`CARTESIAN_CONFIDENCE_UNAVAILABLE`], i.e. 4096).
+    fn position_confidence(&self) -> f64 {
+        confidence_mean(
+            u32::from(self.perceived_object.position.x_coordinate.confidence),
+            u32::from(self.perceived_object.position.y_coordinate.confidence),
+            CARTESIAN_CONFIDENCE_UNAVAILABLE,
+        )
     }
 }
 

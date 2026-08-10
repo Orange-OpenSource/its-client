@@ -12,6 +12,7 @@
 use core::fmt;
 
 use crate::mobility::position::Position;
+use crate::mobility::quadtree::{CONFIDENCE_UNAVAILABLE, confidence_mean};
 use serde::{Deserialize, Serialize};
 
 const COORDINATE_SIGNIFICANT_DIGIT: u8 = 7;
@@ -59,6 +60,27 @@ pub struct PositionConfidenceEllipse {
     /// Orientation of the semi-major axis in centidegrees.
     #[serde(default = "default_semi_major_orientation")]
     pub semi_major_orientation: u16,
+}
+
+impl PositionConfidenceEllipse {
+    /// Returns the mean of the semi-major and semi-minor axes.
+    ///
+    /// Returns `0.0` when either semi-axis equals the ETSI unavailable sentinel
+    /// ([`CONFIDENCE_UNAVAILABLE`], i.e. 4095).
+    pub fn confidence_mean(&self) -> f64 {
+        confidence_mean(
+            u32::from(self.semi_major),
+            u32::from(self.semi_minor),
+            CONFIDENCE_UNAVAILABLE,
+        )
+    }
+
+    /// Returns `true` when the confidence information is available (neither axis
+    /// is the unavailable sentinel).
+    pub fn is_available(&self) -> bool {
+        self.semi_major != CONFIDENCE_UNAVAILABLE as u16
+            && self.semi_minor != CONFIDENCE_UNAVAILABLE as u16
+    }
 }
 
 #[derive(Clone, Default, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
@@ -152,6 +174,13 @@ impl ReferencePosition {
             longitude: coordinate_from_etsi(self.longitude),
             altitude: altitude_from_etsi(self.altitude.value),
         }
+    }
+
+    /// Returns the mean position confidence from the embedded ellipse.
+    ///
+    /// Returns `0.0` when either semi-axis is the ETSI unavailable sentinel (4095).
+    pub fn confidence_mean(&self) -> f64 {
+        self.position_confidence_ellipse.confidence_mean()
     }
 }
 

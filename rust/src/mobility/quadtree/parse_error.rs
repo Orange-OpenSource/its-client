@@ -15,6 +15,8 @@ use thiserror::Error;
 pub enum ParseError {
     #[error("Cannot create key out of empty string")]
     EmptyString,
+    #[error("Malformed quadkey sequence (leading/trailing or consecutive '/')")]
+    MalformedQuadKey,
     #[error("Cannot convert empty string to quadkey element")]
     EmptyTileStr,
     #[error("'{0}' character is not a valid quadkey element")]
