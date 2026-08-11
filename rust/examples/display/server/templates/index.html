@@ -1,0 +1,428 @@
+<!--
+ Software Name : libits-client
+ SPDX-FileCopyrightText: Copyright (c) Orange SA
+ SPDX-License-Identifier: MIT
+
+ This software is distributed under the MIT license,
+ see the "LICENSE.txt" file for more details or https://opensource.org/license/MIT/
+
+ Authors: see CONTRIBUTORS.md
+-->
+
+<!DOCTYPE html>
+<!--suppress CssUnusedSymbol -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>ITS Quadtree Viewer</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <link href="https://unpkg.com/maplibre-gl@3/dist/maplibre-gl.css" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .control-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.96);
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+            z-index: 1000;
+            min-width: 260px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .control-panel h3 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #555;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .control-group select,
+        .control-group input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+            background: white;
+        }
+
+        .day-picker-wrapper {
+            position: relative;
+            display: flex;
+            align-items: stretch;
+        }
+
+        .day-picker-wrapper input {
+            min-width: 0;
+            border-radius: 4px 0 0 4px;
+            border-right: none;
+        }
+
+        .day-picker-btn {
+            flex: 0 0 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ccc;
+            border-radius: 0 4px 4px 0;
+            background: white;
+            color: #555;
+            cursor: pointer;
+            font-size: 15px;
+            line-height: 1;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .day-picker-btn:hover,
+        .day-picker-btn.active {
+            background: #f3f7fb;
+            color: #2b83ba;
+        }
+
+        .calendar-popup {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            width: 100%;
+            min-width: 232px;
+            padding: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            z-index: 2100;
+            display: none;
+        }
+
+        .calendar-popup.open {
+            display: block;
+        }
+
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .calendar-title {
+            flex: 1;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .calendar-nav-btn {
+            width: 28px;
+            height: 28px;
+            border: 1px solid #d8d8d8;
+            border-radius: 6px;
+            background: white;
+            color: #555;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .calendar-nav-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .calendar-weekdays,
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 4px;
+        }
+
+        .calendar-weekday {
+            padding-bottom: 2px;
+            text-align: center;
+            font-size: 10px;
+            font-weight: 600;
+            color: #7a7a7a;
+            text-transform: uppercase;
+        }
+
+        .calendar-day {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 32px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: #333;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .calendar-day:hover {
+            background: #eef5fb;
+        }
+
+        .calendar-day.is-outside {
+            color: #b0b0b0;
+        }
+
+        .calendar-day.is-today {
+            box-shadow: inset 0 0 0 1px rgba(43, 131, 186, 0.55);
+        }
+
+        .calendar-day.is-selected {
+            background: #2b83ba;
+            color: white;
+            font-weight: 600;
+        }
+
+        .calendar-day.has-data {
+            font-weight: 600;
+        }
+
+        .calendar-day.has-data::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: currentColor;
+            transform: translateX(-50%);
+            opacity: 0.8;
+        }
+
+        .calendar-day.is-selected.has-data::after {
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .bbox-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+        }
+
+        .bbox-inputs input {
+            font-size: 11px;
+            padding: 4px 6px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 7px 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 4px;
+            margin-top: 4px;
+        }
+
+        .btn-primary {
+            background: #2b83ba;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1f6d9e;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #ccc;
+        }
+
+        .btn-warning {
+            background: #fdae61;
+            color: #333;
+        }
+
+        .btn-warning:hover {
+            background: #e89a4f;
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 40px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+        }
+
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #333;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 3px 0;
+        }
+
+        .legend-color {
+            width: 24px;
+            height: 12px;
+            margin-right: 6px;
+            border: 1px solid #ccc;
+            border-radius: 2px;
+        }
+
+        .stats-panel {
+            position: absolute;
+            bottom: 40px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 11px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            min-width: 200px;
+        }
+
+        .selection-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            z-index: 2000;
+            pointer-events: none;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+
+<div class="control-panel" id="controls">
+    <h3>🗺️ ITS Quadtree Viewer</h3>
+
+    <div class="control-group">
+        <label for="day-input">📅 Day</label>
+        <div class="day-picker-wrapper" id="day-picker">
+            <input id="day-input" inputmode="numeric" list="day-options" pattern="\\d{4}-\\d{2}-\\d{2}"
+                   placeholder="YYYY-MM-DD"
+                   type="text">
+            <button aria-expanded="false" aria-label="Toggle calendar" class="day-picker-btn" id="day-picker-toggle"
+                    type="button">📅
+            </button>
+        </div>
+        <datalist id="day-options"></datalist>
+    </div>
+
+    <div class="control-group">
+        <label for="type-select">📨 Message Type</label>
+        <select id="type-select">
+            <option value="">All types</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <label for="metric-select">📊 Metric</label>
+        <select id="metric-select">
+            <option value="count">Count</option>
+            <option value="mean_position_confidence">Mean Position Confidence</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <label>🔲 Zone (Bounding Box)</label>
+        <div class="bbox-inputs">
+            <input aria-label="Min longitude" id="bbox-min-lon" placeholder="Min Lon" step="0.0001" type="number">
+            <input aria-label="Min latitude" id="bbox-min-lat" placeholder="Min Lat" step="0.0001" type="number">
+            <input aria-label="Max longitude" id="bbox-max-lon" placeholder="Max Lon" step="0.0001" type="number">
+            <input aria-label="Max latitude" id="bbox-max-lat" placeholder="Max Lat" step="0.0001" type="number">
+        </div>
+    </div>
+
+    <div class="control-group" style="display:flex;align-items:center;gap:8px; margin-top:6px;">
+        <input checked id="auto-load" style="width:auto;" type="checkbox">
+        <label for="auto-load" style="margin:0; font-weight:600;">AUTO LOAD (5s)</label>
+    </div>
+
+    <div>
+        <button class="btn btn-primary" onclick="loadTiles()">🔄 Load</button>
+        <button class="btn btn-warning" id="select-btn" onclick="toggleRectangleSelection()">📐 Select Zone</button>
+        <button class="btn btn-secondary" onclick="clearBbox()">✖ Clear Zone</button>
+    </div>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<div class="stats-panel" id="stats-panel">
+    <div style="font-weight: bold; margin-bottom: 6px;">📊 Statistics</div>
+    <div id="stat-tiles">Tiles: <b>0</b></div>
+    <div id="stat-messages">Messages: <b>0</b></div>
+    <div id="stat-status">Status: <span style="color:#7fbf7b;">● Ready</span></div>
+</div>
+
+<div class="selection-hint" id="selection-hint">
+    Click and drag on the map to select a zone
+</div>
+
+<script src="https://unpkg.com/maplibre-gl@3/dist/maplibre-gl.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
