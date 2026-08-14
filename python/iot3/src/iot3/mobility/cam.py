@@ -22,8 +22,8 @@ class CooperativeAwarenessMessage(etsi.Message):
         *,
         uuid: str,
         station_type: Optional[
-            etsi.Message.StationType
-        ] = etsi.Message.StationType.unknown,
+            etsi.Message.TrafficParticipantType
+        ] = etsi.Message.TrafficParticipantType.unknown,
         gnss_report: GNSSReport,
     ):
         """Create a basic Cooperative Awareness Message

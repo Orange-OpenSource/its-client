@@ -117,8 +117,8 @@ class CollectivePerceptionMessage(etsi.Message):
         *,
         uuid: str,
         station_type: Optional[
-            etsi.Message.StationType
-        ] = etsi.Message.StationType.unknown,
+            etsi.Message.TrafficParticipantType
+        ] = etsi.Message.TrafficParticipantType.unknown,
         gnss_report: GNSSReport,
         segmentation_info: Optional[SegmentationInfo] = None,
         perceived_objects: Optional[Iterable[PerceivedObject]] = [],
@@ -162,10 +162,10 @@ class CollectivePerceptionMessage(etsi.Message):
             },
         )
 
-        if station_type == etsi.Message.StationType.unknown:
+        if station_type == etsi.Message.TrafficParticipantType.unknown:
             # Unknown station type, no station data.
             pass
-        elif station_type == etsi.Message.StationType.roadSideUnit:
+        elif station_type == etsi.Message.TrafficParticipantType.roadSideUnit:
             # We for now don't have enough to handle the MAPEM to define an RSU;
             # the RSU container is just a list of stuff, so just provide an empty
             # list for now.
