@@ -46,6 +46,16 @@ class ITSClient:
 
         self.ITSMessage = ITSClient.TYPES[self.cfg["type"]]["message"]
 
+        try:
+            station_type = self.cfg.get("station-type", "unknown")
+            self.cfg["station_type"] = self.ITSMessage.TrafficParticipantType[
+                station_type
+            ]
+        except KeyError:
+            raise ValueError(
+                f"{station_type}: invalid station type; valid values: {', '.join([t.name for t in self.ITSMessage.TrafficParticipantType])}"
+            ) from None
+
         if not self.cfg["topic-pub-prefix"] or self.cfg["topic-pub-prefix"][-1] != "/":
             raise ValueError(
                 f"configuration key general.topic-pub-prefix must end in a / ({self.cfg['topic-pub-prefix']})"
@@ -140,6 +150,7 @@ class ITSClient:
 
             msg = self.ITSMessage(
                 uuid=self.cfg["instance-id"],
+                station_type=self.cfg["station_type"],
                 gnss_report=gnss_report,
             )
             topic = msg.topic(
