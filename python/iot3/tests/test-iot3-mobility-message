@@ -161,7 +161,7 @@ assert len(msg["message"]["perceived_object_container"]) == 0
 print("CPM of a car with some P.O...")
 msg = CPM(
     uuid="test_role_1234",
-    station_type=Message.StationType.passengerCar,
+    station_type=Message.TrafficParticipantType.passengerCar,
     gnss_report=GNSSReport(
         latitude=43.635212,
         longitude=1.374562,
@@ -215,7 +215,7 @@ for po in msg.perceived_objects:
     count += 1
 assert count == 3
 assert po.quality == 15
-assert po.object_class["vehicle"] == Message.StationType.motorcycle
+assert po.object_class["vehicle"] == Message.TrafficParticipantType.motorcycle
 assert po.object_class_confidence == 50
 # CPM perceived objects dimensions only have decimeter-level precision
 assert po.bounding_box.width == 2.5
@@ -227,17 +227,17 @@ json_msg = msg.to_json()
 print("CPM deserialisation...")
 msg = iot3.mobility.message_from_json(msg_json=json_msg)
 assert msg.msg_type == "cpm"
-assert msg["message"]["management_container"]["station_type"] == Message.StationType.passengerCar
+assert msg["message"]["management_container"]["station_type"] == Message.TrafficParticipantType.passengerCar
 assert len(msg["message"]["perceived_object_container"]) == 3
 po = list(msg.perceived_objects)[-1]
-assert po.object_class["vehicle"] == Message.StationType.motorcycle
+assert po.object_class["vehicle"] == Message.TrafficParticipantType.motorcycle
 assert po.bounding_box.width == 2.5
 assert po.bounding_box.heading == 57.1
 
 print("CPM with segmentation...")
 msg = CPM(
     uuid="test_role_1234",
-    station_type=Message.StationType.passengerCar,
+    station_type=Message.TrafficParticipantType.passengerCar,
     gnss_report=GNSSReport(
         latitude=43.635212,
         longitude=1.374562,
@@ -305,7 +305,7 @@ for po in [
     msg.add_perceived_object(perceived_object=po)
 assert len(msg["message"]["perceived_object_container"]) == 3
 po = list(msg.perceived_objects)[0]
-assert po.object_class["vehicle"] == Message.StationType.motorcycle
+assert po.object_class["vehicle"] == Message.TrafficParticipantType.motorcycle
 
 #-----------------------------------------------------------------------------------------
 print("DENM with nothing set...")
