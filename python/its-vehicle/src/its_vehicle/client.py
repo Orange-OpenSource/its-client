@@ -40,6 +40,12 @@ class ITSClient:
             if type(self.cfg["mirror-self"]) is str
             else self.cfg["mirror-self"]
         )
+        try:
+            self.cfg["length"] = float(self.cfg.get("length"))
+            self.cfg["width"] = float(self.cfg.get("width"))
+        except TypeError:
+            self.cfg["length"] = None
+            self.cfg["width"] = None
 
         if self.cfg["type"] not in ITSClient.TYPES:
             raise ValueError(f"unknown ITS message type {self.cfg['type']}")
@@ -152,6 +158,8 @@ class ITSClient:
                 uuid=self.cfg["station-uuid"],
                 station_type=self.cfg["station_type"],
                 gnss_report=gnss_report,
+                length=self.cfg["length"],
+                width=self.cfg["width"],
             )
             topic = msg.topic(
                 template=self.pub_topic_template,
