@@ -197,7 +197,7 @@ class ETSI(abc.ABC):
                 tzinfo=None
             )
         ).timestamp()
-        return ETSI.si2etsi(tai_time - ETSI.EPOCH, ETSI.MILLI_SECOND, 0)
+        return ETSI.si2etsi(tai_time - ETSI.EPOCH, ETSI.MILLI_SECOND)
 
     @staticmethod
     def etsi2unix_time(
@@ -220,7 +220,7 @@ class ETSI(abc.ABC):
         >>> datetime.datetime.utcfromtimestamp(etsi2unix_time(94694401000))
         datetime.datetime(2007, 1, 1, 0, 0)
         """
-        tai_time = ETSI.etsi2si(etsi_time, ETSI.MILLI_SECOND, 0) + ETSI.EPOCH
+        tai_time = ETSI.etsi2si(etsi_time, ETSI.MILLI_SECOND) + ETSI.EPOCH
         return leapseconds.tai_to_utc(
             datetime.datetime.fromtimestamp(tai_time, datetime.timezone.utc).replace(
                 tzinfo=None
