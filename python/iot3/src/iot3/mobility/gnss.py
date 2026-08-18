@@ -5,6 +5,7 @@
 
 import copy
 import dataclasses
+import enum
 import json
 import math
 import socket
@@ -30,6 +31,8 @@ class GNSSReport:
     :param timestamp: UNIX timestamp this object was created at, with
                       arbitrary sub-second precision; this must _not_ be
                       specified when creating a GNSSReport
+    "param fix" The type of GNSS fix that was computed; synthetized from
+                gpsd's mode and status.
     :param time: Time of the GSS measurement as sent by the GNSS service,
                  with arbitrary sub-second precision
     :param latitude: Latitude in degrees
@@ -55,7 +58,68 @@ class GNSSReport:
                            in degrees from true North.
     """
 
+    class Fix(enum.StrEnum):
+        """A class that represent the GNSS fix status
+
+        'unknown' means the fix status is unknown (maybe there is a fix,
+        maybe there is no fix; if there is a fix, we don't known what it
+        is. 'none' means there is actually no fix, and we know that.
+        'other' means there is a fix, but it is some type of fix we don't
+        known about.
+        """
+
+        unknown = "Unknown"
+        none = "No"
+        fix_2d = "2D"
+        fix_3d = "3D"
+        dgps = "DGPS"
+        rtk_float = "RTK-float"
+        rtk_fixed = "RTK-fixed"
+        other = "Other"
+
+        @staticmethod
+        def from_mode_status(
+            *,
+            mode: int | None,
+            status: int | None,
+        ):
+            """Synthetize a fix from gpsd mode and status"""
+            match mode, status:
+                case None, _:
+                    return GNSSReport.Fix.unknown
+                case int(mode), _ if mode == 0:
+                    return GNSSReport.Fix.unknown
+                case int(mode), _ if mode == 1:
+                    return GNSSReport.Fix.none
+                case _, int(status) if status == 2:
+                    return GNSSReport.Fix.dgps
+                case _, int(status) if status == 3:
+                    return GNSSReport.Fix.rtk_fixed
+                case _, int(status) if status == 4:
+                    return GNSSReport.Fix.rtk_float
+                case _, int(status) if status > 4:
+                    return GNSSReport.Fix.other
+                case int(mode), _ if mode == 2:
+                    return GNSSReport.Fix.fix_2d
+                case int(mode), _ if mode == 3:
+                    return GNSSReport.Fix.fix_3d
+
+        def __bool__(self) -> bool:
+            """Return whether there is any kind of fix"""
+            return self.value not in [
+                self.unknown.value,
+                self.none.value,
+            ]
+
+        def is_rtk(self) -> bool:
+            """Return whether the fix is any kind of RTK fix"""
+            return self.value in [
+                self.rtk_float.value,
+                self.rtk_fixed.value,
+            ]
+
     timestamp: float = None
+    fix: Fix = Fix["unknown"]
     time: float | None = None
     latitude: float | None = None
     latitude_r: float | None = None
@@ -275,7 +339,15 @@ class GNSS:
         *,
         max_age: Optional[float] = None,
     ) -> GNSSReport | None:
-        """Returns a GNSSReport() object with the last valid measurement, None otherwise.
+        """Returns a GNSSReport() object with the last valid measurement
+
+        If no measurement was done, or if the last epoch is older than
+        max_age, then None is returned. If either latitude or longitude,
+        or both, are unknown, then None is returned.
+
+        Otherwise, a GNSSReport() object is returned, with the measurements
+        from the latest epoch. At least longitude, latitude, and the fix
+        are guaranteed to be set.
 
         :param max_age: The maximum age, in seconds, to consider a measurement valid;
                         overrides the persistence from the constructor.
@@ -304,6 +376,10 @@ class GNSS:
         params = dict()
         params["latitude"] = tpv["lat"]
         params["longitude"] = tpv["lon"]
+        params["fix"] = GNSSReport.Fix.from_mode_status(
+            mode=tpv.get("mode"),
+            status=tpv.get("status"),
+        )
 
         params["time"] = tpv.get("time")
         params["altitude"] = tpv.get("altHAE")

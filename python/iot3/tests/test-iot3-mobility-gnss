@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import math
+import sys
 import time
 from iot3.mobility.gnss import GNSSReport, GNSS
 
@@ -66,6 +67,68 @@ gnss_report = GNSSReport(
 # 5*10^-8 is about the same as 10^-9 radians, above
 if math.fabs(gnss_report.latitude - math.degrees(0.761578119)) >= 5 * 10 ** -8:
     raise RuntimeError("Degree -> radian latitude conversion failed")
+
+print("GNSSReport.Fix unknown...")
+fix = GNSSReport.Fix.from_mode_status(mode=None, status=None)
+assert fix == GNSSReport.Fix.unknown
+assert not fix
+assert not fix.is_rtk()
+
+fix = GNSSReport.Fix.from_mode_status(mode=0, status=None)
+assert fix == GNSSReport.Fix.unknown
+assert not fix
+assert not fix.is_rtk()
+
+fix = GNSSReport.Fix.from_mode_status(mode=0, status=2)
+assert fix == GNSSReport.Fix.unknown
+assert not fix
+assert not fix.is_rtk()
+
+print("GNSSReport.Fix no fix...")
+fix = GNSSReport.Fix.from_mode_status(mode=1, status=None)
+assert fix == GNSSReport.Fix.none
+assert not fix
+assert not fix.is_rtk()
+
+fix = GNSSReport.Fix.from_mode_status(mode=1, status=2)
+assert fix == GNSSReport.Fix.none
+assert not fix
+assert not fix.is_rtk()
+
+print("GNSSReport.Fix normal fix...")
+fix = GNSSReport.Fix.from_mode_status(mode=2, status=None)
+assert fix == GNSSReport.Fix.fix_2d
+assert fix
+assert not fix.is_rtk()
+
+fix = GNSSReport.Fix.from_mode_status(mode=3, status=None)
+assert fix == GNSSReport.Fix.fix_3d
+assert fix
+assert not fix.is_rtk()
+
+print("GNSSReport.Fix enhanced fix...")
+fix = GNSSReport.Fix.from_mode_status(mode=2, status=2)
+assert fix == GNSSReport.Fix.dgps
+assert fix
+assert not fix.is_rtk()
+
+fix = GNSSReport.Fix.from_mode_status(mode=2, status=3)
+assert fix == GNSSReport.Fix.rtk_fixed
+assert fix
+assert fix.is_rtk()
+
+fix = GNSSReport.Fix.from_mode_status(mode=2, status=4)
+assert fix == GNSSReport.Fix.rtk_float
+assert fix
+assert fix.is_rtk()
+
+print("GNSSReport.Fix other fix...")
+fix = GNSSReport.Fix.from_mode_status(mode=2, status=5)
+assert fix == GNSSReport.Fix.other
+assert fix
+assert not fix.is_rtk()
+
+sys.exit(0)
 
 #-----------------------------------------------------------------------------------------
 print("gpsd connection to 127.0.0.1:2948...")
