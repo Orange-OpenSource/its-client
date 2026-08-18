@@ -192,11 +192,37 @@ class GNSSReport:
                 object.__setattr__(self, field, deg)
 
 
+@dataclasses.dataclass(frozen=True)
+class GNSSDevice:
+    """A GNSS device description
+
+    :param path: the path (in a broad meaning of path) of the device
+    :param driver: the gpsd driver for that device; None if unknown
+    :param model: the model of the device as a list of identifiers as
+                  provided by the device itself; empty list if model
+                  is unknown
+    :param protocol: the type of protocol talked by the device; None
+                     if unknown, "native" if using a device-specific
+                     protocol, or "NMEA"
+    :param rate: the period of the measurements; None if unknown or
+                 inapplicable
+    """
+
+    path: str
+    driver: str | None
+    model: list[str]
+    protocol: str | None
+    rate: float | None
+
+
 class GNSS:
     """Simple abstraction to a gpsd daemon.
 
     The object is a callable that returns a GNSSReport when it has at least
     a valid latitude and longitude, or None otherwise.
+
+    The object also has a read-only property, devices, which gives access to
+    a description of the GNSS devices currently connected.
     """
 
     def __init__(
@@ -227,6 +253,8 @@ class GNSS:
             name=f"{__name__}.gpsd_client",
             daemon=True,
         )
+        self._time_last_dev = 0
+        self._devices = []
         self._full_epoch = {}
         self._current_epoch = {}
         self._sock = None
@@ -306,6 +334,42 @@ class GNSS:
 
         return GNSSReport(**params)
 
+    @property
+    def devices(self):
+        """
+        Provides the GNSS devices currently connected, as a dict() which
+        keys are the paths (in a broad meaning of path) of each device,
+        and which value are GNSSDevice objects.
+        """
+        return {
+            dev["path"]: GNSSDevice(
+                path=dev["path"],
+                driver=dev.get("driver"),
+                # Some have subtype, some have subtype1, some have both.
+                # Both are comma-separated lists (on devices we know of)
+                # so recreate a list of fields by aggregating both into a
+                # single list. Remove empty fields, if any.
+                model=[
+                    model
+                    for model in (
+                        subtype.strip()
+                        for subtype in (
+                            dev.get("subtype", "").split(",")
+                            + dev.get("subtype1", "").split(",")
+                        )
+                    )
+                    if model
+                ],
+                protocol=(
+                    None
+                    if dev.get("native") is None
+                    else "native" if dev.get("native") else "NMEA"
+                ),
+                rate=dev.get("cycle", None),
+            )
+            for dev in self._devices
+        }
+
     def _connect(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.settimeout(2.0)
@@ -313,6 +377,8 @@ class GNSS:
         self._sock_fd = self._sock.makefile("rwb")
         # From here on, we're only manipulating the connection via sock_fd
         self._sock.close()
+        self._time_last_dev = time.time()
+        self._sock_fd.write("?DEVICES;\n".encode())
         self._sock_fd.write('?WATCH={"enable":true,"json":true};\n'.encode())
         self._sock_fd.flush()
 
@@ -377,6 +443,9 @@ class GNSS:
                 msg_class = msg["class"].lower()
             except KeyError:
                 continue
+
+            now = time.time()
+
             # TPV, GST, ATT messages (and others) are emitted as separate
             # json sentences, but they are usually correlated (ATT is
             # explicitly documented to be "synchronous to the GNSS epoch".
@@ -399,11 +468,19 @@ class GNSS:
             if msg_class in ["tpv", "att", "gst"]:
                 # Only store those messages we need
                 self._current_epoch[msg_class] = {
-                    "timestamp": time.time(),
+                    "timestamp": now,
                     "msg": msg,
                 }
             if msg_class == "tpv":
                 self._full_epoch = self._current_epoch
                 self._current_epoch = {}
+                # Request the list of devices every once in a while
+                if now - self._time_last_dev >= 10:
+                    self._sock_fd.write("?DEVICES;\n".encode())
+                    self._sock_fd.flush()
+                    self._time_last_dev = now
+
+            if msg_class == "devices":
+                self._devices = msg["devices"]
 
         self._disconnect()
