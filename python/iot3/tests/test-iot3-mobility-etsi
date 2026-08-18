@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+
+import datetime
+import math
+import time
+from iot3.mobility.etsi import ETSI
+
+
+#-----------------------------------------------------------------------------------------
+print("ETSI conversion: UNIX -> ETSI time")
+
+# ETSI EPOCH
+unix_time_2004 = datetime.datetime.fromisoformat("2004-01-01T00:00:00.000Z").timestamp()
+etsi_time_2004 = ETSI.unix2etsi_time(unix_time_2004)
+assert etsi_time_2004 == 0
+
+# Test from https://forge.etsi.org/rep/ITS/asn1/cam_ts103900/-/blob/v2.2.1/docs/ETSI-ITS-CDD.md#timestampits
+unix_time_2007 = datetime.datetime.fromisoformat("2007-01-01T00:00:00.000Z").timestamp()
+etsi_time_2007 = ETSI.unix2etsi_time(unix_time_2007)
+assert etsi_time_2007 == 94_694_401_000
+
+# Second test from the same source, above
+unix_time_2022 = datetime.datetime.fromisoformat("2022-01-01T00:00:00.000Z").timestamp()
+etsi_time_2022 = ETSI.unix2etsi_time(unix_time_2022)
+assert ((etsi_time_2022 - etsi_time_2004)/1000) - (unix_time_2022 - unix_time_2004) == 5
+
+print("ETSI conversion: ETSI -> UNIX time")
+
+new_unix_time_2004 = ETSI.etsi2unix_time(etsi_time_2004)
+assert math.fabs(new_unix_time_2004 - unix_time_2004) <= 10 ** -3
+
+new_unix_time_2007 = ETSI.etsi2unix_time(etsi_time_2007)
+assert math.fabs(new_unix_time_2007 - unix_time_2007) <= 10 ** -3
+

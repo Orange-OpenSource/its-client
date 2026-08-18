@@ -116,6 +116,7 @@ in the python venv._
     (docker)🐍 ./python/iot3/tests/test-iot3-core-mqtt
     (docker)🐍 ./python/iot3/tests/test-iot3-core-otel
     (docker)🐍 ./python/iot3/tests/test-iot3-mobility
+    (docker)🐍 ./python/iot3/tests/test-iot3-mobility-etsi
     (docker)🐍 ./python/iot3/tests/test-iot3-mobility-gnss
     (docker)🐍 ./python/iot3/tests/test-iot3-mobility-message
     ```
