@@ -15,7 +15,7 @@ class Filter:
         *,
         name: str,
         filter_cfg: dict,
-        instance_id: str,
+        station_uuid: str,
         prefix: str,
         suffix: str,
         queues: dict,
@@ -23,7 +23,7 @@ class Filter:
         self.name = name
 
         placeholders = {
-            "instance-id": instance_id,
+            "station-uuid": station_uuid,
             "prefix": prefix,
             "suffix": suffix,
         }

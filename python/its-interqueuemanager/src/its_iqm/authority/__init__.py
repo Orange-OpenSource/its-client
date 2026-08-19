@@ -8,17 +8,17 @@ import its_iqm.iqm
 class Authority:
     def __new__(
         cls,
-        instance_id: str,
+        station_uuid: str,
         cfg: dict,
         update_cb: Callable[[its_iqm.iqm.IQM, dict], None],
     ):
         authority_type = cfg["type"]
         if authority_type == "file":
-            return _file.Authority(instance_id, cfg, update_cb)
+            return _file.Authority(station_uuid, cfg, update_cb)
         if authority_type == "http":
-            return _http.Authority(instance_id, cfg, update_cb)
+            return _http.Authority(station_uuid, cfg, update_cb)
         if authority_type == "mqtt":
-            return _mqtt.Authority(instance_id, cfg, update_cb)
+            return _mqtt.Authority(station_uuid, cfg, update_cb)
         raise ValueError(f"unknown central authority type {authority_type}")
 
     def __init__(self, *args, **kwargs):

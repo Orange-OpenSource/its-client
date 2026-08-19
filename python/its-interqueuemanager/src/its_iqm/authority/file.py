@@ -13,7 +13,7 @@ import time
 class Authority:
     def __init__(
         self,
-        _instance_id: str,
+        _station_uuid: str,
         cfg: dict,
         update_cb: Callable[[its_iqm.iqm.IQM, dict], None],
     ):
