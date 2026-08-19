@@ -84,6 +84,11 @@ def main():
         fallback=None,
     )
 
+    # The instance-id is required. Even if specific to the 'client'
+    # part, we check it here because it is so central.
+    if cfg["general"]["instance-id"] is None:
+        raise RuntimeError("configuration key general.instance-id is required")
+
     def _set_default(section, key, default):
         if section not in cfg:
             cfg[section] = dict()
@@ -95,11 +100,6 @@ def main():
             _set_default(s, k, DEFAULTS[s][k])
     _set_default("broker.main", "client-id", cfg["general"]["instance-id"])
     _set_default("broker.mirror", "client-id", cfg["general"]["instance-id"])
-
-    # The instance-id is required. Even if specific to the 'client'
-    # part, we check it here because it is so central.
-    if cfg["general"]["instance-id"] is None:
-        raise RuntimeError("configuration key general.instace-id is required")
 
     logging.basicConfig(
         stream=sys.stderr,
