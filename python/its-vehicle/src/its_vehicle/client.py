@@ -134,7 +134,7 @@ class ITSClient:
                         lambda qk: (
                             self.cfg["topic-sub-prefix"]
                             + msg_type
-                            + "/+/"  # This is the instance-id (aka source_uuid) wildcard
+                            + "/+/"  # This is the source-uuid wildcard
                             + its_quadkeys.QuadKey(qk).to_str("/")
                             + "/#"
                         ),
@@ -149,7 +149,7 @@ class ITSClient:
             self.mqtt_main.subscribe_replace(topics=list(roi_topics))
 
             msg = self.ITSMessage(
-                uuid=self.cfg["instance-id"],
+                uuid=self.cfg["station-uuid"],
                 station_type=self.cfg["station_type"],
                 gnss_report=gnss_report,
             )
@@ -194,7 +194,7 @@ class ITSClient:
             return
         try:
             if (
-                payload_d.get("source_uuid", None) != self.cfg["instance-id"]
+                payload_d.get("source_uuid", None) != self.cfg["station-uuid"]
                 or self.cfg["mirror-self"]
             ):
                 self.mqtt_mirror.publish(topic=topic, payload=payload)
