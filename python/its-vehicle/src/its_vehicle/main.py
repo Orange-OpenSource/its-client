@@ -97,7 +97,7 @@ def main():
         for k in DEFAULTS[s]:
             _set_default(s, k, DEFAULTS[s][k])
     _set_default("broker.main", "client-id", cfg["general"]["instance-id"])
-    _set_default("broker.mirror", "client-id", cfg["general"]["instance-id"])
+    _set_default("broker.mirror", "client-id", cfg["broker.main"]["client-id"])
 
     logging.basicConfig(
         stream=sys.stderr,
