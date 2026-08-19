@@ -63,7 +63,7 @@ def main():
 
     logging.info(f"loading config file {args.config}...")
     cfg = configparser.ConfigParser(allow_no_value=True)
-    with open(args.config) as f:
+    with open(args.config, "r") as f:
         cfg.read_file(f)
 
     # configparser.ConfigParser() only accepts strings as values, but we
