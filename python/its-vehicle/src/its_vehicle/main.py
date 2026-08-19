@@ -71,9 +71,7 @@ def main():
     # Make the config a dict() rather than a ConfigParser(), so that
     # we can store None in there.
     cfg = {
-        s: {k: cfg_parsed[s][k] for k in cfg_parsed[s]}
-        for s in cfg_parsed
-        if s != "DEFAULT"
+        s: {k: cfg_parsed[s][k] for k in cfg_parsed[s]} for s in cfg_parsed.sections()
     }
     # Special case: handle 'tls' specially, as it needs to be a bool but
     # ConfigParser() does not convert types automatically, and interpreting
