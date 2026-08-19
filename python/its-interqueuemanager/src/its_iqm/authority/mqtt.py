@@ -13,7 +13,7 @@ from its_iqm.helpers import str2bool
 class Authority:
     def __init__(
         self,
-        instance_id: str,
+        station_uuid: str,
         cfg: dict,
         update_cb: Callable[[its_iqm.iqm.IQM, dict], None],
     ):
@@ -23,7 +23,7 @@ class Authority:
         try:
             client_id = self.cfg["client_id"]
         except KeyError:
-            client_id = instance_id
+            client_id = station_uuid
 
         self.authority_client = iot3.core.mqtt.MqttClient(
             client_id=client_id,
