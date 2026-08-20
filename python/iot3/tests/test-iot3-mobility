@@ -19,13 +19,6 @@ def recv(
     print(f"{data}: (lat {location.latitude}, lon {location.longitude}), cause {cause.name}, subcause: {subcause}")
 
 config = iot3.mobility.sample_config
-config["mqtt"] = {
-    "host": "test.mosquitto.org",
-    "port": 1883,
-    "client-id": random.randbytes(16).hex(),
-    "username": None,
-    "password": None,
-}
 
 print("Starting IoT3 Mobility SDK...")
 iot3.mobility.start(
