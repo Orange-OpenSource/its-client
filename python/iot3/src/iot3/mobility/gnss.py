@@ -362,7 +362,7 @@ class GNSS:
                 # some issue...
                 if not msg_json:
                     raise ConnectionResetError("short read")
-            except (socket.timeout, TimeoutError, ConnectionResetError):
+            except (socket.timeout, TimeoutError, ConnectionResetError, OSError):
                 self._disconnect()
                 continue
 
