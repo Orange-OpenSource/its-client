@@ -407,7 +407,7 @@ class Message(abc.ABC):
         gnss_report: GNSSReport,
     ) -> int:
         """Return the altitude confidence value."""
-        if gnss_report.altitude_error is None:
+        if gnss_report.altitude is None or gnss_report.altitude_error is None:
             return 15
         steps = [1, 2, 5]
         for confidence in range(14):
