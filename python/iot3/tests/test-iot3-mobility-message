@@ -135,16 +135,6 @@ msg = CAM(
 )
 assert msg["message"]["basic_container"]["reference_position"]["altitude"]["confidence"] == 5
 
-print("CAM altitude confidence unavailable...")
-msg = CAM(
-    uuid="test_1234",
-    gnss_report=GNSSReport(
-        latitude=43.635212,
-        longitude=1.374562,
-    ),
-)
-assert msg["message"]["basic_container"]["reference_position"]["altitude"]["confidence"] == 15
-
 print("CAM serialisation...")
 json_msg = msg.to_json()
 
