@@ -68,6 +68,7 @@ ellipse = msg["message"]["basic_container"]["reference_position"]["position_conf
 assert ellipse["semi_major"] == 50
 assert ellipse["semi_minor"] == 50
 assert ellipse["semi_major_orientation"] == 0
+assert msg["message"]["basic_container"]["reference_position"]["altitude"]["confidence"] == 5
 
 print("CAM with RTK data...")
 rtk_gnss_report = GNSSReport(
@@ -130,6 +131,7 @@ msg = CAM(
     gnss_report=GNSSReport(
         latitude=43.635212,
         longitude=1.374562,
+        altitude=0,
         altitude_error=0.3,
     ),
 )
