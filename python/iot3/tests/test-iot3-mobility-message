@@ -12,7 +12,7 @@ from iot3.mobility.gnss import GNSSReport
 
 print("CAM with nothing available...")
 msg = CAM(
-    uuid="test_1234",
+    uuid="test_role_1234",
     gnss_report=GNSSReport(),
 )
 assert msg["message_type"] == "cam"
@@ -30,7 +30,7 @@ assert "basic_vehicle_container_high_frequency" in msg._message["message"]["high
 
 print("CAM with latitude and longitude...")
 msg = CAM(
-    uuid="test_1234",
+    uuid="test_role_1234",
     gnss_report=GNSSReport(
         latitude=43.635212,
         longitude=1.374562,
@@ -47,7 +47,7 @@ assert msg["message"]["basic_container"]["reference_position"]["altitude"]["conf
 
 print("CAM with all GNSS fields...")
 msg = CAM(
-    uuid="test_1234",
+    uuid="test_role_1234",
     gnss_report=GNSSReport(
         latitude=43.635212,
         longitude=1.374562,
@@ -84,7 +84,7 @@ rtk_gnss_report = GNSSReport(
     altitude_error=0.02,
 )
 msg = CAM(
-    uuid="test_1234",
+    uuid="test_role_1234",
     gnss_report=rtk_gnss_report,
 )
 ellipse = msg["message"]["basic_container"]["reference_position"]["position_confidence_ellipse"]
@@ -95,7 +95,7 @@ assert msg["message"]["basic_container"]["reference_position"]["altitude"]["conf
 
 print("CAM position_confidence_ellipse from GST data...")
 msg = CAM(
-    uuid="test_1234",
+    uuid="test_role_1234",
     gnss_report=GNSSReport(
         latitude=43.635212,
         longitude=1.374562,
@@ -111,7 +111,7 @@ assert ellipse["semi_major_orientation"] == 300
 
 print("CAM position_confidence_ellipse from GST data out of range...")
 msg = CAM(
-    uuid="test_1234",
+    uuid="test_role_1234",
     gnss_report=GNSSReport(
         latitude=43.635212,
         longitude=1.374562,
@@ -127,7 +127,7 @@ assert ellipse["semi_major_orientation"] == 300
 
 print("CAM altitude confidence from altitude_error...")
 msg = CAM(
-    uuid="test_1234",
+    uuid="test_role_1234",
     gnss_report=GNSSReport(
         latitude=43.635212,
         longitude=1.374562,
@@ -149,7 +149,7 @@ assert math.fabs(msg.longitude - 1.3745620) < 5 * 10 ** -8
 #-----------------------------------------------------------------------------------------
 print("CPM with no P.O...")
 msg = CPM(
-    uuid="test_1234",
+    uuid="test_role_1234",
     gnss_report=GNSSReport(
         latitude=43.635212,
         longitude=1.374562,
@@ -160,7 +160,7 @@ assert len(msg["message"]["perceived_object_container"]) == 0
 
 print("CPM of a car with some P.O...")
 msg = CPM(
-    uuid="test_1234",
+    uuid="test_role_1234",
     station_type=Message.StationType.passengerCar,
     gnss_report=GNSSReport(
         latitude=43.635212,
@@ -236,7 +236,7 @@ assert po.bounding_box.heading == 57.1
 
 print("CPM with segmentation...")
 msg = CPM(
-    uuid="test_1234",
+    uuid="test_role_1234",
     station_type=Message.StationType.passengerCar,
     gnss_report=GNSSReport(
         latitude=43.635212,
@@ -310,14 +310,14 @@ assert po.object_class["vehicle"] == Message.StationType.motorcycle
 #-----------------------------------------------------------------------------------------
 print("DENM with nothing set...")
 msg = DENM(
-    uuid="test_1234",
+    uuid="test_role_1234",
     gnss_report=GNSSReport(),
 )
 
 print("DENM with latitude, longitude, and cause...")
 detect_time = time.time()
 msg = DENM(
-    uuid="test_1234",
+    uuid="test_role_1234",
     gnss_report=GNSSReport(
         latitude=43.635212,
         longitude=1.374562,
@@ -333,7 +333,7 @@ detect_time = msg.detection_time
 
 print("DENM continuation (update)...")
 msg = DENM(
-    uuid="test_1234",
+    uuid="test_role_1234",
     gnss_report=GNSSReport(
         latitude=43.635212,
         longitude=1.374562,
@@ -360,7 +360,7 @@ else:
 print("DENM with invalid subcause...")
 try:
     DENM(
-        uuid="test_1234",
+        uuid="test_role_1234",
         gnss_report=GNSSReport(
             latitude=43.635212,
             longitude=1.374562,
@@ -381,7 +381,7 @@ assert "subcause" not in msg["message"]["situation_container"]["event_type"]
 
 print("DENM continuation (termination)...")
 msg = DENM(
-    uuid="test_1234",
+    uuid="test_role_1234",
     gnss_report=GNSSReport(),
     detection_time=detect_time,
     termination=DENM.TerminationType.isNegation,

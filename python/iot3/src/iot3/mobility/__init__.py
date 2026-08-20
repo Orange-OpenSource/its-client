@@ -48,7 +48,7 @@ sample_bootstrap_config = dict(core.sample_bootstrap_config)
 sample_config = dict(core.sample_config)
 sample_config.update(
     {
-        "uuid": "1234",
+        "uuid": "ora_car_1234",
         "station_type": etsi.Message.StationType.unknown,
         "namespace": "default",
         "report_depth": 22,
