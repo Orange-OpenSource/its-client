@@ -19,6 +19,7 @@ use axum::{
     routing::get,
 };
 use libits::mobility::quadtree::quadkey_in_bbox;
+use log::debug;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
@@ -57,6 +58,7 @@ struct MetadataResponse {
 
 pub fn create_router(db_path: &str) -> Router {
     let conn = database::open_database(db_path).expect("Failed to open database");
+    debug!("Database router initialized with path: {}", db_path);
     let state = AppState {
         db: Arc::new(Mutex::new(conn)),
     };
@@ -70,22 +72,24 @@ pub fn create_router(db_path: &str) -> Router {
         .with_state(state)
 }
 
-fn list_days(conn: &Connection) -> Result<Vec<String>> {
-    let mut stmt = conn.prepare("SELECT DISTINCT day FROM tile_metrics ORDER BY day ASC")?;
-    let days: Vec<String> = stmt
+fn list_distinct_values(conn: &Connection, query: &str) -> Result<Vec<String>> {
+    let mut stmt = conn.prepare(query)?;
+    let values: Vec<String> = stmt
         .query_map([], |row| row.get(0))?
         .filter_map(Result::ok)
         .collect();
-    Ok(days)
+    Ok(values)
+}
+
+fn list_days(conn: &Connection) -> Result<Vec<String>> {
+    list_distinct_values(
+        conn,
+        "SELECT DISTINCT day FROM tile_metrics ORDER BY day ASC",
+    )
 }
 
 fn list_message_types(conn: &Connection) -> Result<Vec<String>> {
-    let mut stmt = conn.prepare("SELECT name FROM message_types ORDER BY name ASC")?;
-    let types: Vec<String> = stmt
-        .query_map([], |row| row.get(0))?
-        .filter_map(Result::ok)
-        .collect();
-    Ok(types)
+    list_distinct_values(conn, "SELECT name FROM message_types ORDER BY name ASC")
 }
 
 fn query_tiles(
@@ -160,6 +164,7 @@ async fn app_js_handler() -> impl IntoResponse {
 async fn metadata_handler(
     State(state): State<AppState>,
 ) -> Result<Json<MetadataResponse>, StatusCode> {
+    debug!("GET /api/metadata");
     let db_guard = state
         .db
         .lock()
@@ -175,6 +180,11 @@ async fn metadata_handler(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
+    debug!(
+        "Returning metadata: {} days, {} message types",
+        days.len(),
+        message_types.len()
+    );
     Ok(Json(MetadataResponse {
         days,
         message_types,
@@ -185,6 +195,10 @@ async fn tiles_handler(
     State(state): State<AppState>,
     Query(query): Query<TilesQuery>,
 ) -> Result<Json<Vec<TileRecord>>, StatusCode> {
+    debug!(
+        "GET /api/tiles with query: day={:?}, message_type={:?}",
+        query.day, query.message_type
+    );
     let db_guard = state
         .db
         .lock()
@@ -198,9 +212,16 @@ async fn tiles_handler(
                 eprintln!("Failed to list days: {}", error);
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
+            debug!("Available days: {} total", days.len());
             match days.last() {
-                Some(last_day) => last_day.clone(),
-                None => return Ok(Json(Vec::new())),
+                Some(last_day) => {
+                    debug!("Using last available day: {}", last_day);
+                    last_day.clone()
+                }
+                None => {
+                    debug!("Database is empty, returning empty tile list");
+                    return Ok(Json(Vec::new()));
+                }
             }
         }
     };
@@ -212,13 +233,17 @@ async fn tiles_handler(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
+    debug!("Found {} tiles before filtering", tiles.len());
+
     // Apply bounding box filter if provided
     if let (Some(min_lon), Some(min_lat), Some(max_lon), Some(max_lat)) =
         (query.min_lon, query.min_lat, query.max_lon, query.max_lat)
     {
         tiles.retain(|tile| quadkey_in_bbox(&tile.quadkey, min_lon, min_lat, max_lon, max_lat));
+        debug!("After bbox filter: {} tiles", tiles.len());
     }
 
+    debug!("Returning {} tiles", tiles.len());
     Ok(Json(tiles))
 }
 

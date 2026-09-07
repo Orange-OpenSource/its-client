@@ -281,6 +281,10 @@ let calendarTitleElement = null;
 let calendarGridElement = null;
 let calendarMonthDate = new Date();
 
+function buildApiUrl(path) {
+    return new URL(`.${path}`, window.location.href);
+}
+
 function parseDayString(dateStr) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
 
@@ -473,7 +477,7 @@ function initializeDayPicker() {
 
 async function loadMetadata() {
     try {
-        const response = await fetch('/api/metadata');
+        const response = await fetch(buildApiUrl('/api/metadata'));
         const metadata = await response.json();
 
         availableDays = Array.isArray(metadata.days) ? metadata.days : [];
@@ -522,75 +526,162 @@ async function loadTiles() {
     const maxLon = document.getElementById('bbox-max-lon').value;
     const maxLat = document.getElementById('bbox-max-lat').value;
 
-    let queryUrl = '/api/tiles?';
-    if (selectedDay) queryUrl += `day=${encodeURIComponent(selectedDay)}&`;
-    if (selectedType) queryUrl += `message_type=${encodeURIComponent(selectedType)}&`;
-    if (minLon && minLat && maxLon && maxLat) {
-        queryUrl += `min_lon=${minLon}&min_lat=${minLat}&max_lon=${maxLon}&max_lat=${maxLat}&`;
+    // OPTIMIZATION: If database is empty (no days available), don't bother calling tiles API
+    if (availableDays.length === 0) {
+        console.log('[loadTiles] Database is empty (no days available), skipping API call');
+        console.log('[loadTiles] Setting empty tiles display');
+
+        // Clear map
+        const existingSource = map.getSource('quadtiles');
+        if (existingSource) {
+            existingSource.setData({type: 'FeatureCollection', features: []});
+        } else {
+            try {
+                map.addSource('quadtiles', {
+                    type: 'geojson',
+                    data: {type: 'FeatureCollection', features: []}
+                });
+            } catch (err) {
+                console.warn('[loadTiles] Could not create empty source:', err);
+            }
+        }
+
+        // Update stats to show empty state
+        document.getElementById('stat-tiles').innerHTML = `Tiles: <b>0</b>`;
+        document.getElementById('stat-messages').innerHTML = `Messages: <b>0</b>`;
+        console.log('[loadTiles] Status set to success (empty database)');
+        updateStatus('success');
+        return;
     }
+
+    const queryUrl = buildApiUrl('/api/tiles');
+    if (selectedDay) queryUrl.searchParams.set('day', selectedDay);
+    if (selectedType) queryUrl.searchParams.set('message_type', selectedType);
+    if (minLon && minLat && maxLon && maxLat) {
+        queryUrl.searchParams.set('min_lon', minLon);
+        queryUrl.searchParams.set('min_lat', minLat);
+        queryUrl.searchParams.set('max_lon', maxLon);
+        queryUrl.searchParams.set('max_lat', maxLat);
+    }
+
+    console.log('[loadTiles] Starting with URL:', queryUrl);
+    console.log('[loadTiles] Selected day:', selectedDay, 'type:', selectedType, 'metric:', selectedMetric);
 
     updateStatus('loading');
 
     try {
+        console.log('[loadTiles] Fetching tiles...');
         const response = await fetch(queryUrl);
+        console.log('[loadTiles] Response status:', response.status, response.ok);
+
         if (!response.ok) {
-            console.error(`HTTP ${response.status}`);
+            console.error(`[loadTiles] HTTP error: ${response.status}`);
             updateStatus('error');
             return;
         }
 
         /** @type {TileApiRecord[]} */
         const tiles = await response.json();
+        console.log('[loadTiles] Got tiles:', tiles.length);
 
-        const features = tiles.map(tile => {
-            if (!tile.quadkey) return null;
-            return quadkeyToPolygon(tile.quadkey, {
-                tile_count: tile.count,
-                tile_confidence: tile.mean_position_confidence,
-                message_type: tile.message_type
-            });
+        console.log('[loadTiles] Mapping tiles to polygons...');
+        const features = tiles.map((tile, index) => {
+            if (!tile.quadkey) {
+                console.warn('[loadTiles] Tile missing quadkey at index', index);
+                return null;
+            }
+            try {
+                return quadkeyToPolygon(tile.quadkey, {
+                    tile_count: tile.count,
+                    tile_confidence: tile.mean_position_confidence,
+                    message_type: tile.message_type
+                });
+            } catch (err) {
+                console.error('[loadTiles] Error creating polygon for tile', tile.quadkey, ':', err);
+                return null;
+            }
         }).filter(feature => feature !== null);
 
+        console.log('[loadTiles] Features created:', features.length);
+
         // Update map source
+        console.log('[loadTiles] Checking existing source...');
         const existingSource = map.getSource('quadtiles');
         if (existingSource) {
-            existingSource.setData({type: 'FeatureCollection', features});
+            console.log('[loadTiles] Updating existing source with', features.length, 'features');
+            try {
+                existingSource.setData({type: 'FeatureCollection', features});
+                console.log('[loadTiles] Source data updated successfully');
+            } catch (err) {
+                console.error('[loadTiles] Error updating source data:', err);
+                updateStatus('error');
+                return;
+            }
         } else {
-            map.addSource('quadtiles', {
-                type: 'geojson',
-                data: {type: 'FeatureCollection', features}
-            });
+            console.log('[loadTiles] Creating new source with', features.length, 'features');
+            try {
+                map.addSource('quadtiles', {
+                    type: 'geojson',
+                    data: {type: 'FeatureCollection', features}
+                });
+                console.log('[loadTiles] Source created successfully');
+            } catch (err) {
+                console.error('[loadTiles] Error creating source:', err);
+                updateStatus('error');
+                return;
+            }
         }
 
         // Add or update layers
+        console.log('[loadTiles] Managing layers...');
         if (map.getLayer('quadtiles-fill')) {
+            console.log('[loadTiles] Removing existing layers');
             map.removeLayer('quadtiles-fill');
             map.removeLayer('quadtiles-outline');
         }
 
-        map.addLayer({
-            id: 'quadtiles-fill',
-            type: 'fill',
-            source: 'quadtiles',
-            paint: {
-                'fill-color': buildFillColorExpression(selectedMetric),
-                'fill-opacity': 0.65
-            }
-        });
+        try {
+            console.log('[loadTiles] Building fill color expression with metric:', selectedMetric);
+            const fillColorExpr = buildFillColorExpression(selectedMetric);
+            console.log('[loadTiles] Fill expression built, adding fill layer...');
+            map.addLayer({
+                id: 'quadtiles-fill',
+                type: 'fill',
+                source: 'quadtiles',
+                paint: {
+                    'fill-color': fillColorExpr,
+                    'fill-opacity': 0.65
+                }
+            });
+            console.log('[loadTiles] Fill layer added successfully');
+        } catch (err) {
+            console.error('[loadTiles] Error adding fill layer:', err);
+            updateStatus('error');
+            return;
+        }
 
-        map.addLayer({
-            id: 'quadtiles-outline',
-            type: 'line',
-            source: 'quadtiles',
-            paint: {
-                'line-color': '#333',
-                'line-width': 0.3,
-                'line-opacity': 0.4
-            }
-        });
+        try {
+            console.log('[loadTiles] Adding outline layer...');
+            map.addLayer({
+                id: 'quadtiles-outline',
+                type: 'line',
+                source: 'quadtiles',
+                paint: {
+                    'line-color': '#333',
+                    'line-width': 0.3,
+                    'line-opacity': 0.4
+                }
+            });
+            console.log('[loadTiles] Outline layer added successfully');
+        } catch (err) {
+            console.error('[loadTiles] Error adding outline layer:', err);
+            updateStatus('error');
+            return;
+        }
 
         // Draw selection rectangle on map
         if (minLon && minLat && maxLon && maxLat) {
+            console.log('[loadTiles] Drawing selection rectangle');
             drawSelectionRect(
                 parseFloat(minLon), parseFloat(minLat),
                 parseFloat(maxLon), parseFloat(maxLat)
@@ -598,16 +689,20 @@ async function loadTiles() {
         }
 
         // Update legend
+        console.log('[loadTiles] Updating legend with metric:', selectedMetric);
         updateLegend(selectedMetric);
 
         // Stats
         const totalMessages = tiles.reduce((sum, tile) => sum + tile.count, 0);
+        console.log('[loadTiles] Total messages:', totalMessages, 'features:', features.length);
         document.getElementById('stat-tiles').innerHTML = `Tiles: <b>${features.length}</b>`;
         document.getElementById('stat-messages').innerHTML = `Messages: <b>${totalMessages.toLocaleString()}</b>`;
+        console.log('[loadTiles] Status set to success');
         updateStatus('success');
 
         // Fit bounds on first load only if no bbox filter
         if (isFirstLoad && !minLon && features.length > 0) {
+            console.log('[loadTiles] Fitting bounds on first load with', features.length, 'features');
             let boundsMinLon = 180, boundsMinLat = 90, boundsMaxLon = -180, boundsMaxLat = -90;
             for (const feature of features) {
                 for (const [lon, lat] of feature.geometry.coordinates[0]) {
@@ -617,15 +712,22 @@ async function loadTiles() {
                     if (lat > boundsMaxLat) boundsMaxLat = lat;
                 }
             }
+            console.log('[loadTiles] Bounds calculated, fitting map...');
             map.fitBounds([[boundsMinLon, boundsMinLat], [boundsMaxLon, boundsMaxLat]], {
                 padding: 50,
                 maxZoom: 16
             });
             isFirstLoad = false;
+            console.log('[loadTiles] First load completed, fitted bounds');
+        } else if (isFirstLoad) {
+            isFirstLoad = false;
+            console.log('[loadTiles] First load completed, no features to fit bounds');
         }
+        console.log('[loadTiles] Completed successfully');
 
     } catch (error) {
-        console.error('Failed to load tiles:', error);
+        console.error('[loadTiles] EXCEPTION caught:', error);
+        console.error('[loadTiles] Stack:', error.stack);
         updateStatus('error');
     }
 }
