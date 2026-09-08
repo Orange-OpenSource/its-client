@@ -99,7 +99,8 @@ public final class SpatemHelper {
     private String writeToString(SpatemVersion version, Object envelope) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream(2048);
         spatemCodec.write(version, envelope, out);
-        return out.toString(StandardCharsets.UTF_8);
+        // voluntarily preferred to out.toString(StandardCharsets.UTF_8); to ensure compatibility with Java 8
+        return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 }
 

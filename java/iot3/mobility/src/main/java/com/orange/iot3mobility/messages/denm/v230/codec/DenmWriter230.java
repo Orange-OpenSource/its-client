@@ -72,15 +72,15 @@ public final class DenmWriter230 {
         gen.writeFieldName("management");
         writeManagement(gen, message.managementContainer());
         if (message.situationContainer() != null) {
-            gen.writeFieldName("situation_container");
+            gen.writeFieldName("situation");
             writeSituation(gen, message.situationContainer());
         }
         if (message.locationContainer() != null) {
-            gen.writeFieldName("location_container");
+            gen.writeFieldName("location");
             writeLocation(gen, message.locationContainer());
         }
         if (message.alacarteContainer() != null) {
-            gen.writeFieldName("alacarte_container");
+            gen.writeFieldName("alacarte");
             writeAlacarte(gen, message.alacarteContainer());
         }
         gen.writeEndObject();

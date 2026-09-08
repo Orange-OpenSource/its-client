@@ -17,13 +17,9 @@ public class RoIManager {
 
     private final IoT3Core ioT3Core;
 
-    private String topicRoot;
-    private String uuid;
-
     private String subscriptionCamTopicBase = "/outQueue/v2x/cam/+";
     private String subscriptionCpmTopicBase = "/outQueue/v2x/cpm/+";
     private String subscriptionDenmTopicBase = "/outQueue/v2x/denm/+";
-    private String subscriptionDenmTopicPrivate = "/outQueue/v2x/denm/";
     private String subscriptionMapemTopicBase = "/outQueue/v2x/mapem/+";
     private String subscriptionSpatemTopicBase = "/outQueue/v2x/spatem/+";
     private String subscriptionMcmTopicBase = "/outQueue/v2x/mcm/+";
@@ -44,17 +40,15 @@ public class RoIManager {
 
     public RoIManager(IoT3Core ioT3Core, String uuid, String topicRoot) {
         this.ioT3Core = ioT3Core;
-        this.topicRoot = topicRoot;
-        this.uuid = uuid;
 
         subscriptionCamTopicBase = topicRoot + subscriptionCamTopicBase;
         subscriptionDenmTopicBase = topicRoot + subscriptionDenmTopicBase;
         subscriptionCpmTopicBase = topicRoot + subscriptionCpmTopicBase;
-        subscriptionDenmTopicPrivate = topicRoot + subscriptionDenmTopicPrivate + uuid;
         subscriptionMapemTopicBase = topicRoot + subscriptionMapemTopicBase;
         subscriptionSpatemTopicBase = topicRoot + subscriptionSpatemTopicBase;
         subscriptionMcmTopicBase = topicRoot + subscriptionMcmTopicBase;
 
+        String subscriptionDenmTopicPrivate = topicRoot + "/outQueue/" + uuid + "/denm/+";
         ioT3Core.mqttSubscribe(subscriptionDenmTopicPrivate);
     }
 

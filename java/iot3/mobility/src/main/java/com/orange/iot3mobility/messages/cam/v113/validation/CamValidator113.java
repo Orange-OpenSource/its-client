@@ -68,7 +68,7 @@ public final class CamValidator113 {
         checkRange("longitudinal_acceleration", hf.longitudinalAcceleration(), -160, 161);
         checkRange("yaw_rate", hf.yawRate(), -32766, 32767);
 
-        if (hf.accelerationControl() != null && !hf.accelerationControl().isBlank()
+        if (hf.accelerationControl() != null && !hf.accelerationControl().trim().isEmpty()
                 && !hf.accelerationControl().matches("[01]{7}")) {
             throw new CamValidationException("acceleration_control must be 7-bit binary string");
         }
@@ -128,7 +128,7 @@ public final class CamValidator113 {
     }
 
     private static void requireNotBlank(String field, String value) {
-        if (value == null || value.isBlank()) {
+        if (value == null || value.trim().isEmpty()) {
             throw new CamValidationException("Missing mandatory field: " + field);
         }
     }

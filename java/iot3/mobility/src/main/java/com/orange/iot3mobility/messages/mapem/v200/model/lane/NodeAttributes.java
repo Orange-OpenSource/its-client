@@ -14,6 +14,7 @@ import com.orange.iot3mobility.messages.mapem.v200.model.lane.enums.SegmentAttri
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Optional attribute set attached to a node point in a lane path.
@@ -62,7 +63,7 @@ public record NodeAttributes(
         public Builder localNode(NodeAttributeXY... nodeAttributes) {
             this.localNode = nodeAttributes.length == 0
                     ? Collections.emptyList()
-                    : Arrays.stream(nodeAttributes).map(NodeAttributeXY::value).toList();
+                    : Arrays.stream(nodeAttributes).map(NodeAttributeXY::value).collect(Collectors.toList());
             return this;
         }
 
@@ -78,7 +79,7 @@ public record NodeAttributes(
         public Builder disabled(SegmentAttributeXY... segmentAttributes) {
             this.disabled = segmentAttributes.length == 0
                     ? Collections.emptyList()
-                    : Arrays.stream(segmentAttributes).map(SegmentAttributeXY::value).toList();
+                    : Arrays.stream(segmentAttributes).map(SegmentAttributeXY::value).collect(Collectors.toList());
             return this;
         }
 
@@ -94,7 +95,7 @@ public record NodeAttributes(
         public Builder enabled(SegmentAttributeXY... segmentAttributes) {
             this.enabled = segmentAttributes.length == 0
                     ? Collections.emptyList()
-                    : Arrays.stream(segmentAttributes).map(SegmentAttributeXY::value).toList();
+                    : Arrays.stream(segmentAttributes).map(SegmentAttributeXY::value).collect(Collectors.toList());
             return this;
         }
 

@@ -13,6 +13,7 @@ import com.orange.iot3mobility.messages.mapem.v200.model.shared.SpeedLimit;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A generic lane object describing a single lane (motorized, crosswalk, bicycle, sidewalk, etc.)
@@ -74,7 +75,7 @@ public record GenericLane(
          * @return this builder
          */
         public Builder maneuvers(AllowedManeuver... maneuvers) {
-            this.maneuvers = Arrays.stream(maneuvers).map(AllowedManeuver::value).toList();
+            this.maneuvers = Arrays.stream(maneuvers).map(AllowedManeuver::value).collect(Collectors.toList());
             return this;
         }
         public Builder nodeList(NodeList nodeList) { this.nodeList = nodeList; return this; }

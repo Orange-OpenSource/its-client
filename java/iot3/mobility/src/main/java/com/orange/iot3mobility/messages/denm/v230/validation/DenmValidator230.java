@@ -108,7 +108,7 @@ public final class DenmValidator230 {
     }
 
     private static void validateSituation(SituationContainer situation) {
-        requireNonNull("situation_container", situation);
+        requireNonNull("situation", situation);
         requireNonNull("information_quality", situation.informationQuality());
         checkRange("information_quality", situation.informationQuality(), 0, 7);
         requireNonNull("event_type", situation.eventType());
@@ -150,7 +150,7 @@ public final class DenmValidator230 {
     }
 
     private static void validateLocation(LocationContainer location) {
-        requireNonNull("location_container", location);
+        requireNonNull("location", location);
         if (location.eventSpeed() != null) {
             validateEventSpeed(location.eventSpeed());
         }
@@ -199,11 +199,11 @@ public final class DenmValidator230 {
     }
 
     private static void validateAlacarte(AlacarteContainer alacarte) {
-        checkRange("alacarte_container.lane_position", alacarte.lanePosition(), -1, 14);
+        checkRange("alacarte.lane_position", alacarte.lanePosition(), -1, 14);
         if (alacarte.roadWorks() != null) {
             validateRoadWorks(alacarte.roadWorks());
         }
-        checkRange("alacarte_container.positioning_solution", alacarte.positioningSolution(), 0, 6);
+        checkRange("alacarte.positioning_solution", alacarte.positioningSolution(), 0, 6);
         if (alacarte.stationaryVehicle() != null) {
             validateStationaryVehicle(alacarte.stationaryVehicle());
         }
@@ -318,7 +318,7 @@ public final class DenmValidator230 {
     }
 
     private static void requireNotBlank(String field, String value) {
-        if (value == null || value.isBlank()) {
+        if (value == null || value.trim().isEmpty()) {
             throw new DenmValidationException("Missing mandatory field: " + field);
         }
     }
