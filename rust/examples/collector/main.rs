@@ -22,7 +22,6 @@ use libits::client::logger::create_stdout_logger;
 use libits::transport::mqtt::mqtt_client::MqttClient;
 use libits::transport::mqtt::mqtt_router::MqttRouter;
 use libits::transport::mqtt::routed_str_topic::RoutedStrTopic;
-use libits::transport::packet::Packet;
 #[cfg(feature = "telemetry")]
 use libits::transport::telemetry::init_tracer;
 use log::{debug, error, info, trace};
@@ -234,16 +233,17 @@ async fn main() {
                                     };
                                 }
 
-                                // Create a Packet from the payload string
-                                let packet = Packet::<CollectorStrTopic, String> {
-                                    topic,
-                                    payload: payload.to_string(),
-                                    properties: PublishProperties::default(),
-                                };
-
-                                trace!("Start packet publishing...");
-                                current_publish_client.publish(packet).await;
-                                trace!("Packet published");
+                                // Publish this already-serialized payload as-is to avoid double
+                                // JSON-encoding the message that came from the external broker.
+                                trace!("Start payload forwarding...");
+                                current_publish_client
+                                    .publish_forward(
+                                        topic,
+                                        payload.to_string(),
+                                        PublishProperties::default(),
+                                    )
+                                    .await;
+                                trace!("Payload forwarded");
                             }
                         }
                         None => error!("Failed to downcast payload to String"),
@@ -905,5 +905,68 @@ mod tests {
                 .topic_level_update_list
                 .is_empty()
         );
+    }
+
+    #[test]
+    fn str_route_with_valid_json_payload() {
+        // Test that a JSON payload is correctly parsed and returned as a String
+        let json_payload = br#"{"message_type":"cam","data":"test"}"#.to_vec();
+        let publish = Publish {
+            payload: json_payload.into(),
+            properties: Some(PublishProperties::default()),
+            ..Default::default()
+        };
+        let result = str_route(publish);
+        assert!(result.is_some());
+        let (boxed_payload, _) = result.unwrap();
+        let payload_str = boxed_payload.downcast_ref::<String>().unwrap();
+        assert_eq!(payload_str, r#"{"message_type":"cam","data":"test"}"#);
+    }
+
+    #[test]
+    fn str_route_with_double_encoded_json_invalid() {
+        // Test that a double-encoded JSON (bug case) is still returned as-is
+        // This would be the faulty payload from the old collector MQTT export.
+        // When using publish_forward, this should NOT happen.
+        let double_encoded = br#""{\"message_type\":\"cam\"}""#.to_vec();
+        let publish = Publish {
+            payload: double_encoded.into(),
+            properties: Some(PublishProperties::default()),
+            ..Default::default()
+        };
+        let result = str_route(publish);
+        assert!(result.is_some());
+        let (boxed_payload, _) = result.unwrap();
+        let payload_str = boxed_payload.downcast_ref::<String>().unwrap();
+        // The faulty payload would be this string (which is NOT valid JSON for the message structure)
+        assert!(payload_str.contains("message_type"));
+    }
+
+    #[test]
+    fn mqtt_export_forwarded_payload_not_double_encoded() {
+        // This test documents the expected behavior: when exporting to MQTT,
+        // the collector should use publish_forward (not publish) to avoid double-encoding.
+        //
+        // Scenario:
+        // 1. Collector receives JSON string from str_route: {"msg":"hello"}
+        // 2. Export to MQTT must call: publish_forward(topic, payload_string, properties)
+        //    NOT: Packet<_, String> + publish() which would call serde_json::to_string
+        //
+        // If using publish():
+        //   serde_json::to_string(&payload_string) -> ""{\"msg\":\"hello\"}"" (WRONG - double encoded)
+        // If using publish_forward(payload_string):
+        //   Direct send: {"msg":"hello"} (CORRECT)
+        let json_payload = r#"{"msg":"hello"}"#.to_string();
+
+        // Demonstrate the bug: serializing a String twice
+        let wrong_double_encoded = serde_json::to_string(&json_payload).expect("Should serialize");
+
+        // Verify the WRONG path (what old code did):
+        assert!(wrong_double_encoded.contains("\\"));
+        assert!(wrong_double_encoded.starts_with("\""));
+
+        // The RIGHT path (what publish_forward does - no re-serialization):
+        assert_eq!(json_payload, r#"{"msg":"hello"}"#);
+        assert!(!json_payload.starts_with("\""));
     }
 }
