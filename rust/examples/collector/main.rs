@@ -27,6 +27,7 @@ use libits::transport::packet::Packet;
 use libits::transport::telemetry::init_tracer;
 use log::{debug, error, info, trace};
 use rumqttc::v5::mqttbytes::v5::{Publish, PublishProperties};
+use serde_json::Value;
 use std::any::Any;
 use std::fs::{File, OpenOptions, create_dir_all};
 use std::io::Write;
@@ -235,9 +236,10 @@ async fn main() {
                                 }
 
                                 // Create a Packet from the payload string
-                                let packet = Packet::<CollectorStrTopic, String> {
+                                let packet = Packet::<CollectorStrTopic, Value> {
                                     topic,
-                                    payload: payload.to_string(),
+                                    payload: serde_json::from_str(payload.as_str())
+                                        .unwrap_or(Value::Null),
                                     properties: PublishProperties::default(),
                                 };
 
