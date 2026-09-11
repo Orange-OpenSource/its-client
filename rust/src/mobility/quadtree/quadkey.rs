@@ -15,7 +15,6 @@ use crate::mobility::quadtree::tile::Tile;
 use crate::mobility::quadtree::{DEFAULT_DEPTH, coordinates_to_quadkey};
 use core::fmt;
 use std::cmp::Ordering;
-use std::str;
 use std::str::FromStr;
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
@@ -62,9 +61,40 @@ impl From<&Position> for Quadkey {
 }
 
 impl From<&Self> for Quadkey {
-    fn from(quad_key: &Quadkey) -> Self {
+    fn from(quadkey: &Quadkey) -> Self {
         Self {
-            tiles: quad_key.tiles.clone(),
+            tiles: quadkey.tiles.clone(),
+        }
+    }
+}
+
+impl TryFrom<&str> for Quadkey {
+    type Error = ParseError;
+
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        if s.is_empty() {
+            return Err(ParseError::EmptyString);
+        }
+
+        if s.contains('/') {
+            // Slash-separated quadkey: reject malformed sequences like leading,
+            // trailing or consecutive '/' and validate each tile via Tile.
+            s.split('/')
+                .try_fold(Quadkey::default(), |mut quadkey, element| {
+                    if element.is_empty() {
+                        return Err(ParseError::MalformedQuadKey);
+                    }
+
+                    quadkey.tiles.push(Tile::from_str(element)?);
+                    Ok(quadkey)
+                })
+        } else {
+            // Compact quadkey representation without separators.
+            s.chars()
+                .try_fold(Quadkey::default(), |mut quadkey, element| {
+                    quadkey.tiles.push(TryFrom::try_from(element)?);
+                    Ok(quadkey)
+                })
         }
     }
 }
@@ -73,27 +103,7 @@ impl FromStr for Quadkey {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.is_empty() {
-            Err(ParseError::EmptyString)
-        } else {
-            let number_of_slash = s.chars().filter(|&character| character == '/').count();
-            if number_of_slash > 0 && ((number_of_slash * 2) + 1 == s.len()) {
-                // string with slash separator and one slash for each character except first
-                Ok(s.split('/')
-                    .fold(Quadkey::default(), |mut quadkey_struct, element| {
-                        let result = Tile::from_str(element).unwrap();
-                        quadkey_struct.tiles.push(result);
-                        quadkey_struct
-                    }))
-            } else {
-                // string without slash separator
-                Ok(s.chars()
-                    .fold(Quadkey::default(), |mut quadkey_struct, element| {
-                        quadkey_struct.tiles.push(Tile::from(element));
-                        quadkey_struct
-                    }))
-            }
-        }
+        TryFrom::try_from(s)
     }
 }
 
@@ -210,6 +220,24 @@ mod tests {
     #[should_panic]
     fn test_fail_create_quadkey_with_slash_with_a_character_at_the_end() {
         create_quadkey("0/1/2/a");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fail_create_quadkey_with_consecutive_slashes() {
+        create_quadkey("0//01");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fail_create_quadkey_with_leading_slash_and_valid_tiles() {
+        create_quadkey("/01/1");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_fail_create_quadkey_with_trailing_slash() {
+        create_quadkey("01/1/");
     }
 
     #[test]

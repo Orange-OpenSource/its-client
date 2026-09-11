@@ -14,7 +14,7 @@ use std::{fmt, hash, str};
 
 #[derive(Debug, Default, Clone)]
 #[allow(clippy::upper_case_acronyms)]
-pub(crate) enum MessageType {
+pub enum MessageType {
     #[default]
     Any,
     CAM,

@@ -254,6 +254,12 @@ impl Mobile for CollectivePerceptionMessage {
         // No acceleration is provided
         None
     }
+
+    fn position_confidence(&self) -> f64 {
+        self.management_container
+            .reference_position
+            .confidence_mean()
+    }
 }
 
 impl Content for CollectivePerceptionMessage {

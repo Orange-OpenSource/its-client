@@ -404,6 +404,66 @@ it requires an OTLP collector as mentioned in the telemetry example section.
 cargo run --example collector --features telemetry
 ```
 
+### display
+
+This example provides a minimal viewer pipeline to parse logs or read live MQTT
+into a SQLite DB and display tiles on a map.
+
+#### database
+
+The SQLite database (`display.db`) stores ITS messages as map tiles using quadkeys. It is populated by the MQTT
+ingestion or log import binaries, and queried by the web server to serve tiles.
+
+| Table           | Description                                          |
+|-----------------|------------------------------------------------------|
+| `message_types` | Stores unique message types                          |
+| `tile_metrics`  | Stores aggregated metrics per quadkey, type, and day |
+
+The message_types table:
+
+| Column | Type    | Description                                |
+|--------|---------|--------------------------------------------|
+| `id`   | INTEGER | Primary key                                |
+| `name` | TEXT    | Message type name (CAM, DENM, CPM, MCM...) |
+
+The tile_metrics table:
+
+| Column                     | Type    | Description                       |
+|----------------------------|---------|-----------------------------------|
+| `quadkey`                  | TEXT    | Tile quadkey (e.g., "01230123")   |
+| `message_type_id`          | INTEGER | FK to message_types               |
+| `day`                      | TEXT    | Date (YYYY-MM-DD)                 |
+| `count`                    | INTEGER | Number of messages                |
+| `sum_position_confidence`  | REAL    | Sum of position confidence values |
+| `mean_position_confidence` | REAL    | Mean position confidence          |
+
+#### log reader
+
+Parse historical logs (handles .log, .log.gz, .tar.gz); it takes three positional
+arguments: the input directory, the quadkey zoom level and the output database path:
+
+```shell
+cargo run --example display_log_reader --features mobility -- /tmp/logs 26 /tmp/display.db
+```
+
+#### MQTT reader
+
+Ingest from MQTT messages:
+
+```shell
+cargo run --example display_mqtt_reader --features mobility -- --config examples/config.ini
+```
+
+#### Server
+
+Serve the map UI:
+
+```shell
+cargo run --example display_server --features mobility -- --config examples/config.ini
+```
+
+Open the map at http://localhost:3000/ and zoom to display the message metrics.
+
 [1]: https://github.com/Orange-OpenSource/its-client/actions/workflows/rust.yml
 
 [2]: https://crates.io/crates/libits-client

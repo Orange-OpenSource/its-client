@@ -431,6 +431,10 @@ impl Mobile for DecentralizedEnvironmentalNotificationMessage {
     fn acceleration(&self) -> Option<f64> {
         None
     }
+
+    fn position_confidence(&self) -> f64 {
+        self.management.event_position.confidence_mean()
+    }
 }
 
 impl Content for DecentralizedEnvironmentalNotificationMessage {

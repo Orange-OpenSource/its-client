@@ -138,6 +138,14 @@ impl Mobile for CooperativeAwarenessMessage113 {
             .longitudinal_acceleration
             .map(acceleration_from_etsi)
     }
+
+    fn position_confidence(&self) -> f64 {
+        self.basic_container
+            .confidence
+            .as_ref()
+            .map(|c| c.confidence_mean())
+            .unwrap_or(0.0)
+    }
 }
 
 impl Content for CooperativeAwarenessMessage113 {

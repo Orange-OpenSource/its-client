@@ -461,6 +461,10 @@ impl Mobile for CooperativeAwarenessMessage {
             .as_ref()
             .map(|vehicle| acceleration_from_etsi(vehicle.longitudinal_acceleration.value))
     }
+
+    fn position_confidence(&self) -> f64 {
+        self.basic_container.reference_position.confidence_mean()
+    }
 }
 
 impl Content for CooperativeAwarenessMessage {
