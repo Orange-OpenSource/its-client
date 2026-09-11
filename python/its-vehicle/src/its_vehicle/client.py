@@ -40,11 +40,27 @@ class ITSClient:
             if type(self.cfg["mirror-self"]) is str
             else self.cfg["mirror-self"]
         )
+        try:
+            self.cfg["length"] = float(self.cfg.get("length"))
+            self.cfg["width"] = float(self.cfg.get("width"))
+        except TypeError:
+            self.cfg["length"] = None
+            self.cfg["width"] = None
 
         if self.cfg["type"] not in ITSClient.TYPES:
             raise ValueError(f"unknown ITS message type {self.cfg['type']}")
 
         self.ITSMessage = ITSClient.TYPES[self.cfg["type"]]["message"]
+
+        try:
+            station_type = self.cfg.get("station-type", "unknown")
+            self.cfg["station_type"] = self.ITSMessage.TrafficParticipantType[
+                station_type
+            ]
+        except KeyError:
+            raise ValueError(
+                f"{station_type}: invalid station type; valid values: {', '.join([t.name for t in self.ITSMessage.TrafficParticipantType])}"
+            ) from None
 
         if not self.cfg["topic-pub-prefix"] or self.cfg["topic-pub-prefix"][-1] != "/":
             raise ValueError(
@@ -124,7 +140,7 @@ class ITSClient:
                         lambda qk: (
                             self.cfg["topic-sub-prefix"]
                             + msg_type
-                            + "/+/"  # This is the instance-id (aka source_uuid) wildcard
+                            + "/+/"  # This is the source-uuid wildcard
                             + its_quadkeys.QuadKey(qk).to_str("/")
                             + "/#"
                         ),
@@ -139,8 +155,11 @@ class ITSClient:
             self.mqtt_main.subscribe_replace(topics=list(roi_topics))
 
             msg = self.ITSMessage(
-                uuid=self.cfg["instance-id"],
+                uuid=self.cfg["station-uuid"],
+                station_type=self.cfg["station_type"],
                 gnss_report=gnss_report,
+                length=self.cfg["length"],
+                width=self.cfg["width"],
             )
             topic = msg.topic(
                 template=self.pub_topic_template,
@@ -183,7 +202,7 @@ class ITSClient:
             return
         try:
             if (
-                payload_d.get("source_uuid", None) != self.cfg["instance-id"]
+                payload_d.get("source_uuid", None) != self.cfg["station-uuid"]
                 or self.cfg["mirror-self"]
             ):
                 self.mqtt_mirror.publish(topic=topic, payload=payload)

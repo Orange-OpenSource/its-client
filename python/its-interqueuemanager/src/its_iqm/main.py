@@ -8,6 +8,7 @@ import configparser
 import its_iqm.iqm
 import logging
 import sys
+import warnings
 
 CFG = "/etc/its/iqm.cfg"
 DEFAULTS = {
@@ -63,7 +64,7 @@ def main():
 
     logging.info(f"loading config file {args.config}...")
     cfg = configparser.ConfigParser(allow_no_value=True)
-    with open(args.config) as f:
+    with open(args.config, "r") as f:
         cfg.read_file(f)
 
     # configparser.ConfigParser() only accepts strings as values, but we
@@ -77,7 +78,19 @@ def main():
         if key not in cfg[section]:
             cfg[section][key] = default
 
-    _set_default("neighbours", "client_id", cfg["general"]["instance-id"])
+    if "station-uuid" not in cfg["general"]:
+        # Try with the legacy instance-id
+        try:
+            cfg["general"]["station-uuid"] = cfg["general"]["instance-id"]
+        except KeyError:
+            raise KeyError(
+                f"{args.config}: station-uuid missing in [general]",
+            ) from None
+        warnings.warn(
+            f"{args.config}: using legacy instance-id; swith to station-uuid instead.",
+        )
+
+    _set_default("neighbours", "client_id", cfg["general"]["station-uuid"])
     for s in DEFAULTS:
         for k in DEFAULTS[s]:
             _set_default(s, k, DEFAULTS[s][k])

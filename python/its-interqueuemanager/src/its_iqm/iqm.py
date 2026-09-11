@@ -21,12 +21,12 @@ class IQM:
     ):
         logging.info("create")
         self.cfg = cfg
-        self.instance_id = self.cfg["general"]["instance-id"]
+        self.station_uuid = self.cfg["general"]["station-uuid"]
 
         if "multi-instances" in self.cfg["general"]:
             random_id = random.randbytes(16).hex()
             logging.info(f"Starting multi-instances IQM, my token is {random_id}")
-            self.share_prefix = "$share/" + self.instance_id + "/"
+            self.share_prefix = "$share/" + self.station_uuid + "/"
             self.cfg["local"]["client_id"] += "_" + random_id
             self.cfg["neighbours"]["client_id"] += "_" + random_id
         else:
@@ -62,7 +62,7 @@ class IQM:
             self.otel = iot3.core.otel.Otel(
                 service_name="its-interqueuemanager",
                 endpoint=cfg["telemetry"]["endpoint"],
-                service_id=self.instance_id,
+                service_id=self.station_uuid,
                 auth=iot3.core.otel.Auth(cfg["telemetry"]["authentication"]),
                 username=cfg["telemetry"]["username"],
                 password=cfg["telemetry"]["password"],
@@ -84,7 +84,7 @@ class IQM:
             new_filter = filters.Filter(
                 name=filter_name,
                 filter_cfg=cfg[sect_name],
-                instance_id=self.instance_id,
+                station_uuid=self.station_uuid,
                 prefix=prefix,
                 suffix=suffix,
                 queues=queues,
@@ -128,7 +128,7 @@ class IQM:
         # queue managers, so we need to handle the central authority
         # after we create the local QM.
         self.authority = authority.Authority(
-            self.instance_id,
+            self.station_uuid,
             self.cfg["authority"],
             self.update_cb,
         )

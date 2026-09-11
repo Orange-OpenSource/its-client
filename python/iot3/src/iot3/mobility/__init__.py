@@ -48,8 +48,8 @@ sample_bootstrap_config = dict(core.sample_bootstrap_config)
 sample_config = dict(core.sample_config)
 sample_config.update(
     {
-        "uuid": "1234",
-        "station_type": etsi.Message.StationType.unknown,
+        "uuid": "ora_car_1234",
+        "station_type": etsi.Message.TrafficParticipantType.unknown,
         "namespace": "default",
         "report_depth": 22,
         "roi_depth": 15,
@@ -68,7 +68,9 @@ def bootstrap(
     role: str,
     service_name: str,
     bootstrap_config: dict,
-    station_type: Optional[etsi.Message.StationType] = etsi.Message.StationType.unknown,
+    station_type: Optional[
+        etsi.Message.TrafficParticipantType
+    ] = etsi.Message.TrafficParticipantType.unknown,
     # FIXME: Shouldn't namespace come from the bootstrap, in fact?
     namespace: Optional[str] = "default",
 ) -> dict:

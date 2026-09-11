@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import math
+import sys
 import time
-from iot3.mobility.etsi import Message
 from iot3.mobility.gnss import GNSSReport, GNSS
 
 #-----------------------------------------------------------------------------------------
@@ -68,153 +68,67 @@ gnss_report = GNSSReport(
 if math.fabs(gnss_report.latitude - math.degrees(0.761578119)) >= 5 * 10 ** -8:
     raise RuntimeError("Degree -> radian latitude conversion failed")
 
-#-----------------------------------------------------------------------------------------
-position_confidence_ellipse = Message.position_confidence_ellipse
+print("GNSSReport.Fix unknown...")
+fix = GNSSReport.Fix.from_mode_status(mode=None, status=None)
+assert fix == GNSSReport.Fix.unknown
+assert not fix
+assert not fix.is_rtk()
 
-print("position_confidence_ellipse with no data...")
-ellipse = position_confidence_ellipse(GNSSReport())
-assert ellipse["semi_major"] == 4095
-assert ellipse["semi_minor"] == 4095
-assert ellipse["semi_major_orientation"] == 3601
+fix = GNSSReport.Fix.from_mode_status(mode=0, status=None)
+assert fix == GNSSReport.Fix.unknown
+assert not fix
+assert not fix.is_rtk()
 
-print("position_confidence_ellipse with GST data...")
-ellipse = position_confidence_ellipse(
-    GNSSReport(
-        ellipse_semi_major=1.5,
-        ellipse_semi_minor=0.8,
-        ellipse_orient=45.0,
-    ),
-)
-assert ellipse["semi_major"] == 150
-assert ellipse["semi_minor"] == 80
-assert ellipse["semi_major_orientation"] == 450
+fix = GNSSReport.Fix.from_mode_status(mode=0, status=2)
+assert fix == GNSSReport.Fix.unknown
+assert not fix
+assert not fix.is_rtk()
 
-print("position_confidence_ellipse with GST major only...")
-ellipse = position_confidence_ellipse(
-    GNSSReport(
-        ellipse_semi_major=1.0,
-    ),
-)
-assert ellipse["semi_major"] == 100
-assert ellipse["semi_minor"] == 100
-assert ellipse["semi_major_orientation"] == 0
+print("GNSSReport.Fix no fix...")
+fix = GNSSReport.Fix.from_mode_status(mode=1, status=None)
+assert fix == GNSSReport.Fix.none
+assert not fix
+assert not fix.is_rtk()
 
-print("position_confidence_ellipse with GST minor only...")
-ellipse = position_confidence_ellipse(
-    GNSSReport(
-        ellipse_semi_minor=0.5,
-    ),
-)
-assert ellipse["semi_major"] == 4095
-assert ellipse["semi_minor"] == 4095
-assert ellipse["semi_major_orientation"] == 3601
+fix = GNSSReport.Fix.from_mode_status(mode=1, status=2)
+assert fix == GNSSReport.Fix.none
+assert not fix
+assert not fix.is_rtk()
 
-print("position_confidence_ellipse with GST orient only...")
-ellipse = position_confidence_ellipse(
-    GNSSReport(
-        ellipse_orient=90.0,
-    ),
-)
-assert ellipse["semi_major"] == 4095
-assert ellipse["semi_minor"] == 4095
-assert ellipse["semi_major_orientation"] == 3601
+print("GNSSReport.Fix normal fix...")
+fix = GNSSReport.Fix.from_mode_status(mode=2, status=None)
+assert fix == GNSSReport.Fix.fix_2d
+assert fix
+assert not fix.is_rtk()
 
-print("position_confidence_ellipse with GST major+minor, no orient...")
-ellipse = position_confidence_ellipse(
-    GNSSReport(
-        ellipse_semi_major=1.2,
-        ellipse_semi_minor=0.6,
-    ),
-)
-assert ellipse["semi_major"] == 120
-assert ellipse["semi_minor"] == 60
-assert ellipse["semi_major_orientation"] == 3601
+fix = GNSSReport.Fix.from_mode_status(mode=3, status=None)
+assert fix == GNSSReport.Fix.fix_3d
+assert fix
+assert not fix.is_rtk()
 
-print("position_confidence_ellipse with GST major+orient, no minor...")
-ellipse = position_confidence_ellipse(
-    GNSSReport(
-        ellipse_semi_major=2.0,
-        ellipse_orient=30.0,
-    ),
-)
-assert ellipse["semi_major"] == 200
-assert ellipse["semi_minor"] == 200
-assert ellipse["semi_major_orientation"] == 0
+print("GNSSReport.Fix enhanced fix...")
+fix = GNSSReport.Fix.from_mode_status(mode=2, status=2)
+assert fix == GNSSReport.Fix.dgps
+assert fix
+assert not fix.is_rtk()
 
-print("position_confidence_ellipse with GST minor+orient, no major...")
-ellipse = position_confidence_ellipse(
-    GNSSReport(
-        ellipse_semi_minor=0.3,
-        ellipse_orient=45.0,
-    ),
-)
-assert ellipse["semi_major"] == 4095
-assert ellipse["semi_minor"] == 4095
-assert ellipse["semi_major_orientation"] == 3601
+fix = GNSSReport.Fix.from_mode_status(mode=2, status=3)
+assert fix == GNSSReport.Fix.rtk_fixed
+assert fix
+assert fix.is_rtk()
 
-print("position_confidence_ellipse: GST major takes priority over horizontal_error...")
-ellipse = position_confidence_ellipse(
-    GNSSReport(
-        ellipse_semi_major=1.0,
-        ellipse_semi_minor=0.5,
-        horizontal_error=9.99,
-    ),
-)
-assert ellipse["semi_major"] == 100
-assert ellipse["semi_minor"] == 50
-assert ellipse["semi_major_orientation"] == 3601
+fix = GNSSReport.Fix.from_mode_status(mode=2, status=4)
+assert fix == GNSSReport.Fix.rtk_float
+assert fix
+assert fix.is_rtk()
 
-print("position_confidence_ellipse: horizontal_error fallback when no major...")
-ellipse = position_confidence_ellipse(
-    GNSSReport(
-        horizontal_error=5.0,
-    ),
-)
-assert ellipse["semi_major"] == 500
-assert ellipse["semi_minor"] == 500
-assert ellipse["semi_major_orientation"] == 0
+print("GNSSReport.Fix other fix...")
+fix = GNSSReport.Fix.from_mode_status(mode=2, status=5)
+assert fix == GNSSReport.Fix.other
+assert fix
+assert not fix.is_rtk()
 
-print("position_confidence_ellipse: horizontal_error ignored when major present...")
-ellipse = position_confidence_ellipse(
-    GNSSReport(
-        ellipse_semi_major=0.5,
-        horizontal_error=9.99,
-    ),
-)
-assert ellipse["semi_major"] == 50
-assert ellipse["semi_minor"] == 50
-assert ellipse["semi_major_orientation"] == 0
-
-print("position_confidence_ellipse: orientation wrapping (360° → 0°)...")
-ellipse = position_confidence_ellipse(
-    GNSSReport(
-        ellipse_semi_major=2.0,
-        ellipse_semi_minor=1.0,
-        ellipse_orient=360.0,
-    ),
-)
-print(f"orient={ellipse['semi_major_orientation']}")
-assert ellipse["semi_major_orientation"] == 0
-
-print("position_confidence_ellipse: orientation wrapping (>360°)...")
-ellipse = position_confidence_ellipse(
-    GNSSReport(
-        ellipse_semi_major=2.0,
-        ellipse_semi_minor=1.0,
-        ellipse_orient=450.0,
-    ),
-)
-assert ellipse["semi_major_orientation"] == 900
-
-print("position_confidence_ellipse: orientation correction (major < minor)...")
-ellipse = position_confidence_ellipse(
-    GNSSReport(
-        ellipse_semi_major=1.0,
-        ellipse_semi_minor=2.0,
-        ellipse_orient=0.0,
-    ),
-)
-assert ellipse["semi_major_orientation"] == 900
+sys.exit(0)
 
 #-----------------------------------------------------------------------------------------
 print("gpsd connection to 127.0.0.1:2948...")

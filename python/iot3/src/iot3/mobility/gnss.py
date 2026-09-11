@@ -5,6 +5,7 @@
 
 import copy
 import dataclasses
+import enum
 import json
 import math
 import socket
@@ -30,6 +31,8 @@ class GNSSReport:
     :param timestamp: UNIX timestamp this object was created at, with
                       arbitrary sub-second precision; this must _not_ be
                       specified when creating a GNSSReport
+    "param fix" The type of GNSS fix that was computed; synthetized from
+                gpsd's mode and status.
     :param time: Time of the GSS measurement as sent by the GNSS service,
                  with arbitrary sub-second precision
     :param latitude: Latitude in degrees
@@ -55,7 +58,68 @@ class GNSSReport:
                            in degrees from true North.
     """
 
+    class Fix(enum.StrEnum):
+        """A class that represent the GNSS fix status
+
+        'unknown' means the fix status is unknown (maybe there is a fix,
+        maybe there is no fix; if there is a fix, we don't known what it
+        is. 'none' means there is actually no fix, and we know that.
+        'other' means there is a fix, but it is some type of fix we don't
+        known about.
+        """
+
+        unknown = "Unknown"
+        none = "No"
+        fix_2d = "2D"
+        fix_3d = "3D"
+        dgps = "DGPS"
+        rtk_float = "RTK-float"
+        rtk_fixed = "RTK-fixed"
+        other = "Other"
+
+        @staticmethod
+        def from_mode_status(
+            *,
+            mode: int | None,
+            status: int | None,
+        ):
+            """Synthetize a fix from gpsd mode and status"""
+            match mode, status:
+                case None, _:
+                    return GNSSReport.Fix.unknown
+                case int(mode), _ if mode == 0:
+                    return GNSSReport.Fix.unknown
+                case int(mode), _ if mode == 1:
+                    return GNSSReport.Fix.none
+                case _, int(status) if status == 2:
+                    return GNSSReport.Fix.dgps
+                case _, int(status) if status == 3:
+                    return GNSSReport.Fix.rtk_fixed
+                case _, int(status) if status == 4:
+                    return GNSSReport.Fix.rtk_float
+                case _, int(status) if status > 4:
+                    return GNSSReport.Fix.other
+                case int(mode), _ if mode == 2:
+                    return GNSSReport.Fix.fix_2d
+                case int(mode), _ if mode == 3:
+                    return GNSSReport.Fix.fix_3d
+
+        def __bool__(self) -> bool:
+            """Return whether there is any kind of fix"""
+            return self.value not in [
+                self.unknown.value,
+                self.none.value,
+            ]
+
+        def is_rtk(self) -> bool:
+            """Return whether the fix is any kind of RTK fix"""
+            return self.value in [
+                self.rtk_float.value,
+                self.rtk_fixed.value,
+            ]
+
     timestamp: float = None
+    fix: Fix = Fix["unknown"]
     time: float | None = None
     latitude: float | None = None
     latitude_r: float | None = None
@@ -192,11 +256,37 @@ class GNSSReport:
                 object.__setattr__(self, field, deg)
 
 
+@dataclasses.dataclass(frozen=True)
+class GNSSDevice:
+    """A GNSS device description
+
+    :param path: the path (in a broad meaning of path) of the device
+    :param driver: the gpsd driver for that device; None if unknown
+    :param model: the model of the device as a list of identifiers as
+                  provided by the device itself; empty list if model
+                  is unknown
+    :param protocol: the type of protocol talked by the device; None
+                     if unknown, "native" if using a device-specific
+                     protocol, or "NMEA"
+    :param rate: the period of the measurements; None if unknown or
+                 inapplicable
+    """
+
+    path: str
+    driver: str | None
+    model: list[str]
+    protocol: str | None
+    rate: float | None
+
+
 class GNSS:
     """Simple abstraction to a gpsd daemon.
 
     The object is a callable that returns a GNSSReport when it has at least
     a valid latitude and longitude, or None otherwise.
+
+    The object also has a read-only property, devices, which gives access to
+    a description of the GNSS devices currently connected.
     """
 
     def __init__(
@@ -227,6 +317,8 @@ class GNSS:
             name=f"{__name__}.gpsd_client",
             daemon=True,
         )
+        self._time_last_dev = 0
+        self._devices = []
         self._full_epoch = {}
         self._current_epoch = {}
         self._sock = None
@@ -247,7 +339,15 @@ class GNSS:
         *,
         max_age: Optional[float] = None,
     ) -> GNSSReport | None:
-        """Returns a GNSSReport() object with the last valid measurement, None otherwise.
+        """Returns a GNSSReport() object with the last valid measurement
+
+        If no measurement was done, or if the last epoch is older than
+        max_age, then None is returned. If either latitude or longitude,
+        or both, are unknown, then None is returned.
+
+        Otherwise, a GNSSReport() object is returned, with the measurements
+        from the latest epoch. At least longitude, latitude, and the fix
+        are guaranteed to be set.
 
         :param max_age: The maximum age, in seconds, to consider a measurement valid;
                         overrides the persistence from the constructor.
@@ -276,6 +376,10 @@ class GNSS:
         params = dict()
         params["latitude"] = tpv["lat"]
         params["longitude"] = tpv["lon"]
+        params["fix"] = GNSSReport.Fix.from_mode_status(
+            mode=tpv.get("mode"),
+            status=tpv.get("status"),
+        )
 
         params["time"] = tpv.get("time")
         params["altitude"] = tpv.get("altHAE")
@@ -306,6 +410,42 @@ class GNSS:
 
         return GNSSReport(**params)
 
+    @property
+    def devices(self):
+        """
+        Provides the GNSS devices currently connected, as a dict() which
+        keys are the paths (in a broad meaning of path) of each device,
+        and which value are GNSSDevice objects.
+        """
+        return {
+            dev["path"]: GNSSDevice(
+                path=dev["path"],
+                driver=dev.get("driver"),
+                # Some have subtype, some have subtype1, some have both.
+                # Both are comma-separated lists (on devices we know of)
+                # so recreate a list of fields by aggregating both into a
+                # single list. Remove empty fields, if any.
+                model=[
+                    model
+                    for model in (
+                        subtype.strip()
+                        for subtype in (
+                            dev.get("subtype", "").split(",")
+                            + dev.get("subtype1", "").split(",")
+                        )
+                    )
+                    if model
+                ],
+                protocol=(
+                    None
+                    if dev.get("native") is None
+                    else "native" if dev.get("native") else "NMEA"
+                ),
+                rate=dev.get("cycle", None),
+            )
+            for dev in self._devices
+        }
+
     def _connect(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._sock.settimeout(2.0)
@@ -313,6 +453,8 @@ class GNSS:
         self._sock_fd = self._sock.makefile("rwb")
         # From here on, we're only manipulating the connection via sock_fd
         self._sock.close()
+        self._time_last_dev = time.time()
+        self._sock_fd.write("?DEVICES;\n".encode())
         self._sock_fd.write('?WATCH={"enable":true,"json":true};\n'.encode())
         self._sock_fd.flush()
 
@@ -362,7 +504,7 @@ class GNSS:
                 # some issue...
                 if not msg_json:
                     raise ConnectionResetError("short read")
-            except (socket.timeout, TimeoutError, ConnectionResetError):
+            except (socket.timeout, TimeoutError, ConnectionResetError, OSError):
                 self._disconnect()
                 continue
 
@@ -377,6 +519,9 @@ class GNSS:
                 msg_class = msg["class"].lower()
             except KeyError:
                 continue
+
+            now = time.time()
+
             # TPV, GST, ATT messages (and others) are emitted as separate
             # json sentences, but they are usually correlated (ATT is
             # explicitly documented to be "synchronous to the GNSS epoch".
@@ -399,11 +544,19 @@ class GNSS:
             if msg_class in ["tpv", "att", "gst"]:
                 # Only store those messages we need
                 self._current_epoch[msg_class] = {
-                    "timestamp": time.time(),
+                    "timestamp": now,
                     "msg": msg,
                 }
             if msg_class == "tpv":
                 self._full_epoch = self._current_epoch
                 self._current_epoch = {}
+                # Request the list of devices every once in a while
+                if now - self._time_last_dev >= 10:
+                    self._sock_fd.write("?DEVICES;\n".encode())
+                    self._sock_fd.flush()
+                    self._time_last_dev = now
+
+            if msg_class == "devices":
+                self._devices = msg["devices"]
 
         self._disconnect()

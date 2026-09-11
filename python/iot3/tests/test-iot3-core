@@ -12,13 +12,6 @@ def recv(data, topic, payload):
 print("IoT3 Core SDK with MQTT and OTLP")
 
 config = iot3.core.sample_config
-config["mqtt"] = {
-    "host": "test.mosquitto.org",
-    "port": 1883,
-    "client-id": random.randbytes(16).hex(),
-    "username": None,
-    "password": None,
-}
 
 topic = "test/" + random.randbytes(16).hex() + "/iot3"
 
