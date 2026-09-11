@@ -9,8 +9,9 @@
  * Authors: see CONTRIBUTORS.md
  */
 use serde::Serialize;
+use serde_json::Value;
 use std::fmt::Debug;
 
 pub trait Payload: Clone + Debug + PartialEq + Serialize {}
 
-impl Payload for String {}
+impl Payload for Value {}
