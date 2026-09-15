@@ -247,7 +247,15 @@ class GNSS:
         *,
         max_age: Optional[float] = None,
     ) -> GNSSReport | None:
-        """Returns a GNSSReport() object with the last valid measurement, None otherwise.
+        """Returns a GNSSReport() object with the last valid measurement
+
+        If no measurement was done, or if the last epoch is older than
+        max_age, then None is returned. If either latitude or longitude,
+        or both, are unknown, then None is returned.
+
+        Otherwise, a GNSSReport() object is returned, with the measurements
+        from the latest epoch. At least longitude, and latitude are guaranteed
+        to be set.
 
         :param max_age: The maximum age, in seconds, to consider a measurement valid;
                         overrides the persistence from the constructor.
