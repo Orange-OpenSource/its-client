@@ -133,7 +133,7 @@
                   "required": [
                     "mcm_generic_current_state_container",
                     "vehicle_current_state_container",
-                    "submaneuvres"
+                    "submanoeuvres"
                   ],
                   "properties": {
                     "mcm_generic_current_state_container": {
@@ -152,7 +152,7 @@
                         },
                         "manoeuvre_id": {
                           "type": "integer",
-                          "description": "MCS session ID (its-s ID provided in header and integer modulo 256)",
+                          "description": "MCS session ID (ITS-S ID provided in header and integer modulo 256)",
                           "minimum": 0,
                           "maximum": 255
                         },
@@ -179,7 +179,7 @@
                           "properties": {
                             "manoeuvre_cooperation_goal": {
                               "type": "integer",
-                              "description": "vehicleInterception(0), roadSafety(1), humanHelth(2), emergencyIntervention(3), roadOperatorIntervention(4), localTrafficManagement(5), globalTrafficManagement(6)",
+                              "description": "vehicleInterception(0), roadSafety(1), humanHealth(2), emergencyIntervention(3), roadOperatorIntervention(4), localTrafficManagement(5), globalTrafficManagement(6)",
                               "minimum": 0,
                               "maximum": 6
                             },
@@ -221,7 +221,7 @@
                           "type": "object",
                           "required": [
                             "vehicle_type",
-                            "vehicle_lenth",
+                            "vehicle_length",
                             "vehicle_width",
                             "vehicle_height"
                           ],
@@ -260,7 +260,7 @@
                                 }
                               }
                             },
-                            "vehicle_lenth": {
+                            "vehicle_length": {
                               "$ref": "#/$defs/vehicle_length"
                             },
                             "vehicle_width": {
@@ -279,13 +279,13 @@
                         }
                       }
                     },
-                    "submaneuvres": {
+                    "submanoeuvres": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "required": [
                           "submanoeuvre_id",
-                          "temporal_charateristics",
+                          "temporal_characteristics",
                           "kinematics_characteristics"
                         ],
                         "properties": {
@@ -301,11 +301,11 @@
                           "reference_trajectory": {
                             "$ref": "#/$defs/trajectory"
                           },
-                          "target_road_resource_i_container": {
+                          "target_road_resource_container": {
                             "$ref": "#/$defs/trr_description",
                             "description": "Type 3 is selected when reference trajectory is used"
                           },
-                          "temporal_charateristics": {
+                          "temporal_characteristics": {
                             "$ref": "#/$defs/temporal_characteristics"
                           },
                           "kinematics_characteristics": {
@@ -527,10 +527,11 @@
         "follow_me",
         "existing_group",
         "temporarily_disband_an_existing_group",
-        "constitute_a_temporarily_group",
-        "disband_a_temporarily_group",
+        "constitute_a_temporary_group",
+        "disband_a_temporary_group",
         "take_tolling_lane"
-      ]
+      ],
+      "$comment": "'existing_group' has no explicit verb, unlike the other values in this enum (e.g. 'join_existing_group' would be expected). This reflects the current ETSI MCM TS 103 561 specification as-is, which is not yet stabilized and may contain such inconsistencies."
     },
     "current_state_advised_change": {
       "type": "string",
@@ -543,7 +544,7 @@
         "stop",
         "reset_stop",
         "reset_stay_in_lane",
-        "stay_away_of_vehicle_sith_station_id",
+        "stay_away_of_vehicle_with_station_id",
         "reset_stay_away_of_vehicle",
         "follow_me_with_min_time_inter_distance",
         "join_group"
@@ -574,7 +575,7 @@
       "required": [
         "executant_id",
         "current_state_advised_change",
-        "submaneuvres"
+        "submanoeuvres"
       ],
       "properties": {
         "executant_id": {
@@ -586,7 +587,7 @@
         "current_state_advised_change": {
           "$ref": "#/$defs/current_state_advised_change"
         },
-        "submaneuvres": {
+        "submanoeuvres": {
           "type": "array",
           "items": {
             "type": "object",
@@ -636,13 +637,13 @@
         },
         "lane_count": {
           "type": "integer",
-          "description": "Number of adjacent lanes covered by the TRR surface from the starting lane number with a relavive position for each one",
+          "description": "Number of adjacent lanes covered by the TRR surface from the starting lane number with a relative position for each one",
           "minimum": 0,
           "maximum": 31
         },
         "starting_lane_number": {
           "type": "integer",
-          "description": ": identification of the lane in which the executant vehicle starts the submanoeuvre",
+          "description": "Identification of the lane in which the executant vehicle starts the submanoeuvre",
           "minimum": 0,
           "maximum": 31
         },
@@ -687,13 +688,13 @@
       "properties": {
         "trr_occupancy_start_time": {
           "type": "integer",
-          "description": "LSB unit 1 millisecond: Delta time since the TimesStampIts",
+          "description": "LSB unit 1 millisecond: Delta time since the TimestampIts",
           "minimum": 0,
           "maximum": 65535
         },
         "trr_occupancy_end_time": {
           "type": "integer",
-          "description": "LSB unit 1 millisecond: Delta time since the TimesStampIts",
+          "description": "LSB unit 1 millisecond: Delta time since the TimestampIts",
           "minimum": 0,
           "maximum": 65535
         }
@@ -720,40 +721,34 @@
     "manoeuvre_response": {
       "type": "string",
       "enum": [
-        "offer_acceptation",
+        "offer_accept",
         "offer_decline",
-        "request_acceptation",
+        "request_accept",
         "request_decline"
       ],
       "$comment": "This CHOICE has data-carrying variant(s) 'request_decline' that would appear as optional sibling fields in a parent SEQUENCE if this type were used."
     },
     "rllc": {
-      "type": "object",
-      "required": [
-        "current_lane"
-      ],
-      "properties": {
-        "current_lane": {
-          "type": "boolean",
-          "description": "currentLane bit."
-        }
+      "description": "RLLC (Required Left Lanes Count): per-lane-offset flags indicating which lanes to the left of the current lane are required by the manoeuvre. Index 0 corresponds to the named bit 'currentLane'; indices 1-7 are reserved/undefined in the current version of the specification.",
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {
+        "type": "boolean"
       }
     },
     "rrlc": {
-      "type": "object",
-      "required": [
-        "current_lane"
-      ],
-      "properties": {
-        "current_lane": {
-          "type": "boolean",
-          "description": "currentLane bit."
-        }
+      "description": "RRLC (Required Right Lanes Count): per-lane-offset flags indicating which lanes to the right of the current lane are required by the manoeuvre. Index 0 corresponds to the named bit 'currentLane'; indices 1-7 are reserved/undefined in the current version of the specification.",
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {
+        "type": "boolean"
       }
     },
     "request_decline_reason": {
       "type": "integer",
-      "description": "agreementSeekingUnknown(0), allUnableToConform(1), agreementSeekingUnwanted(2), allUnableToUnderstand(3), allErroneousBehaviourDetected(4), allMissbehaviourDetected(5)",
+      "description": "agreementSeekingUnknown(0), allUnableToConform(1), agreementSeekingUnwanted(2), allUnableToUnderstand(3), allErroneousBehaviourDetected(4), allMisbehaviourDetected(5)",
       "minimum": 0,
       "maximum": 5,
       "default": 0
