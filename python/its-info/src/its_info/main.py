@@ -13,6 +13,7 @@ import os
 import paho.mqtt.client
 import sys
 import time
+import warnings
 from its_quadkeys import QuadZone
 
 
@@ -89,7 +90,19 @@ class MQTTInfoClient:
             if key not in self.cfg[section]:
                 self.cfg[section][key] = default
 
-        _set_default("mqtt", "client_id", self.cfg["general"]["instance_id"])
+        if "station-uuid" not in self.cfg["general"]:
+            # Try with the legacy instance_id
+            try:
+                self.cfg["general"]["station-uuid"] = self.cfg["general"]["instance_id"]
+            except KeyError:
+                raise KeyError(
+                    f"{args.config}: station-uuid missing in [general]",
+                ) from None
+            warnings.warn(
+                f"{args.config}: using legacy instance_id; swith to station-uuid instead.",
+            )
+
+        _set_default("mqtt", "client_id", self.cfg["general"]["station-uuid"])
         for s in MQTTInfoClient.DEFAULTS:
             if s not in self.cfg:
                 self.cfg[s] = {}
@@ -179,7 +192,7 @@ class MQTTInfoClient:
         data = {
             "type": "broker",
             "version": "1.2.0",
-            "instance_id": self.cfg["general"]["instance_id"],
+            "station_uuid": self.cfg["general"]["station-uuid"],
             "instance_type": self.cfg["general"]["instance_type"],
             "running": True,
             "timestamp": int(1000 * time.time()),

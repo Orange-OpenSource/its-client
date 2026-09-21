@@ -22,9 +22,11 @@ class CooperativeAwarenessMessage(etsi.Message):
         *,
         uuid: str,
         station_type: Optional[
-            etsi.Message.StationType
-        ] = etsi.Message.StationType.unknown,
+            etsi.Message.TrafficParticipantType
+        ] = etsi.Message.TrafficParticipantType.unknown,
         gnss_report: GNSSReport,
+        length: float | None = None,
+        width: float | None = None,
     ):
         """Create a basic Cooperative Awareness Message
 
@@ -77,10 +79,22 @@ class CooperativeAwarenessMessage(etsi.Message):
                             },
                             "drive_direction": 2,
                             "vehicle_length": {
-                                "value": 1023,
+                                "value": etsi.ETSI.si2etsi(
+                                    length,
+                                    etsi.ETSI.DECI_METER,
+                                    1023,
+                                    {"min": 1, "max": 1021},
+                                    1022,
+                                ),
                                 "confidence": 4,
                             },
-                            "vehicle_width": 62,
+                            "vehicle_width": etsi.ETSI.si2etsi(
+                                width,
+                                etsi.ETSI.DECI_METER,
+                                62,
+                                {"min": 1, "max": 60},
+                                61,
+                            ),
                             "longitudinal_acceleration": {
                                 "value": etsi.ETSI.si2etsi(
                                     gnss_report.acceleration,
@@ -162,6 +176,52 @@ class CooperativeAwarenessMessage(etsi.Message):
             altitude,
             etsi.ETSI.CENTI_METER,
             800001,
+        )
+
+    @property
+    def length(self):
+        return etsi.ETCI.etsi2si(
+            self._message["message"]["high_frequency_container"][
+                "basic_vehicle_container_high_frequency"
+            ]["vehicle_length"]["value"],
+            etsi.ETSI.DECI_METER,
+            1023,
+            1022,
+        )
+
+    @length.setter
+    def length(self, length):
+        self._message["message"]["high_frequency_container"][
+            "basic_vehicle_container_high_frequency"
+        ]["vehicle_length"]["value"] = etsi.ETSI.si2etsi(
+            length,
+            etsi.ETSI.DECI_METER,
+            1023,
+            {"min": 1, "max": 1021},
+            1022,
+        )
+
+    @property
+    def width(self):
+        return etsi.ETCI.etsi2si(
+            self._message["message"]["high_frequency_container"][
+                "basic_vehicle_container_high_frequency"
+            ]["width"],
+            etsi.ETSI.DECI_METER,
+            62,
+            61,
+        )
+
+    @width.setter
+    def width(self, width):
+        self._message["message"]["high_frequency_container"][
+            "basic_vehicle_container_high_frequency"
+        ]["width"] = etsi.ETSI.si2etsi(
+            width,
+            etsi.ETSI.DECI_METER,
+            62,
+            {"min": 1, "max": 60},
+            61,
         )
 
 

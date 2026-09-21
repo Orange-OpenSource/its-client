@@ -9,6 +9,7 @@ import enum
 import hashlib
 import its_quadkeys
 import json
+import warnings
 from typing import Optional
 from . import leapseconds
 from .gnss import GNSSReport
@@ -196,7 +197,7 @@ class ETSI(abc.ABC):
                 tzinfo=None
             )
         ).timestamp()
-        return ETSI.si2etsi(tai_time - ETSI.EPOCH, ETSI.MILLI_SECOND, 0)
+        return ETSI.si2etsi(tai_time - ETSI.EPOCH, ETSI.MILLI_SECOND)
 
     @staticmethod
     def etsi2unix_time(
@@ -219,7 +220,7 @@ class ETSI(abc.ABC):
         >>> datetime.datetime.utcfromtimestamp(etsi2unix_time(94694401000))
         datetime.datetime(2007, 1, 1, 0, 0)
         """
-        tai_time = ETSI.etsi2si(etsi_time, ETSI.MILLI_SECOND, 0) + ETSI.EPOCH
+        tai_time = ETSI.etsi2si(etsi_time, ETSI.MILLI_SECOND) + ETSI.EPOCH
         return leapseconds.tai_to_utc(
             datetime.datetime.fromtimestamp(tai_time, datetime.timezone.utc).replace(
                 tzinfo=None
@@ -273,10 +274,41 @@ class Message(abc.ABC):
 
     @staticmethod
     def station_id(uuid: str) -> int:
-        return int(
-            hashlib.sha256(uuid.encode()).hexdigest()[:6],
-            16,
-        )
+        """Extract the station ID from a station UUID
+
+        Station UUID is a three-part, underscore-separated identifier:
+          * company name, usualy a trigram, e.g. 'ora' (for Orange)
+          * participant role, e.g. 'car', trailer'...
+          * station ID, e.g. '12345678' (an 32-bit unsigned integer in base 10)
+        which would give the station_UUID: 'ora_car_12345678'.
+
+        Note: for legacy backward compatibility, if the station ID part
+        is not reecognised as a base-10 number, then a base-16 conversion
+        is attempted; if that worked, a warning is emitted. Support for
+        legacy hexadecimal station-ID will be removed in the future.
+        """
+        parts = uuid.split("_")
+        if len(parts) < 3:
+            raise ValueError(f"{uuid}: invalid UUID (expected company_role_id)")
+
+        try:
+            return int(parts[2])
+        except ValueError as v_error:
+            base10_error = v_error
+
+        try:
+            station_id = int(parts[2], base=16)
+        except ValueError:
+            raise base10_error from None
+        else:
+            # stacklevel 1 is here, 2 is our caller (usually in iot3 itself),
+            # 3 is the caller of our caller (usually the actual application).
+            warnings.warn(
+                f"use of hexadecimal ({parts[2]}) in station-UUID is deprecated, convert to the base-10 value ({station_id})",
+                stacklevel=3,
+            )
+
+        return station_id
 
     @property
     def timestamp(self):
@@ -407,7 +439,7 @@ class Message(abc.ABC):
         gnss_report: GNSSReport,
     ) -> int:
         """Return the altitude confidence value."""
-        if gnss_report.altitude_error is None:
+        if gnss_report.altitude is None or gnss_report.altitude_error is None:
             return 15
         steps = [1, 2, 5]
         for confidence in range(14):

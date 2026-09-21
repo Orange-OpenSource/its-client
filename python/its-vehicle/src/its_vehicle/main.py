@@ -11,13 +11,14 @@ import logging
 import os
 import signal
 import sys
+import warnings
 from . import client
 from iot3.mobility.gnss import GNSS
 
 CFG = "/etc/its/vehicle.cfg"
 DEFAULTS = {
     "general": {
-        "instance-id": None,
+        "station-uuid": None,
         "report-freq": None,
         "mirror-self": False,
     },
@@ -71,9 +72,7 @@ def main():
     # Make the config a dict() rather than a ConfigParser(), so that
     # we can store None in there.
     cfg = {
-        s: {k: cfg_parsed[s][k] for k in cfg_parsed[s]}
-        for s in cfg_parsed
-        if s != "DEFAULT"
+        s: {k: cfg_parsed[s][k] for k in cfg_parsed[s]} for s in cfg_parsed.sections()
     }
     # Special case: handle 'tls' specially, as it needs to be a bool but
     # ConfigParser() does not convert types automatically, and interpreting
@@ -84,6 +83,21 @@ def main():
         fallback=None,
     )
 
+    # The station-uuid is required. Even if specific to the 'client'
+    # part, we check it here because it is so central.
+    if cfg["general"]["station-uuid"] is None:
+        # Try the legacy instance-id, to avoid breaking everyone:
+        try:
+            cfg["general"]["station-uuid"] = cfg["general"]["iinstance-id"]
+        except KeyError:
+            raise RuntimeError(
+                "configuration key general.station-uuid is required",
+            ) from None
+
+        warnings.warn(
+            f"{args.config}: using legacy instance-id; switch to station-uuid instead."
+        )
+
     def _set_default(section, key, default):
         if section not in cfg:
             cfg[section] = dict()
@@ -93,13 +107,8 @@ def main():
     for s in DEFAULTS:
         for k in DEFAULTS[s]:
             _set_default(s, k, DEFAULTS[s][k])
-    _set_default("broker.main", "client-id", cfg["general"]["instance-id"])
-    _set_default("broker.mirror", "client-id", cfg["general"]["instance-id"])
-
-    # The instance-id is required. Even if specific to the 'client'
-    # part, we check it here because it is so central.
-    if cfg["general"]["instance-id"] is None:
-        raise RuntimeError("configuration key general.instace-id is required")
+    _set_default("broker.main", "client-id", cfg["general"]["station-uuid"])
+    _set_default("broker.mirror", "client-id", cfg["broker.main"]["client-id"])
 
     logging.basicConfig(
         stream=sys.stderr,
@@ -113,7 +122,7 @@ def main():
         otel = iot3.core.otel.Otel(
             service_name="its-vehicle",
             endpoint=cfg["telemetry"]["endpoint"],
-            service_id=cfg["general"]["instance-id"],
+            service_id=cfg["general"]["station-uuid"],
             auth=iot3.core.otel.Auth(cfg["telemetry"]["authentication"]),
             username=cfg["telemetry"]["username"],
             password=cfg["telemetry"]["password"],

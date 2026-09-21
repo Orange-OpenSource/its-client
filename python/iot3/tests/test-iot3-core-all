@@ -22,7 +22,7 @@ o.start()
 
 c = iot3.core.mqtt.MqttClient(
     client_id=client_id,
-    host="test.mosquitto.org",
+    host="localhost",
     port=1883,
     span_ctxmgr_cb=o.span,
     msg_cb=recv,
