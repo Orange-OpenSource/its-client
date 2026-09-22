@@ -106,13 +106,7 @@ public class RoadUser {
 
     private void computeFootprint() {
         if(length != null && width != null) {
-            LatLng frontCenter = Utils.pointFromPosition(position, heading, length / 2);
-            LatLng frontLeft = Utils.pointFromPosition(frontCenter, (heading - 90 + 360) % 360, width / 2);
-            LatLng frontRight = Utils.pointFromPosition(frontCenter, (heading + 90 + 360) % 360, width / 2);
-            LatLng rearCenter = Utils.pointFromPosition(position, (heading + 180 + 360) % 360, length / 2);
-            LatLng rearLeft = Utils.pointFromPosition(rearCenter, (heading - 90 + 360) % 360, width / 2);
-            LatLng rearRight = Utils.pointFromPosition(rearCenter, (heading + 90 + 360) % 360, width / 2);
-            footprint = List.of(frontLeft, frontRight, rearRight, rearLeft);
+            footprint = Utils.computeFootprint(position, heading, length, width);
         }
     }
 

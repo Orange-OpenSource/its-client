@@ -120,13 +120,7 @@ public class SensorObject {
 
     private void computeFootprint() {
         if(length != null && width != null && orientation != null) {
-            LatLng frontCenter = Utils.pointFromPosition(position, orientation, length / 2);
-            LatLng frontLeft = Utils.pointFromPosition(frontCenter, (orientation - 90 + 360) % 360, width / 2);
-            LatLng frontRight = Utils.pointFromPosition(frontCenter, (orientation + 90 + 360) % 360, width / 2);
-            LatLng rearCenter = Utils.pointFromPosition(position, (orientation + 180 + 360) % 360, length / 2);
-            LatLng rearLeft = Utils.pointFromPosition(rearCenter, (orientation - 90 + 360) % 360, width / 2);
-            LatLng rearRight = Utils.pointFromPosition(rearCenter, (orientation + 90 + 360) % 360, width / 2);
-            footprint = List.of(frontLeft, frontRight, rearRight, rearLeft);
+            footprint = Utils.computeFootprint(position, orientation, length, width);
         }
     }
 
