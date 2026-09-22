@@ -52,6 +52,21 @@ pub struct GeoTopic {
 }
 
 impl GeoTopic {
+    pub fn cam(
+        configuration: &GeoConfiguration,
+        component_name: &str,
+        geo_extension: &Quadkey,
+    ) -> Self {
+        Self {
+            prefix: String::from(&configuration.prefix),
+            queue: Queue::In,
+            suffix: String::from(&configuration.suffix),
+            message_type: MessageType::CAM,
+            uuid: component_name.to_string(),
+            geo_extension: Quadkey::from(geo_extension),
+        }
+    }
+
     pub fn denm(
         configuration: &GeoConfiguration,
         component_name: &str,
