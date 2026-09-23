@@ -9,8 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 use log::{error, info};
-use rumqttc::v5::MqttOptions;
-use rumqttc::{TlsConfiguration, Transport};
+use rumqttc::{MqttOptions, TlsConfiguration, Transport};
 use std::fs::File;
 use std::io;
 use std::io::Read;
@@ -100,7 +99,7 @@ fn tls_from_client_auth(
     client_key_file.read_to_end(&mut client_key)?;
 
     if use_websocket {
-        Ok(Transport::wss(ca, Some((client_key, client_cert)), None))
+        Ok(Transport::wss(ca, Some((client_cert, client_key)), None))
     } else {
         Ok(Transport::tls(ca, Some((client_cert, client_key)), None))
     }

@@ -14,7 +14,7 @@ use crate::client::configuration::configuration_error::ConfigurationError::NoPas
 use crate::client::configuration::{get_mandatory_from_properties, get_optional_from_properties};
 use crate::transport::mqtt::configure_transport;
 use ini::Properties;
-use rumqttc::v5::MqttOptions;
+use rumqttc::MqttOptions;
 use std::ops::Deref;
 
 /// Represents the MQTT configuration.
@@ -26,7 +26,7 @@ pub struct MqttConfiguration {
 impl Default for MqttConfiguration {
     fn default() -> Self {
         Self {
-            mqtt_options: MqttOptions::new("default_client", "localhost", 1883),
+            mqtt_options: MqttOptions::new("default_client", ("localhost", 1883)),
         }
     }
 }
@@ -44,11 +44,15 @@ impl TryFrom<&Properties> for MqttConfiguration {
     ///
     /// A result containing the `MqttConfiguration` or an error.
     fn try_from(properties: &Properties) -> Result<Self, Self::Error> {
+        let host = get_mandatory_from_properties::<String>("host", properties)?;
+        let port = get_mandatory_from_properties::<u16>("port", properties)?;
         let mut mqtt_options = MqttOptions::new(
             get_mandatory_from_properties::<String>("client_id", properties)?,
-            get_mandatory_from_properties::<String>("host", properties)?,
-            get_mandatory_from_properties::<u16>("port", properties)?,
+            (host, port),
         );
+        let max_packet_size =
+            get_optional_from_properties::<u32>("max_packet_size", properties)?.unwrap_or(10_000);
+        mqtt_options.set_max_packet_size(Some(max_packet_size));
 
         if let Ok(Some(username)) = get_optional_from_properties::<String>("username", properties) {
             if let Ok(Some(password)) =
@@ -62,7 +66,7 @@ impl TryFrom<&Properties> for MqttConfiguration {
         if let Ok(Some(connection_timeout)) =
             get_optional_from_properties::<u64>("connection_timeout", properties)
         {
-            mqtt_options.set_connection_timeout(connection_timeout);
+            mqtt_options.set_connect_timeout(std::time::Duration::from_secs(connection_timeout));
         }
 
         let use_tls = get_optional_from_properties::<bool>("use_tls", properties)
@@ -87,7 +91,6 @@ impl TryFrom<&Properties> for MqttConfiguration {
             cert_file,
             key_file,
         );
-
         Ok(Self { mqtt_options })
     }
 }
@@ -108,47 +111,8 @@ impl Deref for MqttConfiguration {
 impl MqttConfiguration {
     #[cfg(feature = "identity")]
     pub(crate) fn suffix_client_id(&mut self, suffix: &str) {
-        let old_mqtt_options = &self.mqtt_options.clone();
-        let suffixed_id = format!("{}-{}", old_mqtt_options.client_id(), suffix);
-        let mut mqtt_options = MqttOptions::new(
-            suffixed_id,
-            old_mqtt_options.broker_address().0,
-            old_mqtt_options.broker_address().1,
-        );
-
-        match old_mqtt_options.credentials() {
-            Some(credentials) => {
-                mqtt_options.set_credentials(credentials.username, credentials.password);
-            }
-            None => {}
-        }
-        mqtt_options.set_connection_timeout(old_mqtt_options.connection_timeout());
-        mqtt_options.set_keep_alive(old_mqtt_options.keep_alive());
-        mqtt_options.set_clean_start(old_mqtt_options.clean_start());
-        mqtt_options.set_transport(old_mqtt_options.transport());
-        mqtt_options.set_request_channel_capacity(old_mqtt_options.request_channel_capacity());
-        mqtt_options.set_pending_throttle(old_mqtt_options.pending_throttle());
-        mqtt_options.set_manual_acks(old_mqtt_options.manual_acks());
-        mqtt_options.set_network_options(old_mqtt_options.network_options());
-        mqtt_options.set_receive_maximum(old_mqtt_options.receive_maximum());
-        mqtt_options.set_max_packet_size(old_mqtt_options.max_packet_size());
-        mqtt_options.set_topic_alias_max(old_mqtt_options.topic_alias_max());
-        mqtt_options.set_request_response_info(old_mqtt_options.request_response_info());
-        mqtt_options.set_request_problem_info(old_mqtt_options.request_problem_info());
-        mqtt_options.set_user_properties(old_mqtt_options.user_properties());
-        mqtt_options.set_authentication_method(old_mqtt_options.authentication_method());
-        mqtt_options.set_authentication_data(old_mqtt_options.authentication_data());
-        if let Some(connect_properties) = old_mqtt_options.connect_properties() {
-            mqtt_options.set_connect_properties(connect_properties);
-        }
-        if let Some(upper_limit) = old_mqtt_options.get_outgoing_inflight_upper_limit() {
-            mqtt_options.set_outgoing_inflight_upper_limit(upper_limit);
-        }
-
-        if let Some(last_will) = old_mqtt_options.last_will() {
-            mqtt_options.set_last_will(last_will);
-        }
-
+        let mut mqtt_options = self.mqtt_options.clone();
+        mqtt_options.set_client_id(format!("{}-{}", mqtt_options.client_id(), suffix));
         self.mqtt_options = mqtt_options;
     }
 }
@@ -181,8 +145,8 @@ mod tests {
         assert_eq!(
             format!(
                 "{}:{}",
-                config.mqtt_options.broker_address().0,
-                config.mqtt_options.broker_address().1
+                config.mqtt_options.broker().tcp_address().unwrap().0,
+                config.mqtt_options.broker().tcp_address().unwrap().1
             ),
             "localhost:1883"
         );
@@ -203,11 +167,11 @@ mod tests {
         properties.insert("password", "pass".to_string());
         let config = MqttConfiguration::try_from(&properties).unwrap();
         assert_eq!(
-            config
-                .mqtt_options
-                .credentials()
-                .map(|c| (c.username, c.password)),
-            Some(("user".to_string(), "pass".to_string()))
+            config.mqtt_options.auth(),
+            &rumqttc::ConnectAuth::UsernamePassword {
+                username: "user".to_string(),
+                password: "pass".to_string().into(),
+            }
         );
     }
 
@@ -274,30 +238,34 @@ mod tests {
         properties.insert("username", "user".to_string());
         properties.insert("password", "pass".to_string());
         let mut config = MqttConfiguration::try_from(&properties).unwrap();
+        config.mqtt_options.set_keep_alive(60);
+        config.mqtt_options.set_clean_start(false);
         config
             .mqtt_options
-            .set_keep_alive(std::time::Duration::from_secs(60));
-        config.mqtt_options.set_clean_start(false);
-        config.mqtt_options.set_connection_timeout(17);
+            .set_connect_timeout(std::time::Duration::from_secs(17));
         config.mqtt_options.set_request_channel_capacity(11);
         config
             .mqtt_options
             .set_pending_throttle(std::time::Duration::from_millis(123));
-        config.mqtt_options.set_manual_acks(true);
+        config.mqtt_options.set_ack_mode(rumqttc::AckMode::Manual);
         config.mqtt_options.set_receive_maximum(Some(7));
         config.mqtt_options.set_max_packet_size(Some(4096));
         config.mqtt_options.set_topic_alias_max(Some(9));
         config.mqtt_options.set_request_response_info(Some(128));
         config.mqtt_options.set_request_problem_info(None);
         let initial_client_id = config.mqtt_options.client_id();
-        let initial_broker_address = config.mqtt_options.broker_address();
-        let initial_credentials = config.mqtt_options.credentials();
+        let initial_broker_address = config
+            .mqtt_options
+            .broker()
+            .tcp_address()
+            .map(|(host, port)| (host.to_string(), port));
+        let initial_auth = config.mqtt_options.auth().clone();
         let initial_keep_alive = config.mqtt_options.keep_alive();
         let initial_clean_start = config.mqtt_options.clean_start();
-        let initial_connection_timeout = config.mqtt_options.connection_timeout();
+        let initial_connect_timeout = config.mqtt_options.connect_timeout();
         let initial_request_channel_capacity = config.mqtt_options.request_channel_capacity();
         let initial_pending_throttle = config.mqtt_options.pending_throttle();
-        let initial_manual_acks = config.mqtt_options.manual_acks();
+        let initial_ack_mode = config.mqtt_options.ack_mode();
         let initial_receive_maximum = config.mqtt_options.receive_maximum();
         let initial_max_packet_size = config.mqtt_options.max_packet_size();
         let initial_topic_alias_max = config.mqtt_options.topic_alias_max();
@@ -311,13 +279,20 @@ mod tests {
             config.mqtt_options.client_id(),
             format!("{}-{}", initial_client_id, "suffix")
         );
-        assert_eq!(config.mqtt_options.broker_address(), initial_broker_address);
-        assert_eq!(config.mqtt_options.credentials(), initial_credentials);
+        assert_eq!(
+            config
+                .mqtt_options
+                .broker()
+                .tcp_address()
+                .map(|(host, port)| (host.to_string(), port)),
+            initial_broker_address
+        );
+        assert_eq!(config.mqtt_options.auth(), &initial_auth);
         assert_eq!(config.mqtt_options.keep_alive(), initial_keep_alive);
         assert_eq!(config.mqtt_options.clean_start(), initial_clean_start);
         assert_eq!(
-            config.mqtt_options.connection_timeout(),
-            initial_connection_timeout
+            config.mqtt_options.connect_timeout(),
+            initial_connect_timeout
         );
         assert_eq!(
             config.mqtt_options.request_channel_capacity(),
@@ -327,7 +302,7 @@ mod tests {
             config.mqtt_options.pending_throttle(),
             initial_pending_throttle
         );
-        assert_eq!(config.mqtt_options.manual_acks(), initial_manual_acks);
+        assert_eq!(config.mqtt_options.ack_mode(), initial_ack_mode);
         assert_eq!(
             config.mqtt_options.receive_maximum(),
             initial_receive_maximum
