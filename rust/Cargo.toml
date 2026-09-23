@@ -9,7 +9,7 @@
 
 [package]
 name = "libits-client"
-version = "3.2.0"
+version = "3.2.1"
 authors = ["Frédéric Gardes <frederic.gardes@orange.com>", "Nicolas Buffon <nicolas.buffon@orange.com>"]
 license = "MIT"
 description = "library to connect on an ITS MQTT server"
@@ -98,21 +98,21 @@ version = "0.33.1"
 optional = true
 
 [dependencies.opentelemetry]
-version = "0.32.0"
+version = "0.33.0"
 optional = true
 
 [dependencies.opentelemetry-http]
-version = "0.32.0"
+version = "0.33.0"
 features = ["reqwest"]
 optional = true
 
 [dependencies.opentelemetry-otlp]
-version = "0.32.0"
+version = "0.33.0"
 features = ["trace", "http-proto", "reqwest-blocking-client"]
 optional = true
 
 [dependencies.opentelemetry_sdk]
-version = "0.32.1"
+version = "0.33.0"
 features = ["trace", "rt-tokio"]
 optional = true
 
@@ -121,7 +121,7 @@ version = "0.25.1"
 features = ["websocket"]
 
 [dependencies.reqwest]
-version = "0.13.4"
+version = "0.13.5"
 features = ["json", "blocking"]
 
 [dependencies.serde]
