@@ -26,7 +26,7 @@ use libits::transport::packet::Packet;
 #[cfg(feature = "telemetry")]
 use libits::transport::telemetry::init_tracer;
 use log::{debug, error, info, trace};
-use rumqttc::v5::mqttbytes::v5::{Publish, PublishProperties};
+use rumqttc::{Publish, PublishProperties};
 use serde_json::Value;
 use std::any::Any;
 use std::fs::{File, OpenOptions, create_dir_all};
@@ -112,7 +112,12 @@ async fn main() {
     info!(
         "Exporter mqtt {}",
         if let Some(mqtt_exporter) = &exporter.mqtt {
-            let (host, port) = mqtt_exporter.configuration.mqtt_options.broker_address();
+            let (host, port) = mqtt_exporter
+                .configuration
+                .mqtt_options
+                .broker()
+                .tcp_address()
+                .unwrap_or(("", 0));
             format!("activated on {host}:{port}")
         } else {
             "deactivated".to_string()
@@ -140,8 +145,20 @@ async fn main() {
             // Initialise MQTT client and event loop for publishing (outside the loop)
             debug!(
                 "Connecting for publish to {}:{}",
-                &configuration.configuration.mqtt_options.broker_address().0,
-                &configuration.configuration.mqtt_options.broker_address().1
+                &configuration
+                    .configuration
+                    .mqtt_options
+                    .broker()
+                    .tcp_address()
+                    .unwrap()
+                    .0,
+                &configuration
+                    .configuration
+                    .mqtt_options
+                    .broker()
+                    .tcp_address()
+                    .unwrap()
+                    .1
             );
             let (client, mut event_loop) =
                 MqttClient::new(&configuration.configuration.mqtt_options);
@@ -551,7 +568,7 @@ mod tests {
     };
     use libits::client::configuration::Configuration;
     use rumqttc::Transport;
-    use rumqttc::v5::mqttbytes::v5::{Publish, PublishProperties};
+    use rumqttc::{Publish, PublishProperties};
 
     #[test]
     fn str_route_valid_utf8_payload() {
@@ -737,30 +754,31 @@ mod tests {
         assert!(exporter_config.mqtt.is_some());
         let mqtt_exporter = exporter_config.mqtt.unwrap();
         assert_eq!(
-            mqtt_exporter.configuration.mqtt_options.broker_address(),
-            ("localhost".to_string(), 1883)
+            mqtt_exporter
+                .configuration
+                .mqtt_options
+                .broker()
+                .tcp_address(),
+            Some(("localhost", 1883))
         );
         assert_eq!(
             mqtt_exporter.configuration.mqtt_options.client_id(),
             "collector_client"
         );
         assert_eq!(
-            mqtt_exporter.configuration.mqtt_options.credentials(),
-            Some(rumqttc::v5::mqttbytes::v5::Login::new(
-                "user".to_string(),
-                "pwd".to_string(),
-            ))
+            mqtt_exporter.configuration.mqtt_options.auth(),
+            &rumqttc::ConnectAuth::UsernamePassword {
+                username: "user".to_string(),
+                password: "pwd".to_string().into(),
+            }
         );
         assert!(matches!(
             mqtt_exporter.configuration.mqtt_options.transport(),
             Transport::Wss(_)
         ));
         assert_eq!(
-            mqtt_exporter
-                .configuration
-                .mqtt_options
-                .connection_timeout(),
-            10
+            mqtt_exporter.configuration.mqtt_options.connect_timeout(),
+            std::time::Duration::from_secs(10)
         );
         assert_eq!(
             mqtt_exporter.topic_level_update_list,

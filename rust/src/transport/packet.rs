@@ -11,7 +11,7 @@
 #[cfg(feature = "telemetry")]
 use opentelemetry::propagation::{Extractor, Injector};
 
-use rumqttc::v5::mqttbytes::v5::PublishProperties;
+use rumqttc::PublishProperties;
 use std::fmt::Debug;
 
 use crate::transport::mqtt::topic::Topic;
