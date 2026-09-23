@@ -292,6 +292,8 @@ use_websocket = false
 client_id = com_app_its-exporter-1
 # optional, connection timeout
 #connection_timeout = 60
+# optional, maximum MQTT packet size in bytes (incoming and outgoing), default to 10000
+#max_packet_size = 262144
 # optional, ACL username
 #username = username
 # optional, ACL password
