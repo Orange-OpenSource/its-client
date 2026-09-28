@@ -9,6 +9,13 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+#[cfg(not(feature = "mobility"))]
+compile_error!(
+    "the display_server example requires the `mobility` feature.\n\
+     Build it with: cargo run --example display_server --features mobility\n\
+     (declared as required-features in Cargo.toml)"
+);
+
 #[path = "../database.rs"]
 mod database;
 mod server;
