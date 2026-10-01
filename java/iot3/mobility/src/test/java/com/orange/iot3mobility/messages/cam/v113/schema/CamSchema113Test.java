@@ -26,8 +26,11 @@ import com.orange.iot3mobility.messages.cam.v113.model.PositionConfidenceEllipse
 import com.orange.iot3mobility.messages.cam.v113.model.ReferencePosition;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class CamSchema113Test {
 
@@ -61,6 +64,57 @@ class CamSchema113Test {
         codec.write(CamVersion.V1_1_3, envelope, out);
 
         SchemaTestUtils.assertConformsToSchema(SCHEMA, out.toByteArray());
+    }
+
+    @Test
+    void read_pathPositionWithoutSubFields_leavesFieldsNull() throws Exception {
+        CamEnvelope113 original = envelopeWithEmptyPathPosition();
+
+        CamCodec codec = new CamCodec(new JsonFactory());
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        codec.write(CamVersion.V1_1_3, original, out);
+
+        // the writer omits null sub-fields, so path_position is serialized as {}
+        SchemaTestUtils.assertConformsToSchema(SCHEMA, out.toByteArray());
+
+        CamCodec.CamFrame<?> frame = codec.read(new ByteArrayInputStream(out.toByteArray()));
+
+        assertEquals(CamVersion.V1_1_3, frame.version());
+        CamEnvelope113 envelope = (CamEnvelope113) frame.envelope();
+        PathPoint pathPoint = envelope.message().lowFrequencyContainer().pathHistory().get(0);
+        // omitted sub-fields are left null, consistent with other optional ETSI
+        // fields in the model (e.g. HighFrequencyContainer), rather than being
+        // defaulted to the ETSI "unavailable" sentinel values
+        assertEquals(new DeltaReferencePosition(null, null, null), pathPoint.deltaPosition());
+    }
+
+    private static CamEnvelope113 envelopeWithEmptyPathPosition() {
+        BasicContainer basic = BasicContainer.builder()
+                .stationType(5)
+                .referencePosition(new ReferencePosition(0, 0, 0))
+                .build();
+
+        LowFrequencyContainer low = LowFrequencyContainer.builder()
+                .vehicleRole(0)
+                .exteriorLights("00000000")
+                .pathHistory(List.of(new PathPoint(new DeltaReferencePosition(null, null, null), 1)))
+                .build();
+
+        CamMessage113 message = CamMessage113.builder()
+                .protocolVersion(1)
+                .stationId(42)
+                .generationDeltaTime(1)
+                .basicContainer(basic)
+                .highFrequencyContainer(HighFrequencyContainer.builder().build())
+                .lowFrequencyContainer(low)
+                .build();
+
+        return CamEnvelope113.builder()
+                .origin("self")
+                .sourceUuid("CCU6")
+                .timestamp(1514764800000L)
+                .message(message)
+                .build();
     }
 
     private static CamEnvelope113 minimalEnvelope() {

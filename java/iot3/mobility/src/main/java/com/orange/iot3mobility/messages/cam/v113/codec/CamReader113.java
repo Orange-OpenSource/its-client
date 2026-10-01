@@ -315,6 +315,8 @@ public final class CamReader113 {
 
     private DeltaReferencePosition readDeltaPosition(JsonParser parser) throws IOException {
         expect(parser.getCurrentToken(), JsonToken.START_OBJECT);
+        // sub-fields of path_position are optional: left null if absent, consistent
+        // with other optional ETSI fields (e.g. HighFrequencyContainer.heading)
         Integer lat = null, lon = null, alt = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
@@ -327,10 +329,7 @@ public final class CamReader113 {
                 default -> parser.skipChildren();
             }
         }
-        return new DeltaReferencePosition(
-                requireField(lat, "delta_latitude"),
-                requireField(lon, "delta_longitude"),
-                requireField(alt, "delta_altitude"));
+        return new DeltaReferencePosition(lat, lon, alt);
     }
 
     private static <T> T requireField(T value, String field) {

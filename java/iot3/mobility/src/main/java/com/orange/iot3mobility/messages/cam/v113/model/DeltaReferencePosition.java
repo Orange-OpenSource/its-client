@@ -11,13 +11,13 @@ package com.orange.iot3mobility.messages.cam.v113.model;
  * DeltaReferencePosition v1.1.3
  * <p>
  * Offset position of a detected event point with regards to the previous detected
- * event point {@link ReferencePosition}.
+ * event point {@link ReferencePosition}. All fields are optional.
  *
- * @param deltaLatitude oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10) , unavailable(131072)
+ * @param deltaLatitude oneMicrodegreeNorth (10), oneMicrodegreeSouth (-10), unavailable(131072)
  * @param deltaLongitude oneMicrodegreeEast (10), oneMicrodegreeWest (-10), unavailable(131072)
  * @param deltaAltitude oneCentimeterUp (1), oneCentimeterDown (-1), unavailable(12800)
  */
 public record DeltaReferencePosition(
-        int deltaLatitude,
-        int deltaLongitude,
-        int deltaAltitude) {}
+        Integer deltaLatitude,
+        Integer deltaLongitude,
+        Integer deltaAltitude) {}
