@@ -119,6 +119,16 @@ public class OpenTelemetryClient {
         return span.getSpanContext().getTraceId();
     }
 
+    /**
+     * Forces an immediate export of any spans that are still buffered in the
+     * {@link BatchSpanProcessor}, instead of waiting for the regular scheduled delay.
+     *
+     * <p>Mainly useful for tests that need to assert on exported spans synchronously.
+     */
+    public void forceFlush() {
+        tracerProvider.forceFlush().join(5, java.util.concurrent.TimeUnit.SECONDS);
+    }
+
     public void close() {
         tracerProvider.shutdown();
         GlobalOpenTelemetry.resetForTest();
