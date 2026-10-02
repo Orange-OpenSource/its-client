@@ -33,9 +33,10 @@ import static org.junit.jupiter.api.Assertions.*;
  *   <li>{@code close()} stopping further exports</li>
  * </ul>
  *
- * <p>{@link OpenTelemetryClient} relies on {@code GlobalOpenTelemetry}, a JVM-wide singleton that
- * can only be set once unless reset; every test therefore closes its client in {@code @AfterEach}
- * to reset global state before the next test runs.
+ * <p>{@link OpenTelemetryClient} keeps its propagators/tracer provider as instance state and does
+ * not register anything with {@code GlobalOpenTelemetry}, so multiple instances can safely coexist
+ * in the same JVM; {@code close()} is still called in {@code @AfterEach} to release the background
+ * export resources (threads, HTTP connections) held by each instance.
  */
 @DisplayName("OpenTelemetryClient — OTLP export and span creation")
 class OpenTelemetryClientTest {

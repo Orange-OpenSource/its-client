@@ -20,7 +20,6 @@ import com.hivemq.client.mqtt.mqtt5.message.Mqtt5ReasonCode;
 import com.hivemq.client.mqtt.mqtt5.message.disconnect.Mqtt5DisconnectReasonCode;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 import com.hivemq.client.mqtt.mqtt5.message.unsubscribe.unsuback.Mqtt5UnsubAckReasonCode;
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
@@ -309,7 +308,7 @@ public class MqttClient {
 
                 // Inject the trace context into a map
                 Map<String, String> contextMap = new HashMap<>();
-                GlobalOpenTelemetry.getPropagators().getTextMapPropagator().inject(Context.current().with(span),
+                openTelemetryClient.getPropagators().getTextMapPropagator().inject(Context.current().with(span),
                         contextMap, (carrier, key, value) -> {
                             assert carrier != null;
                             carrier.put(key, value);
@@ -373,7 +372,7 @@ public class MqttClient {
                 }
             };
 
-            Context extractedContext = GlobalOpenTelemetry.getPropagators().getTextMapPropagator()
+            Context extractedContext = openTelemetryClient.getPropagators().getTextMapPropagator()
                     .extract(Context.current(), contextMap, getter);
             SpanContext receivedSpanContext = Span.fromContext(extractedContext).getSpanContext();
 

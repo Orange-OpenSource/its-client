@@ -15,7 +15,6 @@ import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PublishBuilder;
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
@@ -24,7 +23,6 @@ import io.opentelemetry.api.trace.TraceFlags;
 import io.opentelemetry.api.trace.TraceState;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.ContextPropagators;
-import io.opentelemetry.sdk.OpenTelemetrySdk;
 import org.junit.jupiter.api.*;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
@@ -42,10 +40,10 @@ import static org.mockito.Mockito.*;
  * on completion/failure, {@code traceparent} propagation, and trace extraction on message
  * reception.
  *
- * <p>{@code MqttClient} reads/writes the {@code traceparent} header through the real, process-wide
- * {@code GlobalOpenTelemetry} propagator (not through the injected {@link OpenTelemetryClient}),
- * so a minimal real {@link OpenTelemetrySdk} with the W3C propagator is registered for the
- * duration of each test. The span returned by the mocked {@link OpenTelemetryClient} is
+ * <p>{@code MqttClient} reads/writes the {@code traceparent} header through
+ * {@link OpenTelemetryClient#getPropagators()} — i.e. through the injected instance directly,
+ * never through {@code GlobalOpenTelemetry} — so a real W3C {@link ContextPropagators} is simply
+ * stubbed on the mocked {@link OpenTelemetryClient}. The span it returns is
  * {@link Span#wrap(SpanContext)} (a real, propagation-only {@code Span}) spied upon with Mockito:
  * this keeps {@code storeInContext}/{@code getSpanContext} genuinely functional — required for the
  * W3C propagator to actually emit a {@code traceparent} value — while still allowing
@@ -73,13 +71,6 @@ class MqttClientOpenTelemetryTest {
     @SuppressWarnings("rawtypes")
     @BeforeEach
     void setUp() {
-        // Register a real (minimal) global propagator: MqttClient injects/extracts the
-        // "traceparent" header via GlobalOpenTelemetry directly, regardless of the
-        // OpenTelemetryClient instance it was given.
-        GlobalOpenTelemetry.set(OpenTelemetrySdk.builder()
-                .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
-                .build());
-
         mockMqttClient = mock(Mqtt5AsyncClient.class, RETURNS_DEEP_STUBS);
         mockCallback = mock(MqttCallback.class);
         mockOpenTelemetryClient = mock(OpenTelemetryClient.class);
@@ -93,7 +84,9 @@ class MqttClientOpenTelemetryTest {
                 .thenReturn(mockSpan);
         when(mockOpenTelemetryClient.getTraceId(any(Span.class))).thenReturn(VALID_TRACE_ID);
         when(mockOpenTelemetryClient.getSpanId(any(Span.class))).thenReturn(VALID_SPAN_ID);
-
+        // Real W3C propagators, scoped to this mock instance only — no GlobalOpenTelemetry involved.
+        when(mockOpenTelemetryClient.getPropagators())
+                .thenReturn(ContextPropagators.create(W3CTraceContextPropagator.getInstance()));
 
         // See MqttClientTest for why the publish chain is stubbed explicitly.
         publishBuilderStub = mock(Mqtt5PublishBuilder.Send.Complete.class, Answers.RETURNS_SELF);
@@ -106,10 +99,6 @@ class MqttClientOpenTelemetryTest {
         client = new MqttClient(mockMqttClient, mockCallback, mockOpenTelemetryClient);
     }
 
-    @AfterEach
-    void tearDown() {
-        GlobalOpenTelemetry.resetForTest();
-    }
 
     // ── span creation on publish ─────────────────────────────────────────────
 
