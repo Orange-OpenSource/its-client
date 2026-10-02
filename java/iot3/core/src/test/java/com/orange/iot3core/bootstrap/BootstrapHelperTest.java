@@ -8,9 +8,9 @@
  */
 package com.orange.iot3core.bootstrap;
 
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
+import mockwebserver3.MockResponse;
+import mockwebserver3.MockWebServer;
+import mockwebserver3.RecordedRequest;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.*;
@@ -46,8 +46,8 @@ class BootstrapHelperTest {
     }
 
     @AfterEach
-    void stopServer() throws IOException {
-        server.shutdown();
+    void stopServer() {
+        server.close();
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
@@ -99,9 +99,10 @@ class BootstrapHelperTest {
     @Test
     @DisplayName("HTTP 200 with valid JSON → boostrapSuccess is called with a populated BootstrapConfig")
     void http200ValidJson_callsBootstrapSuccess() {
-        server.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody(buildValidResponseBody()));
+        server.enqueue(new MockResponse.Builder()
+                .code(200)
+                .body(buildValidResponseBody())
+                .build());
 
         CallResult result = callBootstrap(bootstrapUrl());
 
@@ -115,17 +116,18 @@ class BootstrapHelperTest {
     @Test
     @DisplayName("Request carries the correct Content-Type and Basic-Auth headers")
     void http200_requestHasCorrectHeaders() throws InterruptedException {
-        server.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody(buildValidResponseBody()));
+        server.enqueue(new MockResponse.Builder()
+                .code(200)
+                .body(buildValidResponseBody())
+                .build());
 
         callBootstrap(bootstrapUrl());
 
         RecordedRequest request = server.takeRequest();
         // OkHttp appends "; charset=utf-8" to the Content-Type, so check with startsWith
-        assertTrue(Objects.requireNonNull(request.getHeader("Content-Type")).startsWith("application/json"),
+        assertTrue(Objects.requireNonNull(request.getHeaders().get("Content-Type")).startsWith("application/json"),
                 "Content-Type should be application/json (charset suffix is acceptable)");
-        String auth = request.getHeader("Authorization");
+        String auth = request.getHeaders().get("Authorization");
         assertNotNull(auth);
         assertTrue(auth.startsWith("Basic "), "Authorization header should use Basic scheme");
     }
@@ -133,14 +135,15 @@ class BootstrapHelperTest {
     @Test
     @DisplayName("Request body contains ue_id, psk_login, psk_password, and role fields")
     void http200_requestBodyContainsExpectedFields() throws InterruptedException {
-        server.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody(buildValidResponseBody()));
+        server.enqueue(new MockResponse.Builder()
+                .code(200)
+                .body(buildValidResponseBody())
+                .build());
 
         callBootstrap(bootstrapUrl());
 
         RecordedRequest request = server.takeRequest();
-        JSONObject body = new JSONObject(request.getBody().readUtf8());
+        JSONObject body = new JSONObject(Objects.requireNonNull(request.getBody()).utf8());
         assertEquals("device-id",        body.getString("ue_id"));
         assertEquals("login",             body.getString("psk_login"));
         assertEquals("password",          body.getString("psk_password"));
@@ -152,9 +155,10 @@ class BootstrapHelperTest {
     @Test
     @DisplayName("HTTP 400 → boostrapError is called and message contains the status code")
     void http400_callsBootstrapError() {
-        server.enqueue(new MockResponse()
-                .setResponseCode(400)
-                .setBody("Bad Request"));
+        server.enqueue(new MockResponse.Builder()
+                .code(400)
+                .body("Bad Request")
+                .build());
 
         CallResult result = callBootstrap(bootstrapUrl());
 
@@ -166,9 +170,10 @@ class BootstrapHelperTest {
     @Test
     @DisplayName("HTTP 401 → boostrapError is called")
     void http401_callsBootstrapError() {
-        server.enqueue(new MockResponse()
-                .setResponseCode(401)
-                .setBody("Unauthorized"));
+        server.enqueue(new MockResponse.Builder()
+                .code(401)
+                .body("Unauthorized")
+                .build());
 
         CallResult result = callBootstrap(bootstrapUrl());
 
@@ -179,9 +184,10 @@ class BootstrapHelperTest {
     @Test
     @DisplayName("HTTP 500 → boostrapError is called and message contains the status code")
     void http500_callsBootstrapError() {
-        server.enqueue(new MockResponse()
-                .setResponseCode(500)
-                .setBody("Internal Server Error"));
+        server.enqueue(new MockResponse.Builder()
+                .code(500)
+                .body("Internal Server Error")
+                .build());
 
         CallResult result = callBootstrap(bootstrapUrl());
 
@@ -195,9 +201,10 @@ class BootstrapHelperTest {
     @Test
     @DisplayName("HTTP 200 with non-JSON body → boostrapError is called")
     void http200MalformedJson_callsBootstrapError() {
-        server.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody("this-is-not-json"));
+        server.enqueue(new MockResponse.Builder()
+                .code(200)
+                .body("this-is-not-json")
+                .build());
 
         CallResult result = callBootstrap(bootstrapUrl());
 
@@ -208,9 +215,10 @@ class BootstrapHelperTest {
     @Test
     @DisplayName("HTTP 200 with JSON missing required fields → boostrapError is called")
     void http200MissingFields_callsBootstrapError() {
-        server.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody("{\"unexpected_key\": \"value\"}"));
+        server.enqueue(new MockResponse.Builder()
+                .code(200)
+                .body("{\"unexpected_key\": \"value\"}")
+                .build());
 
         CallResult result = callBootstrap(bootstrapUrl());
 
@@ -227,9 +235,10 @@ class BootstrapHelperTest {
         partial.put("psk_iot3_secret", "secret");
         // no "services" key
 
-        server.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody(partial.toString()));
+        server.enqueue(new MockResponse.Builder()
+                .code(200)
+                .body(partial.toString())
+                .build());
 
         CallResult result = callBootstrap(bootstrapUrl());
 
