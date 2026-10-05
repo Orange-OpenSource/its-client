@@ -8,6 +8,7 @@
  *
  * Authors: see CONTRIBUTORS.md
  */
+use super::confidence;
 use serde::{Deserialize, Serialize};
 
 /// Represents a LongitudinalLanePosition according to an ETSI standard.
@@ -17,12 +18,25 @@ use serde::{Deserialize, Serialize};
 ///
 /// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/cpm/cpm_schema_2-1-0.json#L1441
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LongitudinalLanePosition {
     /// Longitudinal lane position value.
     pub value: u16,
     /// Confidence level for the longitudinal lane position.
+    #[serde(
+        serialize_with = "confidence::serialize::<_, _, 0, 1023>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 1023>"
+    )]
     pub confidence: u16,
+}
+
+impl Default for LongitudinalLanePosition {
+    fn default() -> Self {
+        Self {
+            value: 0,
+            confidence: 1023,
+        }
+    }
 }
 
 #[cfg(test)]

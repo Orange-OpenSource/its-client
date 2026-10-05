@@ -9,6 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+use super::confidence;
 use serde::{Deserialize, Serialize};
 
 /// Represents a Velocity according to an ETSI standard.
@@ -18,12 +19,25 @@ use serde::{Deserialize, Serialize};
 ///
 /// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/cpm/cpm_schema_2-1-0.json#L1323
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Velocity {
     /// Velocity value.
     pub value: i16,
     /// Confidence level for the velocity.
+    #[serde(
+        serialize_with = "confidence::serialize::<_, _, 1, 127>",
+        deserialize_with = "confidence::deserialize::<_, _, 1, 127>"
+    )]
     pub confidence: u8,
+}
+
+impl Default for Velocity {
+    fn default() -> Self {
+        Self {
+            value: 0,
+            confidence: 127,
+        }
+    }
 }
 
 #[cfg(test)]
