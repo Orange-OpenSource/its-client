@@ -5,7 +5,7 @@ libits-client
 [![crates.io](https://img.shields.io/crates/v/libits-client)][2]
 
 This crate provides IoT3 [MQTT][3] and [OpenTelemetry][4] generic clients and,
-on top of this, an [ETSI][5] [Intelligent Transport System][6] messages implementation using [JSON][7]
+on top of this, an [ETSI][5] [Intelligent Transport System][6] messages implementation using [JSON][7].
 
 Examples
 --------

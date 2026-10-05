@@ -29,9 +29,9 @@ use serde::{Deserialize, Serialize};
 /// Represents a Decentralized Environmental Notification Message (DENM) according to an ETSI standard.
 ///
 /// This message is used to describe detected road hazards and traffic conditions.
-/// It implements the schema defined in the [DENM version 2.2.0][1].
+/// It implements the schema defined in the [DENM version 2.3.0][1].
 ///
-/// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/denm/denm_schema_2-2-0.json
+/// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/denm/denm_schema_2-3-0.json
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct DecentralizedEnvironmentalNotificationMessage {
@@ -142,6 +142,142 @@ pub struct AlacarteContainer {
     /// Positioning solution used for the event
     // TODO: implements a PositioningSolution enum
     pub positioning_solution: Option<u8>,
+    /// Road works information
+    pub road_works: Option<RoadWorksContainer>,
+    /// Stationary vehicle information
+    pub stationary_vehicle: Option<StationaryVehicleContainer>,
+}
+
+/// Road works container
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct RoadWorksContainer {
+    /// Light bar and siren in use bitmask
+    pub light_bar_siren_in_use: Option<u8>,
+    /// Closed lanes information
+    pub closed_lanes: Option<ClosedLanes>,
+    /// Restricted vehicle types
+    pub restriction: Option<Vec<u8>>,
+    /// Speed limit in km/h
+    pub speed_limit: Option<u8>,
+    /// Incident indication cause code
+    pub incident_indication: Option<CauseCode>,
+    /// Recommended path
+    pub recommended_path: Option<Vec<DeltaReferencePosition>>,
+    /// Starting point for speed limit
+    pub starting_point_speed_limit: Option<DeltaReferencePosition>,
+    /// Traffic flow rule
+    pub traffic_flow_rule: Option<u8>,
+    /// Reference DENMs
+    pub reference_denms: Option<Vec<ActionId>>,
+}
+
+/// Closed lanes information
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct ClosedLanes {
+    /// Hard shoulder status
+    pub hard_shoulder_status: Option<u8>,
+    /// Driving lane status bitmask
+    pub driving_lane_status: Option<u16>,
+}
+
+/// Stationary vehicle container
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct StationaryVehicleContainer {
+    /// Duration since stationary
+    pub stationary_since: Option<u8>,
+    /// Cause of being stationary
+    pub stationary_cause: Option<CauseCode>,
+    /// Dangerous goods information
+    pub carrying_dangerous_goods: Option<DangerousGoods>,
+    /// Number of occupants
+    pub number_of_occupants: Option<u8>,
+    /// Vehicle identification
+    pub vehicle_identification: Option<VehicleIdentification>,
+    /// Energy storage type bitmask
+    pub energy_storage_type: Option<u8>,
+}
+
+/// Dangerous goods information
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct DangerousGoods {
+    /// Type of dangerous goods
+    pub dangerous_goods_type: Option<u8>,
+    /// UN number
+    pub un_number: Option<u16>,
+    /// Elevated temperature flag
+    pub elevated_temperature: Option<bool>,
+    /// Tunnels restricted flag
+    pub tunnels_restricted: Option<bool>,
+    /// Limited quantity flag
+    pub limited_quantity: Option<bool>,
+    /// Emergency action code
+    pub emergency_action_code: Option<String>,
+    /// Emergency phone number
+    pub phone_number: Option<String>,
+    /// Company name
+    pub company_name: Option<String>,
+}
+
+/// Vehicle identification
+#[serde_with::skip_serializing_none]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct VehicleIdentification {
+    /// World Manufacturer Identifier
+    pub wmi_number: Option<String>,
+    /// Vehicle Descriptor Section
+    pub vds: Option<String>,
+}
+
+/// Represents a path element in the DENM path history
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct PathElement {
+    /// Position of the path element
+    pub position: PathElementPosition,
+    /// Type of the message that originated this path element
+    pub message_type: PathElementMessageType,
+}
+
+/// Position of a path element
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct PathElementPosition {
+    /// Latitude in 1/10 micro degrees
+    pub latitude: i32,
+    /// Longitude in 1/10 micro degrees
+    pub longitude: i32,
+    /// Altitude in centimeters
+    pub altitude: AltitudeValue,
+}
+
+/// Altitude value with confidence
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct AltitudeValue {
+    /// Altitude value in centimeters
+    pub value: i32,
+    /// Confidence of the altitude
+    pub confidence: u8,
+}
+
+/// Message type for path element
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PathElementMessageType {
+    Denm,
+    Cam,
+    Cpm,
+    Po,
+}
+
+impl Default for PathElementMessageType {
+    fn default() -> Self {
+        PathElementMessageType::Denm
+    }
 }
 
 /// Represents an action identifier
@@ -206,7 +342,7 @@ impl DecentralizedEnvironmentalNotificationMessage {
             None,
             Some(Speed {
                 value: 0,
-                ..Default::default()
+                confidence: 127,
             }),
             event_position_heading,
             Some(10),
@@ -1379,6 +1515,8 @@ mod tests {
             alacarte: Some(AlacarteContainer {
                 lane_position: Some(1),
                 positioning_solution: Some(1),
+                road_works: None,
+                stationary_vehicle: None,
             }),
         };
 
