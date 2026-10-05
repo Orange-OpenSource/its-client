@@ -13,9 +13,26 @@ use opentelemetry::propagation::{Extractor, Injector};
 
 use rumqttc::PublishProperties;
 use std::fmt::Debug;
+use std::time::Instant;
 
 use crate::transport::mqtt::topic::Topic;
 use crate::transport::payload::Payload;
+
+/// Local MQTT ingress clocks, independent of payload dates and never sent on the wire.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ReceptionTime {
+    pub wall_ms: u64,
+    pub monotonic: Instant,
+}
+
+impl ReceptionTime {
+    pub fn now() -> Self {
+        Self {
+            wall_ms: crate::now(),
+            monotonic: Instant::now(),
+        }
+    }
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Packet<T, P>
@@ -26,6 +43,8 @@ where
     pub topic: T,
     pub payload: P,
     pub properties: PublishProperties,
+    /// Set by MQTT dispatch before parsing and queueing; absent for locally created packets.
+    pub received_at: Option<ReceptionTime>,
 }
 
 impl<T: Topic, P: Payload> Packet<T, P> {
@@ -34,6 +53,7 @@ impl<T: Topic, P: Payload> Packet<T, P> {
             topic,
             payload,
             properties: PublishProperties::default(),
+            received_at: None,
         }
     }
 }

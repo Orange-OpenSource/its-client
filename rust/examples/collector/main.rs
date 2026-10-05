@@ -253,12 +253,10 @@ async fn main() {
                                 }
 
                                 // Create a Packet from the payload string
-                                let packet = Packet::<CollectorStrTopic, Value> {
+                                let packet = Packet::<CollectorStrTopic, Value>::new(
                                     topic,
-                                    payload: serde_json::from_str(payload.as_str())
-                                        .unwrap_or(Value::Null),
-                                    properties: PublishProperties::default(),
-                                };
+                                    serde_json::from_str(payload.as_str()).unwrap_or(Value::Null),
+                                );
 
                                 trace!("Start packet publishing...");
                                 current_publish_client.publish(packet).await;

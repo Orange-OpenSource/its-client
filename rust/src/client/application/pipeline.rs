@@ -20,7 +20,7 @@ use crate::transport::mqtt::mqtt_client::{MqttClient, listen};
 use crate::transport::mqtt::mqtt_router;
 use crate::transport::mqtt::mqtt_router::BoxedReception;
 use crate::transport::mqtt::topic::Topic;
-use crate::transport::packet::Packet;
+use crate::transport::packet::{Packet, ReceptionTime};
 use crate::transport::payload::Payload;
 use crossbeam_channel::{Receiver, unbounded};
 use log::{debug, error, info, trace, warn};
@@ -378,6 +378,7 @@ where
             loop {
                 match event_receiver.recv() {
                     Ok(event) => {
+                        let received_at = ReceptionTime::now();
                         match router.handle_event(event) {
                             Some((topic, (reception, properties))) => {
                                 trace!("Topic: {topic}");
@@ -388,6 +389,7 @@ where
                                             topic,
                                             payload: *exchange,
                                             properties,
+                                            received_at: Some(received_at),
                                         };
                                         //assumed clone, we send to 2 channels
                                         match monitoring_sender.send((item.clone(), None)) {
@@ -415,6 +417,7 @@ where
                                             topic,
                                             payload: *information,
                                             properties: PublishProperties::default(),
+                                            received_at: Some(received_at),
                                         }) {
                                             Ok(()) => trace!("MQTT information sent"),
                                             Err(error) => {
@@ -469,4 +472,106 @@ where
         Err(e) => warn!("Format error: {e}"),
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::exchange::message::Message;
+    use crate::exchange::message::binary_message::BinaryMessage;
+    use rumqttc::{Incoming, Publish};
+    use std::convert::Infallible;
+    use std::fmt;
+    use std::str::FromStr;
+    use std::time::Instant;
+
+    #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+    struct TimedTopic {
+        route: String,
+        parsed_at: Option<Instant>,
+    }
+
+    impl FromStr for TimedTopic {
+        type Err = Infallible;
+
+        fn from_str(value: &str) -> Result<Self, Self::Err> {
+            Ok(Self {
+                route: value.into(),
+                parsed_at: Some(Instant::now()),
+            })
+        }
+    }
+
+    impl fmt::Display for TimedTopic {
+        fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            formatter.write_str(&self.route)
+        }
+    }
+
+    impl Topic for TimedTopic {
+        fn as_route(&self) -> String {
+            self.route.clone()
+        }
+    }
+
+    fn incoming(topic: &str, payload: impl serde::Serialize) -> Event {
+        Event::Incoming(Incoming::Publish(Publish {
+            topic: topic.as_bytes().to_vec().into(),
+            payload: serde_json::to_vec(&payload).unwrap().into(),
+            ..Default::default()
+        }))
+    }
+
+    #[test]
+    fn mqtt_dispatch_dates_packets_before_parsing_and_preserves_receipt_across_queues() {
+        let (sender, receiver) = unbounded();
+        let (exchanges, monitoring, information, handle) = mqtt_router_dispatch_thread(
+            vec![
+                TimedTopic::from_str("test/exchange").unwrap(),
+                TimedTopic::from_str("test/info").unwrap(),
+            ],
+            receiver,
+        );
+        let exchange = Exchange::new(
+            "sender".into(),
+            1,
+            "1".into(),
+            Vec::new(),
+            None,
+            Message::BM(BinaryMessage {
+                version: "1".into(),
+                payload: "AA==".into(),
+            }),
+        );
+        let before = crate::now();
+        sender.send(incoming("test/exchange", &exchange)).unwrap();
+        sender
+            .send(incoming("test/info", Information::default()))
+            .unwrap();
+        drop(sender);
+        handle.join().unwrap();
+
+        let exchange_packet = exchanges.recv().unwrap();
+        let monitored_packet = monitoring.recv().unwrap().0;
+        let information_packet = information.recv().unwrap();
+        let after = crate::now();
+        assert_eq!(
+            exchange_packet.payload.timestamp, 1,
+            "Sender dates must remain unchanged"
+        );
+        assert_eq!(exchange_packet.received_at, monitored_packet.received_at);
+        for (topic, receipt) in [
+            (&exchange_packet.topic, exchange_packet.received_at),
+            (&information_packet.topic, information_packet.received_at),
+        ] {
+            let receipt = receipt.expect("MQTT packets must carry local reception clocks");
+            assert!((before..=after).contains(&receipt.wall_ms));
+            assert!(receipt.monotonic <= topic.parsed_at.unwrap());
+        }
+        let outgoing = Packet::new(exchange_packet.topic, exchange_packet.payload);
+        assert!(
+            outgoing.received_at.is_none(),
+            "A new publication must not inherit input ingress"
+        );
+    }
 }
