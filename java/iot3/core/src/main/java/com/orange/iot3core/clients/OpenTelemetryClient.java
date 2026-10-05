@@ -7,7 +7,6 @@
  */
 package com.orange.iot3core.clients;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.*;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
@@ -21,11 +20,24 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import java.time.Duration;
 import java.util.Base64;
 
+/**
+ * Wraps an OpenTelemetry SDK instance (tracer, propagators, OTLP/HTTP exporter) that is entirely
+ * self-contained within this object — it deliberately does <b>not</b> register itself with the
+ * process-wide {@code GlobalOpenTelemetry} singleton.
+ *
+ * <p>{@code GlobalOpenTelemetry.set(...)} may only be called once per JVM and throws
+ * {@link IllegalStateException} on any subsequent call with a different instance. Relying on it
+ * made stopping and restarting the SDK (or running several {@code IoT3Core}/{@code IoT3Mobility}
+ * instances in the same JVM) fragile and error-prone. Callers that need trace propagation
+ * (see {@link #getPropagators()}) should use the instance returned by this class directly instead
+ * of going through {@code GlobalOpenTelemetry}.
+ */
 public class OpenTelemetryClient {
 
     private final String serviceName;
     private Tracer tracer;
     private SdkTracerProvider tracerProvider;
+    private ContextPropagators propagators;
     private final String scheme;
     private final String host;
     private final int port;
@@ -84,14 +96,20 @@ public class OpenTelemetryClient {
                 .setResource(resource)
                 .build();
 
+        ContextPropagators propagators = ContextPropagators.create(W3CTraceContextPropagator.getInstance());
+
         OpenTelemetrySdk openTelemetry = OpenTelemetrySdk.builder()
                 .setTracerProvider(tracerProvider)
-                .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
+                .setPropagators(propagators)
                 .build();
 
-        GlobalOpenTelemetry.set(openTelemetry);
+        // Deliberately NOT calling GlobalOpenTelemetry.set(openTelemetry) here: see class javadoc.
+        // This SdkTracerProvider/ContextPropagators pair is kept as instance state instead and
+        // exposed via getPropagators(), so callers (e.g. MqttClient) can propagate trace context
+        // without depending on process-wide static state.
 
         this.tracerProvider = tracerProvider;
+        this.propagators = propagators;
 
         return openTelemetry;
     }
@@ -119,9 +137,27 @@ public class OpenTelemetryClient {
         return span.getSpanContext().getTraceId();
     }
 
+    /**
+     * Returns the {@link ContextPropagators} (W3C trace context) bound to this instance, for
+     * injecting/extracting the {@code traceparent} header without depending on
+     * {@code GlobalOpenTelemetry}.
+     */
+    public ContextPropagators getPropagators() {
+        return propagators;
+    }
+
+    /**
+     * Forces an immediate export of any spans that are still buffered in the
+     * {@link BatchSpanProcessor}, instead of waiting for the regular scheduled delay.
+     *
+     * <p>Mainly useful for tests that need to assert on exported spans synchronously.
+     */
+    public void forceFlush() {
+        tracerProvider.forceFlush().join(5, java.util.concurrent.TimeUnit.SECONDS);
+    }
+
     public void close() {
         tracerProvider.shutdown();
-        GlobalOpenTelemetry.resetForTest();
     }
 
 }
