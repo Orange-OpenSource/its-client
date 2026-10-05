@@ -60,11 +60,16 @@ pub(crate) fn override_with_identity(
             match fs::read_to_string(&file_name) {
                 Ok(json_str) => match serde_json::from_str::<Identity>(&json_str) {
                     Ok(identity) => {
-                        configuration.mqtt.suffix_client_id(&identity.id);
+                        let current_client_id =
+                            configuration.mqtt.mqtt_options.client_id().to_string();
                         configuration
                             .mqtt
                             .mqtt_options
-                            .set_credentials(&identity.username, &identity.password);
+                            .set_client_id(format!("{}-{}", current_client_id, identity.id));
+                        configuration.mqtt.mqtt_options.set_credentials(
+                            identity.username.clone(),
+                            identity.password.as_bytes().to_vec(),
+                        );
 
                         #[cfg(feature = "telemetry")]
                         {
