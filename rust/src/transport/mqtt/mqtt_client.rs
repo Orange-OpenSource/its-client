@@ -15,9 +15,7 @@ use crate::transport::payload::Payload;
 
 use crossbeam_channel::Sender;
 use log::{debug, error, info, trace, warn};
-use rumqttc::v5::mqttbytes::QoS;
-use rumqttc::v5::mqttbytes::v5::Filter;
-use rumqttc::v5::{AsyncClient, Event, EventLoop, MqttOptions};
+use rumqttc::{AsyncClient, Event, EventLoop, MqttOptions, PublishOptions, QoS, SubscribeFilter};
 
 #[cfg(feature = "telemetry")]
 use {
@@ -34,7 +32,9 @@ pub struct MqttClient {
 
 impl MqttClient {
     pub fn new(options: &MqttOptions) -> (Self, EventLoop) {
-        let (client, event_loop) = AsyncClient::new(options.clone(), 1000);
+        let (client, event_loop) = AsyncClient::builder(options.clone())
+            .capacity(10000)
+            .build();
         (MqttClient { client }, event_loop)
     }
 
@@ -44,8 +44,8 @@ impl MqttClient {
             .subscribe_many(
                 topic_list
                     .iter()
-                    .map(|topic| Filter::new(topic.clone(), QoS::AtMostOnce))
-                    .collect::<Vec<Filter>>(),
+                    .map(|topic| SubscribeFilter::new(topic.clone(), QoS::AtMostOnce))
+                    .collect::<Vec<SubscribeFilter>>(),
             )
             .await
         {
@@ -87,12 +87,10 @@ impl MqttClient {
 
         match self
             .client
-            .publish_with_properties(
+            .publish(
                 packet.topic.to_string(),
-                QoS::ExactlyOnce,
-                false,
                 payload,
-                packet.properties,
+                PublishOptions::exactly_once().properties(packet.properties),
             )
             .await
         {
