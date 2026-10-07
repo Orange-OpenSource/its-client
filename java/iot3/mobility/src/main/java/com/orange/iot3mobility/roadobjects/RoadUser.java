@@ -7,9 +7,12 @@
  */
 package com.orange.iot3mobility.roadobjects;
 
+import com.orange.iot3mobility.Utils;
 import com.orange.iot3mobility.messages.StationType;
 import com.orange.iot3mobility.messages.cam.core.CamCodec;
 import com.orange.iot3mobility.quadkey.LatLng;
+
+import java.util.List;
 
 public class RoadUser {
 
@@ -20,24 +23,30 @@ public class RoadUser {
     private LatLng position;
     private double speed; // m/s
     private double heading; // degree
+    private Double length; // meter
+    private Double width; // meter
+    private List<LatLng> footprint;
     private long timestamp;
     private Long linkedStationId;
     private CamCodec.CamFrame<?> camFrame;
 
     public RoadUser(String uuid, StationType stationType, LatLng position, double speed, double heading,
                     CamCodec.CamFrame<?> camFrame) {
-        this(uuid, stationType, position, speed, heading, null, camFrame);
+        this(uuid, stationType, position, speed, heading, null, null, null, camFrame);
     }
 
     public RoadUser(String uuid, StationType stationType, LatLng position, double speed, double heading,
-                    Long linkedStationId, CamCodec.CamFrame<?> camFrame) {
+                    Double length, Double width, Long linkedStationId, CamCodec.CamFrame<?> camFrame) {
         this.uuid = uuid;
         this.setStationType(stationType);
         this.position = position;
         this.speed = speed;
         this.heading = heading;
+        this.length = length;
+        this.width = width;
         this.linkedStationId = linkedStationId;
         this.camFrame = camFrame;
+        computeFootprint();
         updateTimestamp();
     }
 
@@ -79,6 +88,30 @@ public class RoadUser {
 
     public void setHeading(double heading) {
         this.heading = heading;
+    }
+
+    public void setDimensions(Double length, Double width) {
+        this.length = length;
+        this.width = width;
+        computeFootprint();
+    }
+
+    public Double getLength() {
+        return length;
+    }
+
+    public Double getWidth() {
+        return width;
+    }
+
+    private void computeFootprint() {
+        if(length != null && width != null) {
+            footprint = Utils.computeFootprint(position, heading, length, width);
+        }
+    }
+
+    public List<LatLng> getFootprint() {
+        return footprint;
     }
 
     public void setCamFrame(CamCodec.CamFrame<?> camFrame) {

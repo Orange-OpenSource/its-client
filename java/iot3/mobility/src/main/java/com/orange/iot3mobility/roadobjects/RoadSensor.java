@@ -12,10 +12,28 @@ import com.orange.iot3mobility.messages.EtsiConverter;
 import com.orange.iot3mobility.messages.cpm.core.CpmCodec;
 import com.orange.iot3mobility.messages.cpm.core.CpmVersion;
 import com.orange.iot3mobility.messages.cpm.v121.model.CpmEnvelope121;
+import com.orange.iot3mobility.messages.cpm.v121.model.defs.AreaCircular;
+import com.orange.iot3mobility.messages.cpm.v121.model.defs.AreaEllipse;
+import com.orange.iot3mobility.messages.cpm.v121.model.defs.AreaPolygon;
+import com.orange.iot3mobility.messages.cpm.v121.model.defs.AreaRectangle;
+import com.orange.iot3mobility.messages.cpm.v121.model.defs.Offset;
 import com.orange.iot3mobility.messages.cpm.v121.model.perceivedobjectcontainer.ObjectClass;
 import com.orange.iot3mobility.messages.cpm.v121.model.perceivedobjectcontainer.ObjectClassification;
 import com.orange.iot3mobility.messages.cpm.v121.model.perceivedobjectcontainer.PerceivedObject;
+import com.orange.iot3mobility.messages.cpm.v121.model.sensorinformationcontainer.DetectionArea;
+import com.orange.iot3mobility.messages.cpm.v121.model.sensorinformationcontainer.SensorInformation;
+import com.orange.iot3mobility.messages.cpm.v121.model.sensorinformationcontainer.StationarySensorRadial;
+import com.orange.iot3mobility.messages.cpm.v121.model.sensorinformationcontainer.VehicleSensor;
+import com.orange.iot3mobility.messages.cpm.v121.model.sensorinformationcontainer.VehicleSensorProperty;
 import com.orange.iot3mobility.messages.cpm.v211.model.CpmEnvelope211;
+import com.orange.iot3mobility.messages.cpm.v211.model.defs.CartesianPosition3d;
+import com.orange.iot3mobility.messages.cpm.v211.model.defs.Circular;
+import com.orange.iot3mobility.messages.cpm.v211.model.defs.Elliptical;
+import com.orange.iot3mobility.messages.cpm.v211.model.defs.Polygonal;
+import com.orange.iot3mobility.messages.cpm.v211.model.defs.Radial;
+import com.orange.iot3mobility.messages.cpm.v211.model.defs.RadialShapes;
+import com.orange.iot3mobility.messages.cpm.v211.model.defs.Rectangular;
+import com.orange.iot3mobility.messages.cpm.v211.model.defs.Shape;
 import com.orange.iot3mobility.quadkey.LatLng;
 import com.orange.iot3mobility.Utils;
 
@@ -31,6 +49,7 @@ public class RoadSensor {
     private final String uuid;
     private final ArrayList<SensorObject> sensorObjects;
     private final HashMap<String, SensorObject> sensorObjectMap;
+    private final HashMap<Integer, SensorCoverage> sensorCoverageMap;
     private LatLng position;
     private long timestamp;
     private long zeroObjectsTimestamp;
@@ -43,9 +62,11 @@ public class RoadSensor {
         this.cpmFrame = cpmFrame;
         this.sensorObjects = new ArrayList<>();
         this.sensorObjectMap = new HashMap<>();
+        this.sensorCoverageMap = new HashMap<>();
         this.ioT3RoadSensorCallback = ioT3RoadSensorCallback;
         updateTimestamp();
         updateSensorObjects();
+        updateSensorCoverages();
     }
 
     public String getUuid() {
@@ -67,6 +88,7 @@ public class RoadSensor {
     public void setCpmFrame(CpmCodec.CpmFrame<?> cpmFrame) {
         this.cpmFrame = cpmFrame;
         updateSensorObjects();
+        updateSensorCoverages();
     }
 
     public void updateSensorObjects() {
@@ -74,6 +96,12 @@ public class RoadSensor {
             CpmEnvelope121 cpmEnvelope121 = (CpmEnvelope121) cpmFrame.envelope();
             if(cpmEnvelope121.message().perceivedObjectContainer() == null) return;
             List<PerceivedObject> perceivedObjects = cpmEnvelope121.message().perceivedObjectContainer().perceivedObjects();
+
+            // Per CPM CDD convention, x_distance/y_distance (and x_speed/y_speed) are reported in a body-fixed
+            // coordinate system (ISO 8855) when the originator is a vehicle, or in a WGS84 north/east-aligned
+            // coordinate system when it's a stationary RSU. effectiveHeadingDegrees() falls back to 0 (no
+            // rotation, i.e. north/east) when no originating vehicle container is present.
+            double headingDegrees = effectiveHeadingDegrees(extractHeadingV121(cpmEnvelope121));
 
             if(!perceivedObjects.isEmpty()) {
                 for(PerceivedObject perceivedObject: perceivedObjects) {
@@ -83,8 +111,7 @@ public class RoadSensor {
                     double xOffsetMeters = EtsiConverter.cpmDistanceMeters(perceivedObject.xDistance());
                     double yOffsetMeters = EtsiConverter.cpmDistanceMeters(perceivedObject.yDistance());
 
-                    LatLng objectPosition = Utils.pointFromPosition(position, 0, yOffsetMeters);
-                    objectPosition = Utils.pointFromPosition(objectPosition, (90 + 360) % 360, xOffsetMeters);
+                    LatLng objectPosition = offsetPoint(position, xOffsetMeters, yOffsetMeters, headingDegrees);
 
                     SensorObjectType objectType = SensorObjectType.UNKNOWN;
                     if(perceivedObject.classification() != null) {
@@ -98,9 +125,11 @@ public class RoadSensor {
                     double objectSpeed = EtsiConverter.cpmDerivedSpeedMetersPerSecond(
                             perceivedObject.xSpeed(),
                             perceivedObject.ySpeed());
-                    double objectHeading = EtsiConverter.cpmDerivedHeadingDegrees(
+                    // x_speed/y_speed share the same body-fixed (vehicle) / WGS84-aligned (RSU) frame as
+                    // x_distance/y_distance, so the derived relative heading must be rotated by the same amount.
+                    double objectHeading = ((headingDegrees + EtsiConverter.cpmDerivedHeadingDegrees(
                             perceivedObject.xSpeed(),
-                            perceivedObject.ySpeed());
+                            perceivedObject.ySpeed())) % 360 + 360) % 360;
 
                     Double objectLength = null, objectWidth = null, objectOrientation = null;
                     if(perceivedObject.planarObjectDimension1() != null
@@ -166,6 +195,11 @@ public class RoadSensor {
                 perceivedObjects = cpmEnvelope211.message().perceivedObjectContainer().perceivedObjects();
             }
 
+            // Same convention as CPM v1.2.1 (the underlying CartesianPosition3d / velocity_component DEs are
+            // unchanged across CPM versions): body-fixed (ISO 8855) for a vehicle originator, WGS84 north/east
+            // for a stationary RSU. effectiveHeadingDegrees() falls back to 0 (no rotation) when absent.
+            double headingDegrees = effectiveHeadingDegrees(extractHeadingV211(cpmEnvelope211));
+
             if(!perceivedObjects.isEmpty()) {
                 for (int index = 0; index < perceivedObjects.size(); index++) {
                     com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.PerceivedObject perceivedObject = perceivedObjects.get(index);
@@ -183,8 +217,7 @@ public class RoadSensor {
                     double xOffsetMeters = EtsiConverter.cpmDistanceMeters(xDistance);
                     double yOffsetMeters = EtsiConverter.cpmDistanceMeters(yDistance);
 
-                    LatLng objectPosition = Utils.pointFromPosition(position, 0, yOffsetMeters);
-                    objectPosition = Utils.pointFromPosition(objectPosition, (90 + 360) % 360, xOffsetMeters);
+                    LatLng objectPosition = offsetPoint(position, xOffsetMeters, yOffsetMeters, headingDegrees);
 
                     SensorObjectType objectType = SensorObjectType.UNKNOWN;
                     if(perceivedObject.classification() != null) {
@@ -204,7 +237,10 @@ public class RoadSensor {
                             int xSpeed = perceivedObject.velocity().cartesianVelocity().xVelocity().value();
                             int ySpeed = perceivedObject.velocity().cartesianVelocity().yVelocity().value();
                             objectSpeed = EtsiConverter.cpmDerivedSpeedMetersPerSecond(xSpeed, ySpeed);
-                            objectHeading = EtsiConverter.cpmDerivedHeadingDegrees(xSpeed, ySpeed);
+                            // x_velocity/y_velocity share the same body-fixed (vehicle) / WGS84-aligned (RSU)
+                            // frame as the position offset, unlike polar_velocity.velocity_direction below
+                            // (an "angle" DE, always WGS84-absolute).
+                            objectHeading = ((headingDegrees + EtsiConverter.cpmDerivedHeadingDegrees(xSpeed, ySpeed)) % 360 + 360) % 360;
                         } else if (perceivedObject.velocity().polarVelocity() != null) {
                             if (perceivedObject.velocity().polarVelocity().velocityMagnitude() != null) {
                                 objectSpeed = EtsiConverter.cpmSpeedMetersPerSecond(
@@ -318,6 +354,15 @@ public class RoadSensor {
         return sensorObjects;
     }
 
+    /**
+     * @return the coverage areas of this {@link RoadSensor}'s individual sensors, as a plain list.
+     *         Each {@link SensorCoverage} approximates the shape of the sensor's detection area / perception
+     *         region as one or more polygons.
+     */
+    public List<SensorCoverage> getSensorCoverageList() {
+        return List.copyOf(sensorCoverageMap.values());
+    }
+
     public long getTimestamp() {
         return timestamp;
     }
@@ -328,6 +373,378 @@ public class RoadSensor {
 
     public boolean stillLiving() {
         return System.currentTimeMillis() - timestamp < LIFETIME;
+    }
+
+    /* --------------------------------------------------------------------- */
+    /* Sensor coverage                                                        */
+    /* --------------------------------------------------------------------- */
+
+    /** Number of vertices used to approximate a full circle / ellipse. */
+    private static final int CIRCLE_POINTS = 24;
+    /** Number of vertices used to approximate the arc of a sector (radial shape). */
+    private static final int SECTOR_ARC_POINTS = 16;
+
+    /**
+     * Cache key used to detect whether the sensor geometry actually changed since the last {@link #updateSensorCoverages()}
+     * call, so the (comparatively expensive) polygon computation can be skipped when it's unnecessary. Most CPM
+     * senders (especially fixed RSU sensors) republish the exact same {@code sensorInformationContainer} on every
+     * frame while only {@code perceivedObjectContainer} varies; {@code headingEtsi} is included because it affects
+     * the resolved polygon's position whenever the sensor belongs to a vehicle (CPM v1.2.1 {@code vehicleSensor},
+     * or any v2.1.1 {@code Shape} reported by a vehicle-origin CPM), even when the sensor descriptor itself is
+     * unchanged.
+     */
+    private record CoverageCacheKey(Object sensorInformationContainer, Integer headingEtsi) {}
+
+    private CoverageCacheKey lastCoverageCacheKey;
+
+    /**
+     * Recomputes the {@link #sensorCoverageMap} map from the current {@link #cpmFrame}, translating each
+     * sensor's CPM detection area / perception region shape into one or more absolute geographic polygons.
+     * <p>
+     * Skipped entirely (cheap {@code equals()} check only) when neither the sensor information container nor
+     * the disseminating vehicle's heading changed since the last call, to avoid needlessly repeating the
+     * trigonometry-heavy polygon computation on every CPM frame.
+     */
+    private void updateSensorCoverages() {
+        if (cpmFrame == null) return;
+
+        if (cpmFrame.version() == CpmVersion.V1_2_1) {
+            CpmEnvelope121 cpmEnvelope121 = (CpmEnvelope121) cpmFrame.envelope();
+            var sensorInformationContainer = cpmEnvelope121.message().sensorInformationContainer();
+            if (sensorInformationContainer == null) return;
+
+            Integer headingEtsi = extractHeadingV121(cpmEnvelope121);
+            CoverageCacheKey cacheKey = new CoverageCacheKey(sensorInformationContainer, headingEtsi);
+            if (cacheKey.equals(lastCoverageCacheKey)) return; // geometry unchanged, skip recomputation
+            lastCoverageCacheKey = cacheKey;
+
+            List<SensorInformation> sensorInformationList = sensorInformationContainer.sensorInformation();
+            if (sensorInformationList == null) return;
+
+            for (SensorInformation sensorInformation : sensorInformationList) {
+                List<List<LatLng>> coverageAreas = resolveCoverageV121(sensorInformation.detectionArea(), headingEtsi);
+                sensorCoverageMap.put(sensorInformation.sensorId(),
+                        new SensorCoverage(sensorInformation.sensorId(), sensorInformation.type(), coverageAreas));
+            }
+        } else if (cpmFrame.version() == CpmVersion.V2_1_1) {
+            CpmEnvelope211 cpmEnvelope211 = (CpmEnvelope211) cpmFrame.envelope();
+            var sensorInformationContainer = cpmEnvelope211.message().sensorInformationContainer();
+            if (sensorInformationContainer == null) return;
+
+            Integer headingEtsi = extractHeadingV211(cpmEnvelope211);
+            CoverageCacheKey cacheKey = new CoverageCacheKey(sensorInformationContainer, headingEtsi);
+            if (cacheKey.equals(lastCoverageCacheKey)) return; // geometry unchanged, skip recomputation
+            lastCoverageCacheKey = cacheKey;
+
+            List<com.orange.iot3mobility.messages.cpm.v211.model.sensorinformationcontainer.SensorInformation>
+                    sensorInformationList = sensorInformationContainer.sensorInformation();
+            if (sensorInformationList == null) return;
+
+            for (com.orange.iot3mobility.messages.cpm.v211.model.sensorinformationcontainer.SensorInformation
+                    sensorInformation : sensorInformationList) {
+                List<List<LatLng>> coverageAreas = resolveCoverageV211(sensorInformation.perceptionRegionShape(), headingEtsi);
+                sensorCoverageMap.put(sensorInformation.sensorId(),
+                        new SensorCoverage(sensorInformation.sensorId(), sensorInformation.sensorType(), coverageAreas));
+            }
+        }
+    }
+
+
+    /**
+     * @return the disseminating vehicle's heading in ETSI units (0.1 degree), or {@code null} if unavailable
+     *         (e.g. RSU-originated CPM, or no station data container / originating vehicle container).
+     */
+    private Integer extractHeadingV121(CpmEnvelope121 cpmEnvelope121) {
+        var stationDataContainer = cpmEnvelope121.message().stationDataContainer();
+        if (stationDataContainer == null || stationDataContainer.originatingVehicleContainer() == null) return null;
+        return stationDataContainer.originatingVehicleContainer().heading();
+    }
+
+    /**
+     * @return the disseminating vehicle's heading in ETSI units (0.1 degree), or {@code null} if unavailable
+     *         (e.g. RSU-originated CPM, or no originating vehicle container).
+     */
+    private Integer extractHeadingV211(CpmEnvelope211 cpmEnvelope211) {
+        if (cpmEnvelope211.message().originatingVehicleContainer() == null) return null;
+        return cpmEnvelope211.message().originatingVehicleContainer().orientationAngle().value();
+    }
+
+    /**
+     * @return the effective heading to use for rotating a vehicle-relative shape, in degrees (WGS84, clockwise
+     *         from true north). Falls back to {@code 0} (true north) when unavailable, e.g. for fixed (non
+     *         vehicular) sensors, per project convention.
+     */
+    private double effectiveHeadingDegrees(Integer headingEtsi) {
+        if (headingEtsi == null) return 0.0;
+        double headingDegrees = EtsiConverter.headingDegrees(headingEtsi);
+        return Double.isNaN(headingDegrees) ? 0.0 : headingDegrees;
+    }
+
+    /**
+     * Offsets {@code origin} by a local (x, y) vector expressed in meters and rotated by {@code headingDegrees}
+     * (WGS84, clockwise from true north). With {@code headingDegrees == 0}, {@code x} is eastward and {@code y}
+     * is northward (matching the convention already used for CPM perceived objects).
+     */
+    private LatLng offsetPoint(LatLng origin, double xMeters, double yMeters, double headingDegrees) {
+        LatLng point = Utils.pointFromPosition(origin, headingDegrees, yMeters);
+        return Utils.pointFromPosition(point, (headingDegrees + 90 + 360) % 360, xMeters);
+    }
+
+    /** Builds a polygon (ring) approximating a full circle of the given radius around {@code center}. */
+    private List<LatLng> polygonFromCircle(LatLng center, double radiusMeters) {
+        List<LatLng> ring = new ArrayList<>(CIRCLE_POINTS);
+        for (int i = 0; i < CIRCLE_POINTS; i++) {
+            double bearing = i * 360.0 / CIRCLE_POINTS;
+            ring.add(Utils.pointFromPosition(center, bearing, radiusMeters));
+        }
+        return ring;
+    }
+
+    /**
+     * Builds a polygon (ring) approximating an ellipse around {@code center}, whose major axis is oriented
+     * {@code orientationDegrees} clockwise from true north.
+     */
+    private List<LatLng> polygonFromEllipse(LatLng center, double semiMajorMeters, double semiMinorMeters,
+                                             double orientationDegrees) {
+        List<LatLng> ring = new ArrayList<>(CIRCLE_POINTS);
+        for (int i = 0; i < CIRCLE_POINTS; i++) {
+            double angleRad = Math.toRadians(i * 360.0 / CIRCLE_POINTS);
+            double localX = semiMajorMeters * Math.cos(angleRad);
+            double localY = semiMinorMeters * Math.sin(angleRad);
+            ring.add(offsetPoint(center, localX, localY, orientationDegrees));
+        }
+        return ring;
+    }
+
+    /**
+     * Builds a polygon (4 corners) approximating a rectangle around {@code center}, whose length axis is
+     * oriented {@code orientationDegrees} clockwise from true north.
+     */
+    private List<LatLng> polygonFromRectangle(LatLng center, double semiLengthMeters, double semiBreadthMeters,
+                                               double orientationDegrees) {
+        List<LatLng> ring = new ArrayList<>(4);
+        ring.add(offsetPoint(center, semiLengthMeters, semiBreadthMeters, orientationDegrees));
+        ring.add(offsetPoint(center, semiLengthMeters, -semiBreadthMeters, orientationDegrees));
+        ring.add(offsetPoint(center, -semiLengthMeters, -semiBreadthMeters, orientationDegrees));
+        ring.add(offsetPoint(center, -semiLengthMeters, semiBreadthMeters, orientationDegrees));
+        return ring;
+    }
+
+    /**
+     * Builds a "pie slice" polygon: {@code center}, followed by the arc points from {@code startDegrees} to
+     * {@code endDegrees} (WGS84, clockwise from true north) at {@code rangeMeters}, closing back on {@code center}.
+     */
+    private List<LatLng> polygonFromSector(LatLng center, double rangeMeters, double startDegrees, double endDegrees) {
+        double start = ((startDegrees % 360) + 360) % 360;
+        double end = ((endDegrees % 360) + 360) % 360;
+        double sweep = end - start;
+        if (sweep <= 0) sweep += 360;
+
+        List<LatLng> ring = new ArrayList<>(SECTOR_ARC_POINTS + 2);
+        ring.add(center);
+        for (int i = 0; i <= SECTOR_ARC_POINTS; i++) {
+            double bearing = (start + sweep * i / SECTOR_ARC_POINTS) % 360;
+            ring.add(Utils.pointFromPosition(center, bearing, rangeMeters));
+        }
+        return ring;
+    }
+
+    /**
+     * Translates a CPM v1.2.1 {@link DetectionArea} into one or more absolute geographic polygons approximating
+     * its shape. Height / vertical opening angles are ignored (2D projection only).
+     *
+     * @param detectionArea the sensor's detection area, never {@code null}
+     * @param headingEtsi the disseminating vehicle's heading in ETSI units (0.1 degree), or {@code null} if
+     *                    unavailable; only relevant for {@code vehicleSensor}, defaults to true north otherwise
+     * @return the polygon(s) approximating the covered area
+     */
+    private List<List<LatLng>> resolveCoverageV121(DetectionArea detectionArea, Integer headingEtsi) {
+        if (detectionArea == null) return List.of();
+
+        if (detectionArea.stationarySensorCircular() != null) {
+            AreaCircular circular = detectionArea.stationarySensorCircular();
+            LatLng center = applyOffset(position, circular.nodeCenterPoint(), 0);
+            double radius = EtsiConverter.cpmRangeMeters(circular.radius());
+            return List.of(polygonFromCircle(center, radius));
+
+        } else if (detectionArea.stationarySensorEllipse() != null) {
+            AreaEllipse ellipse = detectionArea.stationarySensorEllipse();
+            LatLng center = applyOffset(position, ellipse.nodeCenterPoint(), 0);
+            double semiMajor = EtsiConverter.cpmRangeMeters(ellipse.semiMajorRangeLength());
+            double semiMinor = EtsiConverter.cpmRangeMeters(ellipse.semiMinorRangeLength());
+            double orientation = angleDegreesOrZero(ellipse.semiMajorRangeOrientation());
+            return List.of(polygonFromEllipse(center, semiMajor, semiMinor, orientation));
+
+        } else if (detectionArea.stationarySensorRectangle() != null) {
+            AreaRectangle rectangle = detectionArea.stationarySensorRectangle();
+            LatLng center = applyOffset(position, rectangle.nodeCenterPoint(), 0);
+            double semiLength = EtsiConverter.cpmRangeMeters(rectangle.semiMajorRangeLength());
+            double semiBreadth = EtsiConverter.cpmRangeMeters(rectangle.semiMinorRangeLength());
+            double orientation = angleDegreesOrZero(rectangle.semiMajorRangeOrientation());
+            return List.of(polygonFromRectangle(center, semiLength, semiBreadth, orientation));
+
+        } else if (detectionArea.stationarySensorPolygon() != null) {
+            AreaPolygon polygon = detectionArea.stationarySensorPolygon();
+            List<LatLng> ring = new ArrayList<>();
+            for (Offset offset : polygon.offsets()) {
+                ring.add(applyOffset(position, offset, 0));
+            }
+            return List.of(ring);
+
+        } else if (detectionArea.stationarySensorRadial() != null) {
+            StationarySensorRadial radial = detectionArea.stationarySensorRadial();
+            LatLng center = applyOffset(position, radial.sensorPositionOffset(), 0);
+            double range = EtsiConverter.cpmRangeMeters(radial.range());
+            double start = angleDegreesOrZero(radial.horizontalOpeningAngleStart());
+            double end = angleDegreesOrZero(radial.horizontalOpeningAngleEnd());
+            return List.of(polygonFromSector(center, range, start, end));
+
+        } else if (detectionArea.vehicleSensor() != null) {
+            VehicleSensor vehicleSensor = detectionArea.vehicleSensor();
+            double heading = effectiveHeadingDegrees(headingEtsi);
+            LatLng mountingPoint = offsetPoint(position,
+                    EtsiConverter.cpmOffsetMeters(vehicleSensor.xSensorOffset()),
+                    EtsiConverter.cpmOffsetMeters(vehicleSensor.ySensorOffset()),
+                    heading);
+
+            List<List<LatLng>> coverageAreas = new ArrayList<>();
+            if (vehicleSensor.vehicleSensorPropertyList() != null) {
+                for (VehicleSensorProperty property : vehicleSensor.vehicleSensorPropertyList()) {
+                    double range = EtsiConverter.cpmRangeMeters(property.range());
+                    double relativeStart = angleDegreesOrZero(property.horizontalOpeningAngleStart());
+                    double relativeEnd = angleDegreesOrZero(property.horizontalOpeningAngleEnd());
+                    double absoluteStart = (heading + relativeStart) % 360;
+                    double absoluteEnd = (heading + relativeEnd) % 360;
+                    coverageAreas.add(polygonFromSector(mountingPoint, range, absoluteStart, absoluteEnd));
+                }
+            }
+            return coverageAreas;
+        }
+
+        return List.of();
+    }
+
+    /**
+     * Translates a CPM v2.1.1 perception region {@link Shape} into one or more absolute geographic polygons
+     * approximating its shape. Height / vertical opening angles are ignored (2D projection only).
+     * <p>
+     * Two distinct conventions apply, consistently with CPM v1.2.1 (the underlying CDD data elements are
+     * unchanged across versions, even though this project's JSON schema summary for v2.1.1 does not restate it):
+     * <ul>
+     *     <li>Position offsets ({@code centerPoint}, {@code shapeReferencePoint}, polygon vertices, the
+     *     {@code radialShapes} reference point) are expressed in a body-fixed (ISO 8855) coordinate system when
+     *     the sensor belongs to a vehicle, or WGS84 north/east-aligned when it belongs to a stationary RSU —
+     *     hence the {@code headingEtsi} rotation applied here.</li>
+     *     <li>Opening angles and shape orientations use the {@code angle_value} CDD data element, which is by
+     *     definition always WGS84-absolute (the very same element used for the vehicle's own
+     *     {@code orientationAngle}), so no heading correction is applied to them.</li>
+     * </ul>
+     *
+     * @param shape the sensor's perception region shape, may be {@code null} if not reported
+     * @param headingEtsi the disseminating vehicle's heading in ETSI units (0.1 degree), or {@code null} if
+     *                    unavailable (e.g. RSU-originated CPM), in which case position offsets are left
+     *                    unrotated (WGS84 north/east)
+     * @return the polygon(s) approximating the covered area
+     */
+    private List<List<LatLng>> resolveCoverageV211(Shape shape, Integer headingEtsi) {
+        if (shape == null) return List.of();
+
+        double heading = effectiveHeadingDegrees(headingEtsi);
+
+        if (shape.rectangular() != null) {
+            Rectangular rectangular = shape.rectangular();
+            LatLng center = applyOffset(position, rectangular.centerPoint(), heading);
+            double semiLength = EtsiConverter.cpmRangeMeters(rectangular.semiLength());
+            double semiBreadth = EtsiConverter.cpmRangeMeters(rectangular.semiBreadth());
+            double orientation = angleDegreesOrZero(rectangular.orientation());
+            return List.of(polygonFromRectangle(center, semiLength, semiBreadth, orientation));
+
+        } else if (shape.circular() != null) {
+            Circular circular = shape.circular();
+            LatLng center = applyOffset(position, circular.shapeReferencePoint(), heading);
+            double radius = EtsiConverter.cpmRangeMeters(circular.radius());
+            return List.of(polygonFromCircle(center, radius));
+
+        } else if (shape.elliptical() != null) {
+            Elliptical elliptical = shape.elliptical();
+            LatLng center = applyOffset(position, elliptical.shapeReferencePoint(), heading);
+            double semiMajor = EtsiConverter.cpmRangeMeters(elliptical.semiMajorAxisLength());
+            double semiMinor = EtsiConverter.cpmRangeMeters(elliptical.semiMinorAxisLength());
+            double orientation = angleDegreesOrZero(elliptical.orientation());
+            return List.of(polygonFromEllipse(center, semiMajor, semiMinor, orientation));
+
+        } else if (shape.polygonal() != null) {
+            Polygonal polygonal = shape.polygonal();
+            LatLng base = applyOffset(position, polygonal.shapeReferencePoint(), heading);
+            List<LatLng> ring = new ArrayList<>();
+            if (polygonal.polygon() != null) {
+                for (CartesianPosition3d point : polygonal.polygon()) {
+                    ring.add(applyOffset(base, point, heading));
+                }
+            }
+            return List.of(ring);
+
+        } else if (shape.radial() != null) {
+            Radial radial = shape.radial();
+            LatLng center = applyOffset(position, radial.shapeReferencePoint(), heading);
+            double range = EtsiConverter.cpmRangeMeters(radial.range());
+            double start = angleDegreesOrZero(radial.stationaryHorizontalOpeningAngleStart());
+            double end = angleDegreesOrZero(radial.stationaryHorizontalOpeningAngleEnd());
+            return List.of(polygonFromSector(center, range, start, end));
+
+        } else if (shape.radialShapes() != null) {
+            RadialShapes radialShapes = shape.radialShapes();
+            LatLng refPoint = offsetPoint(position,
+                    EtsiConverter.cpmOffsetMeters(radialShapes.xCoordinate()),
+                    EtsiConverter.cpmOffsetMeters(radialShapes.yCoordinate()),
+                    heading);
+
+            List<List<LatLng>> coverageAreas = new ArrayList<>();
+            if (radialShapes.radialShapesList() != null) {
+                for (Radial radial : radialShapes.radialShapesList()) {
+                    LatLng center = radial.shapeReferencePoint() != null
+                            ? applyOffset(position, radial.shapeReferencePoint(), heading)
+                            : refPoint;
+                    double range = EtsiConverter.cpmRangeMeters(radial.range());
+                    double start = angleDegreesOrZero(radial.stationaryHorizontalOpeningAngleStart());
+                    double end = angleDegreesOrZero(radial.stationaryHorizontalOpeningAngleEnd());
+                    coverageAreas.add(polygonFromSector(center, range, start, end));
+                }
+            }
+            return coverageAreas;
+        }
+
+        return List.of();
+    }
+
+    /** Applies an optional CPM v1.2.1 {@link Offset} (0.01 m units) to {@code origin}, or returns {@code origin}. */
+    private LatLng applyOffset(LatLng origin, Offset offset, double headingDegrees) {
+        if (offset == null) return origin;
+        return offsetPoint(origin,
+                EtsiConverter.cpmOffsetMeters(offset.x()),
+                EtsiConverter.cpmOffsetMeters(offset.y()),
+                headingDegrees);
+    }
+
+    /** Applies an optional CPM v2.1.1 {@link CartesianPosition3d} (0.01 m units) to {@code origin}. */
+    private LatLng applyOffset(LatLng origin, CartesianPosition3d offset, double headingDegrees) {
+        if (offset == null) return origin;
+        return offsetPoint(origin,
+                EtsiConverter.cpmOffsetMeters(offset.xCoordinate()),
+                EtsiConverter.cpmOffsetMeters(offset.yCoordinate()),
+                headingDegrees);
+    }
+
+    /** Converts a CPM 0.1-degree opening angle / orientation to degrees, defaulting to {@code 0} if unavailable. */
+    private double angleDegreesOrZero(Integer angleEtsi) {
+        if (angleEtsi == null) return 0.0;
+        double degrees = EtsiConverter.cpmOpeningAngleDegrees(angleEtsi);
+        return Double.isNaN(degrees) ? 0.0 : degrees;
+    }
+
+    private double angleDegreesOrZero(int angleEtsi) {
+        double degrees = EtsiConverter.cpmOpeningAngleDegrees(angleEtsi);
+        return Double.isNaN(degrees) ? 0.0 : degrees;
     }
 
     /* --------------------------------------------------------------------- */

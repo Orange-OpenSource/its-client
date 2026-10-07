@@ -8,6 +8,8 @@
 package com.orange.iot3mobility;
 
 import com.orange.iot3mobility.quadkey.LatLng;
+
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -36,6 +38,16 @@ public class Utils {
         lng2 = Math.toDegrees(lng2);
 
         return new LatLng(lat2, lng2);
+    }
+
+    public static List<LatLng> computeFootprint(LatLng position, double orientation, double length, double width) {
+        LatLng frontCenter = Utils.pointFromPosition(position, orientation, length / 2);
+        LatLng frontLeft = Utils.pointFromPosition(frontCenter, (orientation - 90 + 360) % 360, width / 2);
+        LatLng frontRight = Utils.pointFromPosition(frontCenter, (orientation + 90 + 360) % 360, width / 2);
+        LatLng rearCenter = Utils.pointFromPosition(position, (orientation + 180 + 360) % 360, length / 2);
+        LatLng rearLeft = Utils.pointFromPosition(rearCenter, (orientation - 90 + 360) % 360, width / 2);
+        LatLng rearRight = Utils.pointFromPosition(rearCenter, (orientation + 90 + 360) % 360, width / 2);
+        return List.of(frontLeft, frontRight, rearRight, rearLeft);
     }
 
     public static String getRandomUuid() {

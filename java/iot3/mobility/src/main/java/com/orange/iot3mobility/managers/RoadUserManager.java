@@ -53,8 +53,8 @@ public class RoadUserManager {
                 String uuid;
                 StationType stationType;
                 LatLng position;
-                double speed;
-                double heading;
+                double speed, heading;
+                Double length = null, width = null;
 
                 if(camFrame.version().equals(CamVersion.V1_1_3)) {
                     CamEnvelope113 camEnvelope113 = (CamEnvelope113) camFrame.envelope();
@@ -65,7 +65,11 @@ public class RoadUserManager {
                             EtsiConverter.longitudeDegrees(camEnvelope113.message().basicContainer().referencePosition().longitude()));
                     speed = EtsiConverter.speedMetersPerSecond(camEnvelope113.message().highFrequencyContainer().speed());
                     heading = EtsiConverter.headingDegrees(camEnvelope113.message().highFrequencyContainer().heading());
-                    createOrUpdateRoadUser(uuid, stationType, position, speed, heading, null, camFrame);
+                    if(camEnvelope113.message().highFrequencyContainer().vehicleLength() != null)
+                        length = EtsiConverter.vehicleLengthMeters(camEnvelope113.message().highFrequencyContainer().vehicleLength());
+                    if(camEnvelope113.message().highFrequencyContainer().vehicleWidth() != null)
+                        width = EtsiConverter.vehicleWidthMeters(camEnvelope113.message().highFrequencyContainer().vehicleWidth());
+                    createOrUpdateRoadUser(uuid, stationType, position, speed, heading, length, width, null, camFrame);
                 } else if(camFrame.version().equals(CamVersion.V2_4_0)) {
                     CamEnvelope240 camEnvelope240 = (CamEnvelope240) camFrame.envelope();
                     if(camEnvelope240.message() instanceof CamStructuredData cam) {
@@ -77,11 +81,15 @@ public class RoadUserManager {
                         if(cam.highFrequencyContainer() instanceof BasicVehicleContainerHighFrequency vehicleContainerHighFrequency) {
                             speed = EtsiConverter.speedMetersPerSecond(vehicleContainerHighFrequency.speed().value());
                             heading = EtsiConverter.headingDegrees(vehicleContainerHighFrequency.heading().value());
+                            if(vehicleContainerHighFrequency.vehicleLength() != null && vehicleContainerHighFrequency.vehicleLength().value() != 1023)
+                                length = EtsiConverter.vehicleLengthMeters(vehicleContainerHighFrequency.vehicleLength().value());
+                            if(vehicleContainerHighFrequency.vehicleWidth() != 62)
+                                width = EtsiConverter.vehicleWidthMeters(vehicleContainerHighFrequency.vehicleWidth());
                         } else { // road-side unit
                             speed = 0;
                             heading = 0;
                         }
-                        createOrUpdateRoadUser(uuid, stationType, position, speed, heading,
+                        createOrUpdateRoadUser(uuid, stationType, position, speed, heading, length, width,
                                 camEnvelope240.linkedStationId(), camFrame);
                     }
                 }
@@ -94,7 +102,8 @@ public class RoadUserManager {
     }
 
     private static void createOrUpdateRoadUser(String uuid, StationType stationType, LatLng position, double speed,
-                                               double heading, Long linkedStationId, CamCodec.CamFrame<?> camFrame) {
+                                               double heading, Double length, Double width, Long linkedStationId,
+                                               CamCodec.CamFrame<?> camFrame) {
         if(ROAD_USER_MAP.containsKey(uuid)) {
             synchronized (ROAD_USER_MAP) {
                 RoadUser roadUser = ROAD_USER_MAP.get(uuid);
@@ -104,13 +113,15 @@ public class RoadUserManager {
                     roadUser.setPosition(position);
                     roadUser.setSpeed(speed);
                     roadUser.setHeading(heading);
+                    roadUser.setDimensions(length, width);
                     roadUser.setLinkedStationId(linkedStationId);
                     roadUser.setCamFrame(camFrame);
                     ioT3RoadUserCallback.roadUserUpdate(roadUser);
                 }
             }
         } else {
-            RoadUser roadUser = new RoadUser(uuid, stationType, position, speed, heading, linkedStationId, camFrame);
+            RoadUser roadUser = new RoadUser(uuid, stationType, position, speed, heading, length, width,
+                    linkedStationId, camFrame);
             addRoadUser(uuid, roadUser);
             ioT3RoadUserCallback.newRoadUser(roadUser);
         }

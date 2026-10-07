@@ -148,9 +148,13 @@ public final class CamWriter113 {
             gen.writeStartObject();
             gen.writeFieldName("path_position");
             gen.writeStartObject();
-            gen.writeNumberField("delta_latitude", point.deltaPosition().deltaLatitude());
-            gen.writeNumberField("delta_longitude", point.deltaPosition().deltaLongitude());
-            gen.writeNumberField("delta_altitude", point.deltaPosition().deltaAltitude());
+            DeltaReferencePosition pos = point.deltaPosition();
+            if (pos.deltaLatitude() != null)
+                gen.writeNumberField("delta_latitude", pos.deltaLatitude());
+            if (pos.deltaLongitude() != null)
+                gen.writeNumberField("delta_longitude", pos.deltaLongitude());
+            if (pos.deltaAltitude() != null)
+                gen.writeNumberField("delta_altitude", pos.deltaAltitude());
             gen.writeEndObject();
             if (point.deltaTime() != null) {
                 gen.writeNumberField("path_delta_time", point.deltaTime());
