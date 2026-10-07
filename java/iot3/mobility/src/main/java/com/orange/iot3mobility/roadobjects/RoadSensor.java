@@ -97,6 +97,12 @@ public class RoadSensor {
             if(cpmEnvelope121.message().perceivedObjectContainer() == null) return;
             List<PerceivedObject> perceivedObjects = cpmEnvelope121.message().perceivedObjectContainer().perceivedObjects();
 
+            // Per CPM CDD convention, x_distance/y_distance (and x_speed/y_speed) are reported in a body-fixed
+            // coordinate system (ISO 8855) when the originator is a vehicle, or in a WGS84 north/east-aligned
+            // coordinate system when it's a stationary RSU. effectiveHeadingDegrees() falls back to 0 (no
+            // rotation, i.e. north/east) when no originating vehicle container is present.
+            double headingDegrees = effectiveHeadingDegrees(extractHeadingV121(cpmEnvelope121));
+
             if(!perceivedObjects.isEmpty()) {
                 for(PerceivedObject perceivedObject: perceivedObjects) {
                     String objectId = uuid + "_" + perceivedObject.objectId();
@@ -105,8 +111,7 @@ public class RoadSensor {
                     double xOffsetMeters = EtsiConverter.cpmDistanceMeters(perceivedObject.xDistance());
                     double yOffsetMeters = EtsiConverter.cpmDistanceMeters(perceivedObject.yDistance());
 
-                    LatLng objectPosition = Utils.pointFromPosition(position, 0, yOffsetMeters);
-                    objectPosition = Utils.pointFromPosition(objectPosition, (90 + 360) % 360, xOffsetMeters);
+                    LatLng objectPosition = offsetPoint(position, xOffsetMeters, yOffsetMeters, headingDegrees);
 
                     SensorObjectType objectType = SensorObjectType.UNKNOWN;
                     if(perceivedObject.classification() != null) {
@@ -120,9 +125,11 @@ public class RoadSensor {
                     double objectSpeed = EtsiConverter.cpmDerivedSpeedMetersPerSecond(
                             perceivedObject.xSpeed(),
                             perceivedObject.ySpeed());
-                    double objectHeading = EtsiConverter.cpmDerivedHeadingDegrees(
+                    // x_speed/y_speed share the same body-fixed (vehicle) / WGS84-aligned (RSU) frame as
+                    // x_distance/y_distance, so the derived relative heading must be rotated by the same amount.
+                    double objectHeading = ((headingDegrees + EtsiConverter.cpmDerivedHeadingDegrees(
                             perceivedObject.xSpeed(),
-                            perceivedObject.ySpeed());
+                            perceivedObject.ySpeed())) % 360 + 360) % 360;
 
                     Double objectLength = null, objectWidth = null, objectOrientation = null;
                     if(perceivedObject.planarObjectDimension1() != null
@@ -188,6 +195,11 @@ public class RoadSensor {
                 perceivedObjects = cpmEnvelope211.message().perceivedObjectContainer().perceivedObjects();
             }
 
+            // Same convention as CPM v1.2.1 (the underlying CartesianPosition3d / velocity_component DEs are
+            // unchanged across CPM versions): body-fixed (ISO 8855) for a vehicle originator, WGS84 north/east
+            // for a stationary RSU. effectiveHeadingDegrees() falls back to 0 (no rotation) when absent.
+            double headingDegrees = effectiveHeadingDegrees(extractHeadingV211(cpmEnvelope211));
+
             if(!perceivedObjects.isEmpty()) {
                 for (int index = 0; index < perceivedObjects.size(); index++) {
                     com.orange.iot3mobility.messages.cpm.v211.model.perceivedobjectcontainer.PerceivedObject perceivedObject = perceivedObjects.get(index);
@@ -205,8 +217,7 @@ public class RoadSensor {
                     double xOffsetMeters = EtsiConverter.cpmDistanceMeters(xDistance);
                     double yOffsetMeters = EtsiConverter.cpmDistanceMeters(yDistance);
 
-                    LatLng objectPosition = Utils.pointFromPosition(position, 0, yOffsetMeters);
-                    objectPosition = Utils.pointFromPosition(objectPosition, (90 + 360) % 360, xOffsetMeters);
+                    LatLng objectPosition = offsetPoint(position, xOffsetMeters, yOffsetMeters, headingDegrees);
 
                     SensorObjectType objectType = SensorObjectType.UNKNOWN;
                     if(perceivedObject.classification() != null) {
@@ -226,7 +237,10 @@ public class RoadSensor {
                             int xSpeed = perceivedObject.velocity().cartesianVelocity().xVelocity().value();
                             int ySpeed = perceivedObject.velocity().cartesianVelocity().yVelocity().value();
                             objectSpeed = EtsiConverter.cpmDerivedSpeedMetersPerSecond(xSpeed, ySpeed);
-                            objectHeading = EtsiConverter.cpmDerivedHeadingDegrees(xSpeed, ySpeed);
+                            // x_velocity/y_velocity share the same body-fixed (vehicle) / WGS84-aligned (RSU)
+                            // frame as the position offset, unlike polar_velocity.velocity_direction below
+                            // (an "angle" DE, always WGS84-absolute).
+                            objectHeading = ((headingDegrees + EtsiConverter.cpmDerivedHeadingDegrees(xSpeed, ySpeed)) % 360 + 360) % 360;
                         } else if (perceivedObject.velocity().polarVelocity() != null) {
                             if (perceivedObject.velocity().polarVelocity().velocityMagnitude() != null) {
                                 objectSpeed = EtsiConverter.cpmSpeedMetersPerSecond(
@@ -375,7 +389,9 @@ public class RoadSensor {
      * call, so the (comparatively expensive) polygon computation can be skipped when it's unnecessary. Most CPM
      * senders (especially fixed RSU sensors) republish the exact same {@code sensorInformationContainer} on every
      * frame while only {@code perceivedObjectContainer} varies; {@code headingEtsi} is included because it affects
-     * the resolved {@code vehicleSensor} polygon even when the sensor descriptor itself is unchanged.
+     * the resolved polygon's position whenever the sensor belongs to a vehicle (CPM v1.2.1 {@code vehicleSensor},
+     * or any v2.1.1 {@code Shape} reported by a vehicle-origin CPM), even when the sensor descriptor itself is
+     * unchanged.
      */
     private record CoverageCacheKey(Object sensorInformationContainer, Integer headingEtsi) {}
 
@@ -426,7 +442,7 @@ public class RoadSensor {
 
             for (com.orange.iot3mobility.messages.cpm.v211.model.sensorinformationcontainer.SensorInformation
                     sensorInformation : sensorInformationList) {
-                List<List<LatLng>> coverageAreas = resolveCoverageV211(sensorInformation.perceptionRegionShape());
+                List<List<LatLng>> coverageAreas = resolveCoverageV211(sensorInformation.perceptionRegionShape(), headingEtsi);
                 sensorCoverageMap.put(sensorInformation.sensorId(),
                         new SensorCoverage(sensorInformation.sensorId(), sensorInformation.sensorType(), coverageAreas));
             }
@@ -610,19 +626,34 @@ public class RoadSensor {
 
     /**
      * Translates a CPM v2.1.1 perception region {@link Shape} into one or more absolute geographic polygons
-     * approximating its shape. Opening angles and orientations in this shape are always WGS84-absolute (per
-     * ETSI TS 103 324), so no heading correction is applied. Height / vertical opening angles are ignored
-     * (2D projection only).
+     * approximating its shape. Height / vertical opening angles are ignored (2D projection only).
+     * <p>
+     * Two distinct conventions apply, consistently with CPM v1.2.1 (the underlying CDD data elements are
+     * unchanged across versions, even though this project's JSON schema summary for v2.1.1 does not restate it):
+     * <ul>
+     *     <li>Position offsets ({@code centerPoint}, {@code shapeReferencePoint}, polygon vertices, the
+     *     {@code radialShapes} reference point) are expressed in a body-fixed (ISO 8855) coordinate system when
+     *     the sensor belongs to a vehicle, or WGS84 north/east-aligned when it belongs to a stationary RSU —
+     *     hence the {@code headingEtsi} rotation applied here.</li>
+     *     <li>Opening angles and shape orientations use the {@code angle_value} CDD data element, which is by
+     *     definition always WGS84-absolute (the very same element used for the vehicle's own
+     *     {@code orientationAngle}), so no heading correction is applied to them.</li>
+     * </ul>
      *
      * @param shape the sensor's perception region shape, may be {@code null} if not reported
+     * @param headingEtsi the disseminating vehicle's heading in ETSI units (0.1 degree), or {@code null} if
+     *                    unavailable (e.g. RSU-originated CPM), in which case position offsets are left
+     *                    unrotated (WGS84 north/east)
      * @return the polygon(s) approximating the covered area
      */
-    private List<List<LatLng>> resolveCoverageV211(Shape shape) {
+    private List<List<LatLng>> resolveCoverageV211(Shape shape, Integer headingEtsi) {
         if (shape == null) return List.of();
+
+        double heading = effectiveHeadingDegrees(headingEtsi);
 
         if (shape.rectangular() != null) {
             Rectangular rectangular = shape.rectangular();
-            LatLng center = applyOffset(position, rectangular.centerPoint(), 0);
+            LatLng center = applyOffset(position, rectangular.centerPoint(), heading);
             double semiLength = EtsiConverter.cpmRangeMeters(rectangular.semiLength());
             double semiBreadth = EtsiConverter.cpmRangeMeters(rectangular.semiBreadth());
             double orientation = angleDegreesOrZero(rectangular.orientation());
@@ -630,13 +661,13 @@ public class RoadSensor {
 
         } else if (shape.circular() != null) {
             Circular circular = shape.circular();
-            LatLng center = applyOffset(position, circular.shapeReferencePoint(), 0);
+            LatLng center = applyOffset(position, circular.shapeReferencePoint(), heading);
             double radius = EtsiConverter.cpmRangeMeters(circular.radius());
             return List.of(polygonFromCircle(center, radius));
 
         } else if (shape.elliptical() != null) {
             Elliptical elliptical = shape.elliptical();
-            LatLng center = applyOffset(position, elliptical.shapeReferencePoint(), 0);
+            LatLng center = applyOffset(position, elliptical.shapeReferencePoint(), heading);
             double semiMajor = EtsiConverter.cpmRangeMeters(elliptical.semiMajorAxisLength());
             double semiMinor = EtsiConverter.cpmRangeMeters(elliptical.semiMinorAxisLength());
             double orientation = angleDegreesOrZero(elliptical.orientation());
@@ -644,18 +675,18 @@ public class RoadSensor {
 
         } else if (shape.polygonal() != null) {
             Polygonal polygonal = shape.polygonal();
-            LatLng base = applyOffset(position, polygonal.shapeReferencePoint(), 0);
+            LatLng base = applyOffset(position, polygonal.shapeReferencePoint(), heading);
             List<LatLng> ring = new ArrayList<>();
             if (polygonal.polygon() != null) {
                 for (CartesianPosition3d point : polygonal.polygon()) {
-                    ring.add(applyOffset(base, point, 0));
+                    ring.add(applyOffset(base, point, heading));
                 }
             }
             return List.of(ring);
 
         } else if (shape.radial() != null) {
             Radial radial = shape.radial();
-            LatLng center = applyOffset(position, radial.shapeReferencePoint(), 0);
+            LatLng center = applyOffset(position, radial.shapeReferencePoint(), heading);
             double range = EtsiConverter.cpmRangeMeters(radial.range());
             double start = angleDegreesOrZero(radial.stationaryHorizontalOpeningAngleStart());
             double end = angleDegreesOrZero(radial.stationaryHorizontalOpeningAngleEnd());
@@ -666,13 +697,13 @@ public class RoadSensor {
             LatLng refPoint = offsetPoint(position,
                     EtsiConverter.cpmOffsetMeters(radialShapes.xCoordinate()),
                     EtsiConverter.cpmOffsetMeters(radialShapes.yCoordinate()),
-                    0);
+                    heading);
 
             List<List<LatLng>> coverageAreas = new ArrayList<>();
             if (radialShapes.radialShapesList() != null) {
                 for (Radial radial : radialShapes.radialShapesList()) {
                     LatLng center = radial.shapeReferencePoint() != null
-                            ? applyOffset(position, radial.shapeReferencePoint(), 0)
+                            ? applyOffset(position, radial.shapeReferencePoint(), heading)
                             : refPoint;
                     double range = EtsiConverter.cpmRangeMeters(radial.range());
                     double start = angleDegreesOrZero(radial.stationaryHorizontalOpeningAngleStart());
