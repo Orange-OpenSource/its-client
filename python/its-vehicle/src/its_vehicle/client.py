@@ -200,3 +200,5 @@ class ITSClient:
                 # Payload does not have expected fields, or is not a dict;
                 # ignore this invalid message
                 pass
+        elif data == "local":
+            pass
