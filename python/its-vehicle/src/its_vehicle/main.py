@@ -159,6 +159,7 @@ def main():
         **conn_opts,
         **otel_opts,
         msg_cb=_msg_cb,
+        msg_cb_data="main",
     )
 
     mqtt_local = iot3.core.mqtt.MqttClient(
