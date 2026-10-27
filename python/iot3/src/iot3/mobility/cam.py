@@ -8,7 +8,7 @@ import hashlib
 import json
 import time
 
-from typing import Optional
+from typing import Optional, Self
 
 from . import etsi
 from .gnss import GNSSReport
@@ -16,6 +16,16 @@ from .gnss import GNSSReport
 
 class CooperativeAwarenessMessage(etsi.Message):
     msg_type = "cam"
+
+    class ExteriorLights(enum.Flag):
+        low_beam_headlights = enum.auto()
+        high_beam_headlights = enum.auto()
+        left_turn_signal = enum.auto()
+        right_turn_signal = enum.auto()
+        daytime_running_lights = enum.auto()
+        reverse_light = enum.auto()
+        fog_light = enum.auto()
+        parking_lights = enum.auto()
 
     def __init__(
         self,
@@ -27,6 +37,7 @@ class CooperativeAwarenessMessage(etsi.Message):
         gnss_report: GNSSReport,
         length: float | None = None,
         width: float | None = None,
+        lights: ExteriorLights = ExteriorLights(0),
     ):
         """Create a basic Cooperative Awareness Message
 
@@ -58,6 +69,13 @@ class CooperativeAwarenessMessage(etsi.Message):
                     "basic_container": {
                         "station_type": station_type,
                         "reference_position": self.reference_position(gnss_report),
+                    },
+                    "low_frequency_container": {
+                        "basic_vehicle_container_low_frequency": {
+                            "vehicle_role": 0,
+                            "path_history": [],
+                            # "exterior_lights" is set using the property, below
+                        }
                     },
                     "high_frequency_container": {
                         "basic_vehicle_container_high_frequency": {
@@ -117,6 +135,8 @@ class CooperativeAwarenessMessage(etsi.Message):
                 },
             },
         )
+
+        self.exterior_lights = lights
 
     @property
     def latitude(self):
@@ -223,6 +243,30 @@ class CooperativeAwarenessMessage(etsi.Message):
             {"min": 1, "max": 60},
             61,
         )
+
+    @property
+    def exterior_lights(self) -> ExteriorLights:
+        lights = self.ExteriorLights(0)
+        try:
+            ext_lights = self._message["message"]["low_frequency_container"][
+                "basic_vehicle_container_low_frequency"
+            ]["exterior_lights"]
+        except KeyError:
+            pass
+        else:
+            for light in CooperativeAwarenessMessage.ExteriorLights:
+                if ext_lights[light.name + "_on"]:
+                    lights |= light
+        return lights
+
+    @exterior_lights.setter
+    def exterior_lights(self, lights: ExteriorLights):
+        self._message["message"]["low_frequency_container"][
+            "basic_vehicle_container_low_frequency"
+        ]["exterior_lights"] = {
+            light.name + "_on": light in lights
+            for light in CooperativeAwarenessMessage.ExteriorLights
+        }
 
 
 # Shorthand
