@@ -21,7 +21,7 @@ class ITSClient:
         cfg: dict,
         gpsd: GNSS,
         mqtt_main: MqttClient,
-        mqtt_local: MqttClient = None,
+        mqtt_local: MqttClient,
     ):
         self.cfg = cfg
         self.gpsd = gpsd
@@ -156,7 +156,7 @@ class ITSClient:
             )
             msg_json = msg.to_json()
             self.mqtt_main.publish(topic=topic, payload=msg_json)
-            if self.mqtt_local and not self.cfg["mirror-self"]:
+            if not self.cfg["mirror-self"]:
                 # Use the sub-prefix, to simulate the message as coming
                 # from the main broker as if we had subscribed to it.
                 mirror_topic = (
@@ -186,8 +186,6 @@ class ITSClient:
             payload_d = json.loads(payload)
         except json.decoder.JSONDecodeError:
             # Not JSON, not sure what to do with that...
-            return
-        if self.mqtt_local is None:
             return
         try:
             if (
