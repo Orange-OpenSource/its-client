@@ -186,9 +186,9 @@ def main():
         if otel:
             otel.start()
         gnss.start()
-        mqtt_main.start()
         if mqtt_mirror is not None:
             mqtt_mirror.start()
+        mqtt_main.start()
         its_client.start()
         its_client.join()  # Should not terminate ever, but with an exception
     except (KeyboardInterrupt, TermSignal):
