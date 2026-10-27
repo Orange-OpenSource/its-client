@@ -172,12 +172,14 @@ class ITSClient:
     def msg_cb(
         self,
         *_args,
+        data: str,
         topic: str,
         payload: bytes,
         **_kwargs,
     ):
         logging.debug(
-            "received message on %s: %s",
+            "received message on %s broker, topic %s: %s",
+            data,
             topic[:16] + ("..." if len(topic) > 16 else ""),
             payload[:16].decode(errors="backslashreplace")
             + ("..." if len(payload) > 16 else ""),
@@ -187,13 +189,14 @@ class ITSClient:
         except json.decoder.JSONDecodeError:
             # Not JSON, not sure what to do with that...
             return
-        try:
-            if (
-                payload_d.get("source_uuid", None) != self.cfg["station-uuid"]
-                or self.cfg["mirror-self"]
-            ):
-                self.mqtt_local.publish(topic=topic, payload=payload)
-        except:
-            # Payload does not have expected fields, or is not a dict;
-            # ignore this invalid message
-            pass
+        if data == "main":
+            try:
+                if (
+                    payload_d.get("source_uuid", None) != self.cfg["station-uuid"]
+                    or self.cfg["mirror-self"]
+                ):
+                    self.mqtt_local.publish(topic=topic, payload=payload)
+            except:
+                # Payload does not have expected fields, or is not a dict;
+                # ignore this invalid message
+                pass
