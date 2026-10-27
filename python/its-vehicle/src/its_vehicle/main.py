@@ -170,6 +170,7 @@ def main():
         msg_cb=_msg_cb,
         msg_cb_data="local",
     )
+    mqtt_local.subscribe(topics=[cfg["general"]["topic-obu-state"]])
 
     its_client = client.ITSClient(
         cfg=cfg["general"],
