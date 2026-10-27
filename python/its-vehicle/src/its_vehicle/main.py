@@ -167,6 +167,8 @@ def main():
         socket_path=cfg["broker.local"]["socket-path"],
         username=cfg["broker.local"]["username"],
         password=cfg["broker.local"]["password"],
+        msg_cb=_msg_cb,
+        msg_cb_data="local",
     )
 
     its_client = client.ITSClient(
