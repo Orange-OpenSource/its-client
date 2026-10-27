@@ -173,7 +173,7 @@ def main():
 
     its_client = client.ITSClient(
         cfg=cfg["general"],
-        gpsd=gnss,
+        gnss=gnss,
         mqtt_main=mqtt_main,
         mqtt_local=mqtt_local,
     )
