@@ -86,7 +86,7 @@ version = "0.7.0"
 features = ["fs", "cors"]
 
 [dependencies.rusqlite]
-version = "0.40.2"
+version = "0.41.0"
 features = ["bundled"]
 
 [dependencies.base64]
