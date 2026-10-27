@@ -46,7 +46,7 @@ pub struct Exchange {
     /// message (e.g. the sequence number for CAM and DENM).
     /// Only used into the DENM message.
     /// TODO study if the field detection_zones_to_event_position could be used instead.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub path: Vec<PathElement>,
     pub message: Message,
 
@@ -173,7 +173,40 @@ impl Eq for Exchange {}
 
 #[cfg(test)]
 mod tests {
-    use crate::exchange::Exchange;
+    use crate::exchange::{Exchange, PathElement};
+    use crate::mobility::position::Position;
+
+    #[test]
+    fn empty_paths_are_omitted_but_legacy_empty_paths_remain_readable() {
+        for fixture in [minimal_cam(), minimal_denm(), minimal_cpm()] {
+            let mut legacy: serde_json::Value = serde_json::from_str(fixture).unwrap();
+            legacy["path"] = serde_json::json!([]);
+            for value in [serde_json::from_str(fixture).unwrap(), legacy] {
+                let exchange: Exchange = serde_json::from_value(value).unwrap();
+                assert!(exchange.path.is_empty());
+                assert!(
+                    serde_json::to_value(&exchange)
+                        .unwrap()
+                        .get("path")
+                        .is_none()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn nonempty_paths_are_preserved_on_serialization() {
+        let mut exchange: Exchange = serde_json::from_str(minimal_denm()).unwrap();
+        exchange.path.push(PathElement {
+            position: Position::default(),
+            message_type: "denm".into(),
+            id: Some(42),
+        });
+        let value = serde_json::to_value(&exchange).unwrap();
+        assert_eq!(value["path"].as_array().unwrap().len(), 1);
+        let restored: Exchange = serde_json::from_value(value).unwrap();
+        assert_eq!(restored.path, exchange.path);
+    }
 
     fn minimal_cam() -> &'static str {
         r#"{
@@ -181,7 +214,6 @@ mod tests {
             "source_uuid": "com_application_12345",
             "timestamp": 1574778515424,
             "version": "2.2.0",
-            "path": [],
             "message": {
                 "protocol_version": 255,
                 "station_id": 4294967295,
@@ -243,7 +275,6 @@ mod tests {
             "source_uuid": "com_application_12345",
             "timestamp": 1574778515424,
             "version": "2.3.0",
-            "path": [],
             "message": {
                 "protocol_version": 255,
                 "station_id": 4294967295,
@@ -279,7 +310,6 @@ mod tests {
             "source_uuid": "com_application_12345",
             "timestamp": 1574778515424,
             "version": "2.1.0",
-            "path": [],
             "message": {
                 "protocol_version": 255,
                 "station_id": 4294967295,

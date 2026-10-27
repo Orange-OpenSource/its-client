@@ -7,6 +7,25 @@ libits-client
 This crate provides IoT3 [MQTT][3] and [OpenTelemetry][4] generic clients and,
 on top of this, an [ETSI][5] [Intelligent Transport System][6] messages implementation using [JSON][7].
 
+### Confidence values
+
+Rust confidence fields follow the CAM 2.4.0, DENM 2.3.0 and CPM 2.1.1 schemas;
+legacy CAM 1.1.3 optional fields retain their own layout. Construction defaults
+use each field's unavailable sentinel, not zero or invented precision.
+Zero remains accepted where the corresponding schema permits it, such as
+acceleration, curvature, yaw rate, altitude and ellipse axes.
+
+Serialization and deserialization reject out-of-range confidence values with
+an explicit Serde error; valid values are preserved rather than clamped.
+Missing optional confidences remain absent. Speed, heading and angle confidence
+use 127 for unavailable, Cartesian coordinates 4096, dimensions 32, classification
+and perception regions 101, acceleration 102, yaw rate 8, angular velocity 7,
+longitudinal lane position 1023, and altitude 15.
+Empty exchange paths are omitted on output, while legacy `"path": []` remains
+readable. Nonempty paths are preserved.
+The related quality fields are checked too: CPM object perception quality
+is in `0..15`, and DENM information quality is in `0..7` (unavailable: 0).
+
 Examples
 --------
 

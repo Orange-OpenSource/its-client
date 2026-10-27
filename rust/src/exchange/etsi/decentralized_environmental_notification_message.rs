@@ -21,6 +21,7 @@ use crate::exchange::mortal::Mortal;
 use crate::mobility::mobile::Mobile;
 use crate::mobility::position::Position;
 
+use super::confidence;
 use crate::exchange::etsi::cause_code::CauseCode;
 use crate::exchange::etsi::heading::Heading;
 use crate::exchange::etsi::speed::Speed;
@@ -84,6 +85,10 @@ pub struct ManagementContainer {
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SituationContainer {
     /// Information quality of the event
+    #[serde(
+        serialize_with = "confidence::serialize::<_, _, 0, 7>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 7>"
+    )]
     pub information_quality: u8,
     /// Type of the event, represented by a CauseCode
     pub event_type: CauseCode,
@@ -108,7 +113,10 @@ pub struct EventPoint {
     /// Position of the event in reference to the station
     pub event_position: DeltaReferencePosition,
     /// Information quality of the event point
-    // TODO: implements an InformationQuality enum
+    #[serde(
+        serialize_with = "confidence::serialize::<_, _, 0, 7>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 7>"
+    )]
     pub information_quality: u8,
 
     // Optional fields
@@ -256,12 +264,25 @@ pub struct PathElementPosition {
 
 /// Altitude value with confidence
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AltitudeValue {
     /// Altitude value in centimeters
     pub value: i32,
     /// Confidence of the altitude
+    #[serde(
+        serialize_with = "confidence::serialize::<_, _, 0, 15>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 15>"
+    )]
     pub confidence: u8,
+}
+
+impl Default for AltitudeValue {
+    fn default() -> Self {
+        Self {
+            value: 0,
+            confidence: 15,
+        }
+    }
 }
 
 /// Message type for path element

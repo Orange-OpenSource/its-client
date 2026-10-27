@@ -12,6 +12,7 @@
 use crate::mobility::mobile::Mobile;
 use std::any::type_name;
 
+use super::confidence;
 use crate::exchange::etsi::cooperative_awareness_message::ExteriorLights;
 use crate::exchange::etsi::reference_position113::{PositionConfidence, ReferencePosition113};
 use crate::exchange::etsi::{
@@ -83,13 +84,53 @@ pub struct HighFrequencyContainer {
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HighFrequencyConfidence {
+    #[serde(
+        default,
+        serialize_with = "confidence::serialize::<_, _, 1, 127>",
+        deserialize_with = "confidence::deserialize::<_, _, 1, 127>"
+    )]
     pub heading: Option<u8>,
+    #[serde(
+        default,
+        serialize_with = "confidence::serialize::<_, _, 1, 127>",
+        deserialize_with = "confidence::deserialize::<_, _, 1, 127>"
+    )]
     pub speed: Option<u8>,
+    #[serde(
+        default,
+        serialize_with = "confidence::serialize::<_, _, 0, 4>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 4>"
+    )]
     pub vehicle_length: Option<u8>,
+    #[serde(
+        default,
+        serialize_with = "confidence::serialize::<_, _, 0, 8>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 8>"
+    )]
     pub yaw_rate: Option<u8>,
+    #[serde(
+        default,
+        serialize_with = "confidence::serialize::<_, _, 0, 102>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 102>"
+    )]
     pub longitudinal_acceleration: Option<u8>,
+    #[serde(
+        default,
+        serialize_with = "confidence::serialize::<_, _, 0, 7>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 7>"
+    )]
     pub curvature: Option<u8>,
+    #[serde(
+        default,
+        serialize_with = "confidence::serialize::<_, _, 0, 102>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 102>"
+    )]
     pub lateral_acceleration: Option<u8>,
+    #[serde(
+        default,
+        serialize_with = "confidence::serialize::<_, _, 0, 102>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 102>"
+    )]
     pub vertical_acceleration: Option<u8>,
 }
 

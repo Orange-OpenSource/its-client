@@ -9,6 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+use super::confidence;
 use serde::{Deserialize, Serialize};
 
 /// Represents a Curvature according to an ETSI standard.
@@ -26,8 +27,8 @@ pub struct Curvature {
     pub confidence: CurvatureConfidence,
 }
 
-#[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(from = "u8", into = "u8")]
+#[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, Serialize)]
+#[serde(into = "u8")]
 pub enum CurvatureConfidence {
     /// Curvature confidence levels.
     OnePerMeter0_00002 = 0,
@@ -39,6 +40,12 @@ pub enum CurvatureConfidence {
     OutOfRange = 6,
     #[default]
     Unavailable = 7,
+}
+
+impl<'de> Deserialize<'de> for CurvatureConfidence {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        confidence::deserialize::<u8, _, 0, 7>(deserializer).map(Self::from)
+    }
 }
 
 impl From<CurvatureConfidence> for u8 {
