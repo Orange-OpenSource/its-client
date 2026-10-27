@@ -21,12 +21,12 @@ class ITSClient:
         cfg: dict,
         gpsd: GNSS,
         mqtt_main: MqttClient,
-        mqtt_mirror: MqttClient = None,
+        mqtt_local: MqttClient = None,
     ):
         self.cfg = cfg
         self.gpsd = gpsd
         self.mqtt_main = mqtt_main
-        self.mqtt_mirror = mqtt_mirror
+        self.mqtt_local = mqtt_local
 
         # Type coercion
         self.cfg["report-freq"] = float(self.cfg["report-freq"])
@@ -156,14 +156,14 @@ class ITSClient:
             )
             msg_json = msg.to_json()
             self.mqtt_main.publish(topic=topic, payload=msg_json)
-            if self.mqtt_mirror and not self.cfg["mirror-self"]:
+            if self.mqtt_local and not self.cfg["mirror-self"]:
                 # Use the sub-prefix, to simulate the message as coming
                 # from the main broker as if we had subscribed to it.
                 mirror_topic = (
                     self.cfg["topic-sub-prefix"]
                     + topic[len(self.cfg["topic-pub-prefix"]) :]
                 )
-                self.mqtt_mirror.publish(topic=mirror_topic, payload=msg_json)
+                self.mqtt_local.publish(topic=mirror_topic, payload=msg_json)
 
         # Out of the loop, cleanup and close
         self.mqtt_main.unsubscribe_all()
@@ -187,14 +187,14 @@ class ITSClient:
         except json.decoder.JSONDecodeError:
             # Not JSON, not sure what to do with that...
             return
-        if self.mqtt_mirror is None:
+        if self.mqtt_local is None:
             return
         try:
             if (
                 payload_d.get("source_uuid", None) != self.cfg["station-uuid"]
                 or self.cfg["mirror-self"]
             ):
-                self.mqtt_mirror.publish(topic=topic, payload=payload)
+                self.mqtt_local.publish(topic=topic, payload=payload)
         except:
             # Payload does not have expected fields, or is not a dict;
             # ignore this invalid message
