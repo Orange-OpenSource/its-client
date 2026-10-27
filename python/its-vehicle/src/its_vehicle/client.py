@@ -19,12 +19,12 @@ class ITSClient:
         self,
         *,
         cfg: dict,
-        gpsd: GNSS,
+        gnss: GNSS,
         mqtt_main: MqttClient,
         mqtt_local: MqttClient,
     ):
         self.cfg = cfg
-        self.gpsd = gpsd
+        self.gnss = gnss
         self.mqtt_main = mqtt_main
         self.mqtt_local = mqtt_local
 
@@ -112,7 +112,7 @@ class ITSClient:
             if self.should_stop:
                 break
 
-            gnss_report = self.gpsd()
+            gnss_report = self.gnss()
             if (
                 gnss_report is None
                 or gnss_report.latitude is None
