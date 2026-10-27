@@ -161,15 +161,12 @@ def main():
         msg_cb=_msg_cb,
     )
 
-    if "socket-path" in cfg["broker.local"]:
-        mqtt_local = iot3.core.mqtt.MqttClient(
-            client_id=cfg["broker.local"]["client-id"],
-            socket_path=cfg["broker.local"]["socket-path"],
-            username=cfg["broker.local"]["username"],
-            password=cfg["broker.local"]["password"],
-        )
-    else:
-        mqtt_local = None
+    mqtt_local = iot3.core.mqtt.MqttClient(
+        client_id=cfg["broker.local"]["client-id"],
+        socket_path=cfg["broker.local"]["socket-path"],
+        username=cfg["broker.local"]["username"],
+        password=cfg["broker.local"]["password"],
+    )
 
     its_client = client.ITSClient(
         cfg=cfg["general"],
@@ -186,8 +183,7 @@ def main():
         if otel:
             otel.start()
         gnss.start()
-        if mqtt_local is not None:
-            mqtt_local.start()
+        mqtt_local.start()
         mqtt_main.start()
         its_client.start()
         its_client.join()  # Should not terminate ever, but with an exception
@@ -210,8 +206,7 @@ def main():
     # messages from the main one that we would then try to publish on
     # the local one that we just stopped.
     mqtt_main.stop()
-    if mqtt_local is not None:
-        mqtt_local.stop()
+    mqtt_local.stop()
     gnss.stop()
     gnss.join()
     if otel:
