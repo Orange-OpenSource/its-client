@@ -74,6 +74,8 @@ class ITSClient:
             speeds=[float(s) for s in self.cfg["speed-thresholds"].split()],
         )
 
+        self.vehicle_state = None
+
         self.should_stop = False
         self.thread = threading.Thread(
             target=self._loop,
@@ -201,4 +203,4 @@ class ITSClient:
                 # ignore this invalid message
                 pass
         elif data == "local":
-            pass
+            self.vehicle_state = payload_d
