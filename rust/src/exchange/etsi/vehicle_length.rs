@@ -9,6 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+use super::confidence;
 use serde::{Deserialize, Serialize};
 
 /// Represents a Vehicle Length according to an ETSI standard.
@@ -28,11 +29,10 @@ pub struct VehicleLength {
 
 /// Enum representing the presence of a trailer.
 /// Includes various states such as no trailer, trailer with known/unknown length, or unavailable.
-#[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(from = "u8", into = "u8")]
+#[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, Serialize)]
+#[serde(into = "u8")]
 pub enum TrailerPresence {
     /// No trailer is present.
-    #[default]
     NoTrailerPresent = 0,
     /// Trailer is present with a known length.
     TrailerPresentWithKnownLength = 1,
@@ -41,7 +41,14 @@ pub enum TrailerPresence {
     /// Trailer presence is unknown.
     Unknown = 3,
     /// Trailer presence information is unavailable.
+    #[default]
     Unavailable = 4,
+}
+
+impl<'de> Deserialize<'de> for TrailerPresence {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        confidence::deserialize::<u8, _, 0, 4>(deserializer).map(Self::from)
+    }
 }
 
 impl TrailerPresence {

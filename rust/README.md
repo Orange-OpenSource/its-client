@@ -5,7 +5,26 @@ libits-client
 [![crates.io](https://img.shields.io/crates/v/libits-client)][2]
 
 This crate provides IoT3 [MQTT][3] and [OpenTelemetry][4] generic clients and,
-on top of this, an [ETSI][5] [Intelligent Transport System][6] messages implementation using [JSON][7]
+on top of this, an [ETSI][5] [Intelligent Transport System][6] messages implementation using [JSON][7].
+
+### Confidence values
+
+Rust confidence fields follow the CAM 2.4.0, DENM 2.3.0 and CPM 2.1.1 schemas;
+legacy CAM 1.1.3 optional fields retain their own layout. Construction defaults
+use each field's unavailable sentinel, not zero or invented precision.
+Zero remains accepted where the corresponding schema permits it, such as
+acceleration, curvature, yaw rate, altitude and ellipse axes.
+
+Serialization and deserialization reject out-of-range confidence values with
+an explicit Serde error; valid values are preserved rather than clamped.
+Missing optional confidences remain absent. Speed, heading and angle confidence
+use 127 for unavailable, Cartesian coordinates 4096, dimensions 32, classification
+and perception regions 101, acceleration 102, yaw rate 8, angular velocity 7,
+longitudinal lane position 1023, and altitude 15.
+Empty exchange paths are omitted on output, while legacy `"path": []` remains
+readable. Nonempty paths are preserved.
+The related quality fields are checked too: CPM object perception quality
+is in `0..15`, and DENM information quality is in `0..7` (unavailable: 0).
 
 Examples
 --------
@@ -36,6 +55,7 @@ Subscribes to `test.mosquitto.org` and yields how much messages were received
 and the number of them whose payload is in JSON.
 
 ```shell
+cd rust
 cargo run --example json_counter
 ```
 
@@ -79,6 +99,7 @@ use_tls = false
 Then you can run the example:
 
 ```shell
+cd rust
 cargo run --example telemetry --features telemetry
 ```
 
@@ -103,6 +124,7 @@ INFO [telemetry]    └─ Listener thread    trace_id: 2409551c828c0168c3828c66
 If the `mobility` features is enabled, the `client_id` fiels is used as service name.
 
 ```shell
+cd rust
 cargo run --example telemetry --features telemetry,mobility
 ```
 
@@ -111,6 +133,7 @@ cargo run --example telemetry --features telemetry,mobility
 This example subscribes to ITS CAM and CPM messages, stores them and sends a copy 3 seconds later.
 
 ```shell
+cd rust
 cargo run --example copycat --features geo_routing
 ```
 
@@ -204,6 +227,7 @@ cargo run --example copycat --features geo_routing,telemetry
 This example subscribes to messages and sends it to an exporter.
 
 ```shell
+cd rust
 cargo run --example collector
 ```
 
@@ -275,7 +299,7 @@ total 1,3M
 -rw-rw-r-- 1 user group 452K abr.  11 10:41 collector_20250411_104148_210.log
 ```
 
-You can activate a `mqtt` exporter to write the messages to a(nother) broker:
+You can activate a `mqtt` exporter to write the messages to a (nother) broker:
 
 ```config
 # optional, true to export the received messages to a mqtt broker, default to false
@@ -292,6 +316,8 @@ use_websocket = false
 client_id = com_app_its-exporter-1
 # optional, connection timeout
 #connection_timeout = 60
+# optional, maximum MQTT packet size in bytes (incoming and outgoing), default to 10000
+#max_packet_size = 262144
 # optional, ACL username
 #username = username
 # optional, ACL password
@@ -401,6 +427,7 @@ If the `telemetry` features is enabled both message reception and publish are tr
 it requires an OTLP collector as mentioned in the telemetry example section.
 
 ```shell
+cd rust
 cargo run --example collector --features telemetry
 ```
 
@@ -443,6 +470,8 @@ Parse historical logs (handles .log, .log.gz, .tar.gz); it takes three positiona
 arguments: the input directory, the quadkey zoom level and the output database path:
 
 ```shell
+mkdir /tmp/logs
+cd rust
 cargo run --example display_log_reader --features mobility -- /tmp/logs 26 /tmp/display.db
 ```
 
@@ -451,6 +480,7 @@ cargo run --example display_log_reader --features mobility -- /tmp/logs 26 /tmp/
 Ingest from MQTT messages:
 
 ```shell
+cd rust
 cargo run --example display_mqtt_reader --features mobility -- --config examples/config.ini
 ```
 
@@ -459,6 +489,7 @@ cargo run --example display_mqtt_reader --features mobility -- --config examples
 Serve the map UI:
 
 ```shell
+cd rust
 cargo run --example display_server --features mobility -- --config examples/config.ini
 ```
 

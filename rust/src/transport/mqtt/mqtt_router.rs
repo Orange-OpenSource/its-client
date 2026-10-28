@@ -12,8 +12,7 @@
 use std::collections::HashMap;
 
 use log::{error, info, trace, warn};
-use rumqttc::v5::mqttbytes::v5::{Publish, PublishProperties};
-use rumqttc::v5::{Event, Incoming};
+use rumqttc::{Event, Incoming, Publish, PublishProperties};
 
 use crate::transport::mqtt::topic::Topic;
 use std::any::{Any, type_name};
@@ -118,11 +117,11 @@ impl MqttRouter {
                 Incoming::Unsubscribe(packet) => {
                     trace!("Unsubscribe received for the packet {packet:?}")
                 }
-                Incoming::PingReq(packet) => {
-                    trace!("Ping request received: {packet:?}")
+                Incoming::PingReq => {
+                    trace!("Ping request received")
                 }
-                Incoming::PingResp(packet) => {
-                    trace!("Ping response received: {packet:?}")
+                Incoming::PingResp => {
+                    trace!("Ping response received")
                 }
                 Incoming::Auth(packet) => {
                     trace!("Auth received: {packet:?}")
@@ -136,6 +135,7 @@ impl MqttRouter {
                 }
             },
             Event::Outgoing(outgoing) => trace!("Outgoing: {outgoing:?}"),
+            Event::Auth(auth_event) => trace!("Auth: {auth_event:?}"),
         }
         None
     }

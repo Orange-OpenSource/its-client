@@ -11,6 +11,7 @@
 
 use core::fmt;
 
+use super::confidence;
 use crate::mobility::position::Position;
 use crate::mobility::quadtree::{CONFIDENCE_UNAVAILABLE, confidence_mean};
 use serde::{Deserialize, Serialize};
@@ -38,28 +39,63 @@ pub struct ReferencePosition {
     pub position_confidence_ellipse: PositionConfidenceEllipse,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Altitude {
     /// Altitude value in centimeters.
     #[serde(default = "default_altitude")]
     pub value: i32,
     /// Confidence level for the altitude.
-    #[serde(default = "default_confidence")]
+    #[serde(
+        default = "default_confidence",
+        serialize_with = "confidence::serialize::<_, _, 0, 15>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 15>"
+    )]
     pub confidence: u8,
 }
 
 /// Represents the position confidence in a reference position
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct PositionConfidenceEllipse {
     /// Semi-major axis of the ellipse in centimeters.
-    #[serde(default = "default_semi_major")]
+    #[serde(
+        default = "default_semi_major",
+        serialize_with = "confidence::serialize::<_, _, 0, 4095>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 4095>"
+    )]
     pub semi_major: u16,
     /// Semi-minor axis of the ellipse in centimeters.
-    #[serde(default = "default_semi_minor")]
+    #[serde(
+        default = "default_semi_minor",
+        serialize_with = "confidence::serialize::<_, _, 0, 4095>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 4095>"
+    )]
     pub semi_minor: u16,
     /// Orientation of the semi-major axis in centidegrees.
-    #[serde(default = "default_semi_major_orientation")]
+    #[serde(
+        default = "default_semi_major_orientation",
+        serialize_with = "confidence::serialize::<_, _, 0, 3601>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 3601>"
+    )]
     pub semi_major_orientation: u16,
+}
+
+impl Default for Altitude {
+    fn default() -> Self {
+        Self {
+            value: 0,
+            confidence: default_confidence(),
+        }
+    }
+}
+
+impl Default for PositionConfidenceEllipse {
+    fn default() -> Self {
+        Self {
+            semi_major: default_semi_major(),
+            semi_minor: default_semi_minor(),
+            semi_major_orientation: default_semi_major_orientation(),
+        }
+    }
 }
 
 impl PositionConfidenceEllipse {

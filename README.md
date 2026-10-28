@@ -15,8 +15,8 @@ The following table provides the current status of features implementation in ea
 
 |        Feature        | Rust | Python | Java | Swift |
 |:---------------------:|:----:|:------:|:----:|:-----:|
-|      **MQTTv5**       |  ✓   |   ✓    |  ✓   |   ✓   |
-|     **Telemetry**     |  ✓   |   ✓    |  ✓   |   ✓   |
+|      **MQTTv5**       |  ✓  |   ✓   |  ✓  |  ✓   |
+|     **Telemetry**     |  ✓  |   ✓   |  ✓  |  ✓   |
 | **Device Management** |      |        |      |       |
 
 ### Message exchange
@@ -30,7 +30,7 @@ The following table provides the current implementation status of telemetry in e
 
 |   Signal    | Rust | Python | Java | Swift |
 |:-----------:|:----:|:------:|:----:|:-----:|
-| **Traces**  |  ✓   |   ✓    |  ✓   |   ✓   |
+| **Traces**  |  ✓  |   ✓   |  ✓  |  ✓   |
 |  **Logs**   |      |        |      |       |
 | **Metrics** |      |        |      |       |
 | **Baggage** |      |        |      |       |
@@ -70,8 +70,8 @@ The following table provides the current implementation status of LwM2M protocol
 JSON schemas
 ------------
 
-As mentioned, you can find in the `schemas` directory a proposal of implementation using the [JSON][2] language
-(instead of ASN.1 UPER by default) of the following [ETSI.org][3] messages:
+As mentioned, you can find in the `schemas` directory a proposal of implementation using the [JSON][2] language (instead
+of ASN.1 UPER by default) of the following [ETSI.org][3] messages:
 
 - CooperativeAwarenessMessage (CAM)
 - CollectivePerceptionMessage (CPM)
@@ -99,7 +99,7 @@ they are using the following versions:
 |   **Bootstrap**   |                                                                                     |                                                           |                                                                                                                                     |                                             |
 |      **CAM**      | [2.4.0](schema/cam/cam_schema_2-4-0.json) [1.1.3](schema/cam/cam_schema_1-1-3.json) |         [2.4.0](schema/cam/cam_schema_2-4-0.json)         |                         [2.4.0](schema/cam/cam_schema_2-4-0.json) [1.1.3](schema/cam/cam_schema_1-1-3.json)                         |  [1.1.3](schema/cam/cam_schema_1-1-3.json)  |
 |      **CPM**      |                      [2.1.1](schema/cpm/cpm_schema_2-1-1.json)                      |         [2.1.1](schema/cpm/cpm_schema_2-1-1.json)         |                         [2.1.1](schema/cpm/cpm_schema_2-1-1.json) [1.2.1](schema/cpm/cpm_schema_1-2-1.json)                         |                                             |
-|     **DENM**      |                     [2.2.0](schema/denm/denm_schema_2-2-0.json)                     |        [1.1.3](schema/denm/denm_schema_1-1-3.json)        | [2.3.0](schema/denm/denm_schema_2-3-0.json) [2.2.0](schema/denm/denm_schema_2-2-0.json) [1.1.3](schema/denm/denm_schema_1-1-3.json) | [1.1.3](schema/denm/denm_schema_1-1-3.json) |
+|     **DENM**      |                     [2.3.0](schema/denm/denm_schema_2-3-0.json)                     |        [1.1.3](schema/denm/denm_schema_1-1-3.json)        | [2.3.0](schema/denm/denm_schema_2-3-0.json) [2.2.0](schema/denm/denm_schema_2-2-0.json) [1.1.3](schema/denm/denm_schema_1-1-3.json) | [1.1.3](schema/denm/denm_schema_1-1-3.json) |
 |  **Information**  |              [2.1.0](schema/information/information_schema_2-1-0.json)              | [1.2.0](schema/information/information_schema_1-2-0.json) |                                                                                                                                     |                                             |
 |     **MAPEM**     |                                                                                     |                                                           |                                            [2.0.0](schema/mapem/mapem_schema_2-0-0.json)                                            |                                             |
 |      **MCM**      |                                                                                     |                                                           |                                              [2.0.0](schema/mcm/mcm_schema_2-0-0.json)                                              |                                             |

@@ -9,6 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+use super::confidence;
 use crate::exchange::etsi::angle::Angle;
 pub(crate) use crate::exchange::etsi::heading_from_etsi;
 use crate::exchange::etsi::map_extended_message::{Intersection, RoadSegment};
@@ -94,11 +95,15 @@ pub struct OriginatingVehicleContainer {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PerceptionRegion {
     /// Time difference between the last measurement and the current perception region.
     pub measurement_delta_time: i16,
     /// Confidence level for the perception region.
+    #[serde(
+        serialize_with = "confidence::serialize::<_, _, 1, 101>",
+        deserialize_with = "confidence::deserialize::<_, _, 1, 101>"
+    )]
     pub perception_region_confidence: u8,
     /// Shape of the perception region.
     pub perception_region_shape: Shape,
@@ -111,6 +116,19 @@ pub struct PerceptionRegion {
     /// List of perceived object identifiers that are within this perception region.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub perceived_object_ids: Vec<u16>,
+}
+
+impl Default for PerceptionRegion {
+    fn default() -> Self {
+        Self {
+            measurement_delta_time: 0,
+            perception_region_confidence: 101,
+            perception_region_shape: Shape::default(),
+            shadowing_applies: false,
+            sensor_id_list: Vec::new(),
+            perceived_object_ids: Vec::new(),
+        }
+    }
 }
 
 #[serde_with::skip_serializing_none]
@@ -157,6 +175,11 @@ pub struct SensorInformation {
     /// Perception region of the sensor.
     pub perception_region_shape: Option<Shape>,
     ///Homogeneous perception region confidence that can be assumed for the entire perception region shape of this sensor.
+    #[serde(
+        default,
+        serialize_with = "confidence::serialize::<_, _, 1, 101>",
+        deserialize_with = "confidence::deserialize::<_, _, 1, 101>"
+    )]
     pub perception_region_confidence: Option<u8>,
 }
 

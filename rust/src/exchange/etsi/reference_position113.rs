@@ -11,6 +11,7 @@
 
 use core::fmt;
 
+use super::confidence;
 use crate::exchange::etsi::reference_position::{
     altitude_from_etsi, altitude_to_etsi, coordinate_from_etsi, coordinate_to_etsi,
 };
@@ -81,14 +82,34 @@ impl fmt::Display for ReferencePosition113 {
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PositionConfidence {
     pub position_confidence_ellipse: Option<PositionConfidenceEllipse>,
+    #[serde(
+        default,
+        serialize_with = "confidence::serialize::<_, _, 0, 15>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 15>"
+    )]
     pub altitude: Option<u8>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PositionConfidenceEllipse {
+    #[serde(
+        default,
+        serialize_with = "confidence::serialize::<_, _, 0, 4095>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 4095>"
+    )]
     pub semi_major_confidence: Option<u16>,
+    #[serde(
+        default,
+        serialize_with = "confidence::serialize::<_, _, 0, 4095>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 4095>"
+    )]
     pub semi_minor_confidence: Option<u16>,
+    #[serde(
+        default,
+        serialize_with = "confidence::serialize::<_, _, 0, 3601>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 3601>"
+    )]
     pub semi_major_orientation: Option<u16>,
 }
 

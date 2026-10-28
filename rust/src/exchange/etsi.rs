@@ -15,6 +15,7 @@ mod acceleration;
 pub(crate) mod angle;
 mod cause_code;
 pub mod collective_perception_message;
+mod confidence;
 pub mod cooperative_awareness_message;
 pub mod cooperative_awareness_message_113;
 pub mod coordinate;

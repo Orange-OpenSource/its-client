@@ -65,7 +65,9 @@ pub struct Configuration {
 
 impl Configuration {
     pub fn set_mqtt_credentials(&mut self, username: &str, password: &str) {
-        self.mqtt.mqtt_options.set_credentials(username, password);
+        self.mqtt
+            .mqtt_options
+            .set_credentials(username.to_string(), password.as_bytes().to_vec());
     }
 
     pub fn get<T: FromStr>(
@@ -738,11 +740,11 @@ use_tls = false
         let mut configuration = Configuration::default();
         configuration.set_mqtt_credentials("testuser", "testpass");
         assert_eq!(
-            configuration.mqtt.mqtt_options.credentials(),
-            Some(rumqttc::v5::mqttbytes::v5::Login::new(
-                "testuser".to_string(),
-                "testpass".to_string(),
-            ))
+            configuration.mqtt.mqtt_options.auth(),
+            &rumqttc::ConnectAuth::UsernamePassword {
+                username: "testuser".to_string(),
+                password: "testpass".to_string().into(),
+            }
         );
     }
 }
