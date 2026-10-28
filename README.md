@@ -15,8 +15,8 @@ The following table provides the current status of features implementation in ea
 
 |        Feature        | Rust | Python | Java | Swift |
 |:---------------------:|:----:|:------:|:----:|:-----:|
-|      **MQTTv5**       |  ✓   |   ✓    |  ✓   |   ✓   |
-|     **Telemetry**     |  ✓   |   ✓    |  ✓   |   ✓   |
+|      **MQTTv5**       |  ✓  |   ✓   |  ✓  |  ✓   |
+|     **Telemetry**     |  ✓  |   ✓   |  ✓  |  ✓   |
 | **Device Management** |      |        |      |       |
 
 ### Message exchange
@@ -30,7 +30,7 @@ The following table provides the current implementation status of telemetry in e
 
 |   Signal    | Rust | Python | Java | Swift |
 |:-----------:|:----:|:------:|:----:|:-----:|
-| **Traces**  |  ✓   |   ✓    |  ✓   |   ✓   |
+| **Traces**  |  ✓  |   ✓   |  ✓  |  ✓   |
 |  **Logs**   |      |        |      |       |
 | **Metrics** |      |        |      |       |
 | **Baggage** |      |        |      |       |
@@ -70,8 +70,8 @@ The following table provides the current implementation status of LwM2M protocol
 JSON schemas
 ------------
 
-As mentioned, you can find in the `schemas` directory a proposal of implementation using the [JSON][2] language
-(instead of ASN.1 UPER by default) of the following [ETSI.org][3] messages:
+As mentioned, you can find in the `schemas` directory a proposal of implementation using the [JSON][2] language (instead
+of ASN.1 UPER by default) of the following [ETSI.org][3] messages:
 
 - CooperativeAwarenessMessage (CAM)
 - CollectivePerceptionMessage (CPM)
