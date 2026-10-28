@@ -23,7 +23,7 @@ use opentelemetry_sdk::Resource;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::trace::{RandomIdGenerator, Sampler, SdkTracerProvider};
 use reqwest::header;
-use rumqttc::v5::mqttbytes::v5::Publish;
+use rumqttc::Publish;
 
 use crate::client::configuration::telemetry_configuration::TelemetryConfiguration;
 

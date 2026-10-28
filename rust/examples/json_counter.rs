@@ -21,7 +21,7 @@ use libits::transport::mqtt::mqtt_client::MqttClient;
 use libits::transport::mqtt::mqtt_router::MqttRouter;
 use libits::transport::mqtt::str_topic::StrTopic;
 use log::{error, info};
-use rumqttc::v5::mqttbytes::v5::{Publish, PublishProperties};
+use rumqttc::{Publish, PublishProperties};
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
