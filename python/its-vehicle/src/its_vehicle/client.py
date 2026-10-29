@@ -3,11 +3,13 @@
 # SPDX-License-Identifier: MIT
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
+import functools
 import its_quadkeys
 import json
 import linuxfd
 import logging
 import threading
+import time
 from iot3.core.mqtt import MqttClient
 from iot3.mobility.cam import CAM
 from iot3.mobility.gnss import GNSS
@@ -122,6 +124,22 @@ class ITSClient:
             ):
                 continue
 
+            lights = CAM.ExteriorLights(0)
+            try:
+                if (
+                    self.vehicle_state["expires_at"] == 0
+                    or self.vehicle_state["expires_at"] / 1000 > time.time()
+                ):
+                    lights = functools.reduce(
+                        lambda x, y: x | y,
+                        (
+                            CAM.ExteriorLights[light]
+                            for light in self.vehicle_state["lights"]
+                        ),
+                    )
+            except (TypeError, KeyError):
+                pass
+
             # Update RoI before we send a message, so that
             # we do not miss it...
             roi_topics = set()
@@ -151,6 +169,7 @@ class ITSClient:
                 gnss_report=gnss_report,
                 length=self.cfg["length"],
                 width=self.cfg["width"],
+                lights=lights,
             )
             topic = msg.topic(
                 template=self.pub_topic_template,
