@@ -189,7 +189,7 @@ class ITSClient:
     ):
         logging.debug(
             "received message on %s: %s",
-            topic[:16] + "..." if len(topic) > 16 else "",
+            topic[:16] + ("..." if len(topic) > 16 else ""),
             payload[:16].decode(errors="backslashreplace")
             + ("..." if len(payload) > 16 else ""),
         )
