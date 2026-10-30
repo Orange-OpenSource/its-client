@@ -33,7 +33,7 @@ DEFAULTS = {
         "username": None,
         "password": None,
     },
-    "broker.mirror": {
+    "broker.local": {
         "username": None,
         "password": None,
     },
@@ -108,7 +108,7 @@ def main():
         for k in DEFAULTS[s]:
             _set_default(s, k, DEFAULTS[s][k])
     _set_default("broker.main", "client-id", cfg["general"]["station-uuid"])
-    _set_default("broker.mirror", "client-id", cfg["broker.main"]["client-id"])
+    _set_default("broker.local", "client-id", cfg["broker.main"]["client-id"])
 
     logging.basicConfig(
         stream=sys.stderr,
@@ -159,23 +159,24 @@ def main():
         **conn_opts,
         **otel_opts,
         msg_cb=_msg_cb,
+        msg_cb_data="main",
     )
 
-    if "socket-path" in cfg["broker.mirror"]:
-        mqtt_mirror = iot3.core.mqtt.MqttClient(
-            client_id=cfg["broker.mirror"]["client-id"],
-            socket_path=cfg["broker.mirror"]["socket-path"],
-            username=cfg["broker.mirror"]["username"],
-            password=cfg["broker.mirror"]["password"],
-        )
-    else:
-        mqtt_mirror = None
+    mqtt_local = iot3.core.mqtt.MqttClient(
+        client_id=cfg["broker.local"]["client-id"],
+        socket_path=cfg["broker.local"]["socket-path"],
+        username=cfg["broker.local"]["username"],
+        password=cfg["broker.local"]["password"],
+        msg_cb=_msg_cb,
+        msg_cb_data="local",
+    )
+    mqtt_local.subscribe(topics=[cfg["general"]["topic-obu-state"]])
 
     its_client = client.ITSClient(
         cfg=cfg["general"],
-        gpsd=gnss,
+        gnss=gnss,
         mqtt_main=mqtt_main,
-        mqtt_mirror=mqtt_mirror,
+        mqtt_local=mqtt_local,
     )
 
     def term_handler(_signum: int, _frame):
@@ -186,9 +187,8 @@ def main():
         if otel:
             otel.start()
         gnss.start()
+        mqtt_local.start()
         mqtt_main.start()
-        if mqtt_mirror is not None:
-            mqtt_mirror.start()
         its_client.start()
         its_client.join()  # Should not terminate ever, but with an exception
     except (KeyboardInterrupt, TermSignal):
@@ -206,12 +206,11 @@ def main():
 
     logging.debug("Will stop...")
     its_client.stop(wait=True)
-    # Stop main MQTT client before the mirror one, so that we don't get
+    # Stop main MQTT client before the local one, so that we don't get
     # messages from the main one that we would then try to publish on
-    # the mirror one that we just stopped.
+    # the local one that we just stopped.
     mqtt_main.stop()
-    if mqtt_mirror is not None:
-        mqtt_mirror.stop()
+    mqtt_local.stop()
     gnss.stop()
     gnss.join()
     if otel:

@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import queue
+import time
+
+import paho.mqtt.client
+import paho.mqtt.enums
+import paho.mqtt.packettypes
+import paho.mqtt.properties
+
+Lights = [
+    "low_beam_headlights",
+    "high_beam_headlights",
+    "left_turn_signal",
+    "right_turn_signal",
+    "daytime_running_lights",
+    "reverse_light",
+    "fog_light",
+    "parking_lights",
+]
+Map = {
+    "left": "left_turn_signal",
+    "l": "left_turn_signal",
+    "right": "right_turn_signal",
+    "r": "right_turn_signal",
+    "reverse": "reverse_light",
+    "R": "reverse_light",
+}
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--list",
+        "-l",
+        action="store_true",
+        help="List lights and their shortcuts",
+    )
+    parser.add_argument(
+        "--host",
+        "-H",
+        default="127.0.0.1",
+        help="IP or hostname of MQTT broker (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--port",
+        "-p",
+        type=int,
+        default=1883,
+        help="TCP port the broker listens on (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--username",
+        "-u",
+        help="MQTT username (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--password",
+        "-P",
+        help="MQTT password (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--client-id",
+        "--id",
+        "-i",
+        help="MQTT client-id (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--topic",
+        "-t",
+        default="obu/status/state",
+        help="MQTT topic to publish lights on (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--duration",
+        "-d",
+        type=float,
+        default=0,
+        help="Validity duration, in s; after this delay, lights are all turned off (default: %(default)s)",
+    )
+    parser.add_argument(
+        "LIGHT",
+        nargs="*",
+        help=f"Light (or lights) to enable: {', '.join(Lights)}, or one of the shortcuts: {', '.join(Map)}",
+    )
+    args = parser.parse_args()
+
+    if args.list:
+        for light in Lights:
+            l = [light] + [
+                s for s in Map
+                if Map[s] == light
+            ]
+            print(", ".join(l))
+        return
+
+    duration = int(args.duration * 1000)
+    try:
+        lights = [
+            light if light in Lights else Map[light]
+            for light in args.LIGHT
+        ]
+    except KeyError as e:
+        parser.error(f"Unknown light or shortcut: {e}")
+
+    print(f"enabling lights {lights} for {duration} ms")
+
+    now = time.time()
+    if args.duration < 0:
+        parser.error("Validity duration must be >= 0")
+    elif args.duration == 0:
+        expires_at = 0
+    else:
+        expires_at = int((now + args.duration) * 1000)
+
+    msg = {
+        "message_type": "state",
+        "message_format": "json/raw",
+        "version": "1.0.0",
+        "timestamp": int(now * 1000),
+        "expires_at": expires_at,
+        "lights": lights
+    }
+    payload = json.dumps(msg)
+
+    q = queue.Queue()
+
+    def on_connect(
+        client,
+        userdata,
+        flags,
+        reason_code,
+        properties,
+    ):
+        properties = paho.mqtt.properties.Properties(
+            paho.mqtt.packettypes.PacketTypes.PUBLISH,
+        )
+        if args.duration > 0:
+            properties.MessageExpiryInterval = max(1, int(args.duration))
+        q.put(
+            client.publish(
+                topic=args.topic,
+                payload=payload,
+                retain=True,
+                properties=properties,
+            ),
+        )
+
+    mqtt = paho.mqtt.client.Client(
+        callback_api_version=paho.mqtt.enums.CallbackAPIVersion.VERSION2,
+        client_id=args.client_id,
+        protocol=paho.mqtt.client.MQTTv5,
+    )
+    mqtt.username_pw_set(args.username, args.password)
+    mqtt.on_connect = on_connect
+
+    mqtt.connect_async(
+        host=args.host,
+        port=args.port,
+        clean_start=True,
+    )
+    mqtt.loop_start()
+    mid = q.get()
+    mid.wait_for_publish()
+    mqtt.disconnect()
+    mqtt.loop_stop()
+
+
+if __name__ == "__main__":
+    main()

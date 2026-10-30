@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://Orange-OpenSource.github.io/its-client/schema/cam",
+  "description": "Internal vehicle state JSON schema",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "message_type",
+    "message_format",
+    "version",
+    "timestamp",
+    "expires_at"
+  ],
+  "properties": {
+    "message_type": {
+      "type": "string",
+      "description": "Type of the message carried in message property.",
+      "const": "state"
+    },
+    "version": {
+      "type": "string",
+      "description": "JSON message format version.",
+      "const": "2.0.0"
+    },
+    "message_format": {
+      "description": "Message format.",
+      "enum": [
+        "json/raw"
+      ]
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Timestamp when the message was generated (millisecond in Unix epoch).",
+      "examples": [
+        1574778515424
+      ]
+    },
+    "expires_at": {
+      "type": "integer",
+      "description": "Timestamp after which the message is no longer valid (milliseconds in Unix epoch)",
+      "examples": [
+        1574778515924
+      ]
+    },
+    "lights": {
+      "type": "array",
+      "description": "List of lights of the vehicle that are activated (i.e. that are on for static lights, or are blinking for turn signals, etc...)",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "low_beam_headlights",
+          "high_beam_headlights",
+          "left_turn_signal",
+          "right_turn_signal",
+          "daytime_running_lights",
+          "reverse_light",
+          "fog_light",
+          "parking_lights"
+        ]
+      }
+    }
+  }
+}
