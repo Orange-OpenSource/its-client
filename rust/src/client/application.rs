@@ -9,5 +9,5 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-pub mod analyzer;
+pub mod exchange_analyzer;
 pub mod pipeline;

@@ -20,7 +20,7 @@ use std::sync::{Arc, RwLock};
 /// Structures implementing this trait can be used in [crate::client::application::pipeline::run]
 /// to treat messages and eventually send or update other ones
 ///
-/// Analyzer implementing structs must be able to run in parallel to be able to treat messages
+/// ExchangeAnalyzer implementing structs must be able to run in parallel to be able to treat messages
 /// faster than they arrive
 /// All members are thus shared using [Arc] and [RwLock] when they can be modified by the analyzer
 ///
@@ -29,7 +29,7 @@ use std::sync::{Arc, RwLock};
 /// use std::fmt::{Display, Formatter};
 /// use std::str::FromStr;
 /// use std::sync::{Arc, RwLock};
-/// use libits::client::application::analyzer::Analyzer;
+/// use libits::client::application::exchange_analyzer::ExchangeAnalyzer;
 /// use libits::client::configuration::Configuration;use libits::exchange::Exchange;
 /// use libits::exchange::message::Message;
 /// use libits::exchange::sequence_number::SequenceNumber;
@@ -67,7 +67,7 @@ use std::sync::{Arc, RwLock};
 ///     }
 /// }
 ///
-/// impl Analyzer<StringTopic, Counts> for CounterAnalyzer {
+/// impl ExchangeAnalyzer<StringTopic, Counts> for CounterAnalyzer {
 ///     fn new(configuration: Arc<Configuration>, context: Arc<RwLock<Counts>>, _: Arc<RwLock<SequenceNumber>>) -> Self where Self: Sized {
 ///         Self {
 ///             configuration,
@@ -90,7 +90,7 @@ use std::sync::{Arc, RwLock};
 ///     }
 /// }
 /// ```
-pub trait Analyzer<T: Topic, C> {
+pub trait ExchangeAnalyzer<T: Topic, C> {
     fn new(
         configuration: Arc<Configuration>,
         context: Arc<RwLock<C>>,

@@ -9,7 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use crate::client::application::analyzer::Analyzer;
+use crate::client::application::exchange_analyzer::ExchangeAnalyzer;
 use crate::client::configuration::Configuration;
 use crate::exchange::Exchange;
 use crate::exchange::cause::Cause;
@@ -70,7 +70,7 @@ pub async fn run<A, C, T>(
     sequence_number: Arc<RwLock<SequenceNumber>>,
     subscription_list: &[T],
 ) where
-    A: Analyzer<T, C>,
+    A: ExchangeAnalyzer<T, C>,
     T: Topic + 'static,
     C: Send + Sync + 'static,
 {
