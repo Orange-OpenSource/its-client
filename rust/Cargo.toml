@@ -152,5 +152,10 @@ name = "position"
 harness = false
 required-features = ["mobility"]
 
+[[bench]]
+name = "cause"
+harness = false
+required-features = ["mobility"]
+
 [profile.dev]
 incremental = true
