@@ -52,6 +52,11 @@ pub struct GeoTopic {
 }
 
 impl GeoTopic {
+    /// Returns the MQTT road identifier configured as this topic's suffix.
+    pub fn suffix(&self) -> &str {
+        &self.suffix
+    }
+
     pub fn denm(
         configuration: &GeoConfiguration,
         component_name: &str,
@@ -226,6 +231,20 @@ mod tests {
                 }
             }
             Err(e) => panic!("Failed to create GeoTopic from string: {e}"),
+        }
+    }
+
+    #[test]
+    fn suffix_returns_the_configured_mqtt_road_identifier() {
+        for (topic, expected) in [
+            ("default/inQueue/v2x/denm/source/1/2/0", "v2x"),
+            (
+                "default/inQueue/ora_sumo-trailer-truck/denm/source/1/2/0",
+                "ora_sumo-trailer-truck",
+            ),
+        ] {
+            let topic = GeoTopic::from_str(topic).unwrap();
+            assert_eq!(topic.suffix(), expected);
         }
     }
 
