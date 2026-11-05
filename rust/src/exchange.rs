@@ -40,23 +40,20 @@ pub struct Exchange {
     pub source_uuid: String,
     pub timestamp: u64,
     pub version: String,
-    pub message: Message,
-
-    /// The format of the message.
-    pub message_format: Option<String>,
-
-    /// The identifier for a linked ITS-S, as a trailer or a platooning pair.
-    pub linked_station_id: Option<u32>,
-
     /// The path of the object that generated the message.
     /// It is a list of PathElement, each one containing the position of the object
     /// when it sent a message, the type of the message and optionally the id of the
     /// message (e.g. the sequence number for CAM and DENM).
     /// Only used into the DENM message.
     /// TODO study if the field detection_zones_to_event_position could be used instead.
-    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub path: Vec<PathElement>,
+    pub message: Message,
 
+    /// The format of the message.
+    pub message_format: Option<String>,
+    /// The identifier for a linked ITS-S, as a platooning pair.
+    pub linked_station_id: Option<u32>,
     /// The rotation count of the object ID.
     /// Each time  the max value of the object ID is reached,
     /// the object ID is reset to 0 and the rotation count is incremented by 1.
@@ -128,7 +125,7 @@ impl Exchange {
                 len if len <= 1 => {
                     let event_speed = mobile.speed().map(|speed| Speed {
                         value: speed_to_etsi(speed),
-                        ..Default::default()
+                        confidence: 127,
                     });
                     let event_position_heading = mobile.heading().map(|heading| Heading {
                         value: heading_to_etsi(heading),
@@ -176,7 +173,40 @@ impl Eq for Exchange {}
 
 #[cfg(test)]
 mod tests {
-    use crate::exchange::Exchange;
+    use crate::exchange::{Exchange, PathElement};
+    use crate::mobility::position::Position;
+
+    #[test]
+    fn empty_paths_are_omitted_but_legacy_empty_paths_remain_readable() {
+        for fixture in [minimal_cam(), minimal_denm(), minimal_cpm()] {
+            let mut legacy: serde_json::Value = serde_json::from_str(fixture).unwrap();
+            legacy["path"] = serde_json::json!([]);
+            for value in [serde_json::from_str(fixture).unwrap(), legacy] {
+                let exchange: Exchange = serde_json::from_value(value).unwrap();
+                assert!(exchange.path.is_empty());
+                assert!(
+                    serde_json::to_value(&exchange)
+                        .unwrap()
+                        .get("path")
+                        .is_none()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn nonempty_paths_are_preserved_on_serialization() {
+        let mut exchange: Exchange = serde_json::from_str(minimal_denm()).unwrap();
+        exchange.path.push(PathElement {
+            position: Position::default(),
+            message_type: "denm".into(),
+            id: Some(42),
+        });
+        let value = serde_json::to_value(&exchange).unwrap();
+        assert_eq!(value["path"].as_array().unwrap().len(), 1);
+        let restored: Exchange = serde_json::from_value(value).unwrap();
+        assert_eq!(restored.path, exchange.path);
+    }
 
     fn minimal_cam() -> &'static str {
         r#"{
@@ -244,7 +274,7 @@ mod tests {
             "message_type": "denm",
             "source_uuid": "com_application_12345",
             "timestamp": 1574778515424,
-            "version": "2.2.0",
+            "version": "2.3.0",
             "message": {
                 "protocol_version": 255,
                 "station_id": 4294967295,
@@ -725,9 +755,10 @@ mod tests {
     fn bad_denm_with_string_timestamp() -> &'static str {
         r#"{
             "message_type": "denm",
-            "version": "2.2.0",
+            "version": "2.3.0",
             "source_uuid": "uuid14",
             "timestamp": "1574778515425",
+            "path": [],
             "message": {
                 "protocol_version": 2,
                 "station_id": 42,
@@ -750,9 +781,10 @@ mod tests {
     fn bad_denm_with_protocol_version_u32() -> &'static str {
         r#"{
             "message_type": "denm",
-            "version": "2.2.0",
+            "version": "2.3.0",
             "source_uuid": "uuid14",
             "timestamp": 1574778515425,
+            "path": [],
             "message": {
                 "protocol_version": 4242424242,
                 "station_id": 42,
@@ -829,7 +861,7 @@ mod tests {
         let exchange: Exchange = serde_json::from_str(json).unwrap();
         assert_eq!(exchange.message_type, "denm");
         assert_eq!(exchange.source_uuid, "com_application_12345");
-        assert_eq!(exchange.version, "2.2.0");
+        assert_eq!(exchange.version, "2.3.0");
         assert_eq!(exchange.timestamp, 1574778515424);
         assert_eq!(
             serde_json::to_string(&exchange).unwrap(),

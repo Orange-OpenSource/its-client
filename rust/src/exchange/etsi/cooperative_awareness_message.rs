@@ -407,7 +407,7 @@ impl CooperativeAwarenessMessage {
                     },
                     speed: Speed {
                         value: speed_to_etsi(speed),
-                        ..Default::default()
+                        confidence: 127,
                     },
                     ..Default::default()
                 }),
@@ -1278,7 +1278,7 @@ mod tests {
                     },
                     speed: Speed {
                         value: 500,
-                        confidence: Default::default(),
+                        confidence: 127,
                     },
                     drive_direction: 0,
                     vehicle_length: VehicleLength {

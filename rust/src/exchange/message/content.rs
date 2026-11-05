@@ -9,9 +9,6 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-use crate::exchange::message::content_error::ContentError;
-use crate::exchange::mortal::Mortal;
-use crate::mobility::mobile::Mobile;
 use enum_dispatch::enum_dispatch;
 
 #[enum_dispatch(Message)]
@@ -20,7 +17,17 @@ pub trait Content {
 
     fn appropriate(&mut self, timestamp: u64, station_id: u32);
 
-    fn as_mobile(&self) -> Result<&dyn Mobile, ContentError>;
+    fn as_mobile(
+        &self,
+    ) -> Result<
+        &dyn crate::mobility::mobile::Mobile,
+        crate::exchange::message::content_error::ContentError,
+    >;
 
-    fn as_mortal(&self) -> Result<&dyn Mortal, ContentError>;
+    fn as_mortal(
+        &self,
+    ) -> Result<
+        &dyn crate::exchange::mortal::Mortal,
+        crate::exchange::message::content_error::ContentError,
+    >;
 }

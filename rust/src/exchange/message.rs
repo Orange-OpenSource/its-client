@@ -22,14 +22,13 @@ use crate::exchange::etsi::map_extended_message::MAPExtendedMessage;
 use crate::exchange::etsi::signal_phase_and_timing_extended_message::SignalPhaseAndTimingExtendedMessage;
 use crate::exchange::message::binary_message::BinaryMessage;
 use crate::exchange::message::content::Content;
-use crate::exchange::message::content_error::ContentError;
-use crate::exchange::mortal::Mortal;
-use crate::mobility::mobile::Mobile;
 use enum_dispatch::enum_dispatch;
 use serde::{Deserialize, Serialize};
 
 #[enum_dispatch]
 #[allow(clippy::upper_case_acronyms)]
+// Boxing the DENM variant would break the public pattern-matching API for a few hundred bytes.
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Message {
