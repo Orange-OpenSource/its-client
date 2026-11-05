@@ -105,7 +105,7 @@ pub fn init_tracer(
 
     // Store the provider so examples/binaries can later call `shutdown()`.
     let _ = TRACER_PROVIDER.set(tracer_provider.clone());
-    let _ = global::set_tracer_provider(tracer_provider);
+    global::set_tracer_provider(tracer_provider);
 
     Ok(())
 }
