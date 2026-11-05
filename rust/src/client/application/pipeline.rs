@@ -24,8 +24,7 @@ use crate::transport::packet::Packet;
 use crate::transport::payload::Payload;
 use crossbeam_channel::{Receiver, unbounded};
 use log::{debug, error, info, trace, warn};
-use rumqttc::v5::mqttbytes::v5::PublishProperties;
-use rumqttc::v5::{Event, EventLoop};
+use rumqttc::{Event, EventLoop, PublishProperties};
 use serde::de::DeserializeOwned;
 use std::sync::{Arc, RwLock};
 use std::thread;
@@ -451,7 +450,7 @@ where
     )
 }
 
-fn deserialize<T>(publish: rumqttc::v5::mqttbytes::v5::Publish) -> Option<BoxedReception>
+fn deserialize<T>(publish: rumqttc::Publish) -> Option<BoxedReception>
 where
     T: DeserializeOwned + Payload + 'static + Send,
 {

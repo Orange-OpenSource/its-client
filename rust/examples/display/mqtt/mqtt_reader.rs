@@ -18,7 +18,7 @@ use libits::exchange::message::Message;
 use libits::exchange::message::content::Content;
 use libits::mobility::quadtree::lat_lon_to_quadkey;
 use libits::transport::mqtt::mqtt_client::MqttClient;
-use rumqttc::v5::{Event, EventLoop, Incoming, MqttOptions};
+use rumqttc::{Event, EventLoop, Incoming, MqttOptions};
 use std::sync::{Arc, Mutex};
 
 /// Configuration for the MQTT ingestor.
@@ -35,7 +35,11 @@ pub struct MqttIngestorConfig {
 
 /// Starts the MQTT ingestor that subscribes to topics and stores messages in the database.
 pub async fn run_mqtt_ingestor(config: MqttIngestorConfig) -> Result<()> {
-    let (broker_host, broker_port) = config.mqtt_options.broker_address();
+    let (broker_host, broker_port) = config
+        .mqtt_options
+        .broker()
+        .tcp_address()
+        .unwrap_or(("localhost", 1883));
     println!(
         "🔌 Connecting to MQTT broker: {}:{}",
         broker_host, broker_port
