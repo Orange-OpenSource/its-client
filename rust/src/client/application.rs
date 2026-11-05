@@ -11,4 +11,5 @@
 
 pub mod exchange_analyzer;
 pub mod json_analyzer;
+pub mod json_pipeline;
 pub mod pipeline;
