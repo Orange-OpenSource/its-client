@@ -191,7 +191,7 @@ async fn main() {
     #[cfg(feature = "telemetry")]
     init_tracer(&configuration.telemetry, "copycat").expect("Failed to init telemetry");
 
-    pipeline::run::<CopyCat, NoContext, GeoTopic>(
+    pipeline::exchange_pipeline::run::<CopyCat, NoContext, GeoTopic>(
         Arc::new(configuration),
         Arc::new(RwLock::new(context)),
         Arc::new(RwLock::new(SequenceNumber::new(u16::MAX.into()))),

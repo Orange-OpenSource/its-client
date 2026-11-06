@@ -17,7 +17,7 @@ use crate::transport::packet::Packet;
 use crate::exchange::sequence_number::SequenceNumber;
 use std::sync::{Arc, RwLock};
 
-/// Structures implementing this trait can be used in [crate::client::application::pipeline::run]
+/// Structures implementing this trait can be used in [exchange_pipeline::run][1]
 /// to treat messages and eventually send or update other ones
 ///
 /// ExchangeAnalyzer implementing structs must be able to run in parallel to be able to treat messages
@@ -90,6 +90,8 @@ use std::sync::{Arc, RwLock};
 ///     }
 /// }
 /// ```
+///
+/// [1]: crate::client::application::pipeline::exchange_pipeline::run
 pub trait ExchangeAnalyzer<T: Topic, C> {
     fn new(
         configuration: Arc<Configuration>,
