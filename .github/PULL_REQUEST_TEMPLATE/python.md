@@ -119,6 +119,9 @@ in the python venv._
     (docker)🐍 ./python/iot3/tests/test-iot3-mobility-etsi
     (docker)🐍 ./python/iot3/tests/test-iot3-mobility-gnss
     (docker)🐍 ./python/iot3/tests/test-iot3-mobility-message
+    (docker)🐍 ./python/iot3/tests/test-iot3-mobility-message-cam
+    (docker)🐍 ./python/iot3/tests/test-iot3-mobility-message-cpm
+    (docker)🐍 ./python/iot3/tests/test-iot3-mobility-message-denm
     ```
    _**Note:**_ if `test.mosquitto.org` is unreachable, skip the test
    `./python/iot3/tests/test-iot3-core-mqtt`.
