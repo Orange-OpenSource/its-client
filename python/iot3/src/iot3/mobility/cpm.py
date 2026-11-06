@@ -100,17 +100,32 @@ class CollectivePerceptionMessage(etsi.Message):
         object_class_confidence: int = 101  # 101 is "unavailable", range is 1-100.
         bounding_box: Optional[BoundingBox] = None
 
-    SegmentationInfo = collections.namedtuple(
-        "SegmentationInfo",
-        [
-            "total_msg_no",
-            "this_msg_no",
-        ],
-        # Allow initialising with total_msg_no only, setting this_msg_no to 0:
-        defaults=[
-            1,
-        ],
-    )
+    class SegmentationInfo:
+        def __init__(
+            self,
+            *,
+            total_msg_no: int,
+            this_msg_no: int = 1,
+        ):
+            self._total_msg_no = total_msg_no
+            self._this_msg_no = this_msg_no
+
+        @property
+        def total_msg_no(self):
+            return self._total_msg_no
+
+        @property
+        def this_msg_no(self):
+            return self._this_msg_no
+
+        def _asdict(self):
+            return {
+                "total_msg_no": self._total_msg_no,
+                "this_msg_no": self._this_msg_no,
+            }
+
+        def __repr__(self):
+            return f"<SegmentationInfo(total_msg_no={self.total_msg_no}, this_msg_no={self.this_msg_no})>"
 
     def __init__(
         self,

@@ -7,6 +7,12 @@ from iot3.mobility.gnss import GNSSReport
 
 
 #-----------------------------------------------------------------------------------------
+print("CPM segmentation info...")
+seg = CPM.SegmentationInfo(total_msg_no=2)
+assert seg.total_msg_no == 2
+assert seg.this_msg_no == 1
+
+#-----------------------------------------------------------------------------------------
 print("CPM with no P.O...")
 msg = CPM(
     uuid="test_role_1234",
