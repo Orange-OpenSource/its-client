@@ -187,14 +187,9 @@ class CollectivePerceptionMessage(etsi.Message):
                 raise ValueError(
                     f"More CPMs ({segmentation_info.this_msg_no}) in segmentation than expected ({segmentation_info.total_msg_no})"
                 )
-            self._message["message"]["management_container"]["segmentation_info"] = (
-                dict(
-                    [
-                        ("total_msg_no", segmentation_info.total_msg_no),
-                        ("this_msg_no", segmentation_info.this_msg_no),
-                    ]
-                )
-            )
+            self._message["message"]["management_container"][
+                "segmentation_info"
+            ] = segmentation_info._asdict()
 
         for po in perceived_objects:
             self.add_perceived_object(perceived_object=po)
