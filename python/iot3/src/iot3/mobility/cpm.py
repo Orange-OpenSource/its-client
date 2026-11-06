@@ -118,6 +118,13 @@ class CollectivePerceptionMessage(etsi.Message):
             self._total_msg_no = total_msg_no
             self._this_msg_no = this_msg_no
 
+        def next_msg(self):
+            self._this_msg_no += 1
+            if self._this_msg_no > self._total_msg_no:
+                raise ValueError(
+                    f"More segments that expected ({self._total_msg_no})",
+                )
+
         @property
         def total_msg_no(self):
             return self._total_msg_no
@@ -414,21 +421,16 @@ class CollectivePerceptionMessage(etsi.Message):
         This is equivalent to separately removing all perceived objects, then
         increasing message.management_container.segmentation_info.this_msg_no by 1.
         """
-        if "segmentation_info" not in self._message["message"]["management_container"]:
+        seg_info = self.segmentation
+        if seg_info is None:
             raise RuntimeError(
                 "CPM is not segmented: can't start next CPM in segmentation"
             )
-        seg_info = self._message["message"]["management_container"]["segmentation_info"]
-        total_msg_no = seg_info["total_msg_no"]
-        next_this_msg_no = seg_info["this_msg_no"] + 1
-        if next_this_msg_no > total_msg_no:
-            raise ValueError(
-                f"More CPMs ({next_this_msg_no}) in segmentation than expected ({total_msg_no})",
-            )
+        seg_info.next_msg()
         self.reset_perceived_objects()
         self._message["message"]["management_container"]["segmentation_info"][
             "this_msg_no"
-        ] = next_this_msg_no
+        ] = seg_info.this_msg_no
 
     def reset_perceived_objects(self):
         self._message["message"]["perceived_object_container"] = list()

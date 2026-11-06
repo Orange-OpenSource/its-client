@@ -12,6 +12,19 @@ seg = CPM.SegmentationInfo(total_msg_no=2)
 assert seg.total_msg_no == 2
 assert seg.this_msg_no == 1
 
+print("CPM segmentation info next...")
+seg.next_msg()
+assert seg.total_msg_no == 2
+assert seg.this_msg_no == 2
+
+print("CPM segmentation info overshoot...")
+try:
+    seg.next_msg()
+except ValueError:
+    pass
+else:
+    raise RuntimeError("Segmentation overshoot did not occur")
+
 print("CPM segmentation info invalid...")
 for total, this in [
     (0, 0),
