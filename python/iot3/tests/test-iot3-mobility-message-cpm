@@ -12,6 +12,20 @@ seg = CPM.SegmentationInfo(total_msg_no=2)
 assert seg.total_msg_no == 2
 assert seg.this_msg_no == 1
 
+print("CPM segmentation info invalid...")
+for total, this in [
+    (0, 0),
+    (9, 1),
+    (1, 0),
+    (1, 2),
+]:
+    try:
+        seg = CPM.SegmentationInfo(total_msg_no=total, this_msg_no=this)
+    except ValueError:
+        pass
+    else:
+        raise RuntimeError(f"Invalid segmentation info {seg} was accepted")
+
 #-----------------------------------------------------------------------------------------
 print("CPM with no P.O...")
 msg = CPM(

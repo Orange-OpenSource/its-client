@@ -107,6 +107,14 @@ class CollectivePerceptionMessage(etsi.Message):
             total_msg_no: int,
             this_msg_no: int = 1,
         ):
+            if total_msg_no < 1 or total_msg_no > 8:
+                raise ValueError(
+                    f"Segmentation info total_msg_no ({total_msg_no}) out of range (1..8)",
+                )
+            if this_msg_no < 1 or this_msg_no > total_msg_no:
+                raise ValueError(
+                    f"Segmentation info this_msg_no ({this_msg_no}) out of range (1..{this_msg_no})",
+                )
             self._total_msg_no = total_msg_no
             self._this_msg_no = this_msg_no
 
@@ -198,10 +206,6 @@ class CollectivePerceptionMessage(etsi.Message):
             }
 
         if segmentation_info:
-            if segmentation_info.this_msg_no > segmentation_info.total_msg_no:
-                raise ValueError(
-                    f"More CPMs ({segmentation_info.this_msg_no}) in segmentation than expected ({segmentation_info.total_msg_no})"
-                )
             self._message["message"]["management_container"][
                 "segmentation_info"
             ] = segmentation_info._asdict()
