@@ -108,7 +108,7 @@ class CollectivePerceptionMessage(etsi.Message):
         ],
         # Allow initialising with total_msg_no only, setting this_msg_no to 0:
         defaults=[
-            0,
+            1,
         ],
     )
 
@@ -183,7 +183,7 @@ class CollectivePerceptionMessage(etsi.Message):
             }
 
         if segmentation_info:
-            if segmentation_info.this_msg_no >= segmentation_info.total_msg_no:
+            if segmentation_info.this_msg_no > segmentation_info.total_msg_no:
                 raise ValueError(
                     f"More CPMs ({segmentation_info.this_msg_no}) in segmentation than expected ({segmentation_info.total_msg_no})"
                 )
@@ -407,9 +407,9 @@ class CollectivePerceptionMessage(etsi.Message):
         seg_info = self._message["message"]["management_container"]["segmentation_info"]
         total_msg_no = seg_info["total_msg_no"]
         next_this_msg_no = seg_info["this_msg_no"] + 1
-        if next_this_msg_no == total_msg_no:
+        if next_this_msg_no > total_msg_no:
             raise ValueError(
-                f"More CPMs in segmentation than expected ({total_msg_no})",
+                f"More CPMs ({next_this_msg_no}) in segmentation than expected ({total_msg_no})",
             )
         self.reset_perceived_objects()
         self._message["message"]["management_container"]["segmentation_info"][

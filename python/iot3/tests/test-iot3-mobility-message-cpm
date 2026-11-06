@@ -133,6 +133,18 @@ msg.segmentation_next()
 assert msg.segmentation.total_msg_no == 3
 assert msg.segmentation.this_msg_no == 2
 assert len(msg["message"]["perceived_object_container"]) == 0
+msg.segmentation_next()
+assert msg.segmentation.total_msg_no == 3
+assert msg.segmentation.this_msg_no == 3
+assert len(msg["message"]["perceived_object_container"]) == 0
+
+print("CPM overshoot next in segmentation...")
+try:
+    msg.segmentation_next()
+except ValueError:
+    pass
+else:
+    raise RuntimeError("CPM segmentation overshoot did not occur")
 
 print("CPM segment with some P.O...")
 for po in [
