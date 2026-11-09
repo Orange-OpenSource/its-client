@@ -187,19 +187,27 @@ class MqttClient:
         )
         self.client.loop_start()
 
+    @property
+    def connected(self) -> bool:
+        return self.client.is_connected()
+
+    @warnings.deprecated(
+        "Use the connected property instead",
+        category=FutureWarning,
+    )
     def is_ready(self):
         """Returns whether the MQTT client is ready.
 
         The client is ready when it is connected to the MQTT broker.
         """
-        return self.client.is_connected()
+        return self.connected
 
     def wait_for_ready(self):
         """Wait for the client to be ready.
 
         This can block forever.
         """
-        while not self.client.is_connected():
+        while not self.connected:
             time.sleep(0.1)
 
     def stop(self):
