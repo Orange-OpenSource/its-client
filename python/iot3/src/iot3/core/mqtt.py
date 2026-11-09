@@ -365,9 +365,10 @@ class MqttClient:
         _client,
         _userdata,
         _connect_flags,
-        _rc,
+        rc,
         _properties=None,
     ):
-        with self.subscriptions_lock:
-            if self.subscriptions:
-                self._do_subscribe(topics=self.subscriptions)
+        if rc == 0:
+            with self.subscriptions_lock:
+                if self.subscriptions:
+                    self._do_subscribe(topics=self.subscriptions)
