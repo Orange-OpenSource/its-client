@@ -54,7 +54,7 @@ in the python venv._
         ```sh
         $ TMPDIR=/tmp gpsfake -q -P 2948 -u -n -c 0.1 tests/data/NMEA.log
         ```
-    5. in another terminal, start a container with Python 3.11
+    5. in another terminal, start a container with Python 3.14
        and the necessary packages:
         ```sh
         $ docker container run \
@@ -69,7 +69,7 @@ in the python venv._
             --user $(id -u):$(id -u) \
             --mount type=bind,source=$(pwd),destination=$(pwd) \
             --workdir $(pwd) \
-            python:3.11.15-slim-trixie \
+            python:3.14.10-slim-trixie \
             /bin/bash -il
 
         $ docker container exec -u 0:0 iot3 apt update
@@ -83,10 +83,10 @@ in the python venv._
        _**Note:**_ the socat command exposes the MQTT broker listening
        on `localhost:1883` (see 1.2., above), inside the
        container listening on the UNIX socket `/tmp/mqtt.socket`.
-    6. prepare a Python 3.11 environment, with tests dependencies
+    6. prepare a Python 3.14 environment, with tests dependencies
        and packages' dependencies:
         ```sh
-        (docker)$ python3.11 -m venv /tmp/venv
+        (docker)$ python3.14 -m venv /tmp/venv
         (docker)$ . /tmp/venv/bin/activate
         (docker)🐍 $ pip --disable-pip-version-check --no-cache-dir install \
                         -r python/requirements-tests.txt \

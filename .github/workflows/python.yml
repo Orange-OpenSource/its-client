@@ -17,10 +17,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
-      - name: Set up python 3.11
+      - name: Set up python 3.14
         uses: actions/setup-python@v5.3.0
         with:
-          python-version: "3.11"
+          python-version: "3.14"
       - name: Install tooling dependencies
         run: |
           pip --disable-pip-version-check --no-cache-dir install \
