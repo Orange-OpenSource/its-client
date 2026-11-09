@@ -276,10 +276,7 @@ def wait_for_ready():
     case the MQTT client can't connect at all, wait_for_ready()
     will wait forever and never return.
     """
-    while True:
-        if is_ready():
-            break
-        _time.sleep(0.1)
+    _core["mqtt"].wait_for_ready()
 
 
 def publish(
