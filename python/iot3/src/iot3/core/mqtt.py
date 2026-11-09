@@ -10,6 +10,7 @@ import paho.mqtt.properties
 import ssl
 import threading
 import time
+import warnings
 from typing import Any, Callable, Optional, TypeAlias, Unpack
 from . import otel
 
@@ -30,8 +31,9 @@ class MqttClient:
         username: Optional[str] = None,
         password: Optional[str] = None,
         msg_cb: Optional[MsgCallbackType] = None,
-        msg_cb_data: Any = None,
+        cb_data: Any = None,
         span_ctxmgr_cb: Optional[SpanCallableType] = None,
+        **kwargs,
     ):
         """
         Create an MQTT client
@@ -47,10 +49,11 @@ class MqttClient:
         :param password: The password to authenticate against the MQTT broker.
         :param msg_cb: The function to call when a message is received from
                        the MQTT broker.
-        :param msg_cb_data: Arbitrary data that will be passed back to the
-                            msg_cb function.
+        :param cb_data: Arbitrary data that will be passed back to the
+                        callback functions, above.
         :param span_ctx_cb: The function to obtain a context manager for an
-                            OpenTelemetry span.
+                            OpenTelemetry span (cb_data is not passed to
+                            this callback).
 
         There are two ways to connect to the MQTT broker:
          * via TCP: both host and port must be specified;
@@ -79,20 +82,23 @@ class MqttClient:
         Specifying a message callback as msg_cb allows subscribing to,
         and thus receiving messages from specific topics. If no msg_cb
         is provided, it is not possible to subscribe, and only emitting
-        is permitted. msg_cb must be a callable that accepts at least
-        those keyword arguments: data, topic, payload, retain. Ideally,
-        to be future-proof, it should be declared with:
+        is permitted.
+
+        If cb_data is specified, it is passed as the data keyword
+        argument of the callback functions, except span_ctxmgr_cb;
+        otherwise None is passed.
+
+        Callbacks should be callables that accept keyword parameters.
+        To be future-proof, they should accept any positional or
+        keyword argument, like so:
             def my_cb(
                 *_args,
-                data: Any,
-                topic: str,
-                payload: bytes,
-                retain: bool | int,
+                some_kw_arg,
                 **_kwargs,
             ) -> None
 
-        If msg_cb_data is specified, it is passed as the data keyword
-        argument of msg_cb, otherwise None is passed.
+        Additionally, callbacks should accept specific keyword:
+            msg_cb  : data, topic, payload, retain.
 
         Note: the retain flag will be set to False if the message was
         not published in retain; it will be set to True if the message
@@ -103,7 +109,31 @@ class MqttClient:
         """
 
         self.msg_cb = msg_cb
-        self.msg_cb_data = msg_cb_data
+        msg_cb_data = kwargs.get("msg_cb_data")
+        match cb_data, msg_cb_data:
+            case None, None:
+                pass
+            case data, None:
+                pass
+            case None, data:
+                # stacklevel 1 is here, 2 is our caller (usually the
+                # actual application)
+                warnings.warn(
+                    "Use of msg_cb_data is deprecated and will be removed in the future; use cb_data instead",
+                    stacklevel=2,
+                )
+                cb_data = data
+                del kwargs["msg_cb_data"]
+            case _, _:
+                raise ValueError("Don't pass both cb_data and msg_cb_data")
+        self.cb_data = cb_data
+
+        # Check for unknown kwargs; raise the same exception the interpreter
+        # would have raised if we did not have **kwargs in the signature
+        if kwargs:
+            raise TypeError(
+                f"MqttClient.__init__() got an unexpected keyword argument '{list(kwargs)[0]}'"
+            )
 
         if socket_path is not None:
             transport = "unix"
@@ -354,7 +384,7 @@ class MqttClient:
             else:
                 retain = False
             self.msg_cb(
-                data=self.msg_cb_data,
+                data=self.cb_data,
                 topic=message.topic,
                 payload=message.payload,
                 retain=retain,

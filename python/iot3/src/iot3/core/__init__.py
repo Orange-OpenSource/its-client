@@ -233,7 +233,7 @@ def start(
         username=config["mqtt"]["username"],
         password=config["mqtt"]["password"],
         msg_cb=_msg_cb if message_callback else None,
-        msg_cb_data=callback_data,
+        cb_data=callback_data,
         span_ctxmgr_cb=span_ctxmgr,
     )
     m.start()

@@ -118,7 +118,7 @@ def start(
             ) -> None:
                 ...
         Currently defined kwargs that are always present are:
-          - data: the value passed as msg_cb_data (below)
+          - data: the value passed as cb_data (below)
           - location: contains the location of the alert
           - detection_time: the time of detection of the event
           - cause: the cause for the DENM
