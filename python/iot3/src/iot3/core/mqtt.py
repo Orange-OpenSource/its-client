@@ -14,6 +14,7 @@ import warnings
 from typing import Any, Callable, Optional, TypeAlias, Unpack
 from . import otel
 
+ConnCallbackType: TypeAlias = Callable[[Any, bool], None]
 MsgCallbackType: TypeAlias = Callable[[Any, str, bytes, bool | int], None]
 SpanCallableType: TypeAlias = Callable[Unpack[otel.Otel.span], otel.Span]
 
@@ -30,6 +31,7 @@ class MqttClient:
         tls: Optional[bool] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
+        conn_cb: Optional[ConnCallbackType] = None,
         msg_cb: Optional[MsgCallbackType] = None,
         cb_data: Any = None,
         span_ctxmgr_cb: Optional[SpanCallableType] = None,
@@ -47,6 +49,8 @@ class MqttClient:
         :param tls: Whether to use TLS or not. See below for details.
         :param username: The username to authenticate against the MQTT broker.
         :param password: The password to authenticate against the MQTT broker.
+        :param conn_cb: The function to call when the MQTT connection is
+                        established or lost.
         :param msg_cb: The function to call when a message is received from
                        the MQTT broker.
         :param cb_data: Arbitrary data that will be passed back to the
@@ -98,6 +102,7 @@ class MqttClient:
             ) -> None
 
         Additionally, callbacks should accept specific keyword:
+            conn_cb : data, connected
             msg_cb  : data, topic, payload, retain.
 
         Note: the retain flag will be set to False if the message was
@@ -106,8 +111,18 @@ class MqttClient:
         will be set to a non-zero integer representing the remaining
         Message Expiry Interval if the message was published in retain
         with a non-zero Message Expiry Interval.
+
+        Note: conn_cb is called with status=True when the connection is
+        completely established (i.e. the MQTT handshake is terminated
+        and was succesful); it is called with status=False when the
+        connection was explicitly, cleanly terminated (ie. requested by
+        the client or the broker), but also on an unclean termination
+        (i.e. when the underlying socket is closed, e.g. on network
+        issues). There is no way to differentiate both termination
+        conditions.
         """
 
+        self.conn_cb = conn_cb
         self.msg_cb = msg_cb
         msg_cb_data = kwargs.get("msg_cb_data")
         match cb_data, msg_cb_data:
@@ -173,6 +188,8 @@ class MqttClient:
         self.client.reconnect_delay_set(min_delay=1, max_delay=2)
         self.client.username_pw_set(username, password)
         self.client.on_connect = self.__on_connect
+        self.client.on_disconnect = self.__on_disconnect
+        self.client.on_socket_close = self.__on_socket_close
         self.client.on_message = self.__on_message
 
         self.subscriptions = set()
@@ -410,3 +427,25 @@ class MqttClient:
             with self.subscriptions_lock:
                 if self.subscriptions:
                     self._do_subscribe(topics=self.subscriptions)
+            if self.conn_cb:
+                self.conn_cb(data=self.cb_data, connected=True)
+
+    def __on_disconnect(
+        self,
+        _client,
+        _userdata,
+        _disconnect_flags,
+        _rc,
+        _properties,
+    ) -> None:
+        if self.conn_cb:
+            self.conn_cb(data=self.cb_data, connected=False)
+
+    def __on_socket_close(
+        self,
+        _client,
+        _userdata,
+        _socket,
+    ) -> None:
+        if self.conn_cb:
+            self.conn_cb(data=self.cb_data, connected=False)
