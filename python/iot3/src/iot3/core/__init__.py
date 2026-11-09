@@ -266,7 +266,7 @@ def is_ready() -> bool:
     if _core is None:
         raise RuntimeError("IoT3 Core SDK not initialised.")
 
-    return _core["mqtt"].is_ready()
+    return _core["mqtt"].connected
 
 
 def wait_for_ready():
