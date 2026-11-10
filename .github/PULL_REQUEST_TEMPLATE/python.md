@@ -21,22 +21,15 @@ Test
 How to test
 -----------
 
-_**Note:** in the following, lines starting with `$` are to be executed on your
-machine, as a non-root user;
-lines starting with `(docker)$` are to be executed in the Docker container;
-lines starting with `(docker)🐍 $` are to be executed in the Docker container,
-in the python venv._
+_**Note:** in the following, lines starting with `$` are to be executed on your machine, as a non-root user; lines starting with `(docker)$` are to be executed in the Docker container._
 
 1. Prepare a test environment:
     1. be sure to have unrestricted access to _test.mosquitto.org_ (IPv4 and IPv6)
-    2. be sure to have an MQTT broker that listens locally on port 1883,
-       with no credentials and no ACL; if not, run your own:
+    2. be sure to have an MQTT broker that listens locally on port 1883, with no credentials and no ACL; if not, run your own:
         ```sh
         $ mosquitto
         ```
-    3. in another terminal, prepare a collector implementing
-       the OpenTelemetry API, on localhost. If you don't have one,
-       you may use an existing one, like:
+    3. in another terminal, prepare a collector implementing the OpenTelemetry API, on localhost. If you don't have one, you may use an existing one, like:
         ```
         $ docker container run \
             --rm \
@@ -44,94 +37,177 @@ in the python venv._
             -p 4318:4318 \
             jaegertracing/all-in-one:1.58
         ```
-       then open a browser on the Jaegger UI
-       (or that of your own collector if you have one):
+       then open a browser on the Jaegger UI (or that of your own collector if you have one):
         ```
         http://localhost:16686/
         ```
-    4. in another terminal, start a fake _gpsd_ process
-       (no need for an actual GNSS device):
+    4. in another terminal, start a fake _gpsd_ process (no need for an actual GNSS device):
         ```sh
         $ TMPDIR=/tmp gpsfake -q -P 2948 -u -n -c 0.1 tests/data/NMEA.log
         ```
-    5. in another terminal, start a container with Python 3.14
-       and the necessary packages:
+    5. in another terminal, build and start a container with Python 3.14 and the necessary packages:
         ```sh
+        $ docker build \
+            --file python/Dockerfile.dev \
+            --build-arg DOCKER_PROXY=${DOCKER_PROXY} \
+            --network host \
+            -t its-client-python:review \
+            python/
         $ docker container run \
-            --detach \
-            --name iot3 \
             --rm \
             -ti \
             --network host \
-            -e http_proxy \
-            -e https_proxy \
-            -e no_proxy \
             --user $(id -u):$(id -u) \
             --mount type=bind,source=$(pwd),destination=$(pwd) \
             --workdir $(pwd) \
-            python:3.14.10-slim-trixie \
-            /bin/bash -il
-
-        $ docker container exec -u 0:0 iot3 apt update
-        $ docker container exec -u 0:0 iot3 apt install -y git build-essential curl socat
-        $ docker container exec -u 0:0 iot3 install -d -m 0755 /run/zoneinfo
-        $ docker container exec -u 0:0 iot3 curl -o /run/zoneinfo/leap-seconds.list 'https://data.iana.org/time-zones/data/leap-seconds.list' 
-        $ docker container exec -d iot3 socat UNIX-LISTEN:/tmp/mqtt.socket,fork TCP4:localhost:1883
-
-        $ docker container attach iot3
+            its-client-python:review
         ```
-       _**Note:**_ the socat command exposes the MQTT broker listening
-       on `localhost:1883` (see 1.2., above), inside the
-       container listening on the UNIX socket `/tmp/mqtt.socket`.
-    6. prepare a Python 3.14 environment, with tests dependencies
-       and packages' dependencies:
-        ```sh
-        (docker)$ python3.14 -m venv /tmp/venv
-        (docker)$ . /tmp/venv/bin/activate
-        (docker)🐍 $ pip --disable-pip-version-check --no-cache-dir install \
-                        -r python/requirements-tests.txt \
-                        $(sed -r -e '/.*"(.+(==|>=|<=).+)".*/!d; s//\1/; s/ //g;' \
-                          python/*/pyproject.toml
-                         )
-        ```
-       _**Note:**_ we install the packages dependencies manually,
-       and do not rely on _pip_ to do so, because our Python packages depend
-       one on the others by git hash, as they are not published on PyPi yet,
-       so installing one of our packages may overwrite another.
-2. Build the Python packages:
+2. Run the IoT3 Core SDK tests:
     ```sh
-    (docker)🐍 $ for pkg in python/*/; do
-                    python -m build -w "${pkg}" || break
-                 done
+    (docker)$ ./python/iot3/tests/test-iot3-core
+    (docker)$ ./python/iot3/tests/test-iot3-core-all
+    (docker)$ ./python/iot3/tests/test-iot3-core-mqtt
+    (docker)$ ./python/iot3/tests/test-iot3-core-otel
+    (docker)$ ./python/iot3/tests/test-iot3-mobility
+    (docker)$ ./python/iot3/tests/test-iot3-mobility-etsi
+    (docker)$ ./python/iot3/tests/test-iot3-mobility-gnss
+    (docker)$ ./python/iot3/tests/test-iot3-mobility-message
+    (docker)$ ./python/iot3/tests/test-iot3-mobility-message-cam
+    (docker)$ ./python/iot3/tests/test-iot3-mobility-message-cpm
+    (docker)$ ./python/iot3/tests/test-iot3-mobility-message-denm
     ```
-3. Install the Python packages:
-    ```sh
-    (docker)🐍 $ pip --disable-pip-version-check --no-cache-dir \
-                        install --no-deps python/*/dist/*.whl
-    ```
-4. Run the IoT3 Core SDK tests:
-    ```sh
-    (docker)🐍 ./python/iot3/tests/test-iot3-core
-    (docker)🐍 ./python/iot3/tests/test-iot3-core-all
-    (docker)🐍 ./python/iot3/tests/test-iot3-core-mqtt
-    (docker)🐍 ./python/iot3/tests/test-iot3-core-otel
-    (docker)🐍 ./python/iot3/tests/test-iot3-mobility
-    (docker)🐍 ./python/iot3/tests/test-iot3-mobility-etsi
-    (docker)🐍 ./python/iot3/tests/test-iot3-mobility-gnss
-    (docker)🐍 ./python/iot3/tests/test-iot3-mobility-message
-    (docker)🐍 ./python/iot3/tests/test-iot3-mobility-message-cam
-    (docker)🐍 ./python/iot3/tests/test-iot3-mobility-message-cpm
-    (docker)🐍 ./python/iot3/tests/test-iot3-mobility-message-denm
-    ```
-   _**Note:**_ if `test.mosquitto.org` is unreachable, skip the test
-   `./python/iot3/tests/test-iot3-core-mqtt`.
+   _**Notes:**_
+    * a test that fails will report a traceback; if there was no traceback, the test succeeded;
+    * if `test.mosquitto.org` is unreachable, skip the test `./python/iot3/tests/test-iot3-core-mqtt`.
 5. ...
 
 Expected results
 -------
 
 1. The test environment is ready
-2. The packages were all built successfully
-3. The packages were all installed successfully
-4. The tests all succeed:
-5. ...
+2. The tests all succeed:
+    * IoT3 core:
+        * `test-iot3-core`: the following messages are received:
+            ```
+            IoT3 Core SDK with MQTT and OTLP
+            test/5ad42868ca24ea06a96c57e6fee9ff5a/iot3/passed: b'passed'
+            IoT3 Core SDK with MQTT and no OTLP
+            test/4501059058fca5a9c59447d85a7d4b3c/iot3/no-otlp/passed: b'passed'
+            ```
+          and the Jeager UI displays three corresponding traces for service _my-service_:
+            * one in error, because the MQTT client was not connected for the first message
+            * one for the producer side (the publish) for the second message
+            * one for the consumer side (the subscriber), with a reference to the producer trace above
+        * `test-iot3-core-all`: the following messages are received:
+            ```
+            None: test/7bf597110bf: b'passed
+            ```
+          and the Jeager UI displays three corresponding traces for service _test-service_:
+            * one in error, because the MQTT client was not connected for the first message
+            * one for the producer side (the publish) for the second message
+            * one for the consumer side (the subscriber), with a reference to the producer trace above
+        * `test-iot3-core-mqtt`: the following messages are received:
+            ```
+            clear: test/51e27d875d3: clear message
+            tls: test/51e27d875d3: 3ИСЯЧРТЕD ПЕЅЅД̈GЕ
+            ws: test/51e27d875d3: clear message
+            wss: test/51e27d875d3: 3ИСЯЧРТЕD ПЕЅЅД̈GЕ
+            ```
+          while the Jaeger UI does not provide any new trace for any service.
+        * `test-iot3-core-otel`: no message are received, but the Jaeger UI reports two new traces for the _test-service_:
+            * a first trace with 1 root span, and 5 child and grand-child spans, with the last one in error
+            * a second trace with a single, root span with a reference to the span in error of the previous trace
+    * IoT3 mobility:
+        * `test-iot3-mobility`:
+            ```
+            Starting IoT3 Mobility SDK...
+            Sending position...
+            Sending alert 'accident'...
+            Sending alert 'trafficCondition' as if relayed by an IQM...
+            alert: (lat 43.635211999999996, lon 1.3745619999999998), cause trafficCondition, subcause: not provided
+            Sending again with sub-cause 'trafficStationary'...
+            alert: (lat 43.635211999999996, lon 1.3745619999999998), cause trafficCondition, subcause: trafficStationary
+            ```
+        * `test-iot3-mobility-etsi`:
+            ```
+            ETSI conversion: UNIX -> ETSI time
+            ETSI conversion: ETSI -> UNIX time
+            position_confidence_ellipse: no data...
+            position_confidence_ellipse: GST data...
+            position_confidence_ellipse: GST major only...
+            position_confidence_ellipse: GST minor only...
+            position_confidence_ellipse: GST orient only...
+            position_confidence_ellipse: GST major+minor, no orient...
+            position_confidence_ellipse: GST major+orient, no minor...
+            position_confidence_ellipse: GST minor+orient, no major...
+            position_confidence_ellipse: GST major takes priority over horizontal_error...
+            position_confidence_ellipse: horizontal_error fallback when no major...
+            position_confidence_ellipse: horizontal_error ignored when major present...
+            position_confidence_ellipse: orientation wrapping (360° → 0°)...
+            position_confidence_ellipse: orientation wrapping (>360°)...
+            position_confidence_ellipse: orientation correction (major < minor)...
+            ```
+        * `test-iot3-mobility-gnss`:
+            ```
+            Basic, empty GNSS report...
+            GNSSReport with GST fields...
+            Disallow explicit timestamp...
+            Validity range...
+            Conflicting attributes...
+            Attribute degree -> radian conversion...
+            Attribute radian -> degree conversion...
+            GNSSReport.Fix unknown...
+            GNSSReport.Fix no fix...
+            GNSSReport.Fix normal fix...
+            GNSSReport.Fix enhanced fix...
+            GNSSReport.Fix other fix...
+            gpsd connection to 127.0.0.1:2948...
+            ```
+        * `test-iot3-mobility-message`:
+            ```
+            Invalid generic message...
+            De-serialisation of unrecognised message...
+            De-serialisation of broken message...
+            ```
+        * `test-iot3-mobility-message-cam`:
+            ```
+            CAM with nothing available...
+            CAM with latitude and longitude...
+            CAM with all GNSS fields...
+            CAM with RTK data...
+            CAM position_confidence_ellipse from GST data...
+            CAM position_confidence_ellipse from GST data out of range...
+            CAM altitude confidence from altitude_error...
+            CAM serialisation...
+            CAM de-serialisation...
+            ```
+        * `test-iot3-mobility-message-cpm`:
+            ```
+            CPM segmentation info...
+            CPM segmentation info next...
+            CPM segmentation info overshoot...
+            CPM segmentation info invalid...
+            CPM with no P.O...
+            CPM of a car with some P.O...
+            CPM with a new P.O...
+            CPM iteration of P.O...
+            CPM serialisation...
+            CPM deserialisation...
+            CPM with segmentation...
+            CPM next in segmentation...
+            CPM overshoot next in segmentation...
+            CPM segment with some P.O...
+            ```
+        * `test-iot3-mobility-message-denm`:
+            ```
+            DENM with nothing set...
+            DENM with latitude, longitude, and cause...
+            DENM continuation (update)...
+            DENM update with invalid subcause...
+            DENM with invalid subcause...
+            DENM continuation (update without subcause)...
+            DENM continuation (termination)...
+            DENM serialisation...
+            DENM de-serialisation...
+            ```
+3. ...
