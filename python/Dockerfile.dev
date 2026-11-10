@@ -1,0 +1,70 @@
+ARG DOCKER_PROXY=
+
+#-------------------------------------------------------------------------------
+FROM ${DOCKER_PROXY}python:3.14.10-slim-trixie
+
+# Swith the deb repository to use the snapshot at the time
+# the image was created.
+RUN sed -r -i \
+        -e '/^URIs: /d;' \
+        -e 's,^# (http)s?(://.+),URIs: \1s\2,;' \
+        -e 's/^(Suites: ([^-[:space:]]+)( .+)?)$/\1 \2-backports/;' \
+        -e '/^Suites: /s/$/\nCheck-Valid-Until: no/' \
+        /etc/apt/sources.list.d/debian.sources \
+    && apt-get -o 'Acquire::Retries=10' update
+
+# hadolint ignore=DL3008  # We're using a pinned snapshot already
+RUN apt-get -o 'Acquire::Retries=10' install --no-install-recommends -y \
+        build-essential \
+        curl \
+        git \
+        socat \
+ && apt clean
+
+RUN mkdir -p /run/zoneinfo \
+ && curl -o /run/zoneinfo/leap-seconds.list \
+        'https://data.iana.org/time-zones/data/leap-seconds.list'
+
+RUN python3.14 -m venv /tmp/venv
+
+ENV VIRTUAL_ENV="/tmp/venv"
+ENV PATH="/tmp/venv/bin:${PATH}"
+
+RUN printf 'VIRTUAL_ENV="%s"\nPATH="%s"\n' \
+    "/tmp/venv" \
+    "/tmp/venv/bin:${PATH}" \
+    >/etc/profile.d/venv.sh
+
+COPY . /tmp/py
+
+RUN pip \
+    --disable-pip-version-check \
+    --no-cache-dir \
+    wheel \
+    --no-deps \
+    -w /tmp/wheels \
+    /tmp/py/*/
+
+# we install the packages dependencies manually, and do not rely
+# on _pip_ to do so, because our Python packages depend one on the
+# others by git hash, as they are not published on PyPi yet, so
+# installing one of our packages may overwrite another.
+RUN pip \
+    --disable-pip-version-check \
+    --no-cache-dir \
+    install \
+    $(sed -r -e '/.*"(.+(==|>=|<=).+)".*/!d; s//\1/; s/ //g;' \
+        /tmp/py/*/pyproject.toml \
+    )
+
+RUN pip \
+    --disable-pip-version-check \
+    --no-cache-dir \
+    install \
+    --no-deps \
+    /tmp/wheels/*.whl
+
+ENTRYPOINT [ \
+    "/bin/bash", \
+    "-il" \
+]
