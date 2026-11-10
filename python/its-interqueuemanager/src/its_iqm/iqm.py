@@ -114,7 +114,7 @@ class IQM:
             password=cfg["local"]["password"],
             **conn,
             msg_cb=self.qm_copy_cb,
-            msg_cb_data=qm_data,
+            cb_data=qm_data,
             span_ctxmgr_cb=self.span_cb,
         )
         # Note: for a shared subscription, the special $share prefix and
@@ -224,7 +224,7 @@ class IQM:
                 tls=False,
                 **creds,
                 msg_cb=self.qm_copy_cb,
-                msg_cb_data=qm_data,
+                cb_data=qm_data,
                 span_ctxmgr_cb=self.span_cb,
             )
             self.neighbours_clients[nghb_id].subscribe(topics=[interqueue + "/#"])
