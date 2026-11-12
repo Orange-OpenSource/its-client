@@ -100,17 +100,47 @@ class CollectivePerceptionMessage(etsi.Message):
         object_class_confidence: int = 101  # 101 is "unavailable", range is 1-100.
         bounding_box: Optional[BoundingBox] = None
 
-    SegmentationInfo = collections.namedtuple(
-        "SegmentationInfo",
-        [
-            "total_msg_no",
-            "this_msg_no",
-        ],
-        # Allow initialising with total_msg_no only, setting this_msg_no to 0:
-        defaults=[
-            0,
-        ],
-    )
+    class SegmentationInfo:
+        def __init__(
+            self,
+            *,
+            total_msg_no: int,
+            this_msg_no: int = 1,
+        ):
+            if total_msg_no < 1 or total_msg_no > 8:
+                raise ValueError(
+                    f"Segmentation info total_msg_no ({total_msg_no}) out of range (1..8)",
+                )
+            if this_msg_no < 1 or this_msg_no > total_msg_no:
+                raise ValueError(
+                    f"Segmentation info this_msg_no ({this_msg_no}) out of range (1..{this_msg_no})",
+                )
+            self._total_msg_no = total_msg_no
+            self._this_msg_no = this_msg_no
+
+        def next_msg(self):
+            self._this_msg_no += 1
+            if self._this_msg_no > self._total_msg_no:
+                raise ValueError(
+                    f"More segments that expected ({self._total_msg_no})",
+                )
+
+        @property
+        def total_msg_no(self):
+            return self._total_msg_no
+
+        @property
+        def this_msg_no(self):
+            return self._this_msg_no
+
+        def _asdict(self):
+            return {
+                "total_msg_no": self._total_msg_no,
+                "this_msg_no": self._this_msg_no,
+            }
+
+        def __repr__(self):
+            return f"<SegmentationInfo(total_msg_no={self.total_msg_no}, this_msg_no={self.this_msg_no})>"
 
     def __init__(
         self,
@@ -183,18 +213,9 @@ class CollectivePerceptionMessage(etsi.Message):
             }
 
         if segmentation_info:
-            if segmentation_info.this_msg_no >= segmentation_info.total_msg_no:
-                raise ValueError(
-                    f"More CPMs ({segmentation_info.this_msg_no}) in segmentation than expected ({segmentation_info.total_msg_no})"
-                )
-            self._message["message"]["management_container"]["segmentation_info"] = (
-                dict(
-                    [
-                        ("total_msg_no", segmentation_info.total_msg_no),
-                        ("this_msg_no", segmentation_info.this_msg_no),
-                    ]
-                )
-            )
+            self._message["message"]["management_container"][
+                "segmentation_info"
+            ] = segmentation_info._asdict()
 
         for po in perceived_objects:
             self.add_perceived_object(perceived_object=po)
@@ -400,21 +421,16 @@ class CollectivePerceptionMessage(etsi.Message):
         This is equivalent to separately removing all perceived objects, then
         increasing message.management_container.segmentation_info.this_msg_no by 1.
         """
-        if "segmentation_info" not in self._message["message"]["management_container"]:
+        seg_info = self.segmentation
+        if seg_info is None:
             raise RuntimeError(
                 "CPM is not segmented: can't start next CPM in segmentation"
             )
-        seg_info = self._message["message"]["management_container"]["segmentation_info"]
-        total_msg_no = seg_info["total_msg_no"]
-        next_this_msg_no = seg_info["this_msg_no"] + 1
-        if next_this_msg_no == total_msg_no:
-            raise ValueError(
-                f"More CPMs in segmentation than expected ({total_msg_no})",
-            )
+        seg_info.next_msg()
         self.reset_perceived_objects()
         self._message["message"]["management_container"]["segmentation_info"][
             "this_msg_no"
-        ] = next_this_msg_no
+        ] = seg_info.this_msg_no
 
     def reset_perceived_objects(self):
         self._message["message"]["perceived_object_container"] = list()
