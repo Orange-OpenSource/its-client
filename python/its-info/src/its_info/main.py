@@ -10,10 +10,11 @@ import linuxfd
 import logging
 import netifaces
 import os
-import paho.mqtt.client
 import sys
 import time
 import warnings
+
+from iot3.core.mqtt import MqttClient
 from its_quadkeys import QuadZone
 
 
@@ -126,28 +127,19 @@ class MQTTInfoClient:
         self.timer = linuxfd.timerfd(closeOnExec=True)
 
         logging.debug("creating MQTT client")
-        self.client = paho.mqtt.client.Client(
+        self.client = MqttClient(
             client_id=self.cfg["mqtt"]["client_id"],
-            transport="unix",
+            socket_path=self.cfg["mqtt"]["socket-path"],
+            username=self.cfg["mqtt"]["username"],
+            password=self.cfg["mqtt"]["password"],
+            conn_cb=self.on_conn_change,
         )
-        self.client.reconnect_delay_set(
-            min_delay=1,
-            max_delay=self.cfg["mqtt"]["retry"],
-        )
-        self.client.username_pw_set(
-            self.cfg["mqtt"]["username"],
-            self.cfg["mqtt"]["password"],
-        )
-        self.client.on_connect = self.on_connect
-        self.client.on_disconnect = self.on_disconnect
-        self.client.on_socket_close = self.on_socket_close
-        self.client.connect_async(host=self.cfg["mqtt"]["socket-path"])
 
         logging.debug("finished instanciating info object")
 
     def loop_forever(self):
         logging.info("starting info loop")
-        self.client.loop_start()
+        self.client.start()
         while True:
             try:
                 # We don't care about the number of time the timer has
@@ -167,25 +159,20 @@ class MQTTInfoClient:
                 break
 
         logging.info("stopping info loop")
-        self.client.loop_stop()
-        self.client.disconnect()
+        self.client.stop()
         logging.debug("stopped info loop")
 
-    def on_connect(self, _client, _userdata, _flags, _rc, _properties=None):
-        logging.debug("connected to MQTT broker")
-        self.timer.settime(
-            value=int(self.cfg["general"]["period"]),
-            interval=int(self.cfg["general"]["period"]),
-        )
-        self.info()
-
-    def on_disconnect(self, _client, _userdata, _rc, _properties=None):
-        logging.debug("disconnected to MQTT broker")
-        self.timer.settime(value=0)
-
-    def on_socket_close(self, _client, _userdata, _sock):
-        logging.debug("disconnected to MQTT broker (socket closed)")
-        self.timer.settime(value=0)
+    def on_conn_change(self, *, data, connected):
+        if connected:
+            logging.debug("connected to MQTT broker")
+            self.timer.settime(
+                value=int(self.cfg["general"]["period"]),
+                interval=int(self.cfg["general"]["period"]),
+            )
+            self.info()
+        else:
+            logging.debug("disconnected from MQTT broker")
+            self.timer.settime(value=0)
 
     def info(self):
         logging.debug("preparing info data")
