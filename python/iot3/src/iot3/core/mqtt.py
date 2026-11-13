@@ -207,7 +207,7 @@ class MqttClient:
             span.set_attribute(key="iot3.core.mqtt.payload_size", value=len(payload))
             if retain:
                 span.set_attribute(key="iot3.core.mqtt.retain", value=True)
-                if isinstance(retain, int):
+                if type(retain) is int:
                     if retain < 1:
                         raise ValueError(
                             f"retain must be strictly positive (not: {retain})"
