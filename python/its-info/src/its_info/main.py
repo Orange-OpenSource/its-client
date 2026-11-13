@@ -5,6 +5,7 @@
 
 import argparse
 import configparser
+import ipaddress
 import json
 import linuxfd
 import logging
@@ -196,12 +197,19 @@ class MQTTInfoClient:
                         # IPv6 addresses can look like: 01::EF%iface but we just want 01::EF
                         yield i["addr"].split("%")[0]
 
-        # The IP adresses of the interface may change at runtime
+        # The IP adresses of the interfaces may change at runtime
         # so we must grab them every time.
+        public_ips = list()
         local_ips = list()
+        for itf in netifaces.interfaces():
+            public_ips += [
+                ip for ip in _itf2ip(itf) if not ipaddress.ip_address(ip).is_private
+            ]
         if self.cfg["general"]["interface"]:
             local_ips = list(_itf2ip(self.cfg["general"]["interface"]))
 
+        if public_ips:
+            data["public_ip_address"] = public_ips
         if self.cfg["general"]["dns_ip"]:
             data["domain_name_servers"] = [self.cfg["general"]["dns_ip"]]
         elif local_ips:
