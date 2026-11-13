@@ -227,5 +227,5 @@ class MQTTInfoClient:
         self.client.publish(
             topic=self.cfg["mqtt"]["topic"],
             payload=data_str,
-            retain=True,
+            retain=data["validity_duration"],
         )
