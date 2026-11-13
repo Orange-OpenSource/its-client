@@ -5,15 +5,18 @@
 
 import argparse
 import configparser
+import ipaddress
 import json
 import linuxfd
 import logging
 import netifaces
 import os
-import paho.mqtt.client
 import sys
 import time
 import warnings
+
+from iot3.core.mqtt import MqttClient
+from iot3.mobility.etsi import Message
 from its_quadkeys import QuadZone
 
 
@@ -126,28 +129,19 @@ class MQTTInfoClient:
         self.timer = linuxfd.timerfd(closeOnExec=True)
 
         logging.debug("creating MQTT client")
-        self.client = paho.mqtt.client.Client(
+        self.client = MqttClient(
             client_id=self.cfg["mqtt"]["client_id"],
-            transport="unix",
+            socket_path=self.cfg["mqtt"]["socket-path"],
+            username=self.cfg["mqtt"]["username"],
+            password=self.cfg["mqtt"]["password"],
+            conn_cb=self.on_conn_change,
         )
-        self.client.reconnect_delay_set(
-            min_delay=1,
-            max_delay=self.cfg["mqtt"]["retry"],
-        )
-        self.client.username_pw_set(
-            self.cfg["mqtt"]["username"],
-            self.cfg["mqtt"]["password"],
-        )
-        self.client.on_connect = self.on_connect
-        self.client.on_disconnect = self.on_disconnect
-        self.client.on_socket_close = self.on_socket_close
-        self.client.connect_async(host=self.cfg["mqtt"]["socket-path"])
 
         logging.debug("finished instanciating info object")
 
     def loop_forever(self):
         logging.info("starting info loop")
-        self.client.loop_start()
+        self.client.start()
         while True:
             try:
                 # We don't care about the number of time the timer has
@@ -167,56 +161,63 @@ class MQTTInfoClient:
                 break
 
         logging.info("stopping info loop")
-        self.client.loop_stop()
-        self.client.disconnect()
+        self.client.stop()
         logging.debug("stopped info loop")
 
-    def on_connect(self, _client, _userdata, _flags, _rc, _properties=None):
-        logging.debug("connected to MQTT broker")
-        self.timer.settime(
-            value=int(self.cfg["general"]["period"]),
-            interval=int(self.cfg["general"]["period"]),
-        )
-        self.info()
-
-    def on_disconnect(self, _client, _userdata, _rc, _properties=None):
-        logging.debug("disconnected to MQTT broker")
-        self.timer.settime(value=0)
-
-    def on_socket_close(self, _client, _userdata, _sock):
-        logging.debug("disconnected to MQTT broker (socket closed)")
-        self.timer.settime(value=0)
+    def on_conn_change(self, *, data, connected):
+        if connected:
+            logging.debug("connected to MQTT broker")
+            self.timer.settime(
+                value=int(self.cfg["general"]["period"]),
+                interval=int(self.cfg["general"]["period"]),
+            )
+            self.info()
+        else:
+            logging.debug("disconnected from MQTT broker")
+            self.timer.settime(value=0)
 
     def info(self):
         logging.debug("preparing info data")
         data = {
-            "type": "broker",
-            "version": "1.2.0",
-            "station_uuid": self.cfg["general"]["station-uuid"],
+            "message_type": "information",
+            "source_uuid": self.cfg["general"]["station-uuid"],
+            "timestamp": int(1000 * time.time()),
+            "version": "2.1.0",
+            "instance_id": Message.station_id(self.cfg["general"]["station-uuid"]),
             "instance_type": self.cfg["general"]["instance_type"],
             "running": True,
-            "timestamp": int(1000 * time.time()),
             "validity_duration": int(self.cfg["general"]["period"]) * 2,
         }
 
-        # The IP adresses of the interface may change at runtime
-        # so we must grab them every time.
-        ips = list()
-        if self.cfg["general"]["interface"]:
-            ifa = netifaces.ifaddresses(self.cfg["general"]["interface"])
+        def _itf2ip(itf: str) -> list[str]:
+            ifa = netifaces.ifaddresses(itf)
             for familly in [netifaces.AF_INET, netifaces.AF_INET6]:
                 if familly in ifa:
-                    # IPv6 addresses can look like: 01::EF%iface but we just want 01::EF
-                    ips += [i["addr"].split("%")[0] for i in ifa[familly]]
+                    for i in ifa[familly]:
+                        # IPv6 addresses can look like: 01::EF%iface but we just want 01::EF
+                        yield i["addr"].split("%")[0]
 
+        # The IP adresses of the interfaces may change at runtime
+        # so we must grab them every time.
+        public_ips = list()
+        local_ips = list()
+        for itf in netifaces.interfaces():
+            public_ips += [
+                ip for ip in _itf2ip(itf) if not ipaddress.ip_address(ip).is_private
+            ]
+        if self.cfg["general"]["interface"]:
+            local_ips = list(_itf2ip(self.cfg["general"]["interface"]))
+
+        if public_ips:
+            data["public_ip_address"] = public_ips
         if self.cfg["general"]["dns_ip"]:
             data["domain_name_servers"] = [self.cfg["general"]["dns_ip"]]
-        elif ips:
-            data["domain_name_servers"] = ips
+        elif local_ips:
+            data["domain_name_servers"] = local_ips
         if self.cfg["general"]["ntp_host"]:
             data["ntp_servers"] = [self.cfg["general"]["ntp_host"]]
-        elif ips:
-            data["ntp_servers"] = ips
+        elif local_ips:
+            data["ntp_servers"] = local_ips
 
         if self.cfg["RoR"]["type"] == "static" and self.cfg["RoR"]["reload"]:
             if self.ror is None:
@@ -232,7 +233,7 @@ class MQTTInfoClient:
         if self.ror is not None:
             data["service_area"] = {"type": "tiles", "quadkeys": sorted(self.ror)}
 
-        data_str = json.dumps(data)
+        data_str = json.dumps(data, separators=(",", ":"))
 
         logging.debug(
             f"sending info data '{data_str[:128]+('...' if len(data_str)>128 else '')}'",
@@ -240,5 +241,5 @@ class MQTTInfoClient:
         self.client.publish(
             topic=self.cfg["mqtt"]["topic"],
             payload=data_str,
-            retain=True,
+            retain=data["validity_duration"],
         )

@@ -10,7 +10,7 @@ authors = [
 ]
 description = "ITS information message emitter"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: POSIX :: Linux",
@@ -18,10 +18,10 @@ classifiers = [
 ]
 license = "MIT"
 dependencies = [
+    "iot3 @ git+https://github.com/Orange-OpenSource/its-client@ec72a688225517248761db7497bd379ec253162b#subdirectory=python/iot3",
     "linuxfd==1.5",
     "netifaces==0.11.0",
-    "paho-mqtt >=1.6.1, !=2.0.*",
-    "its-quadkeys @ git+https://github.com/Orange-OpenSource/its-client@91b6508d743fa6b771f5a5480591ce554d52084c#subdirectory=python/its-quadkeys"
+    "its-quadkeys @ git+https://github.com/Orange-OpenSource/its-client@fcc10a61b3242cc048ddf80d777d82ff87640eb8#subdirectory=python/its-quadkeys"
 ]
 
 [project.urls]

@@ -17,7 +17,7 @@ c = iot3.core.mqtt.MqttClient(
     host="test.mosquitto.org",
     port=1883,
     msg_cb=recv,
-    msg_cb_data="clear",
+    cb_data="clear",
 )
 c.start()
 
@@ -34,7 +34,7 @@ c = iot3.core.mqtt.MqttClient(
     host="test.mosquitto.org",
     port=8886,
     msg_cb=recv,
-    msg_cb_data="tls",
+    cb_data="tls",
 )
 c.start()
 
@@ -53,7 +53,7 @@ c = iot3.core.mqtt.MqttClient(
     websocket_path="/mqtt",
     tls=False,
     msg_cb=recv,
-    msg_cb_data="ws",
+    cb_data="ws",
 )
 c.start()
 
@@ -71,7 +71,7 @@ c = iot3.core.mqtt.MqttClient(
     port=8081,
     websocket_path="/mqtt",
     msg_cb=recv,
-    msg_cb_data="wss",
+    cb_data="wss",
 )
 c.start()
 

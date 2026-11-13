@@ -233,7 +233,7 @@ def start(
         username=config["mqtt"]["username"],
         password=config["mqtt"]["password"],
         msg_cb=_msg_cb if message_callback else None,
-        msg_cb_data=callback_data,
+        cb_data=callback_data,
         span_ctxmgr_cb=span_ctxmgr,
     )
     m.start()
@@ -266,7 +266,7 @@ def is_ready() -> bool:
     if _core is None:
         raise RuntimeError("IoT3 Core SDK not initialised.")
 
-    return _core["mqtt"].is_ready()
+    return _core["mqtt"].connected
 
 
 def wait_for_ready():
@@ -276,10 +276,7 @@ def wait_for_ready():
     case the MQTT client can't connect at all, wait_for_ready()
     will wait forever and never return.
     """
-    while True:
-        if is_ready():
-            break
-        _time.sleep(0.1)
+    _core["mqtt"].wait_for_ready()
 
 
 def publish(

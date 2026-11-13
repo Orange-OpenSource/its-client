@@ -10,10 +10,12 @@ import paho.mqtt.properties
 import ssl
 import threading
 import time
+import warnings
 from typing import Any, Callable, Optional, TypeAlias, Unpack
 from . import otel
 
-MsgCallbackType: TypeAlias = Callable[[Any, str, bytes], None]
+ConnCallbackType: TypeAlias = Callable[[Any, bool], None]
+MsgCallbackType: TypeAlias = Callable[[Any, str, bytes, bool | int], None]
 SpanCallableType: TypeAlias = Callable[Unpack[otel.Otel.span], otel.Span]
 
 
@@ -29,9 +31,11 @@ class MqttClient:
         tls: Optional[bool] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
+        conn_cb: Optional[ConnCallbackType] = None,
         msg_cb: Optional[MsgCallbackType] = None,
-        msg_cb_data: Any = None,
+        cb_data: Any = None,
         span_ctxmgr_cb: Optional[SpanCallableType] = None,
+        **kwargs,
     ):
         """
         Create an MQTT client
@@ -45,12 +49,15 @@ class MqttClient:
         :param tls: Whether to use TLS or not. See below for details.
         :param username: The username to authenticate against the MQTT broker.
         :param password: The password to authenticate against the MQTT broker.
+        :param conn_cb: The function to call when the MQTT connection is
+                        established or lost.
         :param msg_cb: The function to call when a message is received from
                        the MQTT broker.
-        :param msg_cb_data: Arbitrary data that will be passed back to the
-                            msg_cb function.
+        :param cb_data: Arbitrary data that will be passed back to the
+                        callback functions, above.
         :param span_ctx_cb: The function to obtain a context manager for an
-                            OpenTelemetry span.
+                            OpenTelemetry span (cb_data is not passed to
+                            this callback).
 
         There are two ways to connect to the MQTT broker:
          * via TCP: both host and port must be specified;
@@ -79,20 +86,24 @@ class MqttClient:
         Specifying a message callback as msg_cb allows subscribing to,
         and thus receiving messages from specific topics. If no msg_cb
         is provided, it is not possible to subscribe, and only emitting
-        is permitted. msg_cb must be a callable that accepts at least
-        those keyword arguments: data, topic, payload, retain. Ideally,
-        to be future-proof, it should be declared with:
+        is permitted.
+
+        If cb_data is specified, it is passed as the data keyword
+        argument of the callback functions, except span_ctxmgr_cb;
+        otherwise None is passed.
+
+        Callbacks should be callables that accept keyword parameters.
+        To be future-proof, they should accept any positional or
+        keyword argument, like so:
             def my_cb(
                 *_args,
-                data: Any,
-                topic: str,
-                payload: bytes,
-                retain: bool | int,
+                some_kw_arg,
                 **_kwargs,
             ) -> None
 
-        If msg_cb_data is specified, it is passed as the data keyword
-        argument of msg_cb, otherwise None is passed.
+        Additionally, callbacks should accept specific keyword:
+            conn_cb : data, connected
+            msg_cb  : data, topic, payload, retain.
 
         Note: the retain flag will be set to False if the message was
         not published in retain; it will be set to True if the message
@@ -100,10 +111,44 @@ class MqttClient:
         will be set to a non-zero integer representing the remaining
         Message Expiry Interval if the message was published in retain
         with a non-zero Message Expiry Interval.
+
+        Note: conn_cb is called with status=True when the connection is
+        completely established (i.e. the MQTT handshake is terminated
+        and was succesful); it is called with status=False when the
+        connection was explicitly, cleanly terminated (ie. requested by
+        the client or the broker), but also on an unclean termination
+        (i.e. when the underlying socket is closed, e.g. on network
+        issues). There is no way to differentiate both termination
+        conditions.
         """
 
+        self.conn_cb = conn_cb
         self.msg_cb = msg_cb
-        self.msg_cb_data = msg_cb_data
+        msg_cb_data = kwargs.get("msg_cb_data")
+        match cb_data, msg_cb_data:
+            case None, None:
+                pass
+            case data, None:
+                pass
+            case None, data:
+                # stacklevel 1 is here, 2 is our caller (usually the
+                # actual application)
+                warnings.warn(
+                    "Use of msg_cb_data is deprecated and will be removed in the future; use cb_data instead",
+                    stacklevel=2,
+                )
+                cb_data = data
+                del kwargs["msg_cb_data"]
+            case _, _:
+                raise ValueError("Don't pass both cb_data and msg_cb_data")
+        self.cb_data = cb_data
+
+        # Check for unknown kwargs; raise the same exception the interpreter
+        # would have raised if we did not have **kwargs in the signature
+        if kwargs:
+            raise TypeError(
+                f"MqttClient.__init__() got an unexpected keyword argument '{list(kwargs)[0]}'"
+            )
 
         if socket_path is not None:
             transport = "unix"
@@ -143,6 +188,8 @@ class MqttClient:
         self.client.reconnect_delay_set(min_delay=1, max_delay=2)
         self.client.username_pw_set(username, password)
         self.client.on_connect = self.__on_connect
+        self.client.on_disconnect = self.__on_disconnect
+        self.client.on_socket_close = self.__on_socket_close
         self.client.on_message = self.__on_message
 
         self.subscriptions = set()
@@ -157,19 +204,27 @@ class MqttClient:
         )
         self.client.loop_start()
 
+    @property
+    def connected(self) -> bool:
+        return self.client.is_connected()
+
+    @warnings.deprecated(
+        "Use the connected property instead",
+        category=FutureWarning,
+    )
     def is_ready(self):
         """Returns whether the MQTT client is ready.
 
         The client is ready when it is connected to the MQTT broker.
         """
-        return self.client.is_connected()
+        return self.connected
 
     def wait_for_ready(self):
         """Wait for the client to be ready.
 
         This can block forever.
         """
-        while not self.client.is_connected():
+        while not self.connected:
             time.sleep(0.1)
 
     def stop(self):
@@ -207,7 +262,7 @@ class MqttClient:
             span.set_attribute(key="iot3.core.mqtt.payload_size", value=len(payload))
             if retain:
                 span.set_attribute(key="iot3.core.mqtt.retain", value=True)
-                if isinstance(retain, int):
+                if type(retain) is int:
                     if retain < 1:
                         raise ValueError(
                             f"retain must be strictly positive (not: {retain})"
@@ -354,7 +409,7 @@ class MqttClient:
             else:
                 retain = False
             self.msg_cb(
-                data=self.msg_cb_data,
+                data=self.cb_data,
                 topic=message.topic,
                 payload=message.payload,
                 retain=retain,
@@ -365,9 +420,32 @@ class MqttClient:
         _client,
         _userdata,
         _connect_flags,
-        _rc,
+        rc,
         _properties=None,
     ):
-        with self.subscriptions_lock:
-            if self.subscriptions:
-                self._do_subscribe(topics=self.subscriptions)
+        if rc == 0:
+            with self.subscriptions_lock:
+                if self.subscriptions:
+                    self._do_subscribe(topics=self.subscriptions)
+            if self.conn_cb:
+                self.conn_cb(data=self.cb_data, connected=True)
+
+    def __on_disconnect(
+        self,
+        _client,
+        _userdata,
+        _disconnect_flags,
+        _rc,
+        _properties,
+    ) -> None:
+        if self.conn_cb:
+            self.conn_cb(data=self.cb_data, connected=False)
+
+    def __on_socket_close(
+        self,
+        _client,
+        _userdata,
+        _socket,
+    ) -> None:
+        if self.conn_cb:
+            self.conn_cb(data=self.cb_data, connected=False)
