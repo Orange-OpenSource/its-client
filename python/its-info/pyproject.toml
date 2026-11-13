@@ -10,7 +10,7 @@ authors = [
 ]
 description = "ITS information message emitter"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: POSIX :: Linux",
@@ -21,7 +21,7 @@ dependencies = [
     "linuxfd==1.5",
     "netifaces==0.11.0",
     "paho-mqtt >=1.6.1, !=2.0.*",
-    "its-quadkeys @ git+https://github.com/Orange-OpenSource/its-client@91b6508d743fa6b771f5a5480591ce554d52084c#subdirectory=python/its-quadkeys"
+    "its-quadkeys @ git+https://github.com/Orange-OpenSource/its-client@f4a04c6564a86fc2c16d24fa7a0eef186b2a42a3#subdirectory=python/its-quadkeys"
 ]
 
 [project.urls]
