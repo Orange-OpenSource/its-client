@@ -188,24 +188,28 @@ class MQTTInfoClient:
             "validity_duration": int(self.cfg["general"]["period"]) * 2,
         }
 
-        # The IP adresses of the interface may change at runtime
-        # so we must grab them every time.
-        ips = list()
-        if self.cfg["general"]["interface"]:
-            ifa = netifaces.ifaddresses(self.cfg["general"]["interface"])
+        def _itf2ip(itf: str) -> list[str]:
+            ifa = netifaces.ifaddresses(itf)
             for familly in [netifaces.AF_INET, netifaces.AF_INET6]:
                 if familly in ifa:
-                    # IPv6 addresses can look like: 01::EF%iface but we just want 01::EF
-                    ips += [i["addr"].split("%")[0] for i in ifa[familly]]
+                    for i in ifa[familly]:
+                        # IPv6 addresses can look like: 01::EF%iface but we just want 01::EF
+                        yield i["addr"].split("%")[0]
+
+        # The IP adresses of the interface may change at runtime
+        # so we must grab them every time.
+        local_ips = list()
+        if self.cfg["general"]["interface"]:
+            local_ips = list(_itf2ip(self.cfg["general"]["interface"]))
 
         if self.cfg["general"]["dns_ip"]:
             data["domain_name_servers"] = [self.cfg["general"]["dns_ip"]]
-        elif ips:
-            data["domain_name_servers"] = ips
+        elif local_ips:
+            data["domain_name_servers"] = local_ips
         if self.cfg["general"]["ntp_host"]:
             data["ntp_servers"] = [self.cfg["general"]["ntp_host"]]
-        elif ips:
-            data["ntp_servers"] = ips
+        elif local_ips:
+            data["ntp_servers"] = local_ips
 
         if self.cfg["RoR"]["type"] == "static" and self.cfg["RoR"]["reload"]:
             if self.ror is None:
