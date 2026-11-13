@@ -15,6 +15,7 @@ import time
 import warnings
 
 from iot3.core.mqtt import MqttClient
+from iot3.mobility.etsi import Message
 from its_quadkeys import QuadZone
 
 
@@ -177,12 +178,13 @@ class MQTTInfoClient:
     def info(self):
         logging.debug("preparing info data")
         data = {
-            "type": "broker",
-            "version": "1.2.0",
-            "station_uuid": self.cfg["general"]["station-uuid"],
+            "message_type": "information",
+            "source_uuid": self.cfg["general"]["station-uuid"],
+            "timestamp": int(1000 * time.time()),
+            "version": "2.1.0",
+            "instance_id": Message.station_id(self.cfg["general"]["station-uuid"]),
             "instance_type": self.cfg["general"]["instance_type"],
             "running": True,
-            "timestamp": int(1000 * time.time()),
             "validity_duration": int(self.cfg["general"]["period"]) * 2,
         }
 
