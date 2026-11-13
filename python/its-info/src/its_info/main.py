@@ -232,7 +232,7 @@ class MQTTInfoClient:
         if self.ror is not None:
             data["service_area"] = {"type": "tiles", "quadkeys": sorted(self.ror)}
 
-        data_str = json.dumps(data)
+        data_str = json.dumps(data, separators=(",", ":"))
 
         logging.debug(
             f"sending info data '{data_str[:128]+('...' if len(data_str)>128 else '')}'",
