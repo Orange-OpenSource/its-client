@@ -10,7 +10,7 @@ authors = [
 ]
 description = "ITS inter-queue manage"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: POSIX :: Linux",
@@ -18,7 +18,7 @@ classifiers = [
 ]
 license = "MIT"
 dependencies = [
-    "iot3 @ git+https://github.com/Orange-OpenSource/its-client@fe1cf253609d84a9abf857f31e6d4ae677e9d706#subdirectory=python/iot3",
+    "iot3 @ git+https://github.com/Orange-OpenSource/its-client@59c08f3dbee1ee30b7a625136004b753e43e0b22#subdirectory=python/iot3",
     "requests==2.33.0",
 ]
 
