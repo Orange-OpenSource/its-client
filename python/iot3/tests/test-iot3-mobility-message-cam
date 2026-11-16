@@ -25,6 +25,38 @@ assert msg["message"]["basic_container"]["reference_position"]["position_confide
 assert msg["message"]["basic_container"]["reference_position"]["position_confidence_ellipse"]["semi_major_orientation"] == 3601
 assert "basic_vehicle_container_high_frequency" in msg._message["message"]["high_frequency_container"]
 
+print("CAM w/ no exterior lights")
+msg = CAM(
+    uuid="test_role_1234",
+    gnss_report=GNSSReport(),
+    lights=CAM.ExteriorLights(0),
+)
+assert msg.exterior_lights is CAM.ExteriorLights(0)
+
+print("CAM w/ left-turn signal")
+msg = CAM(
+    uuid="test_role_1234",
+    gnss_report=GNSSReport(),
+    lights=CAM.ExteriorLights.left_turn_signal,
+)
+assert CAM.ExteriorLights.left_turn_signal in msg.exterior_lights
+assert CAM.ExteriorLights.right_turn_signal not in msg.exterior_lights
+
+print("CAM updated w/ warning signal (both turn signals)")
+msg.exterior_lights = (
+    CAM.ExteriorLights.left_turn_signal
+    | CAM.ExteriorLights.right_turn_signal
+)
+assert CAM.ExteriorLights.left_turn_signal in msg.exterior_lights
+assert CAM.ExteriorLights.right_turn_signal in msg.exterior_lights
+
+print("CAM updated w/ right-turn signal only")
+msg.exterior_lights = (
+    CAM.ExteriorLights.right_turn_signal
+)
+assert CAM.ExteriorLights.left_turn_signal not in msg.exterior_lights
+assert CAM.ExteriorLights.right_turn_signal in msg.exterior_lights
+
 print("CAM with latitude and longitude...")
 msg = CAM(
     uuid="test_role_1234",

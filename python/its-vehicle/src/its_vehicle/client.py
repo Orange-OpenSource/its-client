@@ -3,11 +3,13 @@
 # SPDX-License-Identifier: MIT
 # Author: Yann E. MORIN <yann.morin@orange.com>
 
+import functools
 import its_quadkeys
 import json
 import linuxfd
 import logging
 import threading
+import time
 from iot3.core.mqtt import MqttClient
 from iot3.mobility.cam import CAM
 from iot3.mobility.gnss import GNSS
@@ -15,22 +17,18 @@ from .roi import RegionOfInterest
 
 
 class ITSClient:
-    TYPES = {
-        "CAM": {"topic": "cam", "message": CAM},
-    }
-
     def __init__(
         self,
         *,
         cfg: dict,
-        gpsd: GNSS,
+        gnss: GNSS,
         mqtt_main: MqttClient,
-        mqtt_mirror: MqttClient = None,
+        mqtt_local: MqttClient,
     ):
         self.cfg = cfg
-        self.gpsd = gpsd
+        self.gnss = gnss
         self.mqtt_main = mqtt_main
-        self.mqtt_mirror = mqtt_mirror
+        self.mqtt_local = mqtt_local
 
         # Type coercion
         self.cfg["report-freq"] = float(self.cfg["report-freq"])
@@ -47,19 +45,12 @@ class ITSClient:
             self.cfg["length"] = None
             self.cfg["width"] = None
 
-        if self.cfg["type"] not in ITSClient.TYPES:
-            raise ValueError(f"unknown ITS message type {self.cfg['type']}")
-
-        self.ITSMessage = ITSClient.TYPES[self.cfg["type"]]["message"]
-
         try:
             station_type = self.cfg.get("station-type", "unknown")
-            self.cfg["station_type"] = self.ITSMessage.TrafficParticipantType[
-                station_type
-            ]
+            self.cfg["station_type"] = CAM.TrafficParticipantType[station_type]
         except KeyError:
             raise ValueError(
-                f"{station_type}: invalid station type; valid values: {', '.join([t.name for t in self.ITSMessage.TrafficParticipantType])}"
+                f"{station_type}: invalid station type; valid values: {', '.join([t.name for t in CAM.TrafficParticipantType])}"
             ) from None
 
         if not self.cfg["topic-pub-prefix"] or self.cfg["topic-pub-prefix"][-1] != "/":
@@ -84,6 +75,8 @@ class ITSClient:
             ),
             speeds=[float(s) for s in self.cfg["speed-thresholds"].split()],
         )
+
+        self.vehicle_state = None
 
         self.should_stop = False
         self.thread = threading.Thread(
@@ -123,13 +116,29 @@ class ITSClient:
             if self.should_stop:
                 break
 
-            gnss_report = self.gpsd()
+            gnss_report = self.gnss()
             if (
                 gnss_report is None
                 or gnss_report.latitude is None
                 or gnss_report.longitude is None
             ):
                 continue
+
+            lights = CAM.ExteriorLights(0)
+            try:
+                if (
+                    self.vehicle_state["expires_at"] == 0
+                    or self.vehicle_state["expires_at"] / 1000 > time.time()
+                ):
+                    lights = functools.reduce(
+                        lambda x, y: x | y,
+                        (
+                            CAM.ExteriorLights[light]
+                            for light in self.vehicle_state["lights"]
+                        ),
+                    )
+            except (TypeError, KeyError):
+                pass
 
             # Update RoI before we send a message, so that
             # we do not miss it...
@@ -154,12 +163,13 @@ class ITSClient:
                 )
             self.mqtt_main.subscribe_replace(topics=list(roi_topics))
 
-            msg = self.ITSMessage(
+            msg = CAM(
                 uuid=self.cfg["station-uuid"],
                 station_type=self.cfg["station_type"],
                 gnss_report=gnss_report,
                 length=self.cfg["length"],
                 width=self.cfg["width"],
+                lights=lights,
             )
             topic = msg.topic(
                 template=self.pub_topic_template,
@@ -167,14 +177,14 @@ class ITSClient:
             )
             msg_json = msg.to_json()
             self.mqtt_main.publish(topic=topic, payload=msg_json)
-            if self.mqtt_mirror and not self.cfg["mirror-self"]:
+            if not self.cfg["mirror-self"]:
                 # Use the sub-prefix, to simulate the message as coming
                 # from the main broker as if we had subscribed to it.
                 mirror_topic = (
                     self.cfg["topic-sub-prefix"]
                     + topic[len(self.cfg["topic-pub-prefix"]) :]
                 )
-                self.mqtt_mirror.publish(topic=mirror_topic, payload=msg_json)
+                self.mqtt_local.publish(topic=mirror_topic, payload=msg_json)
 
         # Out of the loop, cleanup and close
         self.mqtt_main.unsubscribe_all()
@@ -183,13 +193,15 @@ class ITSClient:
     def msg_cb(
         self,
         *_args,
+        data: str,
         topic: str,
         payload: bytes,
         **_kwargs,
     ):
         logging.debug(
-            "received message on %s: %s",
-            topic[:16] + "..." if len(topic) > 16 else "",
+            "received message on %s broker, topic %s: %s",
+            data,
+            topic[:16] + ("..." if len(topic) > 16 else ""),
             payload[:16].decode(errors="backslashreplace")
             + ("..." if len(payload) > 16 else ""),
         )
@@ -198,15 +210,16 @@ class ITSClient:
         except json.decoder.JSONDecodeError:
             # Not JSON, not sure what to do with that...
             return
-        if self.mqtt_mirror is None:
-            return
-        try:
-            if (
-                payload_d.get("source_uuid", None) != self.cfg["station-uuid"]
-                or self.cfg["mirror-self"]
-            ):
-                self.mqtt_mirror.publish(topic=topic, payload=payload)
-        except:
-            # Payload does not have expected fields, or is not a dict;
-            # ignore this invalid message
-            pass
+        if data == "main":
+            try:
+                if (
+                    payload_d.get("source_uuid", None) != self.cfg["station-uuid"]
+                    or self.cfg["mirror-self"]
+                ):
+                    self.mqtt_local.publish(topic=topic, payload=payload)
+            except:
+                # Payload does not have expected fields, or is not a dict;
+                # ignore this invalid message
+                pass
+        elif data == "local":
+            self.vehicle_state = payload_d
