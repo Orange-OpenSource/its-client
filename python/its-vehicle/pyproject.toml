@@ -18,7 +18,7 @@ classifiers = [
 ]
 license = "MIT"
 dependencies = [
-    "iot3 @ git+https://github.com/Orange-OpenSource/its-client@87752364d11757b2fbc0411e50f9bc189d77761c#subdirectory=python/iot3",
+    "iot3 @ git+https://github.com/Orange-OpenSource/its-client@a7bac0dbc57a12c678ad41bc03f02f9beb1556c3#subdirectory=python/iot3",
     "its-quadkeys @ git+https://github.com/Orange-OpenSource/its-client@4be5d6c8a0d940dd646a9f65455314ea5ad94b17#subdirectory=python/its-quadkeys",
     "linuxfd==1.5",
 ]
