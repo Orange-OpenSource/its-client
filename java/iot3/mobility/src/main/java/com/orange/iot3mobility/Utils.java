@@ -40,14 +40,62 @@ public class Utils {
         return new LatLng(lat2, lng2);
     }
 
+    /**
+     * Ratio applied to the smallest of {@code length}/{@code width} to compute the size of the
+     * front corner cuts (chamfers), used to make the front of the footprint visually distinct
+     * from its rectangular rear.
+     */
+    private static final double FRONT_CHAMFER_RATIO = 0.15;
+
+    /**
+     * Minimum absolute chamfer size, in meters. Without this floor, the proportional chamfer
+     * becomes imperceptible on small footprints (e.g. pedestrians, small objects below 1 meter),
+     * making the hexagon visually indistinguishable from a plain rectangle.
+     */
+    private static final double MIN_FRONT_CHAMFER_METERS = 0.15;
+
+    /**
+     * Computes the ground footprint of an object as a hexagon with its two front corners cut
+     * (chamfered), so the front of the shape is visually distinguishable from its rectangular
+     * rear.
+     *
+     * @param position    center position of the object
+     * @param orientation orientation (heading) in degrees, 0 = North, clockwise
+     * @param length      length of the object, in meters
+     * @param width       width of the object, in meters
+     * @return the 6 points of the footprint, in order: rear-left, rear-right, front-right-side,
+     *         front-right-cut, front-left-cut, front-left-side
+     */
     public static List<LatLng> computeFootprint(LatLng position, double orientation, double length, double width) {
+        double minDimension = Math.min(length, width);
+        // Floor the chamfer to a minimum absolute size so it stays visible on small footprints,
+        // but never let it exceed half of the smallest dimension to avoid a self-intersecting
+        // (bowtie) polygon on very small objects.
+        double chamfer = Math.min(
+                Math.max(minDimension * FRONT_CHAMFER_RATIO, MIN_FRONT_CHAMFER_METERS),
+                minDimension / 2);
+
         LatLng frontCenter = Utils.pointFromPosition(position, orientation, length / 2);
         LatLng frontLeft = Utils.pointFromPosition(frontCenter, (orientation - 90 + 360) % 360, width / 2);
         LatLng frontRight = Utils.pointFromPosition(frontCenter, (orientation + 90 + 360) % 360, width / 2);
         LatLng rearCenter = Utils.pointFromPosition(position, (orientation + 180 + 360) % 360, length / 2);
         LatLng rearLeft = Utils.pointFromPosition(rearCenter, (orientation - 90 + 360) % 360, width / 2);
         LatLng rearRight = Utils.pointFromPosition(rearCenter, (orientation + 90 + 360) % 360, width / 2);
-        return List.of(frontLeft, frontRight, rearRight, rearLeft);
+
+        // Cut the front-left corner: one point moved back along the left side, one point
+        // moved inward along the front edge, replacing the single frontLeft corner.
+        LatLng frontLeftSide = Utils.pointFromPosition(
+                frontLeft, (orientation + 180 + 360) % 360, chamfer);
+        LatLng frontLeftCut = Utils.pointFromPosition(
+                frontLeft, (orientation + 90 + 360) % 360, chamfer);
+
+        // Cut the front-right corner symmetrically.
+        LatLng frontRightSide = Utils.pointFromPosition(
+                frontRight, (orientation + 180 + 360) % 360, chamfer);
+        LatLng frontRightCut = Utils.pointFromPosition(
+                frontRight, (orientation - 90 + 360) % 360, chamfer);
+
+        return List.of(rearLeft, rearRight, frontRightSide, frontRightCut, frontLeftCut, frontLeftSide);
     }
 
     public static String getRandomUuid() {
