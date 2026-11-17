@@ -17,6 +17,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+      - name: Check internal dependencies
+        run: |
+          ./python/update-deps ${{ matrix.package }}
+          git diff --exit-code
       - name: Set up python 3.14
         uses: actions/setup-python@v5.3.0
         with:
