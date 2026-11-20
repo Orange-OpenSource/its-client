@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+DEPS=(
+    "its-quadkeys"
+    "iot3"
+)
+
+main() {
+    local dep pkg
+    local -A hashes
+
+    if [ -z "${*}" ]; then
+        printf 'Usage: %s PKG [...]' "${my_name}"
+        printf 'Update the internal dependencies of PKG'
+        exit 1
+    fi >&2
+
+    for dep in "${DEPS[@]}"; do
+        hashes["${dep}"]="$(
+            git rev-list -1 HEAD -- "${my_dir}/${dep}/"
+        )"
+    done
+
+    for pkg; do
+        for dep in "${!hashes[@]}"; do
+            sed -r -i \
+                -e "/${dep} @ git/s/@[[:xdigit:]]+#/@${hashes[${dep}]}#/" \
+                "${my_dir}/${pkg}/pyproject.toml"
+        done
+    done
+}
+
+my_dir="${0%/*}"
+my_name="${0##*/}"
+main "${@}"

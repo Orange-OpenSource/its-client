@@ -44,7 +44,6 @@ This simple API consists in a few functions and a type annotation:
 """
 
 
-sample_bootstrap_config = dict(core.sample_bootstrap_config)
 sample_config = dict(core.sample_config)
 sample_config.update(
     {
@@ -60,40 +59,6 @@ sample_config.update(
 # a callable with *args and **kwargs is non trivial, and even though
 # python 3.13 will make that slightly easier. it's not there yet...
 AlertCallbackType: TypeAlias = Callable[..., None]
-
-
-def bootstrap(
-    *,
-    ue_id: str,
-    role: str,
-    service_name: str,
-    bootstrap_config: dict,
-    station_type: Optional[
-        etsi.Message.TrafficParticipantType
-    ] = etsi.Message.TrafficParticipantType.unknown,
-    # FIXME: Shouldn't namespace come from the bootstrap, in fact?
-    namespace: Optional[str] = "default",
-) -> dict:
-    config = core.bootstrap(
-        ue_id=ue_id,
-        role=role,
-        service_name=service_name,
-        bootstrap_config=bootstrap_config,
-    )
-
-    config.update(
-        {
-            "uuid": config["mqtt"]["client_id"],
-            "station_type": station_type,
-            "namespace": namespace,
-            # FIXME: Should those be configurable? Should they come from the
-            # bootstrap, if so?
-            "report_depth": 22,
-            "roi_depth": 15,
-        },
-    )
-
-    return config
 
 
 def start(
@@ -118,7 +83,7 @@ def start(
             ) -> None:
                 ...
         Currently defined kwargs that are always present are:
-          - data: the value passed as msg_cb_data (below)
+          - data: the value passed as cb_data (below)
           - location: contains the location of the alert
           - detection_time: the time of detection of the event
           - cause: the cause for the DENM
