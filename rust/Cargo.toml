@@ -38,6 +38,10 @@ identity = []
 name = "json_counter"
 
 [[example]]
+name = "json_pipeline_counter"
+required-features = ["mobility"]
+
+[[example]]
 name = "telemetry"
 required-features = ["telemetry"]
 
