@@ -10,6 +10,10 @@ package com.orange.iot3mobility.roadobjects;
 import com.orange.iot3mobility.Utils;
 import com.orange.iot3mobility.messages.StationType;
 import com.orange.iot3mobility.messages.cam.core.CamCodec;
+import com.orange.iot3mobility.messages.cam.v113.model.CamEnvelope113;
+import com.orange.iot3mobility.messages.cam.v240.model.CamEnvelope240;
+import com.orange.iot3mobility.messages.cam.v240.model.CamStructuredData;
+import com.orange.iot3mobility.messages.cam.v240.model.highfrequencycontainer.BasicVehicleContainerHighFrequency;
 import com.orange.iot3mobility.quadkey.LatLng;
 
 import java.util.List;
@@ -157,6 +161,39 @@ public class RoadUser {
 
     public boolean isVulnerable() {
         return stationType.equals(StationType.CYCLIST) || stationType.equals(StationType.PEDESTRIAN);
+    }
+
+    /**
+     * Returns {@code true} if the last received CAM indicates that this road user is
+     * driving backward (reversing), based on the {@code drive_direction} field of the
+     * high frequency container.
+     * <p>
+     * Returns {@code false} when no CAM frame is available, when the drive direction is
+     * forward or unavailable, or when it cannot be determined (e.g. RSU-originated CAM or
+     * a raw ASN.1 payload).
+     */
+    public boolean isReversing() {
+        if (camFrame == null) {
+            return false;
+        }
+        Integer driveDirection = switch (camFrame.version()) {
+            case V1_1_3 -> {
+                if (camFrame.envelope() instanceof CamEnvelope113 envelope) {
+                    yield envelope.message().highFrequencyContainer().driveDirection();
+                }
+                yield null;
+            }
+            case V2_4_0 -> {
+                if (camFrame.envelope() instanceof CamEnvelope240 envelope
+                        && envelope.message() instanceof CamStructuredData structuredData
+                        && structuredData.highFrequencyContainer()
+                                instanceof BasicVehicleContainerHighFrequency vehicleContainer) {
+                    yield vehicleContainer.driveDirection();
+                }
+                yield null;
+            }
+        };
+        return driveDirection != null && driveDirection == 1;
     }
 
 }
