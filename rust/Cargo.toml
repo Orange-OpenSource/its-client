@@ -38,6 +38,10 @@ identity = []
 name = "json_counter"
 
 [[example]]
+name = "json_pipeline_counter"
+required-features = ["mobility"]
+
+[[example]]
 name = "telemetry"
 required-features = ["telemetry"]
 
@@ -149,6 +153,11 @@ tar = "0.4.46"
 
 [[bench]]
 name = "position"
+harness = false
+required-features = ["mobility"]
+
+[[bench]]
+name = "cause"
 harness = false
 required-features = ["mobility"]
 

@@ -61,6 +61,10 @@ jobs:
         run: |
           cd rust
           cargo build --example json_counter --verbose
+      - name: Build json_pipeline_counter example
+        run: |
+          cd rust
+          cargo build --example json_pipeline_counter --features mobility --verbose
       - name: Build telemetry example
         run: |
           cd rust

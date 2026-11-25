@@ -15,7 +15,7 @@ use std::sync::{Arc, RwLock};
 
 use clap::{Arg, Command};
 use ini::Ini;
-use libits::client::application::analyzer::Analyzer;
+use libits::client::application::exchange_analyzer::ExchangeAnalyzer;
 use libits::client::application::pipeline;
 use libits::client::configuration::Configuration;
 use libits::client::logger::create_stdout_logger;
@@ -38,7 +38,7 @@ pub struct CopyCat {
 #[derive(Default)]
 struct NoContext {}
 
-impl Analyzer<GeoTopic, NoContext> for CopyCat {
+impl ExchangeAnalyzer<GeoTopic, NoContext> for CopyCat {
     fn new(
         configuration: Arc<Configuration>,
         _context: Arc<RwLock<NoContext>>,
@@ -191,7 +191,7 @@ async fn main() {
     #[cfg(feature = "telemetry")]
     init_tracer(&configuration.telemetry, "copycat").expect("Failed to init telemetry");
 
-    pipeline::run::<CopyCat, NoContext, GeoTopic>(
+    pipeline::exchange_pipeline::run::<CopyCat, NoContext, GeoTopic>(
         Arc::new(configuration),
         Arc::new(RwLock::new(context)),
         Arc::new(RwLock::new(SequenceNumber::new(u16::MAX.into()))),

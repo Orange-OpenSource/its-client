@@ -9,7 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
-pub(crate) mod cause;
+pub mod cause;
 pub mod etsi;
 pub mod message;
 pub mod mortal;
