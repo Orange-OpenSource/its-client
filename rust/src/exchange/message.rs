@@ -30,6 +30,8 @@ use serde::{Deserialize, Serialize};
 
 #[enum_dispatch]
 #[allow(clippy::upper_case_acronyms)]
+// Boxing the DENM variant would break the public pattern-matching API for a few hundred bytes.
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Message {
