@@ -8,6 +8,7 @@
  *
  * Authors: see CONTRIBUTORS.md
  */
+use super::confidence;
 use serde::{Deserialize, Serialize};
 
 /// Represents an Acceleration according to an ETSI standard.
@@ -17,12 +18,25 @@ use serde::{Deserialize, Serialize};
 ///
 /// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/cam/cam_schema_2-2-0.json#L931
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Acceleration {
     /// Acceleration value in centimeters per second squared.
     pub value: i16,
     /// Confidence level for the acceleration.
+    #[serde(
+        serialize_with = "confidence::serialize::<_, _, 0, 102>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 102>"
+    )]
     pub confidence: u8,
+}
+
+impl Default for Acceleration {
+    fn default() -> Self {
+        Self {
+            value: 0,
+            confidence: 102,
+        }
+    }
 }
 
 /// Represents an Acceleration Magnitude according to an ETSI standard.
@@ -32,12 +46,25 @@ pub struct Acceleration {
 ///
 /// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/cam/cam_schema_2-2-0.json#L422
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AccelerationMagnitude {
     /// Acceleration magnitude value.
     pub value: u8,
     /// Confidence level for the acceleration magnitude.
+    #[serde(
+        serialize_with = "confidence::serialize::<_, _, 0, 102>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 102>"
+    )]
     pub confidence: u8,
+}
+
+impl Default for AccelerationMagnitude {
+    fn default() -> Self {
+        Self {
+            value: 0,
+            confidence: 102,
+        }
+    }
 }
 
 #[cfg(test)]

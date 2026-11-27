@@ -407,7 +407,7 @@ impl CooperativeAwarenessMessage {
                     },
                     speed: Speed {
                         value: speed_to_etsi(speed),
-                        ..Default::default()
+                        confidence: 127,
                     },
                     ..Default::default()
                 }),
@@ -445,14 +445,18 @@ impl Mobile for CooperativeAwarenessMessage {
         self.high_frequency_container
             .basic_vehicle_container_high_frequency
             .as_ref()
-            .map(|vehicle| speed_from_etsi(vehicle.speed.value))
+            .map(|vehicle| vehicle.speed.value)
+            .filter(|value| *value < 16383)
+            .map(speed_from_etsi)
     }
 
     fn heading(&self) -> Option<f64> {
         self.high_frequency_container
             .basic_vehicle_container_high_frequency
             .as_ref()
-            .map(|vehicle| heading_from_etsi(vehicle.heading.value))
+            .map(|vehicle| vehicle.heading.value)
+            .filter(|value| *value <= 3600)
+            .map(heading_from_etsi)
     }
 
     fn acceleration(&self) -> Option<f64> {
@@ -1278,7 +1282,7 @@ mod tests {
                     },
                     speed: Speed {
                         value: 500,
-                        confidence: Default::default(),
+                        confidence: 127,
                     },
                     drive_direction: 0,
                     vehicle_length: VehicleLength {

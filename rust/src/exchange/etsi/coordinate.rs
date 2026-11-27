@@ -9,6 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+use super::confidence;
 use serde::{Deserialize, Serialize};
 
 /// Represents a CartesianCoordinate according to an ETSI standard.
@@ -18,12 +19,25 @@ use serde::{Deserialize, Serialize};
 ///
 /// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/cpm/cpm_schema_2-1-0.json#L1024
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Copy, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CartesianCoordinate {
     /// Coordinate value.
     pub value: i32,
     /// Confidence level for the coordinate.
+    #[serde(
+        serialize_with = "confidence::serialize::<_, _, 1, 4096>",
+        deserialize_with = "confidence::deserialize::<_, _, 1, 4096>"
+    )]
     pub confidence: u16,
+}
+
+impl Default for CartesianCoordinate {
+    fn default() -> Self {
+        Self {
+            value: 0,
+            confidence: 4096,
+        }
+    }
 }
 
 #[cfg(test)]

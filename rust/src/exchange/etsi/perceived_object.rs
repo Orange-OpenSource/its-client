@@ -9,6 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+use super::confidence;
 use crate::exchange::etsi::acceleration::{Acceleration, AccelerationMagnitude};
 use crate::exchange::etsi::angle::Angle;
 use crate::exchange::etsi::collective_perception_message::MapReference;
@@ -56,7 +57,12 @@ pub struct PerceivedObject {
     pub object_dimension_x: Option<ObjectDimension>,
     /// Age of the perceived object in milliseconds.
     pub object_age: Option<i16>,
-    /// Quality of the object perception, ranging from 0 to 255.
+    /// Confidence associated with the object, ranging from 0 to 15.
+    #[serde(
+        default,
+        serialize_with = "confidence::serialize::<_, _, 0, 15>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 15>"
+    )]
     pub object_perception_quality: Option<u8>,
     /// List of sensor IDs that detected the perceived object.
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
@@ -175,12 +181,25 @@ pub struct CartesianAcceleration {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CartesianAngularVelocityComponent {
     /// Angular velocity value in centidegrees per second.
     pub value: i16,
     /// Confidence level for the angular velocity.
+    #[serde(
+        serialize_with = "confidence::serialize::<_, _, 0, 7>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 7>"
+    )]
     pub confidence: u8,
+}
+
+impl Default for CartesianAngularVelocityComponent {
+    fn default() -> Self {
+        Self {
+            value: 0,
+            confidence: 7,
+        }
+    }
 }
 
 #[serde_with::skip_serializing_none]
@@ -239,7 +258,11 @@ pub struct CartesianPosition3DWithConfidence {
 pub struct ObjectClassification {
     /// Class of the object, such as vehicle, pedestrian, or other types.
     pub object_class: ObjectClass,
-    /// Confidence level of the classification ranging from 0 to 255.
+    /// Classification confidence (1..=101), with 101 meaning unavailable.
+    #[serde(
+        serialize_with = "confidence::serialize::<_, _, 1, 101>",
+        deserialize_with = "confidence::deserialize::<_, _, 1, 101>"
+    )]
     pub confidence: u8,
 }
 
