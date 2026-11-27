@@ -14,9 +14,9 @@ use serde::{Deserialize, Serialize};
 /// Represents a CauseCode V1 according to an ETSI standard.
 ///
 /// This message is used to describe a cause code.
-/// It implements the schema defined in the [DENM version 2.2.0][1].
+/// It implements the schema defined in the [DENM version 2.3.0][1].
 ///
-/// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/denm/denm_schema_2-2-0.json#L538
+/// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/denm/denm_schema_2-3-0.json#L715
 #[serde_with::skip_serializing_none]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CauseCode {

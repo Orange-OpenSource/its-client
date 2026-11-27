@@ -9,6 +9,7 @@
  * Authors: see CONTRIBUTORS.md
  */
 
+use super::confidence;
 use serde::{Deserialize, Serialize};
 
 /// Represents a Yaw Rate according to an ETSI standard.
@@ -18,10 +19,23 @@ use serde::{Deserialize, Serialize};
 ///
 /// [1]: https://github.com/Orange-OpenSource/its-client/blob/master/schema/cam/cam_schema_2-2-0.json#L978
 #[serde_with::skip_serializing_none]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct YawRate {
     /// Yaw rate value.
     pub value: i16,
     /// Confidence level for the yaw rate.
+    #[serde(
+        serialize_with = "confidence::serialize::<_, _, 0, 8>",
+        deserialize_with = "confidence::deserialize::<_, _, 0, 8>"
+    )]
     pub confidence: u8,
+}
+
+impl Default for YawRate {
+    fn default() -> Self {
+        Self {
+            value: 0,
+            confidence: 8,
+        }
+    }
 }

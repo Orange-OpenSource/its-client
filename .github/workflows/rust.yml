@@ -76,11 +76,11 @@ jobs:
       - name: Build collector example
         run: |
           cd rust
-          cargo build --example collector --verbose
+          cargo build --example collector --features _collector_deps --verbose
       - name: Build collector example with telemetry
         run: |
           cd rust
-          cargo build --example collector --features telemetry --verbose
+          cargo build --example collector --features _collector_deps,telemetry --verbose
       - name: Build all examples
         run: |
           cd rust

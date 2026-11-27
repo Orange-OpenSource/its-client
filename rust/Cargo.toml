@@ -9,7 +9,7 @@
 
 [package]
 name = "libits-client"
-version = "4.0.0"
+version = "5.0.0"
 authors = ["Frédéric Gardes <frederic.gardes@orange.com>", "Nicolas Buffon <nicolas.buffon@orange.com>"]
 license = "MIT"
 description = "library to connect on an ITS MQTT server"
@@ -29,10 +29,19 @@ doc = true
 crate-type = ["lib"]
 
 [features]
-mobility = ["geo"]
+mobility = [
+  "geo",
+  "dep:anyhow",
+  "dep:axum",
+  "dep:flate2",
+  "dep:rusqlite",
+  "dep:tower-http",
+]
 geo_routing = ["mobility"]
 telemetry = ["base64", "opentelemetry", "opentelemetry-http", "opentelemetry-otlp", "opentelemetry_sdk"]
 identity = []
+# Internal: dependencies required by the collector example (tempfile for gzipped logs).
+_collector_deps = ["dep:tempfile", "dep:flate2"]
 
 [[example]]
 name = "json_counter"
@@ -47,6 +56,7 @@ required-features = ["geo_routing"]
 
 [[example]]
 name = "collector"
+required-features = ["_collector_deps"]
 
 [[example]]
 name = "display_log_reader"
@@ -76,18 +86,29 @@ thiserror = "2.0.20"
 threadpool = "1.8.1"
 flexi_logger = "0.31.10"
 rand = "0.10.2"
-tempfile = "3.27.0"
-axum = "0.8.9"
-anyhow = "1.0.104"
-flate2 = "1.1.9"
+tempfile = { version = "3.27.0", optional = true }
+
+[dependencies.anyhow]
+version = "1.0.104"
+optional = true
+
+[dependencies.axum]
+version = "0.8.9"
+optional = true
+
+[dependencies.flate2]
+version = "1.1.9"
+optional = true
 
 [dependencies.tower-http]
 version = "0.7.0"
 features = ["fs", "cors"]
+optional = true
 
 [dependencies.rusqlite]
-version = "0.40.2"
+version = "0.41.0"
 features = ["bundled"]
+optional = true
 
 [dependencies.base64]
 version = "0.23.1"

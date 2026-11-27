@@ -35,7 +35,7 @@ struct Identity {
 /// This function will:
 /// - override the credentials attributes
 /// - suffix the id attributes (MQTT client_id for example)
-/// in all relevant configuration structures.
+///   in all relevant configuration structures.
 ///
 /// The username, password and id suffix will be read from the file provided through the
 /// `identity.file` field in the INI configuration file (see [example/config.ini]).
